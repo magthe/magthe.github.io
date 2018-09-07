@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Maintaining Haskell packages for a Linux distribution---cblrepo</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2011-04-27">2011-04-27</time> - Magnus Therning</p>
+</header>
+
+<p>Maintaining a large set of Haskell packages for a Linux distribution is quite a chore. Especially if one wants to track <a href="http://hackage.haskell.org/">Hackage</a> as far as possible. Several distributions have tools to automatically convert Cabal-based packages into distribution packages, e.g. <a href="http://hackage.haskell.org/package/cabal2arch">cabal2arch</a> for <a href="http://www.archlinux.org/">ArchLinux</a> and <a href="http://hackage.haskell.org/package/cabal-rpm">cabal-rpm</a>. They are just conversion tools though, and the most time-consuming activity in maintaining Haskell packages is resolving and verifying dependencies.</p>
+<p>At least that was my experience when I was actively involved in <a href="http://archhaskell.wordpress.com/">ArchHaskell</a>. I only saw two options when adding or upgrading a package, either I worked out dependencies manually, or I simply tried it out. Neither of them was very appealing, and both were very time-consuming. It seemed obvious that I needed some tool to help out.</p>
+<p>Enter <code>cblrepo</code>!</p>
+<p>It allows me to maintain a database of specific versions of packages, and when I want to upgrade a package, or add a new one, it’ll verify that all dependencies can be satisfied. In other words, it helps me maintain a buildable set of packages at all times.</p>
+<p>The tool also has some functionality that helps in tracking Hackage as packages are updated there.</p>
+<h2 id="something-about-how-it-works">Something about how it works</h2>
+<p>At the moment I maintain a small repository of Arch packages, mostly just to try out <code>cblrepo</code> and convince myself that it works. The work environment contains a database and a directory of patches:</p>
+<pre><code>% ls
+cblrepo.db  patches/
+%</code></pre>
+<p>The database is a cleartext file containing the information on the packages. It’s basically just a dump of the related Haskell datatype, encoded in JSON. The <code>patches</code> directory holds patches for Cabal files and PKGBUILD files. They must be named <code>patch.cabal.&lt;hackage name&gt;</code> or <code>patch.pkgbuild.&lt;hackage name&gt;</code> in order to be picked up by <code>cblrepo</code>.</p>
+<p>There’s also an application directory (<code>~/.cblrepo</code>) for caching info about the packages available on Hackage:</p>
+<pre><code>% ls ~/.cblrepo
+00-index.tar.gz
+%</code></pre>
+<h2 id="how-to-use-it">How to use it</h2>
+<p>A session with <code>cblrepo</code> looks something like this. First we update the information about what packages are available on Hackage:</p>
+<pre><code>% cblrepo idxsync
+%</code></pre>
+<p>After that it’s possible to see what packages are out-of-date:</p>
+<pre><code>% cblrepo updates
+cmdargs: 0.6.8 (0.6.9)
+test-framework-th: 0.1.3 (0.2.0)
+xml: 1.3.7 (1.3.8)
+language-haskell-extract: 0.1.2 (0.2.0)
+blaze-builder: 0.2.1.4 (0.3.0.0)
+%</code></pre>
+<p>Let’s check whether <code>cmdargs</code> can be updated:</p>
+<p>% cblrepo add -n cmdargs,0.6.9 %</p>
+<p>It generates no output, so that means it’s possible to update. When attempting to add all the packages we run into a problem:</p>
+<pre><code>% cblrepo add -n cmdargs,0.6.9 \
+&gt; test-framework-th,0.2.0 \
+&gt; xml,1.3.7 \
+&gt; language-haskell-extract,0.2.0 \
+&gt; blaze-builder,0.3.0.0
+Adding blaze-builder 0.3.0.0 would break:
+  haxr : blaze-builder ==0.2.*</code></pre>
+<p>We’ll leave <code>blaze-builder</code> at the current version for now:</p>
+<pre><code>% cblrepo add cmdargs,0.6.9 \
+&gt; test-framework-th,0.2.0 \
+&gt; xml,1.3.7 \
+&gt; language-haskell-extract,0.2.0
+%</code></pre>
+<p>After these updates we also need to make sure that all packages that depend on these ones are re-built, that is we need to bump their release version:</p>
+<pre><code>% cblrepo bump -n cmdargs \
+&gt; test-framework-th \
+&gt; xml \
+&gt; language-haskell-extract
+Would bump:
+test-framework
+test-framework-hunit
+test-framework-quickcheck2
+%</code></pre>
+<p>Just re-run that without the <code>-n</code> to actually perform the bump. Now that all this is done we need to generate the files necessary to build the Arch packages. We can easily check what packages need re-building, and get a good order for building them:</p>
+<pre><code>% cblrepo build cmdargs \
+&gt; test-framework-th \
+&gt; xml \
+&gt; language-haskell-extract
+cmdargs
+xml
+test-framework
+test-framework-quickcheck2
+test-framework-hunit
+language-haskell-extract
+test-framework-th
+%</code></pre>
+<p>And generating the required files is also easy:</p>
+<pre><code>% cblrepo pkgbuild $(!!)
+% tree
+.
+|-- cblrepo.db
+|-- haskell-cmdargs
+|   |-- haskell-cmdargs.install
+|   `-- PKGBUILD
+|-- haskell-language-haskell-extract
+|   |-- haskell-language-haskell-extract.install
+|   `-- PKGBUILD
+|-- haskell-test-framework
+|   |-- haskell-test-framework.install
+|   `-- PKGBUILD
+|-- haskell-test-framework-hunit
+|   |-- haskell-test-framework-hunit.install
+|   `-- PKGBUILD
+|-- haskell-test-framework-quickcheck2
+|   |-- haskell-test-framework-quickcheck2.install
+|   `-- PKGBUILD
+|-- haskell-test-framework-th
+|   |-- haskell-test-framework-th.install
+|   `-- PKGBUILD
+|-- haskell-xml
+|   |-- haskell-xml.install
+|   `-- PKGBUILD
+`-- patches
+
+8 directories, 15 files
+%</code></pre>
+<p>Now all that’s left is running <code>makepkg</code> in each of the directories, in the order indicated by <code>cblrepo build</code> above.</p>
+<p>Unfortunately they won’t all build—generating the Haddock docs for <code>test-framework-th</code> fails. That’s however fairly easy to remedy by patching the <code>PKGBUILD</code> to disable the generation of docs.</p>
+<p>I’ll get back to that in a later post though.</p>
+<h2 id="your-comments-please">Your comments, please</h2>
+<p>Please leave comments and suggestions. I’m planning on uploading the source to <a href="http://github.com">github</a> shortly.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/arch.html">arch</a>, <a href="../tags/cabal.html">cabal</a>, <a href="../tags/hackage.html">hackage</a>, <a href="../tags/haskell.html">haskell</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2011-01-24-897-on-maintaining-haskell-packages-for-a-linux-distro.html">⟸ On maintaining Haskell packages for a Linux distro</a>
+
+
+
+<a href="../posts/2011-05-01-919-revisiting-json-in-haskell.html">Revisiting JSON in Haskell ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2011-04-27-914-maintaining-haskell-packages-for-a-linux-distribution-cblrepo@therning.org?subject=A comment on Maintaining Haskell packages for a Linux distribution---cblrepo&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

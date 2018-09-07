@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">TagSoup, meet Parsec!</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2008-08-08">2008-08-08</time> - Magnus Therning</p>
+</header>
+
+<p>Recently I began writing a tool to scrape some information off a web site for some off-line processing. After writing up the basics using <a href="http://www-users.cs.york.ac.uk/~ndm/tagsoup/">TagSoup</a> I showed what I had to a colleague. His first comment was “Can’t you use Parsec for that?” It took me a second to realise that he didn’t mean that I should write my own XML parser but rather that Parsec allows writing parsers of a list of anything. So I thought I’d see just what it’d take to create a parser for <code>[Tag]</code>.</p>
+<p>A look at the string parser shipped with Parsec offered a lot of inspiration.</p>
+<p>First the basic type, <code>TagParser</code>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">type</span> <span class="dt">TagParser</span> <span class="fu">=</span> <span class="dt">GenParser</span> <span class="dt">Tag</span></a></code></pre></div>
+<p>The basic function of Parsec is <code>tokenPrim</code>, basically that’s what other basic parsers use. Taking a cue from the string parser implementation I defined a function called <code>satisfy</code>:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">satisfy f <span class="fu">=</span> tokenPrim</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">        show</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">        (\ pos t _ <span class="ot">-&gt;</span> updatePosTag pos t)</a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">        (\ t <span class="ot">-&gt;</span> <span class="kw">if</span> (f t) <span class="kw">then</span> <span class="dt">Just</span> t <span class="kw">else</span> <span class="dt">Nothing</span>)</a></code></pre></div>
+<p>The positioning in a list of tags simply an increase of column, irrespective of what tag is processed:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1">updatePosTag s _ <span class="fu">=</span> incSourceColumn s <span class="dv">1</span></a></code></pre></div>
+<p>Now I have enough to create the first <code>Tag</code> parser—one that accepts a single instance of the specified kind:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">tag t <span class="fu">=</span> satisfy (<span class="fu">~==</span> t) <span class="fu">&lt;?&gt;</span> show t</a></code></pre></div>
+<p>It’s important to stick the supplied tag on the right of <code>(~==)</code>. See <a href="http://hackage.haskell.org/packages/archive/tagsoup/0.6/doc/html/Text-HTML-TagSoup.html#v%3A~%3D%3D">its documentation</a> for why that is. The second parser is one that accepts any kind of tag:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1">anyTag <span class="fu">=</span> satisfy (const <span class="dt">True</span>)</a></code></pre></div>
+<p>So far so good. The next parser to implement is one that accepts any kind of tag out of a list of tags. Here I want to make use of the convenient behaviour of <code>(~==)</code> so I’ll need to implement a custom version of <code>elem</code>:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1">l <span class="ot">`elemTag`</span> r <span class="fu">=</span> or <span class="fu">$</span> l <span class="ot">`elemT`</span> r</a>
+<a class="sourceLine" id="cb6-2" data-line-number="2">    <span class="kw">where</span></a>
+<a class="sourceLine" id="cb6-3" data-line-number="3">        l <span class="ot">`elemT`</span> [] <span class="fu">=</span> [<span class="dt">False</span>]</a>
+<a class="sourceLine" id="cb6-4" data-line-number="4">        l <span class="ot">`elemT`</span> (r<span class="fu">:</span>rs) <span class="fu">=</span> (l <span class="fu">~==</span> r) <span class="fu">:</span> l <span class="ot">`elemT`</span> rs</a></code></pre></div>
+<p>With that in place it’s easy to implement <code>oneOf</code> and <code>noneOf</code>:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1">oneOf ts <span class="fu">=</span> satisfy (<span class="ot">`elemTag`</span> ts)</a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">noneOf ts <span class="fu">=</span> satisfy (\ t <span class="ot">-&gt;</span> not (t <span class="ot">`elemTag`</span> ts))</a></code></pre></div>
+<p>So, as an example of what this can be used for here is a re-implementation of TagSoup’s <a href="http://hackage.haskell.org/packages/archive/tagsoup/0.6/doc/html/Text-HTML-TagSoup.html#v%3Apartitions">partitions</a>:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1">partitions t <span class="fu">=</span> liftM2 (<span class="fu">:</span>)</a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">        (many <span class="fu">$</span> noneOf [t])</a>
+<a class="sourceLine" id="cb8-3" data-line-number="3">        (many <span class="fu">$</span> liftM2 (<span class="fu">:</span>) (tag t) (many <span class="fu">$</span> noneOf [t]))</a></code></pre></div>
+<p>Of course the big question is whether I’ll rewrite my original code using Parsec. Hmm, probably not in this case, but the next time I need to do some web page scraping it offers yet another option for doing it.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/parsec.html">parsec</a>, <a href="../tags/tagsoup.html">tagsoup</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2008-08-08-363-burning-audio-cds-on-linux.html">⟸ Burning audio CDs on Linux</a>
+
+
+
+<a href="../posts/2008-08-21-372-fixing-fonts-in-debian.html">Fixing fonts in Debian ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-140430"></a>
+  <header>
+    <p><b>Corey O'Connor</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-08-09">2008-08-09</time></p>
+  </header>
+<p><em>blink</em></p>
+<p><em>gears turn</em></p>
+<p>Brilliant! That’s a sweet little hack. :-)</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-140580"></a>
+  <header>
+    <p><b>Neil Mitchell</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-08-09">2008-08-09</time></p>
+  </header>
+<p>That is awesome! I will be adding a link to this blog article from the user manual and from the website, well done :-)</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-140748"></a>
+  <header>
+    <p><b>Dmitry Golubovsky</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-08-10">2008-08-10</time></p>
+  </header>
+<p>Interestingly enough, just couple days ago I came to the same combination of TagSoup and Parsec when I needed to parse XML that edoc (Erlang documentation tool) produces. The parser itself is too specialized to use such a large thing as HXT.</p>
+<p>The sample code is here:</p>
+<p><a href="http://code.haskell.org/yc2erl/Language/Edoc/Xml2Hs/Parser.hs" class="uri">http://code.haskell.org/yc2erl/Language/Edoc/Xml2Hs/Parser.hs</a></p>
+<p>and the data structures it creates are defined here:</p>
+<p><a href="http://code.haskell.org/yc2erl/Language/Edoc/Xml2Hs/Type.hs" class="uri">http://code.haskell.org/yc2erl/Language/Edoc/Xml2Hs/Type.hs</a></p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-140967"></a>
+  <header>
+    <p><b>Pepe Iborra</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-08-11">2008-08-11</time></p>
+  </header>
+<p>Is Parsec lazy? If so, this has potential to be light years better than what the TagTree beta module provides. A teaser:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">childrenP <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">  open<span class="fu">@</span>(<span class="dt">TagOpen</span> name _) <span class="ot">&lt;-</span> tagOpen</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  content <span class="ot">&lt;-</span> many (many1 tagText <span class="fu">&lt;|&gt;</span> childrenP)</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  close <span class="ot">&lt;-</span> tagCloseName name</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">  return (open <span class="fu">:</span> concat content <span class="fu">++</span> [close])</a></code></pre></div>
+</article>
+
+<article class="comment-body">
+  <a name="comment-173230"></a>
+  <header>
+    <p><b>Johnny Morrice</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-03-17">2009-03-17</time></p>
+  </header>
+<p>This is very old but I thought I’d tell you I’ve put something similar onto hackage.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-173231"></a>
+  <header>
+    <p><b>Johnny Morrice</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-03-17">2009-03-17</time></p>
+  </header>
+<p>ahh, forgot the name of the package there, it’s tagsoup-parsec</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2008-08-08-367-tagsoup-meet-parsec@therning.org?subject=A comment on TagSoup, meet Parsec!&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

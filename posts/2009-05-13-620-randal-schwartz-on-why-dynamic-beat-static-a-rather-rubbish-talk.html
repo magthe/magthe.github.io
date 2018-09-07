@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Randal Schwartz on why dynamic beat static---a rather rubbish talk</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2009-05-13">2009-05-13</time> - Magnus Therning</p>
+</header>
+
+<p>Well, not the most diplomatic title maybe, but listening to <a href="http://www.cincomsmalltalk.com/blog/SingleView.ssp?showComments=true&amp;entry=3419405760">Randal Schwartz’ talk “Dynamic Returns”</a> first made me laugh and then made my fingers itch to write him an email addressing the fallacies he is peddling. Anyway, I wrote this large, rather ranting, blog post but then decided to not publish it.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a></p>
+<p>Randal, my suggestion to you is that you get someone like Don Stewart on FLOSS Weekly (I believe he is based in Portland as well) to discuss how Haskell’s advanced type system can be harnessed to completely remove whole classes of bugs.</p>
+<section class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>Randal, if you read this I’ll be happy to send the draft version of the post to you, just drop me an email :-)<a href="#fnref1" class="footnote-back">↩</a></p></li>
+</ol>
+</section>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/don%20stewart.html">don stewart</a>, <a href="../tags/floss%20weekly.html">floss weekly</a>, <a href="../tags/haskell.html">haskell</a>, <a href="../tags/randal%20schwartz.html">randal schwartz</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2009-05-11-617-vim-haskellmode-packaged-for-arch.html">⟸ Vim haskellmode packaged for Arch</a>
+
+
+
+<a href="../posts/2009-05-13-626-struggling-with-the-arch-way.html">Struggling with "the Arch way" ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-178773"></a>
+  <header>
+    <p><b>Randal L. Schwartz</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-05-13">2009-05-13</time></p>
+  </header>
+<p>Static typing is still effectively a syntax check, not a semantic check though. Which means you’ll still need additional testing to verify your code works. And as long as you have those tests, you can redefine everything as just generic types. So static typing might reduce the number of tests to write, but betting the whole farm on it doesn’t fly for me.</p>
+<p>I’d be happy to read your draft though. I’m curious.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-178793"></a>
+  <header>
+    <p><b>Tony Morris</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-05-14">2009-05-14</time></p>
+  </header>
+<p>If only there was a penalty for talking under-qualified crack-pot nonsense in the computer programming industry.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-178794"></a>
+  <header>
+    <p><b>Kristian Domagala</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-05-14">2009-05-14</time></p>
+  </header>
+<p>That’s a bit of a worry, especially after confessing at the start that he doesn’t have any experience with using statically typed languages and is only going by what he’s heard.</p>
+<p>I for one would be interested to read the blog post if you ever do publish it. I recently <a href="http://kristian-domagala.blogspot.com/2009/04/using-type-system-for-discoverability.html">wrote about</a> my contrasting experiences with static/dynamic languages, and would love to have more references that point out the fallacies of the arguments that dynamic language enthusiasts push.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-178840"></a>
+  <header>
+    <p><b>Jesper Louis Andersen</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-05-14">2009-05-14</time></p>
+  </header>
+<p>The cool thing about static typing is that you can program the type system to protect you against a large number of pesky bugs. To do this however, the type system must have a certain level of expressibility, and most “popular” languages does not. Haskell is one language that has the power needed. ML less so - but it still provides for a large number of ways to program the type system.</p>
+<p>But to harness that power, one must learn to program the type system first. This takes some time getting used to.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-178841"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-05-14">2009-05-14</time></p>
+  </header>
+<p><em><span class="citation" data-cites="Jesper">@Jesper</span></em>, you are absolutely right, and I suspect that Randal’s friends mostly fall in the category of programmers that use static languages like Java/C# etc.</p>
+<p>This is of course another reason why Randal’s talk is misleading, one can’t say that dynamic languages beat static ones without actually examining the state-of-the art in static type systems.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-178853"></a>
+  <header>
+    <p><b>mrkewlfunk</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-05-14">2009-05-14</time></p>
+  </header>
+<blockquote>
+<p>Static typing is still effectively a syntax check, not a semantic check though.</p>
+</blockquote>
+<p>That is factually incorrect. Static typing is most definitely a semantic check, and can be used to make static guarantees about the behaviour of code. This is as opposed to syntax, which is usually more-or-less well separated from the semantics. Systems like Coq can be used to prove statements about programs in the type system statically.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-178857"></a>
+  <header>
+    <p><b>Dan Doel</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-05-14">2009-05-14</time></p>
+  </header>
+<p>Technically, static typing <em>is</em> a syntactic check. For instance, you have rules like:</p>
+<pre><code>f : a -&amp;gt; b, x : a ==&amp;gt; f x : b</code></pre>
+<p>All of which talk about how you determine the type of one syntactic expression based on the types of its syntactic components (perhaps things are less clear cut in dependently typed languages, where type checking involves evaluating expressions). However, the type system of a language is also often called its “static semantics,” and obviously a good type system will be a way of ruling out (at compile time) syntactic expressions that correspond to semantically (as in dynamic semantics) bad things.</p>
+<p>And with a good type system, you can do quite a lot. For instance, <a href="http://hpaste.org/fastcgi/hpaste.fcgi/view?id=4215">here</a> is a program I wrote not too long ago that implements insertion sort in Agda, and proves that it produces a sorted permutation of the original list (although I’m not really happy with the permutation part; it assumes more axioms about permutations than are probably necessary). Of course, the type system is the method by which these properties are proved.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-178858"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-05-14">2009-05-14</time></p>
+  </header>
+<p><em><span class="citation" data-cites="Dan">@Dan</span></em>, Interesting, I can see that there is a line that has to be drawn somewhere between syntax and semantics, I’ve just never heard or read that it’s drawn so that static typing falls on the syntax side (ie that type information is included in a language’s surface form). Do you have any good reference for this statement?</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-178860"></a>
+  <header>
+    <p><b>Dan Doel</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-05-14">2009-05-14</time></p>
+  </header>
+<p>No, I’m afraid I don’t have anything to point to off hand.</p>
+<p>However, semantics of programming languages generally has to do with assigning some meaning to syntactic terms. So, if you go with denotational semantics (which is what I’m most familiar with), you’re giving the meaning of your programs in terms of mathematical objects, like sets or something. So if we’re giving semantics to arithmetic expressions in some language, we might say (where syntactic expressions go inside brackets):</p>
+<pre><code>[0] = 0
+[1] = 1
+...
+[m + n] = [m] + [n]
+[m - n] = [m] - [n]
+...</code></pre>
+<p>And if we extend the language with ways of defining functions, we might have rules:</p>
+<pre><code>[f x] = [f]([x])</code></pre>
+<p>Where on the left we have an expression representing the application of some expression <code>f</code> to some expression <code>x</code>, and its meaning on the right is the result of the mathematical function corresponding to <code>f</code> at the value corresponding to <code>x</code>.</p>
+<p>However, when you give a type system for a language, you don’t typically (as far as I’ve seen) make reference to the above sort of semantics. Indeed, the type system is typically given first. You wouldn’t say, “if <code>f</code> denotes a mathematical function that takes an integer, and <code>x</code> denotes an integer, then the application of <code>f</code> to <code>x</code> is type correct.” Types are assigned to expressions (which are syntactic) and not to their semantic counterparts.</p>
+<p>However, you probably could look at such type assignments as another kind of semantics, aside from denotational, operational or what have you. In denotational semantics, you’re giving a correspondence between syntactic terms and, say, integers and functions thereof that are their meaning. In a type system (which, as I mentioned, is often called the “static semantics” of a language), you’re giving a correspondence between syntactic terms and types. Of course, not all raw syntactic constructs are well typed, so we might view the type-assignment function as a partial function (implemented here with Maybe):</p>
+<pre><code>[0] = Just Integer
+[1] = Just Integer
+...
+[m + n] = guardInteger [m] &gt;&gt; guardInteger [n] &gt;&gt; Just Integer
+...
+[f x] = guardIntegerToInteger [f] &gt;&gt; guardInteger [x] &gt;&gt; Just Integer</code></pre>
+<p>And so on. So in this view, a type system is another kind of semantics for your language, which helps to rule out certain invalid syntactic expressions independently of their meanings in other semantics (and note, for instance, that the denotational semantics above simply assumed that when we have <code>f x</code>, that <code>f</code> corresponds to an appropriate mathematical function, which can be guaranteed by first checking that the static semantics accepts the program; if you didn’t rule out invalid expressions in advance, you’d have partiality concerns complicating the denotational semantics).</p>
+<p>Anyhow, that is the sense in which type checking is ‘syntactic,’ from a formal specification perspective. That may or may not be the sense in which you and others were thinking of the word.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-178865"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-05-14">2009-05-14</time></p>
+  </header>
+<p><em><span class="citation" data-cites="Dan">@Dan</span></em>, what I’ve seen this before is things like attribute grammars, I’ve just never seen type information presented as a part of the <em>syntax</em> of a language. However, I’ve seen it referred to as “static semantics”. Putting type information into the grammar was just offered as an “implementation trick”, it sort of merges the steps of checking that a string is valid in the language and that it is well-typed.</p>
+<p>Anyway, I have to admit I’ve never gone into formal specifications of languages so I’ll take your word on this :-) Now, if this is indeed what Randal meant then I stand corrected, however then I’d argue that the <em>syntactic check</em> you get from a Haskell-like type system still can’t easily be replaced by manually implemented tests on the dynamic semantics of a type.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-178871"></a>
+  <header>
+    <p><b>Dan Doel</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-05-14">2009-05-14</time></p>
+  </header>
+<p>Well, yes, I agree. Types are not part of the syntax of the language. There are syntactically valid expressions that are not well typed, but that doesn’t make them invalid syntactically.</p>
+<p>Type checking being syntactic means (to me) that a program is determined to be well typed depending only on its syntactic content, and not on the semantics. So for instance:</p>
+<pre><code>foo i f | i &lt;= 5 = f i
+        | i &gt;  5 = f + i</code></pre>
+<p>is judged to be invalid, because we can look only at the syntactic terms, and see that <code>f + i</code> requires f to be an integer, and <code>f i</code> requires f to be a function. Whereas, perhaps, if we didn’t bother with this check, things would be fine, because we always happen to call <code>foo</code> with an integer <code>f</code> when <code>i &amp;gt; 5</code> and with a function otherwise. So if we looked at the overall semantic content of the program, we might judge that things are okay, but aren’t capable of judging that using only syntax-based rules.</p>
+<p>Of course, when we get into full-on dependent types, we can give foo a type like:</p>
+<pre><code>foo : (i : Integer) -&gt; (if i &lt;= 5 then (Integer -&gt; Integer) else Integer) -&gt; Integer</code></pre>
+<p>I’m not sure if that still qualifies as being syntactic or not.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-178923"></a>
+  <header>
+    <p><b>wren ng thornton</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-05-15">2009-05-15</time></p>
+  </header>
+<p>Rather than trying to draw the line anywhere in particular, it is helpful to consider typing as a third intermediate stage: types are the morphology that binds syntax and semantics together. This view is consistent with both static and dynamically checked languages, and therefore is also consistent with hybrid systems like dependent types which have both static and dynamic components.</p>
+<p>The reason types are called “static semantics” is because what counts as “semantics” depends on where you’re looking from. Type checking is an (abstract) interpretation of a syntactically well-formed program. Execution is a (concrete) interpretation of a syntactically well-formed program. The only difference is in the granularity of the execution, i.e. the semantics the interpreter attributes to the program. It is easy to add in even more layers with different interpreters for different levels of granularity (this is often called “elaboration” or “optimization”, depending on the goal of the interpreter).</p>
+<p>It’s called static because we just happen to run that interpreter at compile time. We could just as well do it at run time by creating a “shadow program” that is executed in parallel with the real program. In fact, this is exactly what (checked) dynamic languages are doing. Less efficient and fewer compile-time guarantees than static checking, but it’s no big whoop. For sufficiently expressive type systems (e.g. dependent types, certain deadlock-avoidance systems, staged programming), the types themselves exist dynamically and so some portion of the shadow program cannot be compiled away. At this point there’s no real static/dynamic difference between terms and types, but you still have the nice separation of concerns by calling them different things. And this can be hoisted up another level again with dynamic kinding systems. And hoisted up <a href="http://code.google.com/p/omega/">as many more levels as you like</a> (hence, “many different interpreters for different levels of granularity”).</p>
+<p>There’s nothing special about the execution of a program. It’s just a mathematical object, and that’s just one interpretation of it.</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2009-05-13-620-randal-schwartz-on-why-dynamic-beat-static-a-rather-rubbish-talk@therning.org?subject=A comment on Randal Schwartz on why dynamic beat static---a rather rubbish talk&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

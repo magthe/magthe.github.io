@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Are all languages leaky?</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2007-10-10">2007-10-10</time> - Magnus Therning</p>
+</header>
+
+<p>Dolio wrote an excellent comment on <em>space leaks</em> for the <a href="../posts/2007-10-10-319-i-wonder.html">previous post</a>. I’ve read posts on <em>haskell-cafe</em> before that mentions the concept but I’ve never bothered to ask. Thanks for clarifying the term!</p>
+<p>Dolio’s comment made me think of something I heard during a lecture on OO at university, with the risk of paraphrasing slightly:</p>
+<blockquote>
+<p>It helps a lot to know how a C compiler works while programming C.</p>
+</blockquote>
+<p>In my mind this means that the language is “leaky” in a similar sense to how Joel’s <a href="http://www.joelonsoftware.com/articles/LeakyAbstractions.html">law of leaky abstractions</a>. I suppose a programming language is little more than an abstraction of the machine underneath or, in the case of most languages, of the compiler/interpreter of the language.</p>
+<p>Now of course I’m left wondering if “leakiness” can be measured, can languages be ordered based on it? Maybe there are two dimensions to “leakiness”, how early you need knowledge of the layer below and how deep knowledge that knowledge has to be. My gut tells me you can’t program in C for very long without needing some compiler knowledge but I’m not sure just how deep that knowledge needs to be. My gut also tells me I can blissfully hack along in Haskell for quite a while before needing to know how things like laziness <em>actually</em> works, and again I don’t know if the knowledge needs to be deep or not ((My problem is really that I feel I know a fair bit about how compilers and interpreters work for imperative languages like C, while I’m new to lazy functional languages like Haskell.)).</p>
+<p>Yes, I’ve been in a somewhat philosophical mood lately (some would say it’s a procrastinating mood :) ).</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/programming.html">programming</a>, <a href="../tags/thoughts.html">thoughts</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2007-10-10-319-i-wonder.html">⟸ I wonder...</a>
+
+
+
+<a href="../posts/2007-10-14-322-phantom-type-problems.html">Phantom type problems ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-82113"></a>
+  <header>
+    <p><b>Russell O'Connor</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-10-11">2007-10-11</time></p>
+  </header>
+<p>I’m not sure that Haskell abstraction is exactly leaky in this way. The Haskell language does not give operational semantics (giving denotational semantics instead), and hence does not provide any time/space guarantees (If I understand correctly). Therefore, any time you write a Haskell program with the intent of getting a certain space or time complexity, you are relying on compiler specific behaviour.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-82114"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-10-11">2007-10-11</time></p>
+  </header>
+<p>Russel, I think I see what you mean. In C the leakiness happens already when trying to achieve basic functionality (e.g. I need to know that a local variable is allocated on the stack, so returning a pointer to a local array is problematic) while leakiness in Haskell doesn’t happen until you try to achieve functionality with certain characteristics (e.g an algorithm executing in linear time or space). I guess this is an argument in favour of non-lazy languages in many cases, especially on embedded devices.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-82367"></a>
+  <header>
+    <p><b>pozorvlak</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-10-16">2007-10-16</time></p>
+  </header>
+<p>Interesting. I think the thing is that C is (intentionally) a thin layer of abstraction over the machine: C abstractions map to their implementations in a very simple way. So, while it’s very useful to know what your abstractions will become translated to, it’s not especially onerous.</p>
+<p>Haskell’s a much thicker abstraction layer. I’ve got myself into some horrible messes with laziness and space leaks: in fact, pretty much every time I try to write Haskell code to work with large input or to do long calculations! At this point, you really need to know a bit about how the garbage collector works.</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2007-10-10-321-are-all-languages-leaky@therning.org?subject=A comment on Are all languages leaky?&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

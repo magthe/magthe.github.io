@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Simple Cabal parsing</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2009-02-24">2009-02-24</time> - Magnus Therning</p>
+</header>
+
+<p>This is going to be a silly post, simply because it is so amazingly simple to do some basic parsing of Cabal files. It turns out to be true even for old versions of Cabal, the code below is for 1.2.3.0 since that’s the version still found in Debian Unstable.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a></p>
+<p>First import the required modules:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">import</span> <span class="dt">Distribution.PackageDescription</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">import</span> <span class="dt">Data.Version</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw">import</span> <span class="dt">Distribution.Verbosity</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="kw">import</span> <span class="dt">Distribution.Version</span></a></code></pre></div>
+<p>The a simplistic shortcut, I don’t care about setting flags or pretty much anything else</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">finPkgDesc <span class="fu">=</span> finalizePackageDescription [] <span class="dt">Nothing</span> <span class="st">&quot;Linux&quot;</span> <span class="st">&quot;X86_64&quot;</span> (<span class="st">&quot;GHC&quot;</span>, <span class="dt">Version</span> [<span class="dv">6</span>, <span class="dv">8</span>, <span class="dv">2</span>] [])</a></code></pre></div>
+<p>and I’m only interested in listing the package names of dependencies</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1">getPackageName (<span class="dt">Dependency</span> name _) <span class="fu">=</span> name</a></code></pre></div>
+<p>After this it’s possible to do the following in <code>ghci</code> (<code>ex01.cabal</code> is a copy of the Cabal file for <a href="http://hackage.haskell.org/cgi-bin/hackage-scripts/package/dataenc">dataenc</a>):</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="fu">&gt;</span> gpd <span class="ot">&lt;-</span> readPackageDescription silent <span class="st">&quot;ex01.cabal&quot;</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2"><span class="fu">...</span></a>
+<a class="sourceLine" id="cb4-3" data-line-number="3"><span class="fu">&gt;</span> <span class="kw">let</span> pd <span class="fu">=</span> finPkgDesc gpd</a>
+<a class="sourceLine" id="cb4-4" data-line-number="4"><span class="fu">&gt;</span> <span class="kw">let</span> deps <span class="fu">=</span> either (\_ <span class="ot">-&gt;</span> []) (\ (p, _) <span class="ot">-&gt;</span> buildDepends p) pd</a>
+<a class="sourceLine" id="cb4-5" data-line-number="5"><span class="fu">&gt;</span> map getPackageName deps</a>
+<a class="sourceLine" id="cb4-6" data-line-number="6">[<span class="st">&quot;array&quot;</span>,<span class="st">&quot;base&quot;</span>,<span class="st">&quot;containers&quot;</span>]</a></code></pre></div>
+<section class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>That’ll change when GHC 6.10 makes it onto my system. It’s already in Debian, just not on my system since some Xmonad-related packages haven’t been rebuilt yet.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+</ol>
+</section>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/cabal.html">cabal</a>, <a href="../tags/haskell.html">haskell</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2009-02-21-509-another-way-to-start-xmonad-in-gnome.html">⟸ Another way to start Xmonad in Gnome</a>
+
+
+
+<a href="../posts/2009-02-25-522-another-reason-to-create-distro-specific-packages-for-haskell-modules.html">Another reason to create distro-specific packages for Haskell modules ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-171326"></a>
+  <header>
+    <p><b>Antoine Latter</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-02-25">2009-02-25</time></p>
+  </header>
+<p>For scraping deps from the newer parts of Cabal syntax, you can check out my attempt over <a href="http://panicsonic.blogspot.com/2009/02/dependencies-in-hackage-revisited.html">here</a>.</p>
+<p>You’ll want to look at <code>gPckgDeps :: GenericPackageDescription -&gt; [Dependency]</code>.</p>
+<p>It’s a bit gruesome, I admit.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-171361"></a>
+  <header>
+    <p><b>Duncan</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-02-25">2009-02-25</time></p>
+  </header>
+<p>Note that if you do not care about flags etc then you can use the even simpler flattenPackageDescription. However, be aware that that will give you the union of all possible dependencies. This is not the same as the set of dependencies in any particular configuration. Indeed the union of all version constraints may be impossible.</p>
+<p>On the other hand finalisePackageDescription gives you the result for one particular configuration. So it does not reflect what the deps would be for another configuration if the .cabal file uses conditional dependencies.</p>
+<p>So which one is right to use depends on what it is you are trying to do.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-171363"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-02-25">2009-02-25</time></p>
+  </header>
+<p><em><span class="citation" data-cites="Antoine">@Antoine</span></em>, I believe I’d rather keep using <code>finalizePackageDescription</code> even for newer versions of Cabal. If I read it correctly <code>gPckgDeps</code> simply pulls out the <code>PackageDescription</code>, which AFAIU is at least similar to <code>flattenPackageDescription</code>. I really want to end up with the “default package description”, which I believe is what I get when using <code>finalizePackageDescription</code> with an empty set of flags.</p>
+<p><em><span class="citation" data-cites="Duncan">@Duncan</span></em>, actually I suppose I do care about flags, I want none to be set :-) AFAIU that will give me the “default package description”, which is what I’m after.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-171422"></a>
+  <header>
+    <p><b>Duncan</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-02-26">2009-02-26</time></p>
+  </header>
+<p>Just to clarify…</p>
+<p>When you call finalizePackageDescription you get to say something about flag values. You can specify true or false or you can not specify it at all. Then finalizePackageDescription will come up with true/false values for the flags that you did not specify. It does this based on the default values for the flags (given in the .cabal file by the package author) but more interestingly based on the possible flag values given the flag-conditional dependencies and the set of available packages. Now you’re not specifying any set of available packages (not the same as specifying none, then we could not finalise any package). So all constraints (that are not self-contradictory) will be presumed to be ok.</p>
+<p>The result is that (since you use Nothing for the set of available packages) you’re getting the default flag values specified by the package author. Which as you say, is what you want. Just keep in mind that it need not correspond to any real configuration a user might even encounter, though it’s probably the same or close most of the time.</p>
+<p>Simple right? :-)</p>
+<p>What we’re doing, sort-of, is partially evaluating the package description using the available information. I’m going to change this API in future to make it more flexible and to make the partial evaluation notion more explicit. We’ll be able to partially evaluate a generic package description using any partial set of information, OS, arch, ghc version (or range of versions), available packages (again, not necessarily all available package) etc and get back another generic package description. We’ve only finalised when we’ve resolved all the choices. As you’re doing above we should also be able to do that using default flag values and not using any set of available packages.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-171426"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-02-26">2009-02-26</time></p>
+  </header>
+<p><em><span class="citation" data-cites="Duncan">@Duncan</span></em>, thanks, that <em>does</em> clarify it a bit. Not that simple though ;-)</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2009-02-24-514-514@therning.org?subject=A comment on Simple Cabal parsing&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

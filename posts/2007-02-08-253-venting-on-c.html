@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Venting on C++</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2007-02-08">2007-02-08</time> - Magnus Therning</p>
+</header>
+
+<p>Lately I’ve used C++ for a tool I’ve been working on at the office. Here are some idiosyncrasies in the standard library that I’ve noticed:</p>
+<p>I was expecting the following code to compile:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="bu">std::</span>string f(<span class="st">&quot;hello.txt&quot;</span>);</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="bu">std::</span>ifstream in_file(f);</a></code></pre></div>
+<p>But oh no! For some reason <code>ifstream</code> doesn’t have a constructor that accepts <em>a standard C++ string</em>. Instead I am forced to pass a <code>const char *</code> to the constructor, e.g.:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="bu">std::</span>string f(<span class="st">&quot;hello.txt&quot;</span>);</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2"><span class="bu">std::</span>ifstream in_file(f.c_str());</a></code></pre></div>
+<p>I guess that’s an excellent example of standardisation-by-committee where one part of the committee doesn’t have a clue what the other one is doing. Pathetic, really!</p>
+<p>Now more stuff on <code>ifstream</code>. One would hope that opening a non-existing file for reading would trigger some sort of exception, at the very least reading from a non-existing file shouldn’t succeed. Oh, but not so in the wonderful world of C++. The following code compiles and executes just fine even if the file (<code>hello.txt</code>) doesn’t exist:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="bu">std::</span>ifstream inf(<span class="st">&quot;hello.txt&quot;</span>);</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2"><span class="bu">std::</span>string r;</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">inf &gt;&gt; r;</a>
+<a class="sourceLine" id="cb3-4" data-line-number="4"><span class="bu">std::</span>cout &lt;&lt; r &lt;&lt; <span class="bu">std::</span>endl;</a></code></pre></div>
+<p><code>r</code> is unmodified by <code>inf &gt;&gt; r;</code>. Even more interestingly <code>inf.eof()</code> returns <code>false</code>. Interestingly <code>inf.bad()</code> returns <code>false</code> too. Luckily <code>inf.good()</code> ((I can’t understand the reasoning behind having two methods, <code>good()</code> and <code>bad()</code> which aren’t each other’s opposites, their names certainly suggests they ought to be! It seems they are badly named, they should be called <code>no_error_has_occured()</code> and <code>no_exceptional_failure_has_occured()</code> respectively.)) returns <code>false</code> too, so there is some way of finding out that not all is well with <code>inf</code>. It was also pointed out that evaluating <code>inf</code> itself, such as in <code>if(inf) ...</code>, also results in <code>false</code>.</p>
+<p>Ah, now I feel much better :-)</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/cpp.html">cpp</a>, <a href="../tags/programming.html">programming</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2007-02-07-252-epilicious-is-in-gnome.html">⟸ Epilicious is in GNOME</a>
+
+
+
+<a href="../posts/2007-02-08-254-seen-in-a-presentation-at-work-today.html">Seen in a presentation at work today... ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2007-02-08-253-venting-on-c@therning.org?subject=A comment on Venting on C++&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

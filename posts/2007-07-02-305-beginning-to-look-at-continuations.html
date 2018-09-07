@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Beginning to look at continuations</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2007-07-02">2007-07-02</time> - Magnus Therning</p>
+</header>
+
+<p>I’ve always thought of continuations as a really brilliant solution looking for a problem. I know there are numerous problems it solves, but I mean it on a personal level. <em>I’ve</em> never had a problem where continuations was <em>the</em> solution. Recently I’ve come to believe that it might be because I don’t understand them very well :-)</p>
+<p>I just spent a couple of hours reading about continuations and thought I’d offer a little reading guide for other curious people. If I were to start over I wish I had found the Wikibook chapter on <a href="http://en.wikibooks.org/wiki/Haskell/Continuation_passing_style">Haskell/Continuation passing style</a> first, I think it fully debunk the myth that continuations is something complication. After that it’s easier to tackle the article titled <a href="http://en.wikibooks.org/wiki/Talk:Haskell/Continuation_passing_style">Talk:Haskell/Continuation passing style</a>. The <a href="http://www.haskell.org/haskellwiki/Continuation">Haskell Wiki article on continuations</a> is indeed right in saying that <a href="http://en.wikipedia.org/wiki/Continuation">Wikipedia’s decription of continuations</a> is rather good. I suspect that the <a href="http://www.haskell.org/all_about_monads/html/contmonad.html">chapter on Continuations found in All About Monads</a> will be an excellent refresher in a few weeks when my brain has managed to suppress what I’ve so painstakingly pushed into it tonight.</p>
+<p>This little research expedition happened because I’ve had a nagging suspicion that continuations might offer a more elegant implementation for some code I’ve been toying with for a little while now. Well, we’ll see.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/haskell.html">haskell</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2007-07-02-304-ryanair-is-a-bus-company.html">⟸ RyanAir is a bus company</a>
+
+
+
+<a href="../posts/2007-07-05-306-continuing-with-continuations.html">Continuing with continuations ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-70957"></a>
+  <header>
+    <p><b>sigfpe</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-07-03">2007-07-03</time></p>
+  </header>
+<p>I’ve had times when I felt that continuations were a good solution to my problem. So when I started using Haskell I thought that continuations might be a good solution in that language too. But it turned out that in each case, Haskell also provided another solution that was much better. For example continuations can give a nice way to implement backtracking search. But the list monad does that already in Haskell.</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2007-07-02-305-beginning-to-look-at-continuations@therning.org?subject=A comment on Beginning to look at continuations&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

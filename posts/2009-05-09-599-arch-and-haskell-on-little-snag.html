@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Arch and Haskell, on little snag</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2009-05-09">2009-05-09</time> - Magnus Therning</p>
+</header>
+
+<p>Dear lazyweb (Arch users and especially DonS :-) ),</p>
+<p>I just used <code>yaourt</code> to update my system and it noticed that <code>haskell-time</code> was available in a new version. After answering a few questions I was greeted with this message:</p>
+<pre><code>ghc-pkg: unregistering time-1.1.2.3 would break the following packages: hslogger-1.0.7 MissingH-1.1.0
+    ConfigFile-1.0.4 convertible-1.0.1 HDBC-2.1.0 HDBC-sqlite3-2.1.0.0 HSH-1.2.6 (use --force to override)
+error: scriptlet failed to execute correctly</code></pre>
+<p>Is there already some automated way to deal with this? (How to deal with it manually is fairly obvious to me…)</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/arch.html">arch</a>, <a href="../tags/haskell.html">haskell</a>, <a href="../tags/LazyWeb.html">LazyWeb</a>, <a href="../tags/yaourt.html">yaourt</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2009-05-02-595-setting-up-my-network-services-on-arch.html">⟸ Setting up my network services on Arch</a>
+
+
+
+<a href="../posts/2009-05-09-603-odds-and-ends-for-my-arch-desktop.html">Odds and ends for my Arch desktop ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-178413"></a>
+  <header>
+    <p><b>dons</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-05-09">2009-05-09</time></p>
+  </header>
+<p>Mostly harmless. If you really want to have all packages upgrade to the new haskell-time, they’ll need to be rebuilt.</p>
+<p>I’d just ignore.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-178421"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-05-09">2009-05-09</time></p>
+  </header>
+<p><em><span class="citation" data-cites="dons">@dons</span></em>, doesn’t seem so harmless to me. After that failed upgrade this is what I got when trying to compile something that depends on <em>MissingH</em> (which in turn depends on <em>time</em>):</p>
+<pre><code>% ghc --make vim-scripts-mgr.hs
+Linking vim-scripts-mgr ...
+/usr/bin/ld: cannot find -lHStime-1.1.2.3
+collect2: ld returned 1 exit status</code></pre>
+<p>Not so surprising, since I’ve just replaced <em>time-1.1.2.3</em> with <em>time-1.1.2.4</em>. After forcefully unregistering <code>time-1.1.2.3</code>:</p>
+<pre><code>% ghc --make vim-scripts-mgr.hs
+
+vim-scripts-mgr.hs:27:7:
+    Could not find module `System.IO.HVFS.Utils':
+      Use -v to see a list of the files searched for.</code></pre>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2009-05-09-599-arch-and-haskell-on-little-snag@therning.org?subject=A comment on Arch and Haskell, on little snag&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

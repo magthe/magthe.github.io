@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">How can I unit test failure cases?</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2015-11-13">2015-11-13</time> - Magnus Therning</p>
+</header>
+
+<p>When writing unit tests, especially when using mock objects, there’s always a risk of falling into the trap of writing tests for the implementation rather than for the API. In my experience the most obvious indication of that is that any refactoring of the code requires major rework of the tests.</p>
+<p>Right now I’m sitting with the task of writing tests for a function that promises to return <code>NULL</code> on failure. The function in question allocates memory up to three times, opens two message queues, sends a message on one and expects a reponse on the other. If all goes well it returns the pointer to one of the memory areas allocated. And if it fails, for whatever reason, it returns <code>NULL</code>.</p>
+<p><em>Is it even possible to write a set of tests for it without testing the specific implementation?</em></p>
+<p>I know some of the calls can be re-arranged, e.g. moving all memory allocation to the start of the function, without affecting the caller of the function. However, if I use mock objects to simulate failure in the external libraries and system calls I’d be forced to modify the tests on each such re-arranging of calls. In other words I’m testing the implementation!</p>
+<p>Should I think differently about testing failure cases?</p>
+<p>Should the API be changed in some way to make unit tests a better fit for testing failures?</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/unit%20testing.html">unit testing</a>, <a href="../tags/testing.html">testing</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2015-11-01-000-docker-container-with-ip-address-on-local-network--p2.html">⟸ Docker container with ip address on local network, p2</a>
+
+
+
+<a href="../posts/2015-11-23-000-elm-0-16-with-stack.html">Elm 0.16 with stack ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-0"></a>
+  <header>
+    <p><b>Jesse McDonald</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2015-11-13">2015-11-13</time></p>
+  </header>
+<p>Here’s one idea: First, stub out the interface, but don’t cause it to fail; just record how many times it’s used. Run the code and verify that it succeeds. Then, for each call to the interface in the first run, repeat the test and make just that one stub call fail. It should be possible to write this genetically so that it’s resistant to changes in the number or order of the calls.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-1"></a>
+  <header>
+    <p><b>Magnus Therning</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2015-11-15">2015-11-15</time></p>
+  </header>
+<p><span class="citation" data-cites="Jesse">@Jesse</span>, yes, that’s a nice idea. Nicer than mine of randomizing failures and making <em>many</em> runs.</p>
+<p>In my particular case it’s C so collecting the interface is arguably the most involved bit…</p>
+<p>I just can’t believe I’m the first one bumping into this… there ought to be open-source tools out there that handles it!</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2015-11-13-000-unit-testing-failure-cases@therning.org?subject=A comment on How can I unit test failure cases?&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

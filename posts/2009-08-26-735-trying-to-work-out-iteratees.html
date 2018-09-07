@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Trying to work out iteratees</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2009-08-26">2009-08-26</time> - Magnus Therning</p>
+</header>
+
+<p>A few days ago I decided to explore the idea of using iteratee to do IO in Haskell. I read most of what Oleg has written on <a href="http://okmij.org/ftp/Streams.html">input processing using left-fold enumerators</a>. Only a little wiser I took a look at the <a href="http://hackage.haskell.org/package/iteratee">Iteratee IO package on Hackage</a>. Unfortunately it still hadn’t quite sunk in. To be honest I couldn’t quite make heads or tails of it. Often just lining up the types properly will just work, even if I don’t understand why ((This reminds me of a math professor I had at university who said something like: “When it feels like the pen understands more than your head, persevere! It means you are close to getting it.”)) and soon after I usually gain some sort of understanding. This strategy didn’t seem to work with this particular package though :(</p>
+<p>Somewhat based on Don’s answer to <a href="http://stackoverflow.com/questions/1319705/introduction-or-simple-examples-for-iteratee">my question on Stackoverflow.com</a> I thought I’d try to work through an implementation of my own. I just really hope I’ve got it right :)</p>
+<p>I must admit I used <code>Iteratee</code> for inspiration at times. However, I couldn’t copy it straight off since I decided to first implement iteratee without involving monads. Sure, it’s rather silly to do “input processing” in Haskell without involving monads, but I find that including monads often clouds the problem at hand. So, I left them out to begin with, and add them again once I feel I know what I’m doing. So, here goes nothing…</p>
+<p>The basic idea is to process a stream of data, presented in chunks. Each chunk is handed to an iteratee by an enumerator. For each chunk the iteratee signals to the enumerator whether it’s done or requires more data. These are the types I cooked up for this.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Stream</span> c e</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">    <span class="fu">=</span> <span class="dt">Eof</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">    <span class="fu">|</span> <span class="dt">Chunk</span> (c e)</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">data</span> <span class="dt">Stepper</span> c e a</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">    <span class="fu">=</span> <span class="dt">Done</span> a (<span class="dt">Stream</span> c e)</a>
+<a class="sourceLine" id="cb1-7" data-line-number="7">    <span class="fu">|</span> <span class="dt">NeedAnotherChunk</span> (<span class="dt">Iteratee</span> c e a)</a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">data</span> <span class="dt">Iteratee</span> c e a <span class="fu">=</span> <span class="dt">Iteratee</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10">    {<span class="ot"> runIteratee ::</span> (<span class="dt">Stream</span> c e) <span class="ot">-&gt;</span> (<span class="dt">Stepper</span> c e a) }</a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">type</span> <span class="dt">Enumerator</span> c e a <span class="fu">=</span> <span class="dt">Iteratee</span> c e a <span class="ot">-&gt;</span> <span class="dt">Iteratee</span> c e a</a></code></pre></div>
+<p>I found it rather useful to implement <code>Show</code> for the two first, but I’ll leave that out of this post since it’s a simple thing to do.</p>
+<p>I should probably point out that the container type for the stream (that’s the ‘c’ in <code>Stream c e</code>) is rather pointless in what I’ve done; it’s always going to be <code>[]</code> in this post. Keeping it in does provide some more similarity with the <code>Iteratee</code> on Hackage.</p>
+<p>At this point I jumped to turning a list into an enumerator. The way I implemented it the list is split up in chunk of 3 items and present each chunk in order to the passed in iteratee.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">enumList l iter <span class="fu">=</span> loop grouped iter</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">    <span class="kw">where</span></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">        grouped <span class="fu">=</span> groupList <span class="dv">3</span> l</a>
+<a class="sourceLine" id="cb2-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">        groupList n l <span class="fu">=</span> <span class="kw">let</span></a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">                (p, r) <span class="fu">=</span> splitAt n l</a>
+<a class="sourceLine" id="cb2-7" data-line-number="7">            <span class="kw">in</span> <span class="kw">case</span> p <span class="kw">of</span></a>
+<a class="sourceLine" id="cb2-8" data-line-number="8">                [] <span class="ot">-&gt;</span> []</a>
+<a class="sourceLine" id="cb2-9" data-line-number="9">                xs <span class="ot">-&gt;</span> xs<span class="fu">:</span>groupList n r</a></code></pre></div>
+<p>The <code>loop</code> function is the main part. Ending when the chunks are all used up is the easy part:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1">        loop [] i <span class="fu">=</span> <span class="kw">let</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">                s <span class="fu">=</span> runIteratee i <span class="dt">Eof</span></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">            <span class="kw">in</span> <span class="kw">case</span> s <span class="kw">of</span></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">                <span class="dt">Done</span> v str <span class="ot">-&gt;</span> <span class="dt">Iteratee</span> <span class="fu">$</span> \ _ <span class="ot">-&gt;</span> s</a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">                <span class="dt">NeedAnotherChunk</span> i <span class="ot">-&gt;</span> i</a></code></pre></div>
+<p>It is arguably an error if the iteratee returns <code>NeedAnotherChunk</code> when passed an <code>Eof</code> stream, but for now I’ll leave it the way it is. Doing the recursive step is very similar:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">        loop (x<span class="fu">:</span>xs) i <span class="fu">=</span> <span class="kw">let</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">                s <span class="fu">=</span> runIteratee i (<span class="dt">Chunk</span> x)</a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">            <span class="kw">in</span> <span class="kw">case</span> s <span class="kw">of</span></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">                <span class="dt">Done</span> v str <span class="ot">-&gt;</span> <span class="dt">Iteratee</span> <span class="fu">$</span> \ _ <span class="ot">-&gt;</span> s</a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">                <span class="dt">NeedAnotherChunk</span> i' <span class="ot">-&gt;</span> loop xs i'</a></code></pre></div>
+<p>Here it is worth noticing that the iteratee is expected to return any part of the chunk that wasn’t processed.</p>
+<p>Next I coded up my first iteratee, a map over the stream:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1">iFMap f <span class="fu">=</span> <span class="kw">let</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">        doAcc acc <span class="dt">Eof</span> <span class="fu">=</span> <span class="dt">Done</span> acc <span class="dt">Eof</span></a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">        doAcc acc (<span class="dt">Chunk</span> i) <span class="fu">=</span> <span class="dt">NeedAnotherChunk</span> <span class="fu">$</span> <span class="dt">Iteratee</span> <span class="fu">$</span> doAcc (acc <span class="ot">`mappend`</span> (fmap f i))</a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">    <span class="kw">in</span> <span class="dt">Iteratee</span> <span class="fu">$</span> doAcc mempty</a></code></pre></div>
+<p>Now I can run the iterator over a list enumerator:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="fu">&gt;</span> runIteratee (enumList [<span class="dv">1</span><span class="fu">..</span><span class="dv">9</span>] (iFMap (<span class="fu">*</span><span class="dv">2</span>))) <span class="dt">Eof</span></a>
+<a class="sourceLine" id="cb6-2" data-line-number="2"><span class="dt">Stepper</span> <span class="dt">Done</span> <span class="fu">&lt;&lt;</span>[<span class="dv">2</span>,<span class="dv">4</span>,<span class="dv">6</span>,<span class="dv">8</span>,<span class="dv">10</span>,<span class="dv">12</span>,<span class="dv">14</span>,<span class="dv">16</span>,<span class="dv">18</span>]<span class="fu">&gt;&gt;</span> <span class="fu">&lt;&lt;</span><span class="dt">Stream</span><span class="fu">:</span> <span class="dt">Eof</span><span class="fu">&gt;&gt;</span></a></code></pre></div>
+<p>I found that a bit verbose, especially for interactive experimentation so the following simplifies it a bit</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1">run iter <span class="fu">=</span> <span class="kw">case</span> (runIteratee iter) <span class="dt">Eof</span> <span class="kw">of</span></a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">    <span class="dt">Done</span> a _ <span class="ot">-&gt;</span> a</a>
+<a class="sourceLine" id="cb7-3" data-line-number="3">    <span class="dt">NeedAnotherChunk</span> _ <span class="ot">-&gt;</span> error <span class="st">&quot;run: Iterator didn't finish on Eof&quot;</span></a></code></pre></div>
+<p>As Oleg pointed out in his writings it turns out that <code>Iteratee c e</code> is a monad.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Monad</span> (<span class="dt">Iteratee</span> c e) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">    return x <span class="fu">=</span> <span class="dt">Iteratee</span> <span class="fu">$</span> \ s <span class="ot">-&gt;</span> <span class="dt">Done</span> x s</a></code></pre></div>
+<p>The implementation of <code>return</code> is obvious, there really isn’t any other option than to encode is a continuation that returns <code>Done</code> irrespective of what is offered, and passes along the rest of the stream no matter what’s passed in. Bind (<code>&gt;&gt;=</code>) is a bit more complicated:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1">    i <span class="fu">&gt;&gt;=</span> f <span class="fu">=</span> <span class="dt">Iteratee</span> <span class="fu">$</span> \ s <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb9-2" data-line-number="2">        <span class="kw">let</span></a>
+<a class="sourceLine" id="cb9-3" data-line-number="3">            c <span class="fu">=</span> runIteratee i s</a>
+<a class="sourceLine" id="cb9-4" data-line-number="4">        <span class="kw">in</span> <span class="kw">case</span> c <span class="kw">of</span></a>
+<a class="sourceLine" id="cb9-5" data-line-number="5">            <span class="dt">Done</span> v str <span class="ot">-&gt;</span> runIteratee (f v) str</a>
+<a class="sourceLine" id="cb9-6" data-line-number="6">            <span class="dt">NeedAnotherChunk</span> i' <span class="ot">-&gt;</span> <span class="dt">NeedAnotherChunk</span> <span class="fu">$</span> i' <span class="fu">&gt;&gt;=</span> f</a></code></pre></div>
+<p>My understanding is that the left iteratee should be stepped along until it returns <code>Done</code>, at that point the result is passed to the right-side function, which results in an iteratee. The rest of the stream is then passed on to the new iteratee.</p>
+<p>I implemented two other iteratees, <code>iDrop :: Int -&gt; Iteratee [] e ()</code> and <code>iTakeWhile :: (e -&gt; Bool) -&gt; Iteratee [] e [e]</code> with the obvious implementations. This then allows me to write a little test like this:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1">iTest <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb10-2" data-line-number="2">    iDrop <span class="dv">2</span></a>
+<a class="sourceLine" id="cb10-3" data-line-number="3">    t <span class="ot">&lt;-</span> iTakeWhile (<span class="fu">&lt;</span> <span class="dv">5</span>)</a>
+<a class="sourceLine" id="cb10-4" data-line-number="4">    a <span class="ot">&lt;-</span> return <span class="ch">'c'</span></a>
+<a class="sourceLine" id="cb10-5" data-line-number="5">    m <span class="ot">&lt;-</span> iFMap (<span class="fu">+</span> <span class="dv">3</span>)</a>
+<a class="sourceLine" id="cb10-6" data-line-number="6">    return (t, a, m)</a></code></pre></div>
+<p>Running it gives the expected result:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="fu">&gt;</span> run (enumList [<span class="dv">1</span><span class="fu">..</span><span class="dv">9</span>] iTest)</a>
+<a class="sourceLine" id="cb11-2" data-line-number="2">([<span class="dv">3</span>,<span class="dv">4</span>],<span class="ch">'c'</span>,[<span class="dv">8</span>,<span class="dv">9</span>,<span class="dv">10</span>,<span class="dv">11</span>,<span class="dv">12</span>])</a></code></pre></div>
+<p>That’s pretty much it. Not that much to it. At least not as long as I’ve actually understood iteratees.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/enumerator.html">enumerator</a>, <a href="../tags/haskell.html">haskell</a>, <a href="../tags/iteratee.html">iteratee</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2009-08-23-732-making-a-choice-from-a-list-in-haskell-vty-part-5-the-last-one.html">⟸ Making a choice from a list in Haskell, Vty (part 5, the last one)</a>
+
+
+
+<a href="../posts/2009-09-07-738-wrapping-io-part-1.html">Wrapping IO, part 1 ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-187417"></a>
+  <header>
+    <p><b>wren ng thornton</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-08-27">2009-08-27</time></p>
+  </header>
+<p>If this is all there is to it, why is there so much hype? It’s just the standard stream fusion hylomorphism stuff with a left fold. Which is nice stuff, don’t get me wrong, but it’s fairly well known already. From all I’ve heard about iteratees (not having read Oleg yet) it seems like there should be more to it, e.g. why all the bugs/issues keeping it from official release?</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-187451"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-08-28">2009-08-28</time></p>
+  </header>
+<p><em><span class="citation" data-cites="wren">@wren</span></em>, Yes, that seems to be it indeed. I don’t quite understand what you mean with “keeping it from official release”. There’s the work to bring stream fusion into GHC <a href="http://hackage.haskell.org/trac/ghc/ticket/915">ticket #915</a>, but what I wrote is more related to Oleg’s iteratee-based IO. I thought the two things were completely separate, and that the latter wasn’t related to GHC development at all (hence the official release would be whatever can be found on Hackage). Of course I could be wrong, am I?</p>
+<p>I do have a limited implementation of iteratee-based IO (only ‘I’ really), which is derived from what I have in this post. I’m not sure it’s worth posting though.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-188128"></a>
+  <header>
+    <p><b>John Lato</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-09-05">2009-09-05</time></p>
+  </header>
+<p>Hi Magnus, in my opinion it looks like you’ve got it. At least as well as I do anyway.</p>
+<p>Did you look at the “Examples” directory of the iteratee package? You’ll need to download the tarball and unpack it, but those examples are relatively simple. wave_reader.hs is the shortest, but headers.hs is probably more familiar to most programmers. If you did look at these and they weren’t helpful, I would appreciate knowing about it so I can improve them for the next release. Or if you could tell me where you got stuck at the beginning, maybe I can address that.</p>
+<p>As you’ve likely figured out, there’s actually a lot that can be done without including monads in the iteratee type. If you have an enumerator defined as</p>
+<pre><code>type EnumeratorM m c e a = Iteratee c e a -&amp;gt; m (Iteratee c e a)</code></pre>
+<p>you can do input. The IterateeG type in the iteratee package is actually a monad transformer, which allows for some very interesting applications. I’ve considered changing the iteratee package to provide pure iteratees as well as the monadic variety, but I don’t know that they would find much use. You need the monad to stream output, for example.</p>
+<p>wren, I think the biggest thing about iteratees is that not many people understand them. I/O in Haskell isn’t quite right yet, and I think most programmers are aware of this either intuitively or explicitly. So they think enumerator I/O could be the Holy Grail that will solve all their problems. The Oleg label adds to the mystique. There are advantages to enumerator I/O, but there are also drawbacks that anyone who tries to use them will surely discover sooner or later. Anyway, iteratees do offer some good features. They’re composable, have predictable memory usage, and allow short-cut evaluation of streams. They also fully encapsulate the handle so it cannot leak and is GC’d when the iteratee finishes processing, either naturally or on exceptions. Finally they can be very efficient; my iter-audio package (not on hackage yet, but public darcs repo) is the fastest Haskell wave library I know of. It’s faster than the hsndfile binding to libsndfile, which is the only real competitor performance-wise.</p>
+<p>Also, I don’t know what you mean about an “official release” either. Don released “liboleg”, which is basically a cabal-ization of Oleg’s releases, and the “iteratee” package is released too. If you know of any bugs/problems with “iteratee”, please report them to the maintainer, because right now the trac instance is empty :)</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-188229"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-09-07">2009-09-07</time></p>
+  </header>
+<p><em><span class="citation" data-cites="John">@John</span></em>, I guess I can comfortably say that I’ve got it then :-)</p>
+<p>Yes, I had a look at the <code>Examples</code> directory and found both the files you mention. I’ve so far only taken a look at <code>headers.hs</code>. <em>Now</em> I find it rather a lot easier to see what is going on and I realise that what I had problems with was actually more related to <code>Char</code> and streams. What I tried to do was to call <code>readLines</code> in a <code>fileDriver</code> and expected to get a list of all lines. That failed miserably, and all I got was <code>Left []</code>. After writing this post, and reading <code>headers.hs</code> again I realised I needed to map <code>chr . fromIntegral</code> over the stream first. That got me to at least get some output, though I was still surprised (see below).</p>
+<p>The main issue I’d try to address is simple examples along the lines of reading and printing (to the screen) a file, line by line and char by char.</p>
+<p>I haven’t studied the API extensively (yet) but I’ve already found a few things that surprised me, I’d address those as the second issue. What I’m thinking of is <code>readLines</code>, which for some reason terminates on an empty line and breaks on EOF. The same goes for <code>enumLines</code>. They both seem to be geared to usage for parsing HTTP, but their general-sounding names don’t give that away.</p>
+<p>The third issue as I see it is that there are <em>users</em> of the library mixed in with the library itself. Here I’m thinking of <code>Data.Iteratee.Codecs.*</code>. They are nice to have, but I’d argue they deserve their own little package.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-188650"></a>
+  <header>
+    <p><b>John Lato</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-09-13">2009-09-13</time></p>
+  </header>
+<p>Sorry for the late reply; been busy with family stuff recently.</p>
+<p>I agree that the issues you mention with iteratee do all need to be dealt with. Reading strings (as you tried to do) is probably the most important. I don’t have a great solution yet, but I’m working on it. Thanks for the other issues as well. Solutions are planned for all of them, just a case of limited developer time.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-322435"></a>
+  <header>
+    <p><b>alex</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2013-10-30">2013-10-30</time></p>
+  </header>
+<p>I am following your blog to write an Iteratee. But I change the “c” in Stream c e to be list by default. My implementation of takeWhileI seems not right. Could you give the implementation of it? Thanks.</p>
+<pre><code>takeWhileI :: Int -&gt; Iteratee e [e]
+takeWhileI 0 = return []
+takeWhileI n = do
+             x &lt;- readOne
+             xs &lt;- takeWhileI (n-1)
+             return (x:xs)</code></pre>
+<pre><code>readOne :: Iteratee e e
+readOne = Iteratee $ \s -&gt; case s of
+                                Eof -&gt; error &quot;need more&quot;
+                                Chunk [] -&gt; error &quot;need more1&quot;
+                                Chunk (x:xs) -&gt; Done x (Chunk (xs))</code></pre>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2009-08-26-735-trying-to-work-out-iteratees@therning.org?subject=A comment on Trying to work out iteratees&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

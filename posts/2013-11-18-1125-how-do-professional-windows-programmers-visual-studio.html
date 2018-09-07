@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">How do professional Windows programmers stand Visual Studio?</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2013-11-18">2013-11-18</time> - Magnus Therning</p>
+</header>
+
+<p>I have a new assignment at work and now find myself at yet another Windows shop. They are making embedded systems, but have for some strange reason decided that Windows is the only development platform to use. After only a few weeks here I’m noting a growing irritation with the tools offered for my use. The amount of forced mouse usage is astounding and the main tool, Visual Studio, is turning out to be the main culprit. After a week or so of exposure to VS I’ve found what I consider to be a serious flaw with a tool for developers: it doesn’t scale.</p>
+<ol type="1">
+<li><strong>No hierarchical structure</strong> It doesn’t scale very well with the size of a project. The concept of having a solution with a number of projects is not bad. But the implementation doesn’t scale. A project can’t have sub-projects, which means I can’t really layer the code in the IDE in the same way I do on disk. The only thing I can do is organise viewing of files through the concept of filters.</li>
+<li><strong>All configuration is manual, part 1</strong> MS seems to have optimised for small projects. All configuration is kept in XML files, and the only interface to them is a set of property dialogues (some which can be resized, others not) requiring an amazing amount of pointing and clicking to get anything done.</li>
+<li><strong>All configuration is manual, part 2</strong> MS have optimised for beginning new projects. Getting started is amazingly quick, but once you reach a size of about 10 projects it becomes daunting to fix anything that requires configuration in all projects. Making sure that all configurations are correct is a major undertaking, and requires an insane amount using the mouse. Some earlier versions of VS seem to even have made it impossible to edit the common settings of configurations properly; a simple mistake and the value of one configuration is lost.</li>
+<li><strong>Experience</strong> There are no shortcuts to discover. The configuration is all in XML, which means it’s not really possible to jump out of VS and use a text editor for fixing up semi-broken configurations (like dealing with someone’s decision to place all intermediate files and final results in the top-level solution directory).</li>
+</ol>
+<p>So, how do Windows developers cope with this? Don’t they use VS? Do they police the configurations diligently to ensure no silliness creeps in? Or are they all using tools to address these points (like CMake)?</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/cmake.html">cmake</a>, <a href="../tags/visual%20studio.html">visual studio</a>, <a href="../tags/windows.html">windows</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2013-10-13-1113-tclap-for-command-line-argument-parsing-in-c.html">⟸ TCLAP for command line argument parsing in C++</a>
+
+
+
+<a href="../posts/2013-12-24-1135-phabricator-on-archlinux.html">Phabricator on ArchLinux ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-325707"></a>
+  <header>
+    <p><b>Brett</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2013-11-18">2013-11-18</time></p>
+  </header>
+<p>On hierarchies: The representation of the projects inside the solution does <em>not</em> need to match the layout on disk. On disk you can arrange projects into folders in whatever way you see fit. In VS, within the Solution, the exact same thing is true (that is, projects can be grouped into folders, and folders nested), and those solution folders <em>don’t have to match the on-disk layout</em>. IMO this is actually a fault (I’d prefer disk layout reflect solution layout), but it’s exceedingly flexible and let’s you do essentially anything you want in terms of solution organization.</p>
+<p>On configuration management: yeah… it sucks. Badly. Fortunately, projects tend to be most in flux in the early goings when they’re smaller, which makes it easier to make sweeping changes as you discover things aren’t working. But once the solution scales up, yeah, managing the configuration is an enormous PITA if you have to change things. The answer, of course, is that you shouldn’t have to make huge sweeping changes to large projects once things are reasonably well established, so if you have that problem it probably means you’re doing something wrong.</p>
+<p>So, in summary: as a Windows developer using VS, we just don’t find ourselves having to rejigger large projects… growth is carefully managed so new projects land in the right places right away (and adding a new project to an existing solution is a relatively straightforward process… get the project config set up right, then update the solution build targets you use, and you should be done).</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-325708"></a>
+  <header>
+    <p><b>Brett</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2013-11-18">2013-11-18</time></p>
+  </header>
+<p>Regarding subprojects, I misspoke: I don’t believe you can have projects nested within projects. But you can have nested folder structure down to the project level. So no, you can’t do anything you want, you’re definitely limited in that sense.</p>
+<p>So you could, say, have a folder for a subsystem, then have projects within that folder, using namespacing to imply how they’re nested.</p>
+<p>Not ideal, though.</p>
+<p>VS also appears to support some sort of Nested Projects functionality, but I’ve never been inclined to use it.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-325718"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2013-11-18">2013-11-18</time></p>
+  </header>
+<p><span class="citation" data-cites="Brett">@Brett</span></p>
+<p>Yeah, I can’t find any way to nest projects within projects, which I think is a rather large issue as projects grow.</p>
+<p>In your comment on configuration and that it isn’t a big problem since there is most flux in the beginning, before the code base grows so large that the limitations in the tool prevent changes to be made. You do make one assumption there that doesn’t necessarily hold: that someone in the project cares about the configuration enough to fix it before the project grows too big.</p>
+<p>Also, I think there is some important configuration that can only happen after the code base has grown to a certain size and that’s refactoring into submodules that can be re-used in other projects, e.g. by creating a library project out of a set of source files.</p>
+<p>In the end it sounds like my intuition is fairly close to the truth, and that I’ll continue to argue in favour of using CMake to simplify configuration.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-325726"></a>
+  <header>
+    <p><b>Mattias Bengtsson</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2013-11-18">2013-11-18</time></p>
+  </header>
+<p>For me a combination of cigarettes, shouting and punching in the air took away at least some of the frustration.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-325803"></a>
+  <header>
+    <p><b>Jon</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2013-11-19">2013-11-19</time></p>
+  </header>
+<p>You can use inherited Property Sheets (*.vsprops files) in your projects to create a collection of project settings which your projects can inherit values from. Projects can even inherit from multiple of these so you can have multiple axis of properties (e.g. libraries/exes and uses libraryA/libraryB)</p>
+<p><a href="http://msdn.microsoft.com/en-us/library/3z7t21ew(v=vs.90).aspx" class="uri">http://msdn.microsoft.com/en-us/library/3z7t21ew(v=vs.90).aspx</a></p>
+<p>As for the mouse centric problem, I started using ViEmu (a VI plugin for VS) and that allows you to do “:edit” to jump to any file you know the name of. I then learnt all the shortcuts required to build from the keyboard and added a couple of my own to run macros to do various other build tasks.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-325855"></a>
+  <header>
+    <p><b>Gregory</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2013-11-19">2013-11-19</time></p>
+  </header>
+<p>Actually, there’s so called Property Manager in Visual Studio. It allows to keep common project settings in ‘props’ files and apply them to projects when nessecary. If you need to update those settings for all projects - just edit ‘props’ file</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-325863"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2013-11-19">2013-11-19</time></p>
+  </header>
+<p>Yes, it seems the property-thingie actually works in a rather sane way nowadays. In VS2008 it was rather pointless, since any change in a property sheet would require visiting every project’s property dialogue to trigger a re-importing of the modified property. In VS2010 that seems to work much better. Still, it’s not as clear, easy to edit, and visible as a CMakeLists.txt file, I think.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-326018"></a>
+  <header>
+    <p><b>Bruno</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2013-11-21">2013-11-21</time></p>
+  </header>
+<p>I think people use too many projects, so managing the project files get out of hand. It’s usually easier to have a large C++ project with most of the code and then smaller project for each dll, or exe needed. The tree shaking at link time limits the size of the leaf projects.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-327736"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2013-11-28">2013-11-28</time></p>
+  </header>
+<p><span class="citation" data-cites="Bruno">@Bruno</span>, Well, in many case you <em>do</em> want a lot of VS projects, because each one is a re-usable part that can be shared with others.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-361958"></a>
+  <header>
+    <p><b>Julian</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2014-06-06">2014-06-06</time></p>
+  </header>
+<p>Every time I end up at a Windows shop, I wonder the same thing. It’s usually only a matter of time before I’m using emacs and nmake or msbuild instead. I read all the blogs and books I can on VS productivity, hoping I’m missing something, but it never works out. In the most recent case, I’ve started crafting the sln and proj files in emacs instead of trying to deal with unresizable-dialog-box hell in VS. (I ended up at this blog trying to find ways to minimize duplication between multiple solution files, alas.)</p>
+<p>Unfortunately, when Brett said, “if you have that problem it probably means you’re doing something wrong”, I agree and yet pretty much every Windows shop I’ve encountered with a significant legacy codebase is doing something wrong, and everyone’s paying for it.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-366054"></a>
+  <header>
+    <p><b>Michael Mounteney</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2014-07-14">2014-07-14</time></p>
+  </header>
+<p>If you have a manifest or can somehow obtain a list of required sources, I’ve found automatically regenerating the .vcproj files to be worthwhile.</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2013-11-18-1125-how-do-professional-windows-programmers-visual-studio@therning.org?subject=A comment on How do professional Windows programmers stand Visual Studio?&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

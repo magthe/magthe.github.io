@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Setting up Epiphany to play with Seed extensions</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2009-07-03">2009-07-03</time> - Magnus Therning</p>
+</header>
+
+<p>Since the Python extensions to Epiphany have been removed from the repository I thought it was high time to start playing with what seems to be the replacement to Python extensions: <a href="http://live.gnome.org/Seed/">Seed</a> extensions. The first step is of course to get a version of Epiphany that supports Seed extensions. After a few emails on the mailing list I’ve come to a recipe (I’ve done this twice now on different machines to I’m fairly confident it works). I should probably preface this by saying that I run an up-to-date <a href="http://www.archlinux.org/">Arch</a> system, if you run something else you might need to do a bit more, or less if you’re lucky :-)</p>
+<ol type="1">
+<li>Make sure the following packages are installed ((You might need a few more packages depending on what desktop environment you use. Those were the packages I needed to add to my machine where I run Gnome and do regular non-Gnome development)): <code>libsoup</code>, <code>libwebkit</code>, <code>gnome-common</code>, <code>intltool</code>, <code>libffi</code></li>
+<li>Clone the following Git repositories from <a href="http://git.gnome.org/">git.gnome.org</a>: <code>epiphany-extensions</code>, <code>epiphany</code>, <code>seed</code>, <code>gobject-inspection</code>, <code>gnome-js-common</code>, <code>gir-repository</code></li>
+<li><p>Decide on a <code>$prefix</code>, i.e. where you want it all installed (I use <code>~/opt/gnome-trunk</code>). Then export the following environment variables:</p>
+<pre><code> export PATH=$prefix/bin:$PATH
+ export PKG_CONFIG_PATH=$prefix/lib/pkgconfig</code></pre></li>
+<li><p>Then configure, build and install everything. Use the <code>autogen.sh</code> script to create the configuration, and make sure to pass it <code>prefix=$prefix</code> each time. Some of the modules need extra arguments as well. This is the order and extra arguments I used:</p>
+<ol type="1">
+<li><code>gnome-js-common</code> (<code>--disable-seed --disable-gjs</code>)</li>
+<li><code>seed</code></li>
+<li><code>gnome-js-common</code> (<code>--disable-gjs</code>)</li>
+<li><code>gobject-introspection</code></li>
+<li><code>gir-repository</code></li>
+<li><code>epiphany</code> (<code>--enable-introspection --enable-seed</code>)</li>
+<li><code>epiphany-extensions</code></li>
+</ol></li>
+</ol>
+<p>After that you can put your extensions in <code>~/.gnome2/epiphany/extensions/</code>. I have two instances of Epiphany installed, a stable from my distro, and the dev version I built myself. I haven’t managed to run them both side by side, but beyond that there seems to be no bad interaction between them.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/epiphany.html">epiphany</a>, <a href="../tags/gnome.html">gnome</a>, <a href="../tags/seed.html">seed</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2009-07-01-672-dataenc-finally-making-it-into-debian.html">⟸ Dataenc finally making it into Debian</a>
+
+
+
+<a href="../posts/2009-07-03-685-making-a-choice-from-a-list-in-haskell-vty-part-1.html">Making a choice from a list in Haskell, Vty (part 1) ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-183421"></a>
+  <header>
+    <p><b>Tim Horton</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-07-03">2009-07-03</time></p>
+  </header>
+<p>Thanks for writing this up! I will note that the second build of gnome-js-common is unnecessary (unless you’re interested in the tests), and that that circular dependency mess will be sorted out by the next release.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-183423"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-07-03">2009-07-03</time></p>
+  </header>
+<p><em><span class="citation" data-cites="Tim">@Tim</span> Horton</em>, Yes I was wondering about that circular dependency and basically thought “better safe than sorry”. Good that it can be scrapped, it did make the steps look a bit ugly ;-)</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2009-07-03-674-setting-up-epiphany-to-play-with-seed-extensions@therning.org?subject=A comment on Setting up Epiphany to play with Seed extensions&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

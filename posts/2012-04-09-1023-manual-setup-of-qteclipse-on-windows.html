@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Manual setup of Qt+Eclipse on Windows</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2012-04-09">2012-04-09</time> - Magnus Therning</p>
+</header>
+
+<p>Before the weekend I started looking at using <a href="http://qt-project.org/">Qt</a> on Windows. More specifically I wanted to know whether this combination could be an option for a sub-project at work. We need to develop a program for the Windows desktop, and due to the overall context it would make sense to write it in C++ (that’s what we use for another part of the project). We already use both Eclipse and Visual Studio in the project, but I strongly prefer Eclipse, so I was hoping to be able to use it. However, it seems that the Qt developers strongly favour their own tool <a href="http://qt-project.org/wiki/Category:Tools::QtCreator">Qt Creator</a>, though there are (outdated?) integrators for both Eclipse and Visual Studio. I’d rather avoid introducing a third IDE into a project—two is already one too many in my opinion. Anyway, I think I managed to find an acceptable configuration of Eclipse <em>without</em> using that old <a href="http://qt.nokia.com/products/eclipse-integration/">Qt integration plugin</a> together with the MSVC (I was using the gratis version of MSVC for this).</p>
+<h3 id="qt-setup">Qt setup</h3>
+<p>I decided to install Qt into <code>C:\QtSDK</code>, and then I made the following permanent changes to the environment:</p>
+<pre class="dos"><code>&gt; set QTDIR=C:\QtSDK\Desktop\Qt\4.8.0\msvc2010
+&gt; set QMAKESPEC=%QTDIR%\mkspecs\win32-msvc2010
+&gt; set PATH=%PATH%;%QTDIR%\bin;C:\QtSDK\QtCreator\bin</code></pre>
+<h3 id="starting-eclipse-so-that-it-finds-the-compiler">Starting Eclipse so that it finds the compiler</h3>
+<p>It’s slightly disappointing that Eclipse happily lets one create MSVC project that isn’t buildable because it doesn’t know where the compiler is located. One easy way to remedy that seems to create a BAT file to create the proper environment for Eclipse:</p>
+<pre class="dos"><code>@echo off
+setlocal
+call &quot;C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\vcvarsall.bat&quot;
+start C:\Eclipse\Indigo\eclipse.exe
+endlocal</code></pre>
+<h3 id="creating-the-project">Creating the project</h3>
+<p>Creating a “makefile” project in Eclipse is fairly straight forward; one needs a <em>C/C++ project</em>, of the <em>makefile</em> type, and make it empty too so that there isn’t any cruft in the way. Then add a single source file, e.g. <code>main.cxx</code>:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2"><span class="pp">#include </span><span class="im">&lt;Qt/QtGui&gt;</span></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4"><span class="dt">int</span> main(<span class="dt">int</span> argc, <span class="dt">char</span> **argv)</a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">{</a>
+<a class="sourceLine" id="cb3-6" data-line-number="6">    <span class="bu">std::</span>cout &lt;&lt; <span class="ot">__FUNCTION__</span> &lt;&lt; <span class="bu">std::</span>endl;</a>
+<a class="sourceLine" id="cb3-7" data-line-number="7">    <span class="ex">QApplication</span> app(argc, argv);</a>
+<a class="sourceLine" id="cb3-8" data-line-number="8">    <span class="cf">return</span>(app.exec());</a>
+<a class="sourceLine" id="cb3-9" data-line-number="9">}</a></code></pre></div>
+<p>And then a project file, e.g. <code>Test.pro</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode makefile"><code class="sourceCode makefile"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="dt">TEMPLATE </span><span class="ch">=</span><span class="st"> app</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2"><span class="dt">TARGET </span><span class="ch">=</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb4-3" data-line-number="3"><span class="dt">DEPENDPATH </span><span class="ch">+=</span><span class="st"> .</span></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4"><span class="dt">INCLUDEPATH </span><span class="ch">+=</span><span class="st"> .</span></a>
+<a class="sourceLine" id="cb4-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb4-6" data-line-number="6"><span class="dt">CONFIG </span><span class="ch">+=</span><span class="st"> qt</span></a>
+<a class="sourceLine" id="cb4-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb4-8" data-line-number="8"><span class="dt">HEADERS </span><span class="ch">+=</span></a>
+<a class="sourceLine" id="cb4-9" data-line-number="9"><span class="dt">SOURCES </span><span class="ch">+=</span><span class="st"> main.cxx</span></a></code></pre></div>
+<p>After this use <code>qmake</code> to create the required makefile. I decided to use a subdirectory (<code>_build</code>) in the project, which <code>qmake</code> seems to have full support for:</p>
+<pre class="dos"><code>&gt; qmake ..\Test.pro</code></pre>
+<h3 id="setting-up-building-from-eclipse">Setting up building from Eclipse</h3>
+<p>In the project properties modify the <em>C/C++ Build</em> settings for the <em>Debug</em> target. Instead of the default build command (which is <code>make</code>) one can use <code>nmake</code>, or even better <code>jom</code>:</p>
+<ul>
+<li>Build command: <code>C:/QtSDK/QTCreator/bin/jom -f Makefile.Debug</code></li>
+<li>Build directory: <code>${workspace_loc:/Test}/_build</code></li>
+</ul>
+<p>Then one can create a <em>Release</em> target, which differs only in that it builds using <code>Makefile.Release</code>.</p>
+<h3 id="running-qmake-from-inside-eclipse">Running <code>qmake</code> from inside Eclipse</h3>
+<p>It’s very convenient to be able to run <code>qmake</code> and re-generate the makefiles from inside Eclipse. One can set that up by adding an external tool:</p>
+<ul>
+<li>Location: <code>C:\QtSDK\Desktop\Qt\4.8.0\msvc2010\bin\qmake.exe</code></li>
+<li>Working directory: <code>${workspace_loc:/Test}/_build</code></li>
+<li>Arguments: <code>../Test.pro</code></li>
+</ul>
+<h3 id="in-closing">In closing</h3>
+<p>I plan to also have a look at the <a href="http://qt.nokia.com/products/developer-tools">Qt Visual Studio Add-in</a>, though I suspect we might be using the latest version of VS, which might cause trouble.</p>
+<p>Suggestions for further integration with Eclipse would be most welcome, e.g. for forms and translations.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/eclipse.html">eclipse</a>, <a href="../tags/qt.html">qt</a>, <a href="../tags/windows.html">windows</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2012-03-11-1019-lxde-and-multiple-screens-replacing-lxrandr-with-a-script.html">⟸ LXDE and multiple screens: replacing lxrandr with a script</a>
+
+
+
+<a href="../posts/2012-06-27-1051-qt-state-machines-and-automatic-timed-transitions.html">Qt state machines and automatic timed transitions ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-250503"></a>
+  <header>
+    <p><b>Bryan Green</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2012-07-27">2012-07-27</time></p>
+  </header>
+<p>Thanks for another great post! It is good to see some nice posts on using Qt for windows as well as professional work.</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2012-04-09-1023-manual-setup-of-qteclipse-on-windows@therning.org?subject=A comment on Manual setup of Qt+Eclipse on Windows&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

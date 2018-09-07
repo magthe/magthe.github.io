@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Rotonyms in Haskell</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2008-01-23">2008-01-23</time> - Magnus Therning</p>
+</header>
+
+<p>I have to say <a href="http://tyleruebele.com/rotonym$20024">rotonyms</a> seem kind of pointless, but since there is <a href="http://www.willmcgugan.com/2008/01/22/rotonym-what-the-heck-is-a-rotonym/">a post with a Python solution</a> I thought I’d make an attempt at a solution in Haskell. Of course I didn’t manage on my own, I received some much needed help from <em>Cale</em> and <em>dmwit</em> on <code>#haskell</code>.</p>
+<p>First some rotation functions, as far as I know there’s no built-in rot13 encoding in Haskell:</p>
+<pre><code>rot13Char c = chr ( (ord c - ord 'a' + 13) `mod` (ord 'z' - ord 'a' + 1) + ord 'a')
+rot13 = map rot13Char</code></pre>
+<p>In order to ease working with rotonyms I introduced a type to represent one. This turned out to pay off later on.</p>
+<pre><code>data Rotonym = R String</code></pre>
+<p>It would be easy to let the compiler derive <code>Show</code>, but I wanted to mimick the output produced by Will’s solution in Python:</p>
+<pre><code>instance Show Rotonym where
+    show (R w) =
+        let r = rot13 w
+        in (min w r) ++ &quot;\t&quot; ++ (max w r)</code></pre>
+<p>Now I’m ready for the meat of the matter, reading the word list, pick out the rotonyms and finally print them. Following Will’s cue I represent the word list as a set of strings (importing <code>Data.Set</code> as <code>S</code>), this also eliminates duplicates.</p>
+<pre><code>main = do
+    words &lt;- liftM lines $ readFile &quot;WORD.LST&quot;
+    let wordset = S.fromList words
+        isRotonym w = S.member (rot13 w) wordset
+        rots = S.fromList [R w | w &lt;- words, isRotonym w]
+    mapM_ (putStrLn . show) (S.elems rots)</code></pre>
+<p>Sticking <code>Rotonym</code> instances in a set requires them to be instances of <code>Ord</code> and <code>Eq</code>:</p>
+<pre><code>instance Eq Rotonym where
+    (R w1) == (R w2) =
+        let r1 = rot13 w1
+            r2 = rot13 w2
+        in (w1 == w2 &amp;&amp; r1 == r2) || (w1 == r2 &amp;&amp; w2 == r1)
+
+instance Ord Rotonym where
+    compare (R w1) (R w2) =
+        let r1 = rot13 w1
+            r2 = rot13 w2
+        in compare (length w1, (min w1 r1)) (length w2, (min w2 r2))</code></pre>
+<p><em>dmwit</em> pointed out that what is actually going on here is taking an intersection of the the words and their rotated counterparts. This means the <code>main</code> could be written</p>
+<pre><code>main = readFile &quot;WORD.LST&quot; &gt;&gt;=
+        mapM_ (putStrLn . show) . S.toList . S.map R . findRotonyms . S.fromList . lines
+    where findRotonyms ws = ws `S.intersection` (S.map rot13 ws)</code></pre>
+<p>Another idea that <em>dmwit</em> came up with was to introduce a class for rot13:</p>
+<pre><code>class Rot13 a where
+    rot13 :: a -&gt; a</code></pre>
+<p><code>Char</code> is an instance of that class with the expected implementation of <code>rot13</code>:</p>
+<pre><code>instance Rot13 Char where
+    rot13 c = chr ((ord c - ord 'a' + 13) `mod` (ord 'z' - ord 'a' + 1) + ord 'a')</code></pre>
+<p>If <code>a</code> is an instance of <code>Rot13</code> then list of <code>a</code> is as well, again with the expected implementation:</p>
+<pre><code>instance (Rot13 a) =&gt; Rot13 [a] where
+    rot13 = map rot13</code></pre>
+<p>It is possible to intersect lists (<code>Data.List.intersect</code>) but it turned out to be painfully slow, so back to sets again. A set of <code>a</code> is an instance of <code>Rot13</code>:</p>
+<pre><code>instance (Ord a, Rot13 a) =&gt; Rot13 (S.Set a) where
+    rot13 = S.map rot13</code></pre>
+<p>Finding all rotonyms is then straight forward:</p>
+<pre><code>main = readFile &quot;WORD.LST&quot; &gt;&gt;=
+        mapM_ (putStrLn . show) . S.toList . S.map R . findRotonyms . S.fromList . lines
+    where findRotonyms ws = ws `S.intersection` (rot13 ws)</code></pre>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/haskell.html">haskell</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2008-01-15-336-back-to-listening-to-pauldotcom.html">⟸ Back to listening to pauldotcom</a>
+
+
+
+<a href="../posts/2008-02-17-338-haskell-on-windows.html">Haskell on Windows ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-99386"></a>
+  <header>
+    <p><b>augustss</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-01-23">2008-01-23</time></p>
+  </header>
+<p>putStrLn . show is called print</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2008-01-23-337-rotonyms-in-haskell@therning.org?subject=A comment on Rotonyms in Haskell&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

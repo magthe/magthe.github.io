@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Updating Haskell packages on Arch</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2009-09-13">2009-09-13</time> - Magnus Therning</p>
+</header>
+
+<p>A few days ago I noticed that there were a few Haskell packages on AUR that had received updates. This was the excuse I had been waiting for to address the second part of keeping my Haskell packages up-to-date (I’ve written about the first part before, <a href="../posts/2009-08-04-713-updating-ghc-on-arch.html">dealing with an update to GHC</a>).</p>
+<p>It’s easy to find the packages with available updates:</p>
+<pre class="foo"><code>% yaourt -Su --aur</code></pre>
+<p>Unfortunately it isn’t as easy as just updating the listed packages. Any package that depends on an updated package really should be re-compiled and re-installed to guarantee that the entire system behaves as expected after the upgrade. Of course <code>pacman</code> can handle it:</p>
+<pre class="foo"><code>% pacman -Rcn &lt;all pkgs with updates&gt;</code></pre>
+<p>This will list all packages that will be removed. After removing them all, they can all be re-installed. That is of course not quite as nice as it could be, since they all then will be explicitly installed, it would be nicer to just re-install the “top-level packages”. This is one way to achieve this.</p>
+<p>I did a bit of refactoring and put the Arch-related functions from the previous post in their own module, <code>Arch</code>. Then I added a function that takes a package and recursively inspects <code>Required By</code> until a “top-level package” (i.e. a package that doesn’t require any other package) is reached:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1">getTopRequiredBy pkg <span class="fu">=</span> <span class="kw">let</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">        tops <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">            first <span class="ot">&lt;-</span> getRequiredBy pkg</a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">            <span class="kw">if</span> null first</a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">                <span class="kw">then</span> return [pkg]</a>
+<a class="sourceLine" id="cb3-6" data-line-number="6">                <span class="kw">else</span> liftM concat <span class="fu">$</span> mapM getTopRequiredBy first</a>
+<a class="sourceLine" id="cb3-7" data-line-number="7">    <span class="kw">in</span> liftM nub tops</a></code></pre></div>
+<p>After that it’s straight forward to write up a little tool which offers some advice on what to do:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">main <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">    pkgsToUpgrade <span class="ot">&lt;-</span> getArgs</a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">    pkgsToReinstall <span class="ot">&lt;-</span> liftM (nub <span class="fu">.</span> concat) <span class="fu">$</span> mapM Arch.getTopRequiredBy pkgsToUpgrade</a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">    putStrLn <span class="fu">$</span> <span class="st">&quot;To remove     : pacman -Rnc &quot;</span> <span class="fu">++</span> unwords pkgsToUpgrade</a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">    putStrLn <span class="fu">$</span> <span class="st">&quot;To re-install : yaourt -S &quot;</span> <span class="fu">++</span> unwords pkgsToReinstall</a></code></pre></div>
+<p>Using it on the packages I wanted to upgrade gave the following output:</p>
+<pre class="foo"><code>% runhaskell PkgUpgrade.hs haskell-{configfile,haxml,json,missingh,safe,testpack,time}
+To remove     : pacman -Rnc haskell-configfile haskell-haxml haskell-json haskell-missingh haskell-safe haskell-testpack haskell-time
+To re-install : yaourt -S haskell-configfile haskell-haxml haskell-json haskell-hsh haskell-safe</code></pre>
+<p>Following that advice seemed to work just like I intended.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/arch.html">arch</a>, <a href="../tags/ghc.html">ghc</a>, <a href="../tags/haskell.html">haskell</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2009-09-07-742-wrapping-io-part-2.html">⟸ Wrapping IO, part 2</a>
+
+
+
+<a href="../posts/2009-10-23-762-epilicious-is-dead-say-hello-to-bms.html">Epilicious is dead, say hello to BMS ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-190133"></a>
+  <header>
+    <p><b>David</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-10-04">2009-10-04</time></p>
+  </header>
+<p>Can this be used to update other packages from AUR or is this not necessary? I’ve been doing</p>
+<pre><code>yaourt -Syu</code></pre>
+<p>Could you post the complete <code>PkgUpgrade.hs</code>? I’m not familiar with Haskell but would like to use this utility. Thanks.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-191145"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-10-23">2009-10-23</time></p>
+  </header>
+<p><em><span class="citation" data-cites="David">@David</span>,</em> this is not necessary for other packages in AUR, only for Haskell packages compiled with GHC.</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2009-09-13-751-upgrading-haskell-packages-on-arch@therning.org?subject=A comment on Updating Haskell packages on Arch&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

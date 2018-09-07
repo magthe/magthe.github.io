@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Configuring audio for my Arch desktop</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2009-05-09">2009-05-09</time> - Magnus Therning</p>
+</header>
+
+<p>I probably started in the wrong end, by installing a few GStreamer packages:</p>
+<ol type="1">
+<li><em>gstreamer0.10-bad-plugins</em></li>
+<li><em>gstreamer0.10-ugly-plugins</em></li>
+<li><em>gstreamer0.10-ffmpeg</em></li>
+</ol>
+<p>It was first after that that I actually configured sound :-)</p>
+<p>As always the <a href="http://wiki.archlinux.org/">Arch Wiki</a> contains all the information needed, and more. There’s a page for <a href="http://wiki.archlinux.org/index.php/ALSA">configuring Alsa</a>. All I did was install <em>alsa-utils</em>, make sure my user was a member of <code>audio</code> and then configure using <code>alsamixer</code> until <code>aplay /usr/share/sounds/alsa/Front_Center.wav</code> played properly. Then I put <code>alsa</code> in the <code>DEAMON</code> list in <code>/etc/rc.conf</code>.</p>
+<p>Next I installed and configured <a href="http://www.pulseaudio.org/">PulseAudio</a>. Again there’s an excellent page with instructions for <a href="http://wiki.archlinux.org/index.php/PulseAudio">configuring PulseAudio</a> on the wiki. For me that meant first installing <em>pulseaudio</em> and <em>alsa-plugins</em>. Then I used <code>vigr</code> to add my user to <code>pulse-access</code> and <code>pulse-rt</code>. I also created <code>/etc/asound.conf</code>, following the instruction on the wiki it contains the following:</p>
+<pre><code>pcm.pulse {
+    type pulse
+}
+ctl.pulse {
+    type pulse
+}
+
+pcm.!default {
+    type pulse
+}
+ctl.!default {
+    type pulse
+}</code></pre>
+<p>I then double checked that PulseAudio uses HAL to detect the needed modules. Lastly I made it possible for gstreamer to use PulseAudio by installing <em>gstreamer0.10-pulse</em>.</p>
+<p><em>[edited 22/5/2009]</em> Added info on group membership.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/alsa.html">alsa</a>, <a href="../tags/arch.html">arch</a>, <a href="../tags/pulseaudio.html">pulseaudio</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2009-05-09-603-odds-and-ends-for-my-arch-desktop.html">⟸ Odds and ends for my Arch desktop</a>
+
+
+
+<a href="../posts/2009-05-11-617-vim-haskellmode-packaged-for-arch.html">Vim haskellmode packaged for Arch ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2009-05-09-611-configuring-audio-for-my-arch-desktop@therning.org?subject=A comment on Configuring audio for my Arch desktop&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

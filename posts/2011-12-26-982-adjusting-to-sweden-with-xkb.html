@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Adjusting to Sweden with XKB</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2011-12-26">2011-12-26</time> - Magnus Therning</p>
+</header>
+
+<p>Having lived outside of Sweden for about a decade I’ve grown accustomed to non-Swedish keyboard layouts, first the US (as it’s widely used in The Netherlands) and later on the UK layout. Moving back to Sweden had me swearing over the layout used here within only a few days. The placement of “{[]}” is especially painful. Clearly the Swedish layout wasn’t designed for developers! Rather than go on muscle memory I decided to first attempt a small change to the X key mappings.</p>
+<p>I found a <a href="http://madduck.net/docs/extending-xkb/">good description of per-user XKB configuration</a> after a bit of searching. Then I modified it slightly to fit better in my Arch-based LXDE system.</p>
+<h2 id="the-xkb-config">The XKB config</h2>
+<p>I started with removing all the configuration I’d previously put into <code>/etc/X11/xorg.conf.d</code> – if I’m to use per-user configuration then there should be <em>no</em> system-wide settings at all. Then I put the output of <code>setxkbmap -print</code> into <code>~/.xkb/maps/$(hostname)</code> as a starting point. The main goal is to move the characters that requires awkward single-hand combinations with <em>AltGr</em> to slightly more comfortable mappings. After a bit of experimentation I settled on the following (which I put in <code>~/.xkb/symbols/sedev</code>)</p>
+<pre lang="C" line="1">
+partial alphanumeric_keys
+xkb_symbols "devkeys" {
+    key <AD01> { [ q, Q, backslash ] };
+    key <AD02> { [ w, W, asciitilde ] };
+
+    key <AC01> { [ a, A, braceleft ] };
+    key <AC02> { [ s, S, bracketleft ] };
+    key <AC03> { [ d, D, bracketright ] };
+    key <AC04> { [ f, F, braceright ] };
+};
+</pre>
+<p>After setting it manually and verifying that the new mappings work I added it to my keymap, which ended up looking like this</p>
+<pre lang="C" line="1">
+xkb_keymap {
+    xkb_keycodes  { include "evdev+aliases(qwerty)" };
+    xkb_types     { include "complete" };
+    xkb_compat    { include "complete" };
+    xkb_symbols   { include "pc+se(nodeadkeys)+inet(evdev)+capslock(swapescape)+compose(paus)+sedev(devkeys)" };
+    xkb_geometry  { include "pc(pc104)" };
+};
+</pre>
+<h2 id="tying-it-together">Tying it together</h2>
+<p>Now all the remains is to load the new configuration on login. Based on madduck’s example I put the following into <code>~/.xprofile</code></p>
+<pre lang="Bash" line="1">
+# load XKB, if there is one
+XKBDIR=${HOME}/.xkb
+XKBMAPFILE=${XKBDIR}/keymap/$(hostname)
+if [[ -f ${XKBMAPFILE} ]]; then
+    xkbcomp -I${XKBDIR} ${XKBMAPFILE} ${DISPLAY}
+fi
+</pre>
+<p>Now I just have to get used to using the new mappings.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/xkb.html">xkb</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2011-12-08-974-lxde-and-xmonad.html">⟸ LXDE and xmonad</a>
+
+
+
+<a href="../posts/2012-01-12-999-compiling-u-boot-for-use-in-qemu-versatilepb.html">Compiling U-Boot for use in QEMU (VersatilePB) ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2011-12-26-982-adjusting-to-sweden-with-xkb@therning.org?subject=A comment on Adjusting to Sweden with XKB&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

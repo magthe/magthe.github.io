@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">More adventures in parsing</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2007-05-29">2007-05-29</time> - Magnus Therning</p>
+</header>
+
+<p>I received an interesting comment from Conal Elliott on my <a href="../posts/2007-05-27-289-adventures-in-parsing.html#comment-50636">previous post on parsing</a>. I have to admit I wasn’t sure I understood him at first, I’m still not sure I do, but I think I have an idea of what he means :-)</p>
+<p>Basically my code is very sequential in that I use the <code>do</code> construct everywhere in the parsing code. Personally I thought that makes the parser very easy to read since the code very much mimics the structure of the <code>maps</code> file. I do realise the code isn’t very “functional” though so I thought I’d take Conal’s comments to heart and see what the result would be.</p>
+<p>Let’s start with observation that every entity in a line is separated by a space. However some things are separated by other characters. So the first thing I did was write a higher-order function that first reads something, then reads a character and returns the first thing that was read:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">thenChar c f <span class="fu">=</span> f <span class="fu">&gt;&gt;=</span> (\ r <span class="ot">-&gt;</span> char c <span class="fu">&gt;&gt;</span> return r)</a></code></pre></div>
+<p>Since space is used as a separator so often I added a short-cut for that:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">thenSpace  <span class="fu">=</span> thenChar <span class="ch">' '</span></a></code></pre></div>
+<p>Then I put that to use on <code>parseAddress</code>:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1">parseAddress <span class="fu">=</span> <span class="kw">let</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">        hexStr2Int <span class="fu">=</span> Prelude.read <span class="fu">.</span> (<span class="st">&quot;0x&quot;</span> <span class="fu">++</span>)</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">    <span class="kw">in</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">        start <span class="ot">&lt;-</span> thenChar <span class="ch">'-'</span> <span class="fu">$</span> many1 hexDigit</a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">        end <span class="ot">&lt;-</span> many1 hexDigit</a>
+<a class="sourceLine" id="cb3-6" data-line-number="6">        return <span class="fu">$</span> <span class="dt">Address</span> (hexStr2Int start) (hexStr2Int end)</a></code></pre></div>
+<p>Modifying the other parsing functions using <code>thenChar</code> and <code>thenSpace</code> is straight forward.</p>
+<p>I’m not entirely sure I understand what Conal meant with the part about <code>liftM</code> in his comment. I suspect his referring to the fact that I first read characters and then convert them in the “constructors”. By using <code>liftM</code> I can move the conversion “up in the code”. Here’s <code>parseAddress</code> after I’ve moved the calls to <code>hexStr2Int</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">parseAddress <span class="fu">=</span> <span class="kw">let</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">        hexStr2Int <span class="fu">=</span> Prelude.read <span class="fu">.</span> (<span class="st">&quot;0x&quot;</span> <span class="fu">++</span>)</a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">    <span class="kw">in</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">        start <span class="ot">&lt;-</span> liftM hexStr2Int <span class="fu">$</span> thenChar <span class="ch">'-'</span> <span class="fu">$</span> many1 hexDigit</a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">        end <span class="ot">&lt;-</span> liftM hexStr2Int <span class="fu">$</span> many1 hexDigit</a>
+<a class="sourceLine" id="cb4-6" data-line-number="6">        return <span class="fu">$</span> <span class="dt">Address</span> start end</a></code></pre></div>
+<p>After modifying the other parsing functions in a similar way I ended up with this:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1">parsePerms <span class="fu">=</span> <span class="kw">let</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">        cA a <span class="fu">=</span> <span class="kw">case</span> a <span class="kw">of</span></a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">            <span class="ch">'p'</span> <span class="ot">-&gt;</span> <span class="dt">Private</span></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">            <span class="ch">'s'</span> <span class="ot">-&gt;</span> <span class="dt">Shared</span></a>
+<a class="sourceLine" id="cb5-5" data-line-number="5">    <span class="kw">in</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb5-6" data-line-number="6">        r <span class="ot">&lt;-</span> liftM (<span class="fu">==</span> <span class="ch">'r'</span>) anyChar</a>
+<a class="sourceLine" id="cb5-7" data-line-number="7">        w <span class="ot">&lt;-</span> liftM (<span class="fu">==</span> <span class="ch">'w'</span>) anyChar</a>
+<a class="sourceLine" id="cb5-8" data-line-number="8">        x <span class="ot">&lt;-</span> liftM (<span class="fu">==</span> <span class="ch">'x'</span>) anyChar</a>
+<a class="sourceLine" id="cb5-9" data-line-number="9">        a <span class="ot">&lt;-</span> liftM cA anyChar</a>
+<a class="sourceLine" id="cb5-10" data-line-number="10">        return <span class="fu">$</span> <span class="dt">Perms</span> r w x a</a>
+<a class="sourceLine" id="cb5-11" data-line-number="11"></a>
+<a class="sourceLine" id="cb5-12" data-line-number="12">parseDevice <span class="fu">=</span> <span class="kw">let</span></a>
+<a class="sourceLine" id="cb5-13" data-line-number="13">        hexStr2Int <span class="fu">=</span> Prelude.read <span class="fu">.</span> (<span class="st">&quot;0x&quot;</span> <span class="fu">++</span>)</a>
+<a class="sourceLine" id="cb5-14" data-line-number="14">    <span class="kw">in</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb5-15" data-line-number="15">        maj <span class="ot">&lt;-</span> liftM hexStr2Int <span class="fu">$</span> thenChar <span class="ch">':'</span> <span class="fu">$</span> many1 hexDigit</a>
+<a class="sourceLine" id="cb5-16" data-line-number="16">        min <span class="ot">&lt;-</span> liftM hexStr2Int <span class="fu">$</span> many1 hexDigit</a>
+<a class="sourceLine" id="cb5-17" data-line-number="17">        return <span class="fu">$</span> <span class="dt">Device</span> maj min</a>
+<a class="sourceLine" id="cb5-18" data-line-number="18"></a>
+<a class="sourceLine" id="cb5-19" data-line-number="19">parseRegion <span class="fu">=</span> <span class="kw">let</span></a>
+<a class="sourceLine" id="cb5-20" data-line-number="20">        hexStr2Int <span class="fu">=</span> Prelude.read <span class="fu">.</span> (<span class="st">&quot;0x&quot;</span> <span class="fu">++</span>)</a>
+<a class="sourceLine" id="cb5-21" data-line-number="21">        parsePath <span class="fu">=</span> (many1 <span class="fu">$</span> char <span class="ch">' '</span>) <span class="fu">&gt;&gt;</span> (many1 <span class="fu">$</span> anyChar)</a>
+<a class="sourceLine" id="cb5-22" data-line-number="22">    <span class="kw">in</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb5-23" data-line-number="23">        addr <span class="ot">&lt;-</span> thenSpace parseAddress</a>
+<a class="sourceLine" id="cb5-24" data-line-number="24">        perm <span class="ot">&lt;-</span> thenSpace parsePerms</a>
+<a class="sourceLine" id="cb5-25" data-line-number="25">        offset <span class="ot">&lt;-</span> liftM hexStr2Int <span class="fu">$</span> thenSpace <span class="fu">$</span> many1 hexDigit</a>
+<a class="sourceLine" id="cb5-26" data-line-number="26">        dev <span class="ot">&lt;-</span> thenSpace parseDevice</a>
+<a class="sourceLine" id="cb5-27" data-line-number="27">        inode <span class="ot">&lt;-</span> liftM Prelude.read <span class="fu">$</span> thenSpace <span class="fu">$</span> many1 digit</a>
+<a class="sourceLine" id="cb5-28" data-line-number="28">        path <span class="ot">&lt;-</span> parsePath <span class="fu">&lt;|&gt;</span> string <span class="st">&quot;&quot;</span></a>
+<a class="sourceLine" id="cb5-29" data-line-number="29">        return <span class="fu">$</span> <span class="dt">MemRegion</span> addr perm offset dev inode path</a></code></pre></div>
+<p>Is this code more “functional”? Is it easier to read? You’ll have to be the judge of that…</p>
+<p>Conal, if I got the intention of your comment completely wrong then feel free to tell me I’m an idiot ;-)</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/parsec.html">parsec</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2007-05-27-289-adventures-in-parsing.html">⟸ Adventures in parsing</a>
+
+
+
+<a href="../posts/2007-06-01-292-comment-to-a-look-at-lua.html">Comment to "A Look at Lua" ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-52430"></a>
+  <header>
+    <p><b>Holger</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-05-30">2007-05-30</time></p>
+  </header>
+<p>Hi,</p>
+<p>your story and Conal’s comment inspired me to play around with liftM and I came up with this version of parseAddress:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">parseAddress <span class="fu">=</span> <span class="kw">let</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">        hexStr2Int <span class="fu">=</span> Prelude.read <span class="fu">.</span> (<span class="st">&quot;0x&quot;</span> <span class="fu">++</span>)</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">    <span class="kw">in</span> </a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">        liftM3 (\ x _ y <span class="ot">-&gt;</span> <span class="dt">Address</span> (hexStr2Int x) (hexStr2Int y)) (many1 hexDigit) (char <span class="ch">'-'</span>) (many1 hexDigit)</a></code></pre></div>
+<p>You could probably rewrite all the functions in a similar way, but honestly I find your original code in do-notation much easier to read.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-52495"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-05-30">2007-05-30</time></p>
+  </header>
+<p>Yeah, the same line of thought made it a little difficult to fall asleep yesterday (yes, I know, nerdiness taken to new levels). My thoughts was something like this:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">parseAddress <span class="fu">=</span> <span class="kw">let</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">        hexStr2Int <span class="fu">=</span> <span class="fu">...</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">    <span class="kw">in</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">        liftM2 <span class="dt">Address</span> </a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">            (liftM hexStr2Int <span class="fu">$</span> thenChar <span class="ch">'-'</span> <span class="fu">$</span> many1 hexDigit)</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">            (liftM hexStr2Int <span class="fu">$</span> many1 hexDigit)</a></code></pre></div>
+<p>I agree with you on readability. I also wonder if laziness could bite back or if <code>liftM2</code> guarantees an order of evaluation.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-52522"></a>
+  <header>
+    <p><b>Holger</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-05-30">2007-05-30</time></p>
+  </header>
+<p>I just looked at the source of liftM2/3 and it seems that it basically just resolves to an expression in do-notation. So it’s just a shortcut and therefore should yield the same program.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-52530"></a>
+  <header>
+    <p><b>Cale Gibbard</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-05-30">2007-05-30</time></p>
+  </header>
+<p>liftM2 guarantees an ordering on the monadic computation, because it’s defined like:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">liftM2 f x y <span class="fu">=</span> <span class="kw">do</span> { u <span class="ot">&lt;-</span> x; v <span class="ot">&lt;-</span> y; return (f u v) }</a></code></pre></div>
+<p>Though, that’s a little different from guaranteeing an order of evaluation – depending on the monad, the order of evaluation will vary. In any case, it shouldn’t be much different from what you originally had.</p>
+<p>Another thing you might like to play around with, at least in your head, is the fact that:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">liftM2 f x y <span class="fu">=</span> return f <span class="ot">`ap`</span> x <span class="ot">`ap`</span> y</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">liftM3 f x y z <span class="fu">=</span> return f <span class="ot">`ap`</span> x <span class="ot">`ap`</span> y <span class="ot">`ap`</span> z</a></code></pre></div>
+<p>and so on, which leads up to the style embodied by the Control.Applicative library, though if you really want to play around with that, you’ll need to write a quick instance of Applicative for GenParser, which should just consist of making pure = return and (&lt;*&gt;) = ap.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-52569"></a>
+  <header>
+    <p><b>Twan van Laarhoven</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-05-30">2007-05-30</time></p>
+  </header>
+<p>The best way to make parsing code readable is to use Data.Applicative. Also, most people prefer where to let..in if possible. This gives something like:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">parseHexStr <span class="fu">=</span> Prelude.read <span class="fu">.</span> (<span class="st">&quot;0x&quot;</span> <span class="fu">++</span>)  many1 hexDigit</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">parsePath   <span class="fu">=</span> many1 (char <span class="ch">' '</span>) <span class="fu">*&gt;</span> many1 anyChar</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">parseAddress <span class="fu">=</span> <span class="dt">Address</span>  hexStr <span class="fu">*&gt;</span> char <span class="ch">'-'</span>  hexStr </a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">parseRegion <span class="fu">=</span> <span class="dt">MemRegion</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7">            parseAddress <span class="fu">*&gt;</span> char <span class="ch">' '</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8">            parsePerms   <span class="fu">*&gt;</span> char <span class="ch">' '</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9">            parseHexStr  <span class="fu">*&gt;</span> char <span class="ch">' '</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10">            parseDevice  <span class="fu">*&gt;</span> char <span class="ch">' '</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11">            (Prelude.read  many1 digit) <span class="fu">*&gt;</span> char <span class="ch">' '</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12">            (parsePath  return <span class="st">&quot;&quot;</span>)</a></code></pre></div>
+<p>Basicly <code>(liftM# f x y z)</code> can be written as <code>f  x &lt;*&gt; y &lt;*&gt; z</code>.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-52641"></a>
+  <header>
+    <p><b>Nick</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-05-30">2007-05-30</time></p>
+  </header>
+<p>I find the <code>thenSpace</code> a bit difficult to read.I think something like this is more natural, as it maintains the left-to-right relationship of the parsed data and the following space:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">aChar c r <span class="fu">=</span> char c <span class="fu">&gt;&gt;</span> return r</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">aSpace <span class="fu">=</span> aChar <span class="ch">' '</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="fu">...</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">    <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">        start <span class="ot">&lt;-</span>  many1 hexDigit <span class="fu">&gt;&gt;</span> aChar</a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="fu">....</span></a></code></pre></div>
+<p>note that I haven’t tested this and my haskell-fu is not very strong, so I could be way off here.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-52689"></a>
+  <header>
+    <p><b>Conal Elliott</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-05-30">2007-05-30</time></p>
+  </header>
+<p>yes, that’s exactly the direction i had in mind. once you switch from “do” style to “liftM#” style, it’s a simple step to replace the monad operators to applicative functor operators.</p>
+<p>the previous comments have lost many operators in the blog conversion. is there a way to get code through safely, including operators that look html tags?</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-52870"></a>
+  <header>
+    <p><b>Twan van Laarhoven</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-05-30">2007-05-30</time></p>
+  </header>
+<p><code>&amp;lt;</code> should produce <code>&lt;</code>. So: <code>liftM3 f x y z == f &lt;$&gt; x &lt;*&gt; y &lt;*&gt; z</code></p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-52879"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-05-30">2007-05-30</time></p>
+  </header>
+<p>Nick, yes your way of writing it is easier to read. You’ll need to change to using <code>&gt;&gt;=</code> though:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">    start <span class="ot">&lt;-</span> many1 hexDigit <span class="fu">&gt;&gt;=</span> aChar <span class="ch">'-'</span></a></code></pre></div>
+<p>Then you can mix in <code>liftM</code> as well:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">    start <span class="ot">&lt;-</span> liftM hexStr2Int <span class="fu">$</span> many1 hexDigit <span class="fu">&gt;&gt;=</span> aChar <span class="ch">'-'</span></a></code></pre></div>
+<p>to do the conversion. However, I think my initial version is even clearer:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">do</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">    start <span class="ot">&lt;-</span> liftM hexStr2Int <span class="fu">$</span> many1 hexDigitc</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">    char <span class="ch">'-'</span></a></code></pre></div>
+</article>
+
+<article class="comment-body">
+  <a name="comment-52880"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-05-30">2007-05-30</time></p>
+  </header>
+<p>Conal, ok, you’re one sneaky little b… ;-) I’ll have to look at the applicative operators to see what I think of them.</p>
+<p>Yes, there is a way. I use <a href="http://daringfireball.net/projects/markdown/">markdown</a> for writing my entries and it works in the comments as well. Besides that certain HTML tags seem to work. In particular <code>&lt;pre&gt;</code> works fine for code.</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2007-05-29-290-more-adventures-in-parsing@therning.org?subject=A comment on More adventures in parsing&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Adding tags</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2014-09-30">2014-09-30</time> - Magnus Therning</p>
+</header>
+
+<p>Adding tags to a <a href="http://jaspervdj.be/hakyll/">Hakyll</a> site brought some surprises. In retrospect it all makes sense, but it took some thinking on my part to work out the why of it all. The resulting code was heavily influenced by <a href="https://variadic.me/">Erik Kronberg’s site</a>.</p>
+<p>First I thought I’d just add tags to each rendered post, by building the tags</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">tags <span class="ot">&lt;-</span> buildTags <span class="st">&quot;posts/*&quot;</span> (fromCapture <span class="st">&quot;tags/*.html&quot;</span>)</a></code></pre></div>
+<p>then adding them to the post context</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">let</span> postCtx <span class="fu">=</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">        field <span class="st">&quot;previousPostUrl&quot;</span> (previousPostUrl <span class="st">&quot;posts/*&quot;</span>) <span class="fu">&lt;&gt;</span></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">        field <span class="st">&quot;previousPostTitle&quot;</span> (previousPostTitle <span class="st">&quot;posts/*&quot;</span>) <span class="fu">&lt;&gt;</span></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">        field <span class="st">&quot;nextPostUrl&quot;</span> (nextPostUrl <span class="st">&quot;posts/*&quot;</span>) <span class="fu">&lt;&gt;</span></a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">        field <span class="st">&quot;nextPostTitle&quot;</span> (nextPostTitle <span class="st">&quot;posts/*&quot;</span>) <span class="fu">&lt;&gt;</span></a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">        field <span class="st">&quot;postId&quot;</span> getPostId <span class="fu">&lt;&gt;</span></a>
+<a class="sourceLine" id="cb2-7" data-line-number="7">        tagsField <span class="st">&quot;tags&quot;</span> tags <span class="fu">&lt;&gt;</span></a>
+<a class="sourceLine" id="cb2-8" data-line-number="8">        listFieldFunc <span class="st">&quot;comments&quot;</span> defaultContext (getComments <span class="st">&quot;comments/*&quot;</span>) <span class="fu">&lt;&gt;</span></a>
+<a class="sourceLine" id="cb2-9" data-line-number="9">        baseCtx</a></code></pre></div>
+<p>and last modify the template</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">&lt;p&gt;</span>Tags: $tags$<span class="kw">&lt;/p&gt;</span></a></code></pre></div>
+<p>Easy! Except it doesn’t work that way. The <code>$tags$</code> is always empty. To actually get the <code>tagsField</code> to work as intended it’s necessary to build the tag pages, which can be accomplished using <code>tagsRules</code></p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">tagsRules tags <span class="fu">$</span> \ tagStr pattern <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">    route idRoute</a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">    compile <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">        posts <span class="ot">&lt;-</span> loadAll pattern <span class="fu">&gt;&gt;=</span> recentFirst</a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">        <span class="kw">let</span> tagsCtx <span class="fu">=</span></a>
+<a class="sourceLine" id="cb4-6" data-line-number="6">                constField <span class="st">&quot;thetag&quot;</span> tagStr <span class="fu">&lt;&gt;</span></a>
+<a class="sourceLine" id="cb4-7" data-line-number="7">                listField <span class="st">&quot;posts&quot;</span> baseCtx (return posts) <span class="fu">&lt;&gt;</span></a>
+<a class="sourceLine" id="cb4-8" data-line-number="8">                baseCtx</a>
+<a class="sourceLine" id="cb4-9" data-line-number="9">        makeItem <span class="st">&quot;&quot;</span></a>
+<a class="sourceLine" id="cb4-10" data-line-number="10">            <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/tag-post-list.html&quot;</span> tagsCtx</a>
+<a class="sourceLine" id="cb4-11" data-line-number="11">            <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/default.html&quot;</span> tagsCtx</a>
+<a class="sourceLine" id="cb4-12" data-line-number="12">            <span class="fu">&gt;&gt;=</span> relativizeUrls</a></code></pre></div>
+<p>The template for the tags pages is very simple at the moment</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="kw">&lt;h1&gt;</span>Posts tagged $thetag$<span class="kw">&lt;/h1&gt;</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2"><span class="kw">&lt;ul&gt;</span></a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">  $for(posts)$</a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">  <span class="kw">&lt;li&gt;</span></a>
+<a class="sourceLine" id="cb5-5" data-line-number="5">    <span class="kw">&lt;a</span><span class="ot"> href=</span><span class="st">&quot;$url$&quot;</span><span class="kw">&gt;</span>$title$<span class="kw">&lt;/a&gt;</span> - $date$</a>
+<a class="sourceLine" id="cb5-6" data-line-number="6">  <span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb5-7" data-line-number="7">  $endfor$</a>
+<a class="sourceLine" id="cb5-8" data-line-number="8"><span class="kw">&lt;/ul&gt;</span></a></code></pre></div>
+<p>That’s it. With that in place the <code>$tags$</code> field renders properly in the post pages as well.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/hakyll.html">hakyll</a>, <a href="../tags/haskell.html">haskell</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2014-09-29-000-support-for-comments.html">⟸ Adding support for comments</a>
+
+
+
+<a href="../posts/2014-10-04-000-bbwp.html">Script for migrating from WordPress to Hakyll ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2014-09-30-000-adding-tags@therning.org?subject=A comment on Adding tags&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

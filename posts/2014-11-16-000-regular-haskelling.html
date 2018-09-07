@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Regular Haskelling.  How?</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2014-11-16">2014-11-16</time> - Magnus Therning</p>
+</header>
+
+<p>Ever since <a href="http://icfpconference.org/icfp2014/">ICFP 2014</a> I’ve had as a goal to get into the habit of coding in Haskell. It’s been the language I enjoy most for a few years now, but being surrounded by and talking to so many brilliant developers as I did during that week really drove home that I will only have more fun the more code I write. My goal was not very ambitious; just write something in Haskell most days every week. So far I’ve managed to keep it up.</p>
+<p>These are a few tricks I’ve used and they’ve worked well for me so far.</p>
+<h3 id="just-write-no-matter-what-just-write">Just write, no matter what, just write</h3>
+<p>In ninth grade a rather successful Swedish author visited my school and what I remember most from that is one thing he said:</p>
+<blockquote>
+<p>Just read! It doesn’t matter what. It doesn’t matter if what you read isn’t considered good literature; read Harlequin books if that’s what you like, read magazines, read comics. Just read!</p>
+</blockquote>
+<p>I think the same holds for writing code; it’s only with practice that one gets comfortable expressing oneself in a particular language.</p>
+<h3 id="fix-warts">Fix warts</h3>
+<p>I can’t actually think of any piece of code I’ve written that doesn’t have some warts. It may be in the form of missing features, or quirks (bugs) in the implementation that forces the user to regularly work in a less-than-optimal way. I’ve found fixing warts in tools and libraries I use myself to be one of the most rewarding tasks to take on; the feedback is so immediate that every fix cause a boost in motivation to fix the next one.</p>
+<h3 id="exercise-sites">Exercise sites</h3>
+<p>Sometimes it’s simply difficult to find the motivation to tackle working on an existing project, and inspiration for starting something new might be lacking too. This happens to me regularly, and I used to simply close the lid on the computer earlier, but now I try to find some exercises to do instead.</p>
+<p>There are several sources of exercises. I know <a href="https://projecteuler.net/problems">Project Euler</a> is rather popular among new Haskellers, but there are others.</p>
+<ul>
+<li><a href="https://www.codeeval.com/">CodeEval</a> is a site with problems in three different levels. It may be extra interesting for people in the US since some of the problems are sponsored by companies which seem to use the site as a place for recruiting. So far I’ve only seen American companies do that, but I suppose it might catch on in other parts of the world too. Haskell is one of several languages supported.</li>
+<li><a href="http://exercism.io/">Exercism</a> is both a site and a tool. The goal is to facilitate learning of languages. On first use the tool will download the first exercise, and after completion one uses it to upload the solution to the site. Once uploaded the solution is visible to other users, and they are allowed to “nitpick” (comment). After uploading a solution to one exercise the next exercise in the series becomes available. It supports a rather long list programming languages.</li>
+</ul>
+<p>I like both of these, but I’ve spent more time on the latter one. Personally I find the idea behind Exercism very appealing and I’ve been recommending it to a couple of co-workers already.</p>
+<p>Feel free to put links to other sources of exercises in the comments.</p>
+<h3 id="simplify-old-code">Simplify old code</h3>
+<p>With more practice comes more and more insights into what functions are available and how to string them together. When I don’t even feel like doing a full exercise on Exercism I just dig out something that smells a little and clean it up. Anything is fair game, no matter how tiny. Just take a look at my implementation of <a href="https://github.com/magthe/cblrepo/commit/eefe3b9015c96d8f69392e4043c6e31c7dc36219"><code>reThrowError</code></a>.</p>
+<h3 id="what-else">What else?</h3>
+<p>I’d love to hear tips and tricks from other people who aren’t lucky enough to have a day job where they get to write Haskell. How do you keep up the learning and practice?</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/programming.html">programming</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2014-10-20-000-dijkstra-ewd1284.html">⟸ Dijkstra quotes from EWD1284</a>
+
+
+
+<a href="../posts/2014-12-07-000-fp101-completed.html">FP101x completed ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-0"></a>
+  <header>
+    <p><b>Jürgen Gegenfurtner</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2014-11-19">2014-11-19</time></p>
+  </header>
+<p>Hey Magnus :)</p>
+<p>I read your blog entry and liked it very much. I was wondering if you know about 1 Haskell A Day (1HAD) https://github.com/1HaskellADay/1HAD However, I have the feeling they sometimes do more advanced stuff, so it’s not for beginners.</p>
+<p>Anyway, maybe you should add that to your list :-)</p>
+<p>Happy Haskell Hacking, Jürgen</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-1"></a>
+  <header>
+    <p><b>Magnus Therning</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2014-11-19">2014-11-19</time></p>
+  </header>
+<p>Thanks Jürgen. That is indeed one I follow on <a href="https://twitter.com/1HaskellADay">Twitter</a>, but I haven’t looked at any of the problems posted there yet.</p>
+<p>Instead of adding it to my list I’ll just publish your comment instead ;)</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-2"></a>
+  <header>
+    <p><b>Magnus Therning</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2014-12-09">2014-12-09</time></p>
+  </header>
+<p>Just found another post with <a href="http://programmingzen.com/2014/12/04/10-programming-challenges-sites/">links to exercise sites</a> (or challenges sites, as that writer calls them).</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2014-11-16-000-regular-haskelling@therning.org?subject=A comment on Regular Haskelling.  How?&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

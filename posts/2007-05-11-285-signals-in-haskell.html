@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Signals in Haskell</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2007-05-11">2007-05-11</time> - Magnus Therning</p>
+</header>
+
+<p>When playing with Haskell I sometimes get the feeling that I’m the last one in the world to figure out how some things work. It’s almost embarrassing to write about it at times, but I fear I’ll forget and end up redoing my trivial experiments if I don’t ((Or maybe I shouldn’t compare myself to the highly (dare I say it?) academical entries usually found on the Haskell Planet. Maybe I should just consider my writing to be “Haskell for mortals”.)). So, here goes…</p>
+<p>Dealing with signals in Haskell is fairly straight forward. Well, at least as far as dealing with signals ever is straight forward. In <code>System.Posix.Signals</code> you find <code>installHandler</code>. The arguments are a little funky but they get a little clearer if you look up the man-page for <code>sigaction</code>.</p>
+<p>Here’s a simple example that installs a handler for <code>SIGINT</code>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw">import</span> <span class="dt">System.Posix.Signals</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="kw">import</span> <span class="dt">Control.Concurrent</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="ot">handler ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb1-7" data-line-number="7">handler <span class="fu">=</span> putStrLn <span class="st">&quot;In handler&quot;</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="ot">doNothing ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb1-10" data-line-number="10">doNothing <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11">    threadDelay <span class="dv">1000000</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12">    putStrLn <span class="st">&quot;Repeating&quot;</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb1-15" data-line-number="15">main <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16">    installHandler sigINT (<span class="dt">Catch</span> handler) <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17">    sequence_ <span class="fu">$</span> repeat doNothing</a></code></pre></div>
+<p>Now that’s fairly straight forward, I think. However, it’d be nice to be able to let the main thread know that we’ve recieved a signal in some way. From perusing the <a href="http://www.haskell.org/hawiki/FrontPage">Haskell Wiki</a> it seems the way to communicate between threads, at least for simple cases, is by using <code>MVar</code>s. So, extending the example above to also keep track of how many times <code>SIGINT</code> has been received could look like this:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3"><span class="kw">import</span> <span class="dt">System.Posix.Signals</span></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4"><span class="kw">import</span> <span class="dt">Control.Concurrent</span></a>
+<a class="sourceLine" id="cb2-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Control.Concurrent.MVar</span></a>
+<a class="sourceLine" id="cb2-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb2-7" data-line-number="7"><span class="ot">handler ::</span> <span class="dt">MVar</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb2-8" data-line-number="8">handler mi <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-9" data-line-number="9">    i <span class="ot">&lt;-</span> takeMVar mi</a>
+<a class="sourceLine" id="cb2-10" data-line-number="10">    putStrLn <span class="st">&quot;In handler&quot;</span></a>
+<a class="sourceLine" id="cb2-11" data-line-number="11">    putMVar mi (i <span class="fu">+</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb2-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb2-13" data-line-number="13"><span class="ot">doNothing ::</span> <span class="dt">MVar</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb2-14" data-line-number="14">doNothing mi <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-15" data-line-number="15">    threadDelay <span class="dv">1000000</span></a>
+<a class="sourceLine" id="cb2-16" data-line-number="16">    i <span class="ot">&lt;-</span> readMVar mi</a>
+<a class="sourceLine" id="cb2-17" data-line-number="17">    putStrLn <span class="fu">$</span> <span class="st">&quot;Repeating &quot;</span> <span class="fu">++</span> (show i)</a>
+<a class="sourceLine" id="cb2-18" data-line-number="18"></a>
+<a class="sourceLine" id="cb2-19" data-line-number="19"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb2-20" data-line-number="20">main <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-21" data-line-number="21">    mi <span class="ot">&lt;-</span> newMVar <span class="dv">0</span></a>
+<a class="sourceLine" id="cb2-22" data-line-number="22">    installHandler sigINT (<span class="dt">Catch</span> <span class="fu">$</span> handler mi) <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb2-23" data-line-number="23">    sequence_ <span class="fu">$</span> repeat <span class="fu">$</span> doNothing mi</a></code></pre></div>
+<p>It should be noted that, and here it all hinges on me having understood things correctly, <code>handler</code> has more or less become a sort of critical section. Taking the value out of the <code>MVar</code> makes sure that the <code>readMVar</code> in <code>doNothing</code> blocks until a new value is put back. Probably not a very useful thing in this particular example, but it’s still worth keeping in mind for the future.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/posix%20signals.html">posix signals</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2007-05-07-283-unescaping-urls-in-python-and-haskell.html">⟸ Unescaping URLs in Python and Haskell</a>
+
+
+
+<a href="../posts/2007-05-17-286-types-are-funky.html">Types are funky... ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-40735"></a>
+  <header>
+    <p><b>Dominique Valentine</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-05-12">2007-05-12</time></p>
+  </header>
+<p>I enjoy your blog.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-43846"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-05-17">2007-05-17</time></p>
+  </header>
+<p>Thanks, Dominique.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-211772"></a>
+  <header>
+    <p><b>Andrew Pennebaker</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2011-02-07">2011-02-07</time></p>
+  </header>
+<p>Thanks for the example code!</p>
+<p>I would like my Haskell program to exitFailure when the program is interrupted, so I changed the handler function to this:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">import</span> <span class="dt">System.Exit</span> (exitFailure)</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="fu">...</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="ot">handler ::</span> <span class="dt">MVar</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">handler mi <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7">    i <span class="ot">&lt;-</span> takeMVar mi</a>
+<a class="sourceLine" id="cb1-8" data-line-number="8">    putStrLn <span class="st">&quot;In handler&quot;</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9">    exitFailure</a></code></pre></div>
+<p>But when I run this code, the program doesn’t actually exit. It just prints out a notice that main.hs raised exitWith (Failure 1).</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2007-05-11-285-signals-in-haskell@therning.org?subject=A comment on Signals in Haskell&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

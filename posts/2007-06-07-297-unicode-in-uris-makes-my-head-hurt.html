@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Unicode in URIs makes my head hurt</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2007-06-07">2007-06-07</time> - Magnus Therning</p>
+</header>
+
+<p>I’ve read very little about Unicode before but today I had the questionable pleasure of delving a bit deeper into it. Mind you, it still feels like I’ve just dipped a foot in the water, but before today I had only dipped a single toe.</p>
+<p>Especially I was interested in the URI encoding (“percentage encoding”) and Unicode. According to <a href="ftp://ftp.rfc-editor.org/in-notes/rfc3986.txt">RFC 3986</a>:</p>
+<blockquote>
+<p>When a new URI scheme defines a component that represents textual data consisting of characters from the Universal Character Set [UCS], the data should first be encoded as octets according to the UTF-8 character encoding [STD63]; then only those octets that do not correspond to characters in the unreserved set should be percent- encoded.</p>
+</blockquote>
+<p>Of course this particular document if fairly new (January 2005) so I bet there are quite a few URI codecs out there that don’t behave this way yet. Another interesting detail is that Microsoft long has supported a special URI encoding especially suited for dealing with UCS-2 ((I suspect this is connected to Microsoft’s love for UCS-2 in other areas of their operating system.)) which takes the form <code>%uhhhh</code>. E.g. the character ‘A’ would be %41 according to the standard encoding, using Microsoft’s encoding it looks like %u0041. So far it’s quite straight forward but then enters something strange in Unicode; compatibility characters. They do make certain sense when they are combinations of a base character and some sort of marker (I’m not sure I’m using the right terminology here), e.g. the character ‘å’ can be constructed in two ways, either using the code point U+00E5 or by combining an ‘a’ (U+0061) and the “combining diacritical mark” ’ ̊’ (U+030A). Of course comparing these two characters which are completely differently encoded while still having exactly the same semantics is a bit of a problem. That’s solved by canonicalisation, which there are two standards for. I didn’t bother going further into that, because my real problem, the reason why I started all of this was that there are compatibility characters for something called “Halfwidth and Fullwidth Forms” (block FF01–FFEF). This block contains some non-latin characters and then it makes sense, but for some strange reason all printable characters in the Basic Latin block (0000–007f) is present as “fullwidth forms” as well. The reason for this is unclear to me and I’d really love an explanation. The result of this is that there apparently is some confusion just what to do with these “fullwidth forms” when decoding them, in some cases they are treated just like their “halfwidth form” cousins in the Basic Latin block. The end result is that on Microsoft products ‘A’ can also be encoded as %uff21.</p>
+<p>While reading about Unicode I always have to remind myself that “for every complex problem, there is a solution that is simple, neat, and wrong”. I simply can’t help but think “this is so complicated, there must be an easier solution”…</p>
+<p>Re-reading this post I realise there isn’t much of a point to it, besides possibly that writing (or talking) about something always helps my understanding of it. Please let me know if my understanding of Unicode or URI encoding is wrong…</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/microsoft.html">microsoft</a>, <a href="../tags/unicode.html">unicode</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2007-06-05-296-adventures-in-parsing-part-4.html">⟸ Adventures in parsing, part 4</a>
+
+
+
+<a href="../posts/2007-06-10-298-lrl-registered-and-paid.html">LRL---registered and paid ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-67584"></a>
+  <header>
+    <p><b>Dan Knapp</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-06-21">2007-06-21</time></p>
+  </header>
+<p>The halfwidth/fullwidth thing has to do with the history of Japanese encodings. See, on old-style text terminals, Japanese characters occupied two adjacent cells. If you tried to intermingle English text with that, it would look awkward; so they have the extra-wide versions of the Latin characters. Of course some of these look pretty badly distorted to the western eye, but at least they don’t leave awkward gaps in the text. I’m not sure why the basic Japanese characters have halfwidth forms, though; possibly to solve the inverse problem?</p>
+<p>I guess it’s not totally accurate to say that this is only a historical thing, because Japanese input methods still provide a way to type the fullwidth forms, and people still use them. Most users are aware of the difference and know, for example, that you can’t type the fullwidth numerals into a form field that’s going to try to parse it as an integer.</p>
+<p>If you’re setting your text vertically, you would rarely want the regular (halfwidth) Latin characters, because it would mess up what would otherwise be a very regular grid; also they are probably in a different font and there probably aren’t metrics included for laying them out that way. But if it were trailing off at the end of the line, it might look okay… So at least to some people, there is a semantic difference between the halfwidth and fullwidth forms and it’s wrong to automatically map between them.</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2007-06-07-297-unicode-in-uris-makes-my-head-hurt@therning.org?subject=A comment on Unicode in URIs makes my head hurt&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

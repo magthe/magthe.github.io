@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">C and Haskell sitting in a tree...</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2006-12-08">2006-12-08</time> - Magnus Therning</p>
+</header>
+
+<p>A few days ago I thougth I’d take a look at calling C functions from haskell. I wrote up the following set of files:</p>
+<p><em>foo.h</em>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode c"><code class="sourceCode c"><a class="sourceLine" id="cb1-1" data-line-number="1">    <span class="dt">int</span> foo(<span class="dt">int</span> i);</a></code></pre></div>
+<p><em>foo.c</em>:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode c"><code class="sourceCode c"><a class="sourceLine" id="cb2-1" data-line-number="1">    <span class="dt">int</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">    foo(<span class="dt">int</span> i)</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">    {</a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">        <span class="cf">return</span> i * i;</a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">    }</a></code></pre></div>
+<p><em>Foo.hs</em>:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1">    <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">    </a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">    <span class="kw">import</span> <span class="dt">Foreign.C.Types</span></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">    </a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">    main <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb3-6" data-line-number="6">        r <span class="ot">&lt;-</span> foo <span class="dv">2</span></a>
+<a class="sourceLine" id="cb3-7" data-line-number="7">        putStrLn <span class="fu">$</span> show r</a>
+<a class="sourceLine" id="cb3-8" data-line-number="8">    </a>
+<a class="sourceLine" id="cb3-9" data-line-number="9">    foreign <span class="kw">import</span> ccall safe &quot;foo.h foo&quot; foo :: <span class="dt">CInt</span> -&gt; <span class="dt">IO</span> <span class="dt">CInt</span></a></code></pre></div>
+<p>Compiling the C file was of course no problem:</p>
+<pre><code>% gcc -c foo.c</code></pre>
+<p>The haskell file offered some resistance:</p>
+<pre><code>% ghc -c Foo.hs
+Foo.hs:9:8: parse error on input `import'</code></pre>
+<p>It took me a round on <em>haskell-cafe</em> before I found out that <em>ghc</em> needs to be told to use the <em>foreign function interface</em>, <code>-ffi</code> or <code>-fffi</code>:</p>
+<pre><code>% ghc -c -fffi Foo.hs</code></pre>
+<p>Linking is a snap after that:</p>
+<pre><code>% ghc -o foo foo.o Foo.o
+% ./foo
+4</code></pre>
+<p>It’s also possible to build and link it all in one go:</p>
+<pre><code>% ghc --make -fffi -o foo foo.c Foo.hs</code></pre>
+<p>Now, that’s pretty nice, however it’d be even nicer to use <a href="http://www.haskell.org/ghc/docs/latest/html/Cabal/">cabal</a> to do the building. At the same time I decided to put <a href="http://www.cse.unsw.edu.au/~chak/haskell/c2hs/">c2hs</a> to use. It seemed to be a lot easier than having to create the <em>import</em> statements manually. I ended up with the following:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode c"><code class="sourceCode c"><a class="sourceLine" id="cb9-1" data-line-number="1">_csrc/foo.h_:</a>
+<a class="sourceLine" id="cb9-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb9-3" data-line-number="3">    <span class="pp">#ifndef _FOO_H_</span></a>
+<a class="sourceLine" id="cb9-4" data-line-number="4">    </a>
+<a class="sourceLine" id="cb9-5" data-line-number="5">    <span class="dt">int</span> foo(<span class="dt">int</span>);</a>
+<a class="sourceLine" id="cb9-6" data-line-number="6">    </a>
+<a class="sourceLine" id="cb9-7" data-line-number="7">    <span class="pp">#endif</span></a></code></pre></div>
+<p><em>csrc/foo.c</em>:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode c"><code class="sourceCode c"><a class="sourceLine" id="cb10-1" data-line-number="1">    <span class="pp">#include </span><span class="im">&quot;foo.h&quot;</span></a>
+<a class="sourceLine" id="cb10-2" data-line-number="2">    </a>
+<a class="sourceLine" id="cb10-3" data-line-number="3">    <span class="dt">int</span></a>
+<a class="sourceLine" id="cb10-4" data-line-number="4">    foo(<span class="dt">int</span> i)</a>
+<a class="sourceLine" id="cb10-5" data-line-number="5">    {</a>
+<a class="sourceLine" id="cb10-6" data-line-number="6">        <span class="cf">return</span> i * i;</a>
+<a class="sourceLine" id="cb10-7" data-line-number="7">    }</a></code></pre></div>
+<p>I couldn’t get cabal to accept <em>Foo.chs</em> as the file containing the <em>Main</em> module in my project. So I ended up putting all the relevant code in <em>Foo</em> and then have a dummy <em>Main</em>.</p>
+<p><em>src/Foo.chs</em>:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1">    <span class="kw">module</span> <span class="dt">Foo</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb11-2" data-line-number="2">    </a>
+<a class="sourceLine" id="cb11-3" data-line-number="3">    <span class="fu">#</span>include <span class="st">&quot;foo.h&quot;</span></a>
+<a class="sourceLine" id="cb11-4" data-line-number="4">    </a>
+<a class="sourceLine" id="cb11-5" data-line-number="5">    <span class="kw">import</span> <span class="dt">Foreign.C.Types</span></a>
+<a class="sourceLine" id="cb11-6" data-line-number="6">    </a>
+<a class="sourceLine" id="cb11-7" data-line-number="7">    main <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-8" data-line-number="8">        r <span class="ot">&lt;-</span> <span class="st">{# </span><span class="kw">call</span><span class="st"> foo #}</span> <span class="dv">2</span></a>
+<a class="sourceLine" id="cb11-9" data-line-number="9">        putStrLn <span class="fu">$</span> show r</a></code></pre></div>
+<p>Here’s the dummy <em>Main</em>.</p>
+<p><em>src/Main.hs</em>:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1">    <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb12-2" data-line-number="2">    </a>
+<a class="sourceLine" id="cb12-3" data-line-number="3">    <span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Foo</span></a>
+<a class="sourceLine" id="cb12-4" data-line-number="4">    </a>
+<a class="sourceLine" id="cb12-5" data-line-number="5">    main <span class="fu">=</span> Foo.main</a></code></pre></div>
+<p>The cabal file is rather straight forward. It took me a round on <em>haskell-cafe</em> to find out how to let the compiler know that I need the foreign function interface without putting compiler directives in the source file.</p>
+<p><em>cnh.cabal</em>:</p>
+<pre><code>name: cnh
+version: 0.1
+build-depends: base
+
+executable: cnh
+main-is: Main.hs
+hs-source-dirs: src
+include-dirs: csrc
+c-sources: csrc/foo.c
+extensions: ForeignFunctionInterface
+other-modules: Foo</code></pre>
+<p>Nothing special is needed in the <em>Setup.hs</em>:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1">    <span class="fu">#!</span> <span class="fu">/</span>usr<span class="fu">/</span>bin<span class="fu">/</span>env runhaskell</a>
+<a class="sourceLine" id="cb14-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb14-3" data-line-number="3">    <span class="kw">import</span> <span class="dt">Distribution.Simple</span></a>
+<a class="sourceLine" id="cb14-4" data-line-number="4">    main <span class="fu">=</span> defaultMain</a></code></pre></div>
+<p>Make it executable and you can build in two easy steps:</p>
+<pre><code>% ./Setup.hs configure &amp;&amp; ./Setup.hs build</code></pre>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/c2hs.html">c2hs</a>, <a href="../tags/cabal.html">cabal</a>, <a href="../tags/haskell.html">haskell</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2006-12-07-239-epilicious-moved-to-darcs.html">⟸ Epilicious moved to darcs</a>
+
+
+
+<a href="../posts/2006-12-08-240-darcsweblighttpd-on-debian.html">darcsweb+lighttpd on Debian ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-199931"></a>
+  <header>
+    <p><b>BAReFOOt</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2010-05-19">2010-05-19</time></p>
+  </header>
+<p>That would be “.hsc” not “.chs”. Maybe that was the problem…</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-200716"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2010-06-21">2010-06-21</time></p>
+  </header>
+<p>Possibly, though I doubt it. Please report back once you’ve tried it out yourself :-)</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-236816"></a>
+  <header>
+    <p><b>anon</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2012-03-22">2012-03-22</time></p>
+  </header>
+<p>excellent, thank you</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2006-12-08-238-c-and-haskell-sitting-in-a-tree@therning.org?subject=A comment on C and Haskell sitting in a tree...&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

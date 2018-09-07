@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Dealing with life in Haskell</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2008-05-01">2008-05-01</time> - Magnus Therning</p>
+</header>
+
+<p>I bet you have at least one silly little thing at work that, whenever it happens, you let out a sigh, maybe roll your eyes and whish that everyone would use a proper operating system. A few days I finally decided to do something about one of my things like that. At work, Windows users will at times for some strange reason, manually create directories inside their work area, even though the directories actually are under version control. Invariably they get the case wrong and due to an onfortunate combination of case insensitive filesystem on the client (Windows) and a version control system the cares about case (Perforce). This results in files ending up all over the place even though they belong in the same directory. The Windows users are none the wiser, they simply don’t see the problem. Since I use a sane system (Linux) I do notice, and when I see it I sigh and roll my eyes.</p>
+<p>Here’s my take on solving the problem:</p>
+<pre><code>module Main where
+
+import Control.Monad
+import Data.Char
+import System.Directory
+import System.Environment
+import System.FilePath
+import System.IO.HVFS.Utils
+import System.Posix.Files
+
+data IFile = IFile
+    { iFileIPath :: FilePath
+    , iFileIName :: FilePath
+    , iFileFull :: FilePath
+    } deriving (Show)
+
+toIFile :: FilePath -&gt; IFile
+toIFile fp =  IFile path file fp
+    where
+        path = map toLower $ takeDirectory fp
+        file = map toLower $ takeFileName fp
+
+listFilesR :: FilePath -&gt; IO [IFile]
+listFilesR path =
+    recurseDir SystemFS path &gt;&gt;=
+    filterM doesFileExist &gt;&gt;=
+    mapM (return . toIFile)
+
+linkFile :: FilePath -&gt; IFile -&gt; IO ()
+linkFile dest ifile = do
+        createDirectoryIfMissing True newDir
+        createLink (iFileFull ifile) newFile
+    where
+        newDir = normalise $ dest &lt;/&gt; (iFileIPath ifile)
+        newFile = newDir &lt;/&gt; (iFileIName ifile)
+
+main :: IO ()
+main = do
+    args &lt;- getArgs
+    listFilesR (args !! 0) &gt;&gt;= mapM_ (linkFile $ args !! 1)</code></pre>
+<p>Yes, this is the <a href="../posts/2008-04-29-348-rubber-and-lhs.html">code</a> I wrote in Literate Haskell, but I think I’d better not disclose my rant against clueless Windows users publically ;-)</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/linux.html">linux</a>, <a href="../tags/perforce.html">perforce</a>, <a href="../tags/windows.html">windows</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2008-04-29-348-rubber-and-lhs.html">⟸ Rubber and lhs?</a>
+
+
+
+<a href="../posts/2008-05-23-350-linux-2625-nvidia-module.html">Linux 2.6.25 + nvidia module ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-121485"></a>
+  <header>
+    <p><b>Thierry</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-05-15">2008-05-15</time></p>
+  </header>
+<p>Not pretty but running p4d with the -C1 option is what I do for my win users…makes p4 case insensitive</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-121719"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-05-16">2008-05-16</time></p>
+  </header>
+<p><span class="citation" data-cites="Thierry">@Thierry</span>, too bad our P4 administrators don’t do that :(</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2008-05-01-349-dealing-with-life-in-haskell@therning.org?subject=A comment on Dealing with life in Haskell&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Continuing with continuations</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2007-07-05">2007-07-05</time> - Magnus Therning</p>
+</header>
+
+<p>As I alluded to in <a href="../posts/2007-07-02-305-beginning-to-look-at-continuations.html">my previous post on continuations</a> I was interested in them due to a suspicion that they might offer a nice way of dealing with an issue that came up with some code I was writing.</p>
+<p>I spent some time the other night playing with continuations and I re-used the problem from <a href="../posts/2007-01-19-249-playing-unsafe-haskell.html">an earlier post</a>. There are a few differences this time around though, the main one is that there is no need to create a list of characters instead the goal is to string together the reading and the processing using continuations.</p>
+<p>First off I should mention that I stuck <code>-fno-monomorphism-restriction</code> in my source file. Without it I got a lot of complaints from GHC.</p>
+<p>I started with the most basic set of functions, one for reading a character and one for writing a character. I want the type to be <code>ContT r IO Char</code> for the former and <code>ContT r IO ()</code> for the latter, but as always I don’t actually need to tell the compiler the exact types. Basically they correspond to <code>getChat</code> and <code>putChar</code> that way:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">cpsGetChar <span class="fu">=</span> liftIO getChar</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">cpsPutChar c <span class="fu">=</span> liftIO <span class="fu">$</span> putChar c</a></code></pre></div>
+<p>Running these two in sequence is done like this:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">runContT (cpsGetChar <span class="fu">&gt;&gt;=</span> cpsPutChar) return</a></code></pre></div>
+<p>Running it just once isn’t enough though and I was pointed to the function <code>forever</code> by Cale in #haskell. It wasn’t actually in the version of GHC I have on my system (it’ll be in 6.7) so I had to define it:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1">forever x <span class="fu">=</span> x <span class="fu">&gt;&gt;</span> forever x</a></code></pre></div>
+<p>Using that it’s now easy to keep on reading an writing individual characters forever:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">runContT (forever <span class="fu">$</span> cpsGetChar <span class="fu">&gt;&gt;=</span> cpsPutChar) return</a></code></pre></div>
+<p>Since that doesn’t ever terminate it isn’t really what I want. Instead I want the two functions to be “mutually recursive with continuation”, for that I need to control the continuations more than <code>return</code> allows, I need to use <code>callCC</code>. First I started by rewriting the functions from above using <code>callCC</code>. That turned out like this:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1">cpsGetCharCC <span class="fu">=</span> callCC <span class="fu">$</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">    \ k <span class="ot">-&gt;</span> liftIO getChar <span class="fu">&gt;&gt;=</span> cpsPutCharCC <span class="fu">&gt;&gt;=</span> k</a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">cpsPutCharCC c <span class="fu">=</span> callCC <span class="fu">$</span></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">    \ k <span class="ot">-&gt;</span> (liftIO <span class="fu">$</span> putChar c) <span class="fu">&gt;&gt;</span> cpsGetCharCC <span class="fu">&gt;&gt;=</span> k</a></code></pre></div>
+<p>Running it should produce the same result as when using <code>forever</code> above:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1">runContT cpsGetCharCC return</a></code></pre></div>
+<p>Basically both functions defer calling the actual continuation until a call to the either <code>cpsPutCharCC</code> or <code>cpsGetCharCC</code> has been made. Still this never terminates, but rewriting the first function to terminate is simple:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1">cpsGetCharCC <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">    c <span class="ot">&lt;-</span> liftIO getChar</a>
+<a class="sourceLine" id="cb7-3" data-line-number="3">    <span class="kw">if</span> c <span class="fu">==</span> <span class="ch">'q'</span></a>
+<a class="sourceLine" id="cb7-4" data-line-number="4">        <span class="kw">then</span> return ()</a>
+<a class="sourceLine" id="cb7-5" data-line-number="5">        <span class="kw">else</span> callCC <span class="fu">$</span> \ k <span class="ot">-&gt;</span> cpsPutCharCC c <span class="fu">&gt;&gt;=</span> k</a></code></pre></div>
+<p>Now, one thing that’s possible to do here, but which would be difficult to accomplish when mapping the handler on a list is to terminate in <code>cpsPutCharCC</code>. All that is required is to rewrite the handler similarly to what I just did with <code>cpsGetCharCC</code>:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1">cpsPutCharCC c <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">    liftIO <span class="fu">$</span> putChar c</a>
+<a class="sourceLine" id="cb8-3" data-line-number="3">    <span class="kw">if</span> c <span class="fu">==</span> <span class="ch">'x'</span></a>
+<a class="sourceLine" id="cb8-4" data-line-number="4">        <span class="kw">then</span> return ()</a>
+<a class="sourceLine" id="cb8-5" data-line-number="5">        <span class="kw">else</span> callCC <span class="fu">$</span> \ k <span class="ot">-&gt;</span> cpsGetCharCC <span class="fu">&gt;&gt;=</span> k</a></code></pre></div>
+<p>Yes, there isn’t really that mcuh to all of this. Sorry if I’ve disappointed. The same functionality could be achieved using two regular mutually recursive functions:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1">mutGetChar <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb9-2" data-line-number="2">    c <span class="ot">&lt;-</span> getChar</a>
+<a class="sourceLine" id="cb9-3" data-line-number="3">    <span class="kw">if</span> c <span class="fu">==</span> <span class="ch">'q'</span></a>
+<a class="sourceLine" id="cb9-4" data-line-number="4">        <span class="kw">then</span> return ()</a>
+<a class="sourceLine" id="cb9-5" data-line-number="5">        <span class="kw">else</span> mutPutChar c</a>
+<a class="sourceLine" id="cb9-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb9-7" data-line-number="7">mutPutChar c <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb9-8" data-line-number="8">    putChar c</a>
+<a class="sourceLine" id="cb9-9" data-line-number="9">    <span class="kw">if</span> c <span class="fu">==</span> <span class="ch">'x'</span></a>
+<a class="sourceLine" id="cb9-10" data-line-number="10">        <span class="kw">then</span> return ()</a>
+<a class="sourceLine" id="cb9-11" data-line-number="11">        <span class="kw">else</span> mutGetChar</a></code></pre></div>
+<p>And at this point I won’t do anything more except explain why I kind of like using continuations. It’s all about flexibility and composability. Say that we have a library for dealing with events and a developer wants to use it to do some processing of said events. I suspect that something that allows writing code like</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1">runContT (setupWorld <span class="fu">&gt;&gt;=</span> receiveEvent handleEvent) postProcessWorld</a></code></pre></div>
+<p>is to prefer over a set of straight-forward functions, some which take “callbacks”. But hey! I might be wrong :-) I’m planning to see for myself!</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/haskell.html">haskell</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2007-07-02-305-beginning-to-look-at-continuations.html">⟸ Beginning to look at continuations</a>
+
+
+
+<a href="../posts/2007-07-11-307-lvm-rocks.html">LVM rocks! ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-71585"></a>
+  <header>
+    <p><b>dolio</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-07-06">2007-07-06</time></p>
+  </header>
+<p>Not to disparage your efforts, but your code strikes me as rather weird. What you’re essentially doing is, I think, at the end of each function, taking the continuation, and sticking something right before it (although that thing may in turn stick something right before it as well). That seems like no more than writing mutually recursive functions, only in a more verbose manner.</p>
+<p>The real neat thing about continuations, in my opinion, is that you can use ‘forever’, but still give the functions inside the loop the chance to break out (which I seem to recall Cale mentioning yesterday, but maybe it got lost in the shuffle). For example:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">foreverK fm <span class="fu">=</span> callCC (\k <span class="ot">-&gt;</span> forever (fm k))</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">getCharCC break <span class="fu">=</span> <span class="kw">do</span> c <span class="ot">&lt;-</span> liftIO getChar</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">                     when (c <span class="fu">==</span> <span class="ch">'q'</span>) <span class="fu">$</span> break ()</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">                     return c</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7">putCharCC break c <span class="fu">=</span> <span class="kw">do</span> liftIO <span class="fu">$</span> putChar c</a>
+<a class="sourceLine" id="cb1-8" data-line-number="8">                       when (c <span class="fu">==</span> <span class="ch">'x'</span>) <span class="fu">$</span> break ()</a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10">getCharCC' break <span class="fu">=</span> <span class="kw">do</span> c <span class="ot">&lt;-</span> liftIO getChar</a>
+<a class="sourceLine" id="cb1-11" data-line-number="11">                      when (c <span class="fu">==</span> <span class="ch">'q'</span>) <span class="fu">$</span> break ()</a>
+<a class="sourceLine" id="cb1-12" data-line-number="12">                      putCharCC' break c</a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14">putCharCC' break c <span class="fu">=</span> <span class="kw">do</span> liftIO <span class="fu">$</span> putChar c</a>
+<a class="sourceLine" id="cb1-15" data-line-number="15">                        when (c <span class="fu">==</span> <span class="ch">'x'</span>) <span class="fu">$</span> break ()</a>
+<a class="sourceLine" id="cb1-16" data-line-number="16">                        getCharCC' break</a>
+<a class="sourceLine" id="cb1-17" data-line-number="17"></a>
+<a class="sourceLine" id="cb1-18" data-line-number="18">test1 <span class="fu">=</span> foreverK (\k <span class="ot">-&gt;</span> getCharCC k <span class="fu">&gt;&gt;=</span> putCharCC k)</a>
+<a class="sourceLine" id="cb1-19" data-line-number="19"></a>
+<a class="sourceLine" id="cb1-20" data-line-number="20">test2 <span class="fu">=</span> callCC getCharCC'</a></code></pre></div>
+<p>So, there are two versions; one uses forever and the other just has mutually recursive functions. They’d both loop forever, <em>except</em> that we call ‘callCC’ outside of the infinite loop, and pass it in (as break), so that when one of the functions detects the exiting condition, it can return to the continuation of (essentially) the infinite loop itself, and terminate.</p>
+<p>You can also use the reader transformer to make things a bit less noisy:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">foreverK' m <span class="fu">=</span> callCC <span class="fu">$</span> runReaderT (forever m)</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">getCharCC'' <span class="fu">=</span> <span class="kw">do</span> c <span class="ot">&lt;-</span> liftIO getChar</a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">                 when (c <span class="fu">==</span> <span class="ch">'q'</span>) breakCC</a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">                 return c</a>
+<a class="sourceLine" id="cb2-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb2-7" data-line-number="7">putCharCC'' c <span class="fu">=</span> <span class="kw">do</span> liftIO <span class="fu">$</span> putChar c</a>
+<a class="sourceLine" id="cb2-8" data-line-number="8">                   when (c <span class="fu">==</span> <span class="ch">'x'</span>) breakCC</a>
+<a class="sourceLine" id="cb2-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb2-10" data-line-number="10">breakCC <span class="fu">=</span> ask <span class="fu">&gt;&gt;=</span> \k <span class="ot">-&gt;</span> lift <span class="fu">$</span> k ()</a>
+<a class="sourceLine" id="cb2-11" data-line-number="11"></a>
+<a class="sourceLine" id="cb2-12" data-line-number="12">test3 <span class="fu">=</span> foreverK' (getCharCC'' <span class="fu">&gt;&gt;=</span> putCharCC'')</a></code></pre></div>
+</article>
+
+<article class="comment-body">
+  <a name="comment-71590"></a>
+  <header>
+    <p><b>gerel</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-07-06">2007-07-06</time></p>
+  </header>
+<p>CPS is a much simpler concept than Haskell Monads a la Wikibooks: <a href="http://en.wikibooks.org/wiki/Haskell/Understanding_monads" class="uri">http://en.wikibooks.org/wiki/Haskell/Understanding_monads</a></p>
+<p>The analogy between nuclear waste (<code>t</code>) robots (<code>&gt;&gt;=</code>) and containers (<code>M t</code>) sucks a lot. If you come with some Lisp background and read that wikibook, your head collapses, seriously.</p>
+<p>I know this is kinda off-topic here but needed to say it.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-74464"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-07-21">2007-07-21</time></p>
+  </header>
+<p>dolio, thanks for the comment. I did miss Cale’s comment about breaking out of <code>forever</code>.</p>
+<p>You’ve also prompted me to look at <code>Reader</code>, it’s one of the many monads I haven’t looked closer at.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-74703"></a>
+  <header>
+    <p><b>C.K.</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-07-23">2007-07-23</time></p>
+  </header>
+<p>And if all you want is to jump out of the current chain of (<code>&gt;&gt;=</code>), then you don’t need all the complexity of continuations.</p>
+<p>For example: In playing with the DNA to RNA procedure from the ICFP2007 spec, there is a need to break out of the code to the end of the iteration.</p>
+<p>I used a <code>MaybeT</code> as the simplest solution <a href="http://haskell.org/haskellwiki/New_monads/MaybeT">1</a>. Thus I could run (<code>forever $ oneIter</code>) and it would break out as needed by using the <code>fail _ == mzero == Nothing</code> command.</p>
+<p>If you need to pass out a result instead of a plain <code>Nothing</code>, then using <code>ErrorT</code> from <code>Control.Monad.Error</code> <a href="http://www.haskell.org/ghc/docs/latest/html/libraries/mtl/Control-Monad-Error.html">2</a> which is actually <code>Either</code> so (<code>Left foo</code>) is more informative than <code>Nothing</code>.</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2007-07-05-306-continuing-with-continuations@therning.org?subject=A comment on Continuing with continuations&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

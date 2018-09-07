@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Epilicious is dead, say hello to BMS</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2009-10-23">2009-10-23</time> - Magnus Therning</p>
+</header>
+
+<p>With Python being dropped as a language for extensions in epiphany 2.28 I needed to replace <a href="http://therning.org/magnus/computer/epilicious">epilicious</a>. I tried writing it in JavaScript (<a href="http://live.gnome.org/Seed">seed</a> was integrated in 2.28), but I gave up due to hitting too many hurdles on the way. Instead I decided to rewrite epilicious using <a href="http://live.gnome.org/Vala">Vala</a> and a minimal layer of C.</p>
+<p>It turned out to be very doable, despite epiphany’s extension API lacking Vala bindings (Cosimo Cecchi, I’m looking at <a href="http://uwstopia.nl/blog/2008/07/vala-bindings-for-epiphany-extensions">you</a> :-) ). Basically I did the following setup:</p>
+<ol type="1">
+<li>Add the extension following the instructions in <a href="http://projects.gnome.org/epiphany/documentation/extensions/index.html">Writing Epiphany Extensions</a> by Adam Hooper.</li>
+<li>Add a check for valac in <code>configure.ac</code>.</li>
+<li>Add a rule in the extension’s <code>Makefile.am</code> to generate a C header file for all the Vala code, for use from C.</li>
+</ol>
+<p>Then I started writing the actual extension. I did the minimal amount of work in C, trying to escape as soon as possible into Vala. In the few places I needed to call from Vala into C I would declare a delegate in Vala, and pass a function from C.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a></p>
+<p>I call this new version BMS, for <em>b</em>ook<em>m</em>ark <em>s</em>ynchronisation. I have a <a href="http://therning.org/magnus_files/epiphany-extension-bms-1.0-2.src.tar.gz">patch for BMS that applies to epiphany 2.28.1</a>. (The file also contain a <code>PKGBUILD</code> in order to delight Arch users :-) )</p>
+<p>I should probably point out that while epilicious never could be called polished, BMS is even less so. I might find the time to make it multi-threaded, so that it’s possible to do some sort of progress dialogue, but don’t hold your breath. In the back of my mind is also the thought of rewriting it yet again, in JavaScript/seed.</p>
+<section class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>The format of <code>.vapi</code> files are unknown to me, and I haven’t managed to find much documentation. Using function pointers seemed like an easier way, especially given that I needed this in exactly 3 places.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+</ol>
+</section>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/epilicious.html">epilicious</a>, <a href="../tags/epiphany.html">epiphany</a>, <a href="../tags/seed.html">seed</a>, <a href="../tags/vala.html">vala</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2009-09-13-751-upgrading-haskell-packages-on-arch.html">⟸ Updating Haskell packages on Arch</a>
+
+
+
+<a href="../posts/2009-10-30-778-playing-with-sockets-in-haskell.html">Playing with sockets in Haskell ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-193380"></a>
+  <header>
+    <p><b>Leonardo Fontenelle</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-11-17">2009-11-17</time></p>
+  </header>
+<p>Hi, Magnus! Bookmark synchronization (both upper and lower cases) is more than welcome back to Epiphany. Which services are being supported right now? I guess Gnolia, and I’d like to ask you to consider adding Chipmark and Weave. Both have a public API and are open source. I just don’t know how much sense it would make to include Weave because it is supposed to sync more than bookmarks, and the developers are targeting at Firefox only.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-193381"></a>
+  <header>
+    <p><b>Leonardo Fontenelle</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-11-17">2009-11-17</time></p>
+  </header>
+<p>BTW: nice to know you are using Arch Linux too.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-194168"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-11-27">2009-11-27</time></p>
+  </header>
+<p><em><span class="citation" data-cites="Leonardo">@Leonardo</span>,</em> it only supports diigo.com at the moment. Chipmark looks like a future possibility. I wasn’t even aware that Gnolia existed again, it is also a possibility. Patches are welcome ;)</p>
+<p>It looks like weave is completely different from everything else, and I’m not sure it’d fit with the built-in assumptions on the bookmark storing.</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2009-10-23-762-epilicious-is-dead-say-hello-to-bms@therning.org?subject=A comment on Epilicious is dead, say hello to BMS&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

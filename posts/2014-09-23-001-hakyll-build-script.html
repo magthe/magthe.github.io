@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">The current Hakyll build script</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2014-09-23">2014-09-23</time> - Magnus Therning</p>
+</header>
+
+<p>I’m fairly sure I understand the current build script, and it seems to be rather minimal. Hopefully it can serve as an introductory for someone who, just like me, is new to <a href="http://jaspervdj.be/hakyll/index.html">Hakyll</a>.</p>
+<h2 id="the-site-layout">The site layout</h2>
+<p>Before getting into the build script it’s worth describing the folder layout of the project, it looks like this:</p>
+<pre><code>.
+├── build_site.hs
+├── index.html
+├── posts
+│   ├── 2014-09-23-000-moving-to-hakyll.mkd
+│   └── 2014-09-23-001-hakyll-build-script.mkd
+└── templates
+    ├── default.html
+    └── single-post.html</code></pre>
+<h2 id="the-templates">The templates</h2>
+<dl>
+<dt><code>single-post.html</code></dt>
+<dd>A template for, as the name suggests, a single post. It renders the post into an HTML snippet.
+</dd>
+<dt><code>default.html</code></dt>
+<dd>The main template, i.e. the one that provides the entire structure of a complete HTML page.
+</dd>
+</dl>
+<p>It should also be noted that <code>index.html</code> basically is a template itself. These three files fit together such that each post is turned into an HTML snippet (<code>single-post.html</code>), all the snippets are then pulled into <code>index.html</code>, which finally is wrapped into a proper page by <code>default.html</code>.</p>
+<h2 id="the-script">The script</h2>
+<p>The full script looks like this:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode numberSource haskell numberLines"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">#! /usr/bin/runhaskell</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3"><span class="ot">{-# LANGUAGE OverloadedStrings #-}</span></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4"><span class="kw">import</span> <span class="dt">Data.Monoid</span></a>
+<a class="sourceLine" id="cb2-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Hakyll</span></a>
+<a class="sourceLine" id="cb2-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb2-7" data-line-number="7"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb2-8" data-line-number="8">main <span class="fu">=</span> hakyll <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-9" data-line-number="9">    match <span class="st">&quot;posts/*&quot;</span> <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-10" data-line-number="10">        route <span class="fu">$</span> setExtension <span class="st">&quot;html&quot;</span></a>
+<a class="sourceLine" id="cb2-11" data-line-number="11">        compile <span class="fu">$</span> pandocCompiler</a>
+<a class="sourceLine" id="cb2-12" data-line-number="12">            <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/single-post.html&quot;</span> baseCtx</a>
+<a class="sourceLine" id="cb2-13" data-line-number="13">            <span class="fu">&gt;&gt;=</span> saveSnapshot <span class="st">&quot;posts-content&quot;</span></a>
+<a class="sourceLine" id="cb2-14" data-line-number="14">            <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/default.html&quot;</span> baseCtx</a>
+<a class="sourceLine" id="cb2-15" data-line-number="15">            <span class="fu">&gt;&gt;=</span> relativizeUrls</a>
+<a class="sourceLine" id="cb2-16" data-line-number="16"></a>
+<a class="sourceLine" id="cb2-17" data-line-number="17">    match <span class="st">&quot;index.html&quot;</span> <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-18" data-line-number="18">        route idRoute</a>
+<a class="sourceLine" id="cb2-19" data-line-number="19">        compile <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-20" data-line-number="20">            posts <span class="ot">&lt;-</span> recentFirst <span class="fu">=&lt;&lt;</span> loadAllSnapshots <span class="st">&quot;posts/*&quot;</span> <span class="st">&quot;posts-content&quot;</span></a>
+<a class="sourceLine" id="cb2-21" data-line-number="21">            <span class="kw">let</span> indexCtx <span class="fu">=</span></a>
+<a class="sourceLine" id="cb2-22" data-line-number="22">                    listField <span class="st">&quot;posts&quot;</span> baseCtx (return posts) <span class="fu">&lt;&gt;</span></a>
+<a class="sourceLine" id="cb2-23" data-line-number="23">                    baseCtx</a>
+<a class="sourceLine" id="cb2-24" data-line-number="24">            getResourceBody</a>
+<a class="sourceLine" id="cb2-25" data-line-number="25">                <span class="fu">&gt;&gt;=</span> applyAsTemplate indexCtx</a>
+<a class="sourceLine" id="cb2-26" data-line-number="26">                <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/default.html&quot;</span> indexCtx</a>
+<a class="sourceLine" id="cb2-27" data-line-number="27">                <span class="fu">&gt;&gt;=</span> relativizeUrls</a>
+<a class="sourceLine" id="cb2-28" data-line-number="28"></a>
+<a class="sourceLine" id="cb2-29" data-line-number="29">    match <span class="st">&quot;templates/*&quot;</span> <span class="fu">$</span> compile templateCompiler</a>
+<a class="sourceLine" id="cb2-30" data-line-number="30"></a>
+<a class="sourceLine" id="cb2-31" data-line-number="31"><span class="ot">baseCtx ::</span> <span class="dt">Context</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb2-32" data-line-number="32">baseCtx <span class="fu">=</span></a>
+<a class="sourceLine" id="cb2-33" data-line-number="33">    dateField <span class="st">&quot;date&quot;</span> <span class="st">&quot;%Y-%m-%d&quot;</span> <span class="fu">&lt;&gt;</span></a>
+<a class="sourceLine" id="cb2-34" data-line-number="34">    constField <span class="st">&quot;site-title&quot;</span> <span class="st">&quot;Magnus web site&quot;</span> <span class="fu">&lt;&gt;</span></a>
+<a class="sourceLine" id="cb2-35" data-line-number="35">    constField <span class="st">&quot;site-subtitle&quot;</span> <span class="st">&quot;Random stuff&quot;</span> <span class="fu">&lt;&gt;</span></a>
+<a class="sourceLine" id="cb2-36" data-line-number="36">    constField <span class="st">&quot;author&quot;</span> <span class="st">&quot;Magnus Therning&quot;</span> <span class="fu">&lt;&gt;</span></a>
+<a class="sourceLine" id="cb2-37" data-line-number="37">    defaultContext</a></code></pre></div>
+<p>The only slightly unnecessary thing is that all posts are turned into complete web pages (line 14), but none of those files is actually reachable from the generated landing page. My plan is to limit the number of posts on the landing page so they will be used later on.</p>
+<p>For the moment some site constants are put into the base context. I’m not completely convinced that’s the wise thing to do, but I have a vague feeling that it’s better putting stuff like that into the context than hard code them into the template. I guess the better solution would be to have a configuration file for them though. That’s for the future though, for now I’m keeping it simple.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/hakyll.html">hakyll</a>, <a href="../tags/haskell.html">haskell</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2014-09-23-000-moving-to-hakyll.html">⟸ Moving to Hakyll</a>
+
+
+
+<a href="../posts/2014-09-24-000-adding-feed.html">Adding a feed ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2014-09-23-001-hakyll-build-script@therning.org?subject=A comment on The current Hakyll build script&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

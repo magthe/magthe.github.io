@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Kid's play with HTML in Haskell</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2008-03-30">2008-03-30</time> - Magnus Therning</p>
+</header>
+
+<p>In my ever-continuing attempts to replace Python by Haskell as my language of first choice I’ve finally managed to dip a toe in the XML/HTML sea. I decided to use the <a href="http://www.fh-wedel.de/~si/HXmlToolbox/">Haskell XML Toolkit</a> (HXT) even though it’s not packaged for Debian (something I might look into doing one day). HXT depends on <a href="http://www-users.cs.york.ac.uk/~ndm/tagsoup/">tagsoup</a> which also isn’t packaged for Debian. Both packages install painlessly thanks to Cabal.</p>
+<p>As the title suggests my itch wouldn’t require anything complicated, but when I’ve previously have looked at any Haskell XML library I’ve always shied away. It all just looks so complicated. It turns out it looks worse than it is, and of course the documentation is poor when it comes to simple, concrete examples with adequate explanations. HXT would surely benefit from documentation at a level similar to what’s available for <a href="http://legacy.cs.uu.nl/daan/parsec.html">Parsec</a>. I whish I were equipped to write it.</p>
+<p>Anyway, this was my problem. I’ve found an interesting audio webcast. The team behind it has published around 90 episodes already and I’d like to listen to all of them. Unfortunately their RSS feed doesn’t include all episodes so I can’t simply use the trusted <a href="http://software.complete.org/software/projects/show/hpodder">hpodder</a> to get all episodes. After manually downloading about 20 of them I thought I’d better write some code to make it less labour-intensive. Here’s the complete script:</p>
+<pre><code>module Main where
+
+import System.Environment
+import Text.XML.HXT.Arrow
+
+isMp3Link = (==) &quot;3pm.&quot; . take 4 . reverse
+
+myReadDoc = readDocument [(a_parse_html, &quot;1&quot;), (a_encoding, isoLatin1),
+    (a_issue_warnings, &quot;0&quot;), (a_issue_errors, &quot;0&quot;)]
+
+myProc src = (runX $ myReadDoc src &gt;&gt;&gt; deep selectMp3Links &gt;&gt;&gt; getAttrValue &quot;href&quot;)
+    &gt;&gt;= mapM_ putStrLn
+
+selectMp3Links = hasName &quot;a&quot; &gt;&gt;&gt; hasAttrValue &quot;href&quot; isMp3Link
+
+main = do
+    [src] &lt;- getArgs
+    myProc src</code></pre>
+<p>The thing that took by far the most time was finding out that <code>hasAttrValue</code> exists. I’m currently downloading episodes using the following command line:</p>
+<pre><code>curl -L $(for h in $(runhaskell get_mp3links.hs 'http://url.of.page/'); do \
+    echo '-O' $h; done)</code></pre>
+<p>Yet another set of itches where Haskell has displaced Python as the utensil used for scratching. :-)</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/audio%20webcasts.html">audio webcasts</a>, <a href="../tags/haskell.html">haskell</a>, <a href="../tags/hxt.html">hxt</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2008-03-28-340-saddle-two-sddl-related-tools.html">⟸ Saddle, two SDDL related tools</a>
+
+
+
+<a href="../posts/2008-04-09-344-ctypes-and-flexible-zero-length-arrays.html">ctypes and flexible (zero-length) arrays ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-112268"></a>
+  <header>
+    <p><b>Neil Mitchell</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-03-30">2008-03-30</time></p>
+  </header>
+<p>Instead of using HXT, you can do this directly in TagSoup:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">import</span> <span class="dt">System.FilePath</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">import</span> <span class="dt">System.Environment</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw">import</span> <span class="dt">Text.HTML.TagSoup</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">main <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">   [src] <span class="ot">&lt;-</span> getArgs</a>
+<a class="sourceLine" id="cb1-7" data-line-number="7">   txt <span class="ot">&lt;-</span> readFile src</a>
+<a class="sourceLine" id="cb1-8" data-line-number="8">   mapM_ putStrLn [mp3 <span class="fu">|</span> <span class="dt">TagOpen</span> <span class="st">&quot;a&quot;</span> atts <span class="ot">&lt;-</span> parseTags txt, (<span class="st">&quot;href&quot;</span>,mp3) <span class="ot">&lt;-</span> atts, takeExtension mp3 <span class="fu">==</span> <span class="st">&quot;.mp3&quot;</span>]</a></code></pre></div>
+<p>I’ve also used System.FilePath to check if an extension is mp3</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-112269"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-03-30">2008-03-30</time></p>
+  </header>
+<p><span class="citation" data-cites="Neil">@Neil</span>,</p>
+<p>Nice. I’ve never looked at tagsoup so it’s nice to see some code using it. One nice thing with HXT is that it handles both URLs and files without any extra work by me. Though I think your code above is a bit more “intuitive”, at least for someone like me who doesn’t have a lot of previous exposure to arrows.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-112270"></a>
+  <header>
+    <p><b>Neil Mitchell</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-03-30">2008-03-30</time></p>
+  </header>
+<p><span class="citation" data-cites="Magnus">@Magnus</span>, I decided to write it up as a post on my blog, <a href="http://neilmitchell.blogspot.com/2008/03/toddlers-play-with-html-in-haskell.html" class="uri">http://neilmitchell.blogspot.com/2008/03/toddlers-play-with-html-in-haskell.html</a></p>
+<p>HXT certainly does a lot more than TagSoup does, but for the simple cases (like this one), I find TagSoup tends to be shorter and a bit clearer.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-112586"></a>
+  <header>
+    <p><b>fritz</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-04-01">2008-04-01</time></p>
+  </header>
+<p>All this and a bonus: the code upgrades easily to retrieve broadcasts made in the late afternoon!</p>
+<p>isMp3Link = (==) “3pm.” . take 4 . reverse</p>
+<p>Just take away that reverse … .</p>
+<p>(Sorry, April 1st for me, couldn’t resist the “3pm” part :) ).</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2008-03-30-341-kids-play-with-html-in-haskell@therning.org?subject=A comment on Kid's play with HTML in Haskell&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Python extensions: Please tell me there's an easier way!</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2009-02-17">2009-02-17</time> - Magnus Therning</p>
+</header>
+
+<p>Dear Lazyweb,</p>
+<p>Please tell me there’s an easier way of building Python C/C++ extensions (read shared objects) using automake than by using libtool. Please! Please!</p>
+<p>I just want a frickin’ .so file, nothing complicated. Is the only way, besides using libtool, to write custom targets?</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/automake.html">automake</a>, <a href="../tags/LazyWeb.html">LazyWeb</a>, <a href="../tags/python.html">python</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2009-02-14-502-python-coding-dojo-in-cambridge.html">⟸ Python coding dojo in Cambridge</a>
+
+
+
+<a href="../posts/2009-02-21-509-another-way-to-start-xmonad-in-gnome.html">Another way to start Xmonad in Gnome ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-170986"></a>
+  <header>
+    <p><b>C Smith</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-02-17">2009-02-17</time></p>
+  </header>
+<p><a href="http://www.boost.org/doc/libs/1_38_0/libs/python/doc/index.html" class="uri">http://www.boost.org/doc/libs/1_38_0/libs/python/doc/index.html</a></p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-170991"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-02-17">2009-02-17</time></p>
+  </header>
+<p><em><span class="citation" data-cites="C">@C</span> Smith</em>: Huh? Since I’m already using Boost.Python for my Python extension I know for a fact that it is no replacement for automake ;-)</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-170995"></a>
+  <header>
+    <p><b>Anonymous</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-02-17">2009-02-17</time></p>
+  </header>
+<p>I’ve always used GNU make to coordinate the building of python extensions.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-171023"></a>
+  <header>
+    <p><b>lilac</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-02-18">2009-02-18</time></p>
+  </header>
+<p><a href="http://docs.python.org/library/distutils.html" class="uri">http://docs.python.org/library/distutils.html</a></p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-171052"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-02-19">2009-02-19</time></p>
+  </header>
+<p><em><span class="citation" data-cites="Anonymous">@Anonymous</span></em>, using GNU make isn’t a net gain in this case, there are a lot of things that come for free when using the AutoTools.</p>
+<p><em><span class="citation" data-cites="lilac">@lilac</span></em>, distutils would indeed be the right answer if I was building a Python “module”. What I didn’t mention is that the extension is part of a Gnome application written in Python. distutils is <em>not</em> the way to go for that.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-176881"></a>
+  <header>
+    <p><b>??</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-04-23">2009-04-23</time></p>
+  </header>
+<p>i hope i will never use python, i haven’t mastered c and c++. :)</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-176940"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-04-23">2009-04-23</time></p>
+  </header>
+<p><em>@??</em>: I’m not sure anyone’s mastered C++ but I’m sure that anyone who does will find it isn’t worth the effort ;-) So after you’re done with C I’d move on to a higher-level language, Python, Haskell, anything that tickles your fancy.</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2009-02-17-505-please-tell-me-theres-an-easier-way@therning.org?subject=A comment on Python extensions: Please tell me there's an easier way!&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

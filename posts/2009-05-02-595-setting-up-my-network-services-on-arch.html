@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Setting up my network services on Arch</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2009-05-02">2009-05-02</time> - Magnus Therning</p>
+</header>
+
+<p>After having set up X (not sure I really can call just installing it “setting up” though :-) ) and Gnome, which of course included installing and configuring Xmonad, I went on to configure some network-related stuff.</p>
+<p>At home I use mDNS to make it easy to connect to the computers we have at home. I added <code>avahi</code> to the list of services to start in <code>/etc/rc.conf</code> and installed <code>nss-mdns</code>. Then I following the instructions on how to <a href="http://wiki.archlinux.org/index.php/Avahi#Hostname_resolution">configure mDNS on Arch</a>, which resulted in the following changes:</p>
+<pre><code>--- /etc/nsswitch.conf_old	2009-05-02 21:17:06.460591935 +0100
++++ /etc/nsswitch.conf	2009-04-25 18:08:39.719853968 +0100
+@@ -6,7 +6,7 @@
+ 
+ publickey: files
+ 
+-hosts: files dns
++hosts: files mdns_minimal [NOTFOUND=return] dns mdns
+ networks: files
+ 
+ protocols: db files</code></pre>
+<p>I also need SSH access to my desktop machine so I installed OpenSSH (<code>openssh</code>). No changes were needed to the configuration but following <a href="http://wiki.archlinux.org/index.php/SSH#Allowing_others_in">the instructions</a> I made the following change to <code>/etc/hosts.allow</code> to allow connections at all:</p>
+<pre><code>--- /etc/hosts.allow_orig	2009-05-02 21:31:16.243401337 +0100
++++ /etc/hosts.allow	2009-04-28 17:55:57.553603986 +0100
+@@ -2,5 +2,6 @@
+ # /etc/hosts.allow
+ #
+ 
++sshd: ALL
+ 
+ # End of file</code></pre>
+<p>Then of course I added <code>sshd</code> to the list of services in <code>/etc/rc.conf</code>.</p>
+<p>The last step was setting up NTP, based on suggestions on the Arch Wiki I installed OpenNTP (<code>openntp</code>) rather than the standard NTP package. No changes to the configuration were needed, just adding it to <code>DAEMONS</code> in <code>/etc/rc.conf</code>.</p>
+<p>That was it, all the crucial network-related services set up and running at boot.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/arch.html">arch</a>, <a href="../tags/avahi.html">avahi</a>, <a href="../tags/mdns.html">mdns</a>, <a href="../tags/openntp.html">openntp</a>, <a href="../tags/openssh.html">openssh</a>, <a href="../tags/ssh.html">ssh</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2009-05-02-590-arch-gnome-and-shutdownreboot.html">⟸ Arch, Gnome, and shutdown/reboot</a>
+
+
+
+<a href="../posts/2009-05-09-599-arch-and-haskell-on-little-snag.html">Arch and Haskell, on little snag ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2009-05-02-595-setting-up-my-network-services-on-arch@therning.org?subject=A comment on Setting up my network services on Arch&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

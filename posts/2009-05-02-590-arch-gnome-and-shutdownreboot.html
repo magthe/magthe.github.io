@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Arch, Gnome, and shutdown/reboot</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2009-05-02">2009-05-02</time> - Magnus Therning</p>
+</header>
+
+<p>I’ll soon continue documenting my experience with installing and configuring my desktop, but first a note on fixing an irritating issue in Gnome 2.26. Soon after installing Gnome I noticed that I couldn’t reboot or shutdown from inside my Gnome session, I had to log out and use GDM’s action menu instead. Rather irritating, but something I could live with until the weekend. It took a while to find the solution so to safe myself time in the future I’ll document it here. It might even help someone else, who knows?</p>
+<p>Whenever I tried to reboot or shutdown I saw the following message appear in <code>~/.xsession-errors</code>:</p>
+<pre><code>gnome-session[4134]: WARNING: Unable to list sessions: Rejected send message, 2 matched rules;
+type=&quot;method_call&quot;, sender=&quot;:1.50&quot; (uid=1000 pid=4134 comm=&quot;gnome-session &quot;)
+interface=&quot;org.freedesktop.ConsoleKit.Manager&quot; member=&quot;GetSessions&quot; error name=&quot;(unset)&quot;
+requested_reply=0 destination=&quot;org.freedesktop.ConsoleKit&quot; (uid=0 pid=2838
+comm=&quot;/usr/sbin/console-kit-daemon &quot;))</code></pre>
+<p>After giving up on finding a solution with Google I turned to <code>#archlinux</code> and was pointed to a <a href="http://bbs.archlinux.org/viewtopic.php?id=70803">forum post</a>. That discussion doesn’t mention the warning message at all, so it wasn’t obvious to me at first that it was the same issue. However, about half-way down the page I found <a href="http://bbs.archlinux.org/viewtopic.php?pid=543614#p543614">a post by justusjonas</a> that looked relevant. I tried that change, or rather something very similar, and a manual reboot later I could confirm that the change indeed fixed the issue. This is the change I applied:</p>
+<pre><code>--- /etc/dbus-1/system.d/ConsoleKit.conf_org	2009-05-02 15:59:40.235077390 +0100
++++ /etc/dbus-1/system.d/ConsoleKit.conf	2009-05-02 16:00:10.108231150 +0100
+@@ -32,6 +32,8 @@
+     &lt;allow send_interface=&quot;org.freedesktop.ConsoleKit.Manager&quot;
+            send_member=&quot;GetSeats&quot;/&gt;
+     &lt;allow send_interface=&quot;org.freedesktop.ConsoleKit.Manager&quot;
++           send_member=&quot;GetSessions&quot;/&gt;
++    &lt;allow send_interface=&quot;org.freedesktop.ConsoleKit.Manager&quot;
+            send_member=&quot;GetSessionForCookie&quot;/&gt;
+     &lt;allow send_interface=&quot;org.freedesktop.ConsoleKit.Manager&quot;
+            send_member=&quot;GetSessionForUnixProcess&quot;/&gt;</code></pre>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/arch.html">arch</a>, <a href="../tags/gnome.html">gnome</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2009-04-30-586-more-on-the-move-to-arch-linux.html">⟸ More on the move to Arch Linux</a>
+
+
+
+<a href="../posts/2009-05-02-595-setting-up-my-network-services-on-arch.html">Setting up my network services on Arch ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2009-05-02-590-arch-gnome-and-shutdownreboot@therning.org?subject=A comment on Arch, Gnome, and shutdown/reboot&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

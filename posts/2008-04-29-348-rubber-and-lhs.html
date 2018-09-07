@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Rubber and lhs?</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2008-04-29">2008-04-29</time> - Magnus Therning</p>
+</header>
+
+<p>Another dear lazyweb post.</p>
+<p>Yesterday night I hacked up a silly little tool for use at work. Nothing spectacular ((I’ll post the source here shortly.)) but I thought I’d try this <a href="http://www.haskell.org/haskellwiki/Literate_programming">Literate Haskell</a> thing. I decided to go the LaTeX route and created a <code>.lhs</code> file. To my amazement <a href="http://www.pps.jussieu.fr/~beffara/soft/rubber/">rubber</a> has a module for handling Literate Haskell, unfortunately it passes everything ending in <code>.lhs</code> through <a href="http://people.cs.uu.nl/andres/lhs2tex/">lhs2Tex</a>. I didn’t really want to use lhs2Tex ((I’ll probably have a closer look at it later but for now I wanted to keep things as easy as possible.)) but I haven’t been able to find any way of changing rubber’s behaviour through its command line arguments. What I’d like is a way to disable a module for a single invocation. So, dear lazyweb, is there a way to do this from the command line?</p>
+<p>So far I’ve worked around this by creating a symbolic link named <code>MyTool.tex</code> that points to the Haskell source, then I run rubber on the link. Not to much of a hazzle, but it’d be nicer to pass an argument to rubber.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/literate%20programming.html">literate programming</a>, <a href="../tags/rubber.html">rubber</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2008-04-22-347-debian-lighttpd-and-mediawiki.html">⟸ Debian, lighttpd and MediaWiki</a>
+
+
+
+<a href="../posts/2008-05-01-349-dealing-with-life-in-haskell.html">Dealing with life in Haskell ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2008-04-29-348-rubber-and-lhs@therning.org?subject=A comment on Rubber and lhs?&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

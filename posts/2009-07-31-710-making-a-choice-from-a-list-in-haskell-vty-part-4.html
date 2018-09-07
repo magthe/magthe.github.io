@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Making a choice from a list in Haskell, Vty (part 4)</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2009-07-31">2009-07-31</time> - Magnus Therning</p>
+</header>
+
+<p>After <a href="../posts/2009-07-24-702-making-a-choice-from-a-list-in-haskell-vty-part-3.html">part 3 in this series</a>, which might have been the longest post I’ve ever put on this blog, follows a much short post. In fact it’s so short it’s rather silly.</p>
+<p>In this post I’ll modify the <code>Option</code> type to render into multiple lines; two in fact (it’s easy to see that it would work with more lines).</p>
+<p>So, to start off, I add a second string to <code>Option</code>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Option</span> <span class="fu">=</span> <span class="dt">Option</span> {<span class="ot"> optionRange::</span>(<span class="dt">Int</span>, <span class="dt">Int</span>),<span class="ot"> optionS1::</span><span class="dt">String</span>,<span class="ot"> optionS2::</span><span class="dt">String</span> }</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">    <span class="kw">deriving</span> (<span class="dt">Show</span>)</a></code></pre></div>
+<p>Next the definition for <code>Pretty</code> is changed to render an <code>Option</code> on two lines:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Pretty</span> <span class="dt">Option</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">    pretty (<span class="dt">Option</span> _ s1 s2) <span class="fu">=</span> string s1 <span class="fu">&lt;&gt;</span> line <span class="fu">&lt;&gt;</span> indent <span class="dv">2</span> (string s2)</a></code></pre></div>
+<p>Due to the change to <code>Option</code> I also need to modify <code>optionIsInRange</code>:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1">optionIsInRange (<span class="dt">Option</span> (b, e) _ _) i <span class="fu">=</span> b <span class="fu">&lt;=</span> i <span class="fu">&amp;&amp;</span> i <span class="fu">&lt;=</span> e</a></code></pre></div>
+<p>Finally the <code>options</code> need to be modified as well:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">options <span class="fu">=</span> ozFromListWithMod (optionSetRange <span class="dv">0</span>) [<span class="dt">Option</span> (<span class="dv">0</span>, <span class="dv">0</span>) ((show i) <span class="fu">++</span> <span class="st">&quot; Foo&quot;</span>) <span class="st">&quot;Bar&quot;</span> <span class="fu">|</span> i <span class="ot">&lt;-</span> [<span class="dv">0</span><span class="fu">..</span><span class="dv">2</span>]]</a></code></pre></div>
+<p>That’s all there’s to it. Short and sweet.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/vty.html">vty</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2009-07-24-702-making-a-choice-from-a-list-in-haskell-vty-part-3.html">⟸ Making a choice from a list in Haskell, Vty (part 3)</a>
+
+
+
+<a href="../posts/2009-08-04-713-updating-ghc-on-arch.html">Updating GHC on Arch ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2009-07-31-710-making-a-choice-from-a-list-in-haskell-vty-part-4@therning.org?subject=A comment on Making a choice from a list in Haskell, Vty (part 4)&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

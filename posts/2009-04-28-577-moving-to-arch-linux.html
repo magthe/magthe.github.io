@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Moving to Arch Linux</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2009-04-28">2009-04-28</time> - Magnus Therning</p>
+</header>
+
+<p>&lt;rant&gt;So my irritation with Debian on the desktop reached a critical moment over the last few days. Sid is a good desktop system for most things, but if you are interested in Haskell then you really should prepare yourself for being a little behind on things. If it isn’t GHC that is out of date then it’s some library that hasn’t been rebuilt for the latest version of GHC. If you’re lucky then new packages are uploaded to the NEW queue and it’s only a matter of waiting for the autobuilders to get to them. Of course that doesn’t mean you can get those packages, so not that much luck in the end anyway.&lt;/rant&gt;</p>
+<p>I decided to move to the only other distro I’ve used seriously since Linux’ move to 2.x kernels, <a href="http://www.archlinux.org/">Arch</a>. I remember it as a slightly less polished than Debian, but more up-to-date than even Sid. Also, there is a vibrant group of Haskell hackers working on providing almost all of Hackage in Arch’s native packaging system.</p>
+<p>Installing Arch turned out to be a bit of a blast from the past, even when compared to Debian. Luckily the <a href="http://wiki.archlinux.org/">Arch wiki</a> is there to help with the things that are different compared to Debian. I would suggest having a second computer with a browser pointed to Arch’s home pages nearby during the entire install.</p>
+<p>For my installation of Debian I had opted to use LVM and I wanted to keep my <code>/home</code> around so I had to follow the steps required to <a href="http://wiki.archlinux.org/index.php/LVM2">use LVM in Arch</a>. Installation went smooth and the reboot was successful. Now starts the hard work—configuring the system and updating my home folder.</p>
+<p>The very first thing I noticed was that <code>vim</code> wasn’t installed by default, only <code>vi</code> was available. Not a big problem, except that my muscle memory resulted in a lot of <code>vim: command not found</code> messages. Clearly I had to install <code>vim</code> just to keep my sanity.</p>
+<p>Next thing to do was to install X.org and the video driver I need:</p>
+<pre><code># pacman -S xorg xf86-video-intel</code></pre>
+<p>After adding <code>hal</code> to <code>/etc/rc.conf</code> I started it manually and I ran <code>startx</code> as non-root. Wow, it all worked perfect, without creating any configuration file for X first. I double checked and it used the driver I wanted, i.e. it didn’t pick a safe default, like vesa, as its first option. Brilliant.</p>
+<p>After following the <a href="http://wiki.archlinux.org/index.php/Xorg#Setting_non-us_keyboard_without_xorg.conf">instructions for changing the keyboard layout in X.org using hal</a> I even had my ‘@’ on the right key. (The most confusing thing was that in X.org the UK keyboard layout is called <code>gb</code>, while in the console setup it’s called <code>uk</code>.)</p>
+<p>I’ll post a bit more about the setup and configuration of my system as I progress towards my ideal desktop.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/arch.html">arch</a>, <a href="../tags/debian.html">debian</a>, <a href="../tags/linux.html">linux</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2009-04-23-568-dataenc-01210-released.html">⟸ dataenc 0.12.1.0 released</a>
+
+
+
+<a href="../posts/2009-04-30-586-more-on-the-move-to-arch-linux.html">More on the move to Arch Linux ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-177477"></a>
+  <header>
+    <p><b>Nax</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-04-29">2009-04-29</time></p>
+  </header>
+<p>Good choice, Arch Linux is great for having bleeding edge packages :)!</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-177485"></a>
+  <header>
+    <p><b>Alp</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-04-29">2009-04-29</time></p>
+  </header>
+<p>Hi,</p>
+<p>Did you install a 32 bits or a 64 bits version of Arch?</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-177488"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-04-29">2009-04-29</time></p>
+  </header>
+<p><em><span class="citation" data-cites="Nax">@Nax</span></em>: Thanks. So far I really like it. It does require quite a bit of work up front, but luckily the Wiki contains a wealth of information. Other details can usually be found quickly by simple searches.</p>
+<p><em><span class="citation" data-cites="Alp">@Alp</span></em>: I installed the 64 bit version. I ran Debian 64-bit before so I didn’t think twice about using 64-bit Arch.</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2009-04-28-577-moving-to-arch-linux@therning.org?subject=A comment on Moving to Arch Linux&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Burning audio CDs on Linux</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2008-08-08">2008-08-08</time> - Magnus Therning</p>
+</header>
+
+<p>I just had a blast from the past!</p>
+<p>Being somewhat spoiled by the current state of Linux-on-the-desktop (Gnome in my case) I have become used to inserting a blank CD, point Nautilus to <code>burn:///</code>, dragging and dropping a few files into it, and finally clicking the “Burn to CD” button. Works beautifully. Of course I thought that Nautilus’ CD-burning would know about audio CDs. So I dragged a few WAV files into Nautilus and clicked the button. Voilà, a data CD containing a few Wav files! Not really what I wanted.</p>
+<p>So, to avoid this in the future here is the command line to use:</p>
+<pre><code>wodim -v dev=0,0,0 speed=40 -audio -pad *.wav</code></pre>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/cd%20burning.html">cd burning</a>, <a href="../tags/gnome.html">gnome</a>, <a href="../tags/linux.html">linux</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2008-07-29-355-more-prefixes.html">⟸ More prefixes</a>
+
+
+
+<a href="../posts/2008-08-08-367-tagsoup-meet-parsec.html">TagSoup, meet Parsec! ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-140404"></a>
+  <header>
+    <p><b>Mattias Bengtsson</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-08-08">2008-08-08</time></p>
+  </header>
+<p>If you are running a standard GNOME desktop, Serpentine Audio CD Creator should be available for you under Applications -&gt; Sound &amp; Video.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-142195"></a>
+  <header>
+    <p><b>Tilo Wiklund</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-08-16">2008-08-16</time></p>
+  </header>
+<p>Or what about Brasero, it’s installed by default at least since Feisty.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-142609"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-08-19">2008-08-19</time></p>
+  </header>
+<p><span class="citation" data-cites="Mattias">@Mattias</span>, I found serpentine after I installed the meta-package <code>gnome</code>, with just <code>gnome-core</code> and <code>gnome-desktop</code> it wasn’t there.</p>
+<p><span class="citation" data-cites="Tilo">@Tilo</span>, sure if I ran Ubuntu maybe ;) It’s good to know for the future though, so thanks for mentioning it.</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2008-08-08-363-burning-audio-cds-on-linux@therning.org?subject=A comment on Burning audio CDs on Linux&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Listing files in Haskell</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2006-11-24">2006-11-24</time> - Magnus Therning</p>
+</header>
+
+<p>As I <a href="http://therning.org/magnus/archives/223/">promised earlier</a> here’s a post on my playing with files and directories in Haskell. This was a few days ago so I’ve forgotten a few of the twists and turns that took me to the goal. Forgive me for that.</p>
+<p>First, my goal was to list all files below a directory, recursively. I was sort of hoping to find something similar to Python’s <a href="http://www.python.org/doc/2.4.4/lib/os-file-dir.html#l2h-1646">os.walk()</a>. No such luck!</p>
+<p>I found out a few things.</p>
+<ol type="1">
+<li><p><code>getDirectoryContents</code> returns <em>everything</em> in a directory, including <code>.</code> and <code>..</code>. I needed a filter to remove them:</p>
+<pre><code> isDODD f = not $ (endswith &quot;/.&quot; f) || (endswith &quot;/..&quot; f)</code></pre>
+<p>(At first I called it <code>isDotOrDotDot</code> but I like <code>isDODD</code> better.)</p></li>
+<li><p>I also needed to separate out the directories and files from the result of <code>getDirectoryContents</code>:</p>
+<pre><code> listDirs = filterM doesDirectoryExist
+ listFiles = filterM doesFileExist</code></pre></li>
+<li><p><code>getDirectoryContents</code> returns a list of the contents in the directory you point it to. All file names/directory names are relative to that path. That means the next thing I needed was to join paths. I first couldn’t believe that there wasn’t a function to do that. I mean, I can list contents of a directory, I can find out if something’s a file or a directory, but the most basic manipulation of paths isn’t there. At first I simply concatenated strings, but I didn’t worry about making it cross platform or anything. Then I found that Cabal comes with libraries that handles cross-platform issues properly, but that library was “closed”. After <del datetime="2006-11-24T09:23:55+00:00">moaning</del> asking on <em>haskell-cafe</em> I found <a href="http://www-users.cs.york.ac.uk/~ndm/projects/libraries.php#filepath">FilePath</a>. It’s even packaged for Debian <a href="http://moonshine.dnsalias.org/debian/unstable">here</a>.</p>
+<p><code>FilePath.joinPath</code> takes a list of strings to join, while I was only interested in joining two strings at a time:</p>
+<pre><code> joinFN p1 p2 = joinPath [p1, p2]</code></pre></li>
+</ol>
+<p>Putting it all together I ended up with the following:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">listFilesR ::</span> FilePath <span class="ot">-&gt;</span> <span class="dt">IO</span> [FilePath]</a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">listFilesR path <span class="fu">=</span> <span class="kw">let</span></a>
+<a class="sourceLine" id="cb4-3" data-line-number="3"><span class="ot">    isDODD ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">    isDODD f <span class="fu">=</span> not <span class="fu">$</span> (endswith <span class="st">&quot;/.&quot;</span> f) <span class="fu">||</span> (endswith <span class="st">&quot;/..&quot;</span> f)</a>
+<a class="sourceLine" id="cb4-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb4-6" data-line-number="6"><span class="ot">    listDirs ::</span> [FilePath] <span class="ot">-&gt;</span> <span class="dt">IO</span> [FilePath]</a>
+<a class="sourceLine" id="cb4-7" data-line-number="7">    listDirs <span class="fu">=</span> filterM doesDirectoryExist</a>
+<a class="sourceLine" id="cb4-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb4-9" data-line-number="9"><span class="ot">    listFiles ::</span> [FilePath] <span class="ot">-&gt;</span> <span class="dt">IO</span> [FilePath]</a>
+<a class="sourceLine" id="cb4-10" data-line-number="10">    listFiles <span class="fu">=</span> filterM doesFileExist</a>
+<a class="sourceLine" id="cb4-11" data-line-number="11"></a>
+<a class="sourceLine" id="cb4-12" data-line-number="12"><span class="ot">    joinFN ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> FilePath</a>
+<a class="sourceLine" id="cb4-13" data-line-number="13">    joinFN p1 p2 <span class="fu">=</span> joinPath [p1, p2]</a>
+<a class="sourceLine" id="cb4-14" data-line-number="14"></a>
+<a class="sourceLine" id="cb4-15" data-line-number="15">    <span class="kw">in</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb4-16" data-line-number="16">        allfiles <span class="ot">&lt;-</span> getDirectoryContents path</a>
+<a class="sourceLine" id="cb4-17" data-line-number="17">        no_dots <span class="ot">&lt;-</span> filterM (return <span class="fu">.</span> isDODD) (map (joinFN path) allfiles)</a>
+<a class="sourceLine" id="cb4-18" data-line-number="18">        dirs <span class="ot">&lt;-</span> listDirs no_dots</a>
+<a class="sourceLine" id="cb4-19" data-line-number="19">        subdirfiles <span class="ot">&lt;-</span> (mapM listFilesR dirs <span class="fu">&gt;&gt;=</span> return <span class="fu">.</span> concat)</a>
+<a class="sourceLine" id="cb4-20" data-line-number="20">        files <span class="ot">&lt;-</span> listFiles no_dots</a>
+<a class="sourceLine" id="cb4-21" data-line-number="21">        return <span class="fu">$</span> files <span class="fu">++</span> subdirfiles</a></code></pre></div>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/haskell.html">haskell</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2006-11-24-227-links-and-stuff-24112006.html">⟸ Links and stuff (24/11/2006)</a>
+
+
+
+<a href="../posts/2006-11-24-230-my-google-reader-share-2.html">My Google Reader share ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-4910"></a>
+  <header>
+    <p><b>Greg</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2006-12-05">2006-12-05</time></p>
+  </header>
+<p>You should look into the MissingH.IO.HVFS.Utils module: <a href="http://quux.org:70/devel/missingh/html/MissingH-IO-HVFS-Utils.html" class="uri">http://quux.org:70/devel/missingh/html/MissingH-IO-HVFS-Utils.html</a></p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-4989"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2006-12-07">2006-12-07</time></p>
+  </header>
+<p>Greg, thanks for the pointer. I really should start looking at MissingH <em>after</em> I make my own implementations. If I do it before I miss a learning opportunity :-)</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-5143"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2006-12-09">2006-12-09</time></p>
+  </header>
+<p>Taking Greg’s excellent advise I’ve now replaced my hand-crafted function from my original post with the following:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">listFilesR ::</span> FilePath <span class="ot">-&gt;</span> <span class="dt">IO</span> [FilePath]</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">listFilesR path <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">    cur_path <span class="ot">&lt;-</span> getCurrentDirectory</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">    files <span class="ot">&lt;-</span> recurseDir <span class="dt">SystemFS</span> <span class="fu">$</span> normalise <span class="fu">$</span> combine cur_path path</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">    filterM doesFileExist files</a></code></pre></div>
+<p>A lot shorter and nicer :-)</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-121010"></a>
+  <header>
+    <p><b>Paul</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-05-13">2008-05-13</time></p>
+  </header>
+<p>Very helpful; but how/where is endswith defined?</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-121720"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-05-16">2008-05-16</time></p>
+  </header>
+<p><span class="citation" data-cites="Paul">@Paul</span>, <code>endsWith</code> is in MissingH <a href="http://software.complete.org/static/missingh/doc//MissingH/Data-String-Utils.html#v%3Aendswith">here</a>.</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2006-11-24-228-listing-files-in-haskell@therning.org?subject=A comment on Listing files in Haskell&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

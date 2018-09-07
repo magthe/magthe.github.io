@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">XML prettifier in Haskell</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2009-07-14">2009-07-14</time> - Magnus Therning</p>
+</header>
+
+<p>I don’t know how many times I’ve gone looking for one of these but my search-fu is weak and I always give up, instead resorting to manual editing in Vim (no I hardly ever need the <em>entire</em> file to be pretty, only one or two tags that I’m interested in). Anyway, here’s a quick hack in Haskell, relying on <a href="http://hackage.haskell.org/package/xml">xml</a> for the heavy lifting:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">#! /usr/bin/env runhaskell</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Control.Monad</span></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">System.Environment</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Text.XML.Light.Input</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Text.XML.Light.Output</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10">main <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11">    fn <span class="ot">&lt;-</span> liftM (<span class="fu">!!</span> <span class="dv">0</span>) <span class="fu">$</span> getArgs</a>
+<a class="sourceLine" id="cb1-12" data-line-number="12">    xml_contents <span class="ot">&lt;-</span> readFile fn</a>
+<a class="sourceLine" id="cb1-13" data-line-number="13">    <span class="kw">let</span> (<span class="dt">Just</span> doc) <span class="fu">=</span> parseXMLDoc xml_contents</a>
+<a class="sourceLine" id="cb1-14" data-line-number="14">    writeFile (<span class="st">&quot;pretty-&quot;</span> <span class="fu">++</span> fn) (ppTopElement doc)</a></code></pre></div>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/xml.html">xml</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2009-07-09-689-making-a-choice-from-a-list-in-haskell-vty-part-2.html">⟸ Making a choice from a list in Haskell, Vty (part 2)</a>
+
+
+
+<a href="../posts/2009-07-21-698-ping-server-in-haskell-not-that-kind-of-ping-and-rather-silly.html">Ping server in Haskell (not that kind of ping, and rather silly) ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-184493"></a>
+  <header>
+    <p><b>Ram?nas Gutkovas</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-07-14">2009-07-14</time></p>
+  </header>
+<p>There is an utility command “xmllint” which comes with “libxml2-utils” package on Ubuntu.</p>
+<pre><code>xmllint --format cluttered.xml &gt; prettified.xml</code></pre>
+</article>
+
+<article class="comment-body">
+  <a name="comment-184500"></a>
+  <header>
+    <p><b>ephemient</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-07-14">2009-07-14</time></p>
+  </header>
+<p>As cool as that is, what about Vim’s “gg=G”? It sometimes gets confused by what the proper indentation should be around comments, but aside from that, it’s pretty good.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-184504"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-07-14">2009-07-14</time></p>
+  </header>
+<p><em><span class="citation" data-cites="Gutkovas">@Gutkovas</span></em>, what’s the fun in that? Kidding aside, I didn’t know xmllint did that, thanks for pointing it out.</p>
+<p><em><span class="citation" data-cites="ephemient">@ephemient</span></em>, yes, that’s what I’ve often done, but as you point out, it’s not always reliable.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-184517"></a>
+  <header>
+    <p><b>endrew</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-07-14">2009-07-14</time></p>
+  </header>
+<p>I’m really just a noob, but what’s the point of using (!! 0) instead of head?</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-184529"></a>
+  <header>
+    <p><b>David</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-07-15">2009-07-15</time></p>
+  </header>
+<p>For your first line in main, I recommend:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">main <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">  [fn] <span class="ot">&lt;-</span> getArgs</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  <span class="fu">...</span></a></code></pre></div>
+</article>
+
+<article class="comment-body">
+  <a name="comment-184540"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-07-15">2009-07-15</time></p>
+  </header>
+<p><em><span class="citation" data-cites="endrew">@endrew</span> &amp; David</em>, every time I use <code>getArgs</code> I forget it doesn’t include <code>argv[0]</code> so I always start out with <code>liftM (!! 1)</code> and when reminded (through a run-time exception) I put in the zero. Of course I could always us <code>(_:fn)</code>, but pattern matching in <code>do</code> (or <code>let</code>) still doesn’t come naturally for me. :-)</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-184545"></a>
+  <header>
+    <p><b>Andreas Krey</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-07-15">2009-07-15</time></p>
+  </header>
+<p>And, of course, you technically can’t pretty-print XML, because all the whitespace is significant. Except for within the tags.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-184576"></a>
+  <header>
+    <p><b>endrew</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-07-15">2009-07-15</time></p>
+  </header>
+<p>Aha! I knew there was something to it :)</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2009-07-14-695-xml-prettifier-in-haskell@therning.org?subject=A comment on XML prettifier in Haskell&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

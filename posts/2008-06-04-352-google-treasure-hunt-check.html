@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Google Treasure Hunt, check!</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2008-06-04">2008-06-04</time> - Magnus Therning</p>
+</header>
+
+<p>I personally found the first one to be the trickiest, quite a bit of thinking with a colleague before we saw Pascal’s triangle in the problem. I was a bit worried that things would get trickier from there on. It surely didn’t.</p>
+<p>The second, summing certain lines taken from files matching certain glob patterns, was easily solved with a short Haskell program.</p>
+<p>The third, a routing problem was probably the easiest and I think most easily solved on paper. I did make a mistake though, which I caught before typing my answer into the webform.</p>
+<p>The fourth one, adding sequences of primes, was fairly straight forward. I think it would have presented a bit more trouble if I didn’t make use of Haskell’s laziness and support for infinite lists though.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/google.html">google</a>, <a href="../tags/haskell.html">haskell</a>, <a href="../tags/treasure%20hunt.html">treasure hunt</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2008-06-04-351-silly-realisation.html">⟸ Silly realisation</a>
+
+
+
+<a href="../posts/2008-06-07-353-google-treasure-hunt-primes-question.html">Google Treasure Hunt primes question ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-125619"></a>
+  <header>
+    <p><b>Peter</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-06-05">2008-06-05</time></p>
+  </header>
+<p>It’s interesting to compare experiences.</p>
+<p>For the first one, I’d seen this kind of problem before, so I spotted Pascal’s triangle more-or-less straight-away and after that it was easy-peasy.</p>
+<p>The second one actually took me the longest to solve in Haskell. I’m sure I could have done it much more quickly with a bit of imperative scripting and the GNU find command. Maybe this shows my inexperience with real-world Haskell? I actually got it wrong first time because I didn’t read the question properly: I submitted the sum, rather than the product of the two results.</p>
+<p>As you say, the third isn’t a coding problem.</p>
+<p>The fourth one wasn’t quite as straightforward for me, because my first implementation was too slow. Lack of real-world experience, again: I’ve never used Haskell code-profiling tools. But I eventually found the bottleneck, and then it was lazy lists FTW!</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-125691"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-06-06">2008-06-06</time></p>
+  </header>
+<p><span class="citation" data-cites="Peter">@Peter</span>,</p>
+<p>Well, I had already done a bit of file-related stuff in Haskell (as you can see in other posts here) so I think being somewhat familiar with the relevant modules (mostly <code>System.IO.HVFS.Utils</code>, <code>System.FilePath</code> and <code>System.Directory</code>) helped. I also utilised <code>#haskell</code> to find <a href="http://hackage.haskell.org/cgi-bin/hackage-scripts/package/safe">safe</a> which helped when dealing with missing lines in files.</p>
+<p>For the fourth problem I correctly guessed that finding primes would most easily be solved by using Google :-) So I concentrated on how to do the sums (a combination of <code>take</code> and <code>sum</code>) and on finding the intersection of the infinite lists (exploiting the fact that the lists are sorted and that I only need to find the first item).</p>
+<p>As an aside I can tell that my colleague gave up on using generators for solving the problem in Python, instead he generated a list of all primes up till 10000000 in one go. I guess he was helped by the fact that I had found my solution and that it was a much smaller number than we had guessed.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-125946"></a>
+  <header>
+    <p><b>Andre</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-06-07">2008-06-07</time></p>
+  </header>
+<p>The first question was fairly simple if you know how to apply dynamic programming to that problem. With some further thoughts I solved it in one line of Haskell-code.</p>
+<p>Also the second one was not a problem at all, which I solved mainly with System.Directory and Data.List.</p>
+<p>Due to some understanding-problems of the terminology used in the network-task, it took me some tries to figure out, how to interpret the terminology. Thereafter the task was solved easily - and without any code. ;-)</p>
+<p>The biggest problems occured in the primes-task. At first I tried to generate the primes with the Sieve of Eratosthenes. But the primes were getting too big to be generated efficiently by the sieve. Therefore I downloaded a list with the first million primes. I also wrote a function for summing up n primes and one for finding the intersection of the four infinite lists (one infinite list for each number of summands). The bottleneck in these functions was their laziness.</p>
+<p>All in all, it was really nice to see how easily these problems could be solved with Haskell. :-)</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-125973"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-06-07">2008-06-07</time></p>
+  </header>
+<p><span class="citation" data-cites="Andre">@Andre</span>,</p>
+<p>Well, I guess my colleague and I used “verbal dynamic programming” to find Pascal’s triangle in the first question :-) Would you mind posting your Haskell one-liner somewhere and let me know?</p>
+<p>On the primes task I did use the Sieve of Eratosthenes, generating a lazy infinite list of primes. Then passing it four times through a function to generate the sums, resulting in four more lazy infinite lists. Then finally taking the intersection of all five lists. The resulting compiled executable only takes about 5-8 seconds to run, depending on the question parameters. I’ll post my code here, if you want to see it.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-125977"></a>
+  <header>
+    <p><b>Andre</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-06-07">2008-06-07</time></p>
+  </header>
+<p><code>robot (m+1) n = last $ (iterate (scanl1 (+)) ([1] ++ replicate m 0)) !! n</code></p>
+<p>At first the start-line (1 0 0 .. 0) is generated and thereafter the ways to each field in the lines are added from left to right. If you go down from each field you’d effectively copy the last line generated, therefore you only need one line to operate on. In fact, it results in applying the addition from left to right n times. For a 3x4-matrix it looks like this: <code>1 0 0 ~&amp;gt; 1 1 1 ~&amp;gt; 1 2 3 ~&amp;gt; 1 3 6 ~&amp;gt; 1 4 10</code></p>
+<p>Regarding the primes task: I worked all the time on GHCi. Could this have caused any performance-problems? With my current implementation it takes circa 10s to find the solution. But with the sieve it’d much more elegant, hence I’m very interested in your code. :-)</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-125980"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-06-07">2008-06-07</time></p>
+  </header>
+<p><span class="citation" data-cites="Andre">@Andre</span>,</p>
+<p>That’s a nice coding of the solution for question one. I wonder if we had seen the same thing if we hadn’t stopped looking at the shape of the numbers and instead turned to Wikipedia for the formula.</p>
+<p>I did run parts of it in GHCi during development, both to convince myself that I was doing things right and to get a feel for whether the code would find a solution during my life time ;-) After timing the compiled code I also timed it using <code>runghc</code> and then it took about 80 seconds. I’ll stick the code in a separate blog post later on.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-126097"></a>
+  <header>
+    <p><b>Andre</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-06-08">2008-06-08</time></p>
+  </header>
+<p>In most cases it’s the best decision to reduce a problem to a well-known problem - the exception proves the rule. ;-)</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-126216"></a>
+  <header>
+    <p><b>Peter</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-06-09">2008-06-09</time></p>
+  </header>
+<p>Andre:</p>
+<p>I <em>really</em> like how you did that!</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-126650"></a>
+  <header>
+    <p><b>hezekiah</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-06-10">2008-06-10</time></p>
+  </header>
+<p>Magnus: I noticed your post on Planet Haskell and found it quite interesting. I had never heard of the Google Treasure hunt before, so I went and did the problems. Thanks for the nice post and introducing me to the treasure hunt.</p>
+<p>Regarding the first question (involving the robot), you can actually solve it without any coding at all, only a little combinatorial math. The problem states that the robot needs to move from the top-left corner to the bottom-right of an NxM grid. Since he can only make moves of one square down or one square right, you can think of a path as a sequence of R and D instructions for Right and Down. Since the robot must make N-1 moves right and M-1 moves down to reach the destination, the problem can be restated as “How many unique strings of length N+M-2 can you make out of N-1 R’s and M-1 D’s?” This can be solved with a single equation: (n+m-2)!/(n-1)!(m-1)!</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-126693"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-06-11">2008-06-11</time></p>
+  </header>
+<p><span class="citation" data-cites="hezekiah">@hezekiah</span>,</p>
+<p>I’m glad you had fun with the Treasure Hunt.</p>
+<p>I solved the first problem in exactly the same way as you did. That’s what I meant by mentioning Pascal’s triangle. Wikipedia has an excellent page on Pascal’s triangle.</p>
+<p>If you still don’t see it, take your grid of size MxN and in each square you put the number of paths to reach it. Now tilt your head slightly to the left. ;-)</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2008-06-04-352-google-treasure-hunt-check@therning.org?subject=A comment on Google Treasure Hunt, check!&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

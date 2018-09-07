@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Google Treasure Hunt primes question</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2008-06-07">2008-06-07</time> - Magnus Therning</p>
+</header>
+
+<p>In the comments to my <a href="../posts/2008-06-04-352-google-treasure-hunt-check.html">post on the Google treasure hunt</a> Andre asked me to put up my solution for the fourth problem. The problems were personalised and here is mine:</p>
+<blockquote>
+<p>Find the smallest number that can be expressed as<br> the sum of 3 consecutive prime numbers,<br> the sum of 29 consecutive prime numbers,<br> the sum of 373 consecutive prime numbers,<br> the sum of 665 consecutive prime numbers,<br> and is itself a prime number.</p>
+</blockquote>
+<p>The idea behind my solution is that if I have four lists of the sums, and a list of primes, then the solution to the problem is the smallest member of the intersection of all five lists.</p>
+<p>I saved the problem of finding primes to the last and instead concentrated on summing up lists of integers in a convenient way. I ended up with the following solution to that:</p>
+<pre lang="haskell">
+sumN :: Int -> [Integer]
+sumN n = map fst sumi
+    where
+        sumi = tail $ iterate (sumn) (0, primes)
+        sumn (r, xs) = (sum $ take n xs, tail xs)
+</pre>
+<p>The real work happens in the inner functions. <code>sumn</code> picks out as many numbers as I want and sums them up, the reason for taking and returning a tuple is that <code>sumi</code> can use <code>iterate</code> to calculate the sequence of sums. The first item in the result of <code>iterate a</code> is <code>a</code>, so <code>sumi</code> drops the first one. This lets me create the needed lists of sums:</p>
+<pre lang="haskell">
+sum3 = sumN 3
+sum29 = sumN 29
+sum373 = sumN 373
+sum665 = sumN 665
+</pre>
+<p>After having a quick look at the implementation of <a href="http://haskell.org/ghc/docs/latest/html/libraries/base/Data-List.html#v%3Aintersect">Data.List.intersect</a> I realised it probably would be a bit too slow. Instead I wrote one that exploits that all the involved lists are ordered:</p>
+<pre lang="haskell">
+intersection a@(x:xs) b@(y:ys)
+    | x == y = x : intersection xs ys
+    | x < y = intersection (dropWhile (< y) xs) b
+    | x > y = intersection a (dropWhile (x >) ys)
+</pre>
+<p>After convincing myself that this code did what I wanted (basically through playing in GHCi using an incorrect definition of primes, <code>primes = [1..]</code>) I turned to the problem of finding the primes. Of course someone else had already written the <a href="http://en.literateprograms.org/Sieve_of_Eratosthenes_(Haskell)">Haskell code to find primes</a>. That code fitted perfectly with mine since it produces an infinate list of <code>Integer</code>s. Brilliant! :-)</p>
+<p>Finally here’s the <code>main</code> that allows me to compile the code and get the answer quickly (it’s slightly modified for the medium, basically I wrote it all on one, long line):</p>
+<pre lang="haskell">
+main :: IO ()
+main = let
+        i1 = (primes `intersection` sum665)
+        i2 = (sum3 `intersection` sum373)
+        s =  i1 `intersection` i2 `intersection` sum29
+    in
+        print $ head s
+</pre>
+<p>Compiled, it runs in about 5.5 seconds on my desktop machine.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/google.html">google</a>, <a href="../tags/haskell.html">haskell</a>, <a href="../tags/treasure%20hunt.html">treasure hunt</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2008-06-04-352-google-treasure-hunt-check.html">⟸ Google Treasure Hunt, check!</a>
+
+
+
+<a href="../posts/2008-07-12-354-playing-with-prefixes.html">Playing with prefixes ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-126081"></a>
+  <header>
+    <p><b>foobar</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-06-08">2008-06-08</time></p>
+  </header>
+<p>The following looks nicer to me:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">sumN <span class="dv">1</span> <span class="fu">=</span> primes</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">sumN n <span class="fu">=</span> [x<span class="fu">+</span>y <span class="fu">|</span> (x, y) <span class="ot">&lt;-</span> zip (tail <span class="fu">$</span> sumN (n<span class="fu">-</span><span class="dv">1</span>)) primes]</a></code></pre></div>
+</article>
+
+<article class="comment-body">
+  <a name="comment-126099"></a>
+  <header>
+    <p><b>Andre</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-06-08">2008-06-08</time></p>
+  </header>
+<p>Ah, I see. My problem was the naive implementation of the sieve. The optimized version runs much faster. :-)</p>
+<p>My intersection-function is similar, although it finds elements which are in each passed (infinite) list. Here’s my implementation:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">intersect ::</span> (<span class="dt">Eq</span> a, <span class="dt">Ord</span> a) <span class="ot">=&gt;</span> [[a]] <span class="ot">-&gt;</span> [a]</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">intersect [] <span class="fu">=</span> []</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">intersect xs <span class="fu">|</span> or (map null xs) <span class="fu">=</span> []</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">             <span class="fu">|</span> and <span class="fu">$</span> map ((<span class="fu">==</span> x) <span class="fu">.</span> head) xs <span class="fu">=</span> x <span class="fu">:</span> (intersect <span class="fu">$</span> map tail xs)</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">             <span class="fu">|</span> otherwise <span class="fu">=</span> intersect <span class="fu">$</span> map (dropWhile (<span class="fu">&lt;</span> max)) xs</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">   <span class="kw">where</span> max <span class="fu">=</span> <span class="kw">let</span> comp (x<span class="fu">:</span>_) (y<span class="fu">:</span>_) <span class="fu">=</span> compare x y</a>
+<a class="sourceLine" id="cb1-7" data-line-number="7">               <span class="kw">in</span>  head <span class="fu">$</span> maximumBy comp xs</a>
+<a class="sourceLine" id="cb1-8" data-line-number="8">         x   <span class="fu">=</span> head <span class="fu">$</span> head xs</a></code></pre></div>
+<p>(Sorry for the formatting.)</p>
+<p>Therefore I’ve a more general function for finding the prime which fulfills the required conditions: ~~~ { .haskell } prime :: [Int] -&gt; Integer prime = head . intersect . (primes:) . map (<code>calc</code> primes) ~~~</p>
+<p>Whereas calc is semantically equivalent to your sumN-function.</p>
+<p>Using your test-data and the optimized sieve my program needs circa 10 seconds for finding the solution. Great work of yours!</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-126110"></a>
+  <header>
+    <p><b>Russell O'Connor</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-06-08">2008-06-08</time></p>
+  </header>
+<p>This is almost the same as my code, except I wrote <code>sumN</code> as <code>sumN xs = map (sum . take n) (tails primes)</code></p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-126219"></a>
+  <header>
+    <p><b>Peter</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-06-09">2008-06-09</time></p>
+  </header>
+Thanks for showing us what you did!
+</p>
+<p>I really like foobar’s definition of sumN – much better than the one I came up with – although I’d have used zipWith, like this:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">sumN <span class="dv">1</span> <span class="fu">=</span> primes</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">sumN (n<span class="fu">+</span><span class="dv">1</span>) <span class="fu">=</span> zipWith (<span class="fu">+</span>) primes <span class="fu">$</span> tail <span class="fu">$</span> sumN n</a></code></pre></div>
+<p>For extra prettiness, notice that primes == sumN 1 and that Andre’s version of intersect can be derived from Magnus’ version of intersect using foldl1:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">main <span class="fu">=</span> print <span class="fu">$</span> head <span class="fu">$</span> foldl1 intersect [sumN n primes <span class="fu">|</span> n <span class="fu">&amp;</span>lt;<span class="fu">-</span> [<span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">29</span>, <span class="dv">373</span>, <span class="dv">665</span>]]</a></code></pre></div>
+<p>:-)</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-126221"></a>
+  <header>
+    <p><b>Peter</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-06-09">2008-06-09</time></p>
+  </header>
+<p>Oops. There’s a typo in my previous comment. It should be:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">main <span class="fu">=</span> print <span class="fu">$</span> head <span class="fu">$</span> foldl1 intersect [sumN n <span class="fu">|</span> n <span class="fu">&amp;</span>lt;<span class="fu">-</span> [<span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">29</span>, <span class="dv">373</span>, <span class="dv">665</span>]]</a></code></pre></div>
+</article>
+
+<article class="comment-body">
+  <a name="comment-126283"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-06-09">2008-06-09</time></p>
+  </header>
+<p><span class="citation" data-cites="Russel">@Russel</span>,</p>
+<p>That is a beautiful definition of <code>sumN</code>! I wasn’t aware of the existence of the <code>tails</code> function before.</p>
+<p><span class="citation" data-cites="Peter">@Peter</span>,</p>
+<p>Thanks for pointing that out, it does make it a bit more beautiful and readable.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-126299"></a>
+  <header>
+    <p><b>Samuel</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-06-09">2008-06-09</time></p>
+  </header>
+<p>Interesting how we all used pretty much the same solution. :)</p>
+<p>I used the following definition of sumN (equivalent to Russel’s function). Should be much faster, since it doesn’t need to iterate through 665 primes for each element.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">sumN n <span class="fu">=</span> sumN' primes (drop n primes) (sum <span class="fu">$</span> take n primes)</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">sumN' (x<span class="fu">:</span>xs) (y<span class="fu">:</span>ys) accum <span class="fu">=</span> accum<span class="fu">:</span>sumN' xs ys (accum<span class="fu">+</span>y<span class="fu">-</span>x)</a></code></pre></div>
+<p>My definition of primes, btw, is the following. Slower than the fastest one on the quoted page, but still pretty fast and elegant.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">primes <span class="fu">=</span> <span class="dv">2</span><span class="fu">:</span>[x <span class="fu">|</span> x <span class="fu">&amp;</span>lt;<span class="fu">-</span> [<span class="dv">3</span>,<span class="dv">5</span><span class="fu">..</span>], is_prime x]</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">is_prime n <span class="fu">=</span> all (<span class="fu">/=</span> <span class="dv">0</span>) [n <span class="ot">`mod`</span> x <span class="fu">|</span> x <span class="fu">&amp;</span>lt;<span class="fu">-</span> takeWhile ((<span class="fu">&amp;</span>lt;<span class="fu">=</span>n)<span class="fu">.</span>(<span class="fu">^</span><span class="dv">2</span>)) primes]</a></code></pre></div>
+</article>
+
+<article class="comment-body">
+  <a name="comment-126556"></a>
+  <header>
+    <p><b>Nikolay</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-06-10">2008-06-10</time></p>
+  </header>
+<p>I’ve used such definition of sums with stream-fusion:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">sprimesS ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Stream</span> <span class="dt">Integer</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">sprimesS n <span class="fu">|</span> n <span class="fu">==</span> <span class="dv">1</span> <span class="fu">=</span> stream primes</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">                 <span class="fu">|</span> n <span class="fu">&gt;</span> <span class="dv">1</span> <span class="fu">=</span> <span class="dt">Stream</span> next (<span class="dt">L</span> (sum h,primes,t))</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">    <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">        (h,t) <span class="fu">=</span> splitAt n primes</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">        next (<span class="dt">L</span> (s,(x<span class="fu">:</span>xs),(y<span class="fu">:</span>ys))) <span class="fu">=</span> <span class="dt">Yield</span> s (<span class="dt">L</span> (s<span class="fu">-</span>x<span class="fu">+</span>y,xs,ys))</a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8">sprimes <span class="fu">=</span> unstream <span class="fu">.</span> sprimesS</a></code></pre></div>
+<p>That should prevent much GC, because all we need is primes list, all other is shifting sums.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-126608"></a>
+  <header>
+    <p><b>ciju</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-06-10">2008-06-10</time></p>
+  </header>
+<p>Here’s another solution. Runs in around 0.2 seconds, although using C. <a href="http://ciju.wordpress.com/2008/06/03/google-treasure-hunt/" class="uri">http://ciju.wordpress.com/2008/06/03/google-treasure-hunt/</a></p>
+<p>The method should work in haskell also. If you try it, please do let me know how much speedup u get, if any.</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2008-06-07-353-google-treasure-hunt-primes-question@therning.org?subject=A comment on Google Treasure Hunt primes question&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

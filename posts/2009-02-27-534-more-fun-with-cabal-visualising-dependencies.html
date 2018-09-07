@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">More fun with Cabal, visualising dependencies</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2009-02-27">2009-02-27</time> - Magnus Therning</p>
+</header>
+
+<p>It wasn’t why I started playing with Cabal, but after <a href="../posts/2009-02-24-514-514.html">extracting dependencies from a single package</a> I thought struck me that I could extract dependencies from many packages, e.g. <a href="http://hackage.haskell.org/packages/hackage.html">hackage</a>, and draw a dependency graph of the result.</p>
+<p>The basic idea is to use the code from my earlier post, accumulate dependency information by mapping it over several cabal files. Then convert that information into nodes and edges suitable for building a graph (<code>Data.Graph</code>). That graph is then “graphviz’ed” using <code>Data.Graph.Inductive.Graphviz</code>. Not that since this is performed on Debian Sid I’m using some rather old versions of packages.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a></p>
+<p>First off a shortcut for reading cabal files:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">readCabalFile <span class="fu">=</span> readPackageDescription silent</a></code></pre></div>
+<p>Once I have a <code>GenericPackageDescription</code> I want to collapse it into a regular <code>PackageDescription</code> (see the comments in my previous post for some details regarding this). Then I extract the package name and its dependencies and package them into a tuple. by mapping this function over a list of <code>GenericPackageDescription</code> I end up with an association list where the key is the package and the value is a list of all its dependencies.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">processFile gpd <span class="fu">=</span> <span class="kw">let</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">        finPkgDesc <span class="fu">=</span> finalizePackageDescription [] <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">            <span class="st">&quot;Linux&quot;</span> <span class="st">&quot;X86_64&quot;</span> (<span class="st">&quot;GHC&quot;</span>, <span class="dt">Version</span> [<span class="dv">6</span>, <span class="dv">8</span>, <span class="dv">2</span>] [])</a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">        (<span class="dt">Right</span> (pd, _)) <span class="fu">=</span> finPkgDesc gpd</a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">        getPackageName (<span class="dt">Dependency</span> name _) <span class="fu">=</span> name</a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">        nameNDeps <span class="fu">=</span> (pkgName <span class="fu">.</span> package) <span class="fu">&amp;&amp;&amp;</span> (nub <span class="fu">.</span> map getPackageName <span class="fu">.</span> buildDepends)</a>
+<a class="sourceLine" id="cb2-7" data-line-number="7">    <span class="kw">in</span></a>
+<a class="sourceLine" id="cb2-8" data-line-number="8">        nameNDeps pd</a></code></pre></div>
+<p>In order to create the graph later on I need a complete list of all nodes. To do this I take all the keys and all the values in the association list, collapse them into a single list, and remove duplicates. To turn this resulting list of packages into a list of <code>LNode</code> I then <code>zip</code> it with a list of integers.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1">getNodes <span class="fu">=</span> <span class="kw">let</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">        assocKeys <span class="fu">=</span> map fst</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">        assocVals <span class="fu">=</span> concat <span class="fu">.</span> map snd</a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">    <span class="kw">in</span> zip [<span class="dv">1</span><span class="fu">..</span>] <span class="fu">.</span> nub <span class="fu">.</span> uncurry (<span class="fu">++</span>) <span class="fu">.</span> (assocKeys <span class="fu">&amp;&amp;&amp;</span> assocVals)</a></code></pre></div>
+<p>Building the edges is straight forward, but a bit more involved. An edge is a tuple of two integers and something else, I don’t need to label the edges so in my case it is <code>(Int, Int, ())</code>. The list of nodes is basically an association list (an integer for key and a string for value), but I need to flip keys and values since I know the package name and need its node number.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">getEdges deps <span class="fu">=</span> <span class="kw">let</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">        nodes <span class="fu">=</span> getNodes deps</a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">        nodesAssoc <span class="fu">=</span> map (\ (a, b) <span class="ot">-&gt;</span> (b, a)) nodes</a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">        buildEdges (name, dep) <span class="fu">=</span> <span class="kw">let</span></a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">                getNode n <span class="fu">=</span> fromJust <span class="fu">$</span> lookup n nodesAssoc</a>
+<a class="sourceLine" id="cb4-6" data-line-number="6">                fromNode <span class="fu">=</span> getNode name</a>
+<a class="sourceLine" id="cb4-7" data-line-number="7">            <span class="kw">in</span> map (\ t <span class="ot">-&gt;</span> (fromNode, getNode t, ())) dep</a>
+<a class="sourceLine" id="cb4-8" data-line-number="8">    <span class="kw">in</span> concat <span class="fu">$</span> map buildEdges deps</a></code></pre></div>
+<p>Now that that’s done I can put it all together in a <code>main</code> function. The trickiest bit of that was to find the size of A4 in incehs :-)</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1">main <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">    files <span class="ot">&lt;-</span> getArgs</a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">    gpds <span class="ot">&lt;-</span> mapM readCabalFile files</a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">    <span class="kw">let</span> deps <span class="fu">=</span> map processFile gpds</a>
+<a class="sourceLine" id="cb5-5" data-line-number="5">    <span class="kw">let</span> (nodes, edges) <span class="fu">=</span> (getNodes <span class="fu">&amp;&amp;&amp;</span> getEdges) deps</a>
+<a class="sourceLine" id="cb5-6" data-line-number="6">    <span class="kw">let</span> depGraph <span class="fu">=</span> mkGraph nodes<span class="ot"> edges ::</span> <span class="dt">Gr</span> <span class="dt">String</span> ()</a>
+<a class="sourceLine" id="cb5-7" data-line-number="7">    putStrLn <span class="fu">$</span> graphviz depGraph <span class="st">&quot;Dependency_Graph&quot;</span> (<span class="fl">11.7</span>, <span class="fl">16.5</span>) (<span class="dv">1</span>,<span class="dv">1</span>) <span class="dt">Landscape</span></a></code></pre></div>
+<p>I downloaded all cabal files from Hackage and ran this code over them. I bumped into a few that use Cabal features not supported in the ancient version I’m using. I was a bit disappointed that Cabal wouldn’t let me handle that kind of errors myself (as I already expressed in an <a href="../posts/2009-02-27-523-a-no-no-in-my-book-found-in-cabal.html">earlier post</a>) so I was forced to delete them manually.</p>
+<p><a href="http://therning.org/magnus_files/hackage_deps.ps">Here’s the output</a>, completely unreadable, I know, but still sort of cool.</p>
+<section class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>Yes, I’d be really happy if the transition to GHC 6.10 would finish soon.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+</ol>
+</section>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/cabal.html">cabal</a>, <a href="../tags/haskell.html">haskell</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2009-02-27-523-a-no-no-in-my-book-found-in-cabal.html">⟸ A no-no in my book (found in Cabal)</a>
+
+
+
+<a href="../posts/2009-02-27-543-even-more-cabal-fun-visualising-in-3d.html">Even more Cabal fun, visualising in 3d ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-171533"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-02-27">2009-02-27</time></p>
+  </header>
+<p>As Duncan pointed out in a comment to [my earlier post](http://therning.org/magnus/archives/523 I should have been using <code>parsePackageDescription</code> instead of <code>readPackageDescription</code>. With that knowledge I rewrote <code>readCabalFile</code> like this:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">readCabalFile fn <span class="fu">=</span> <span class="kw">let</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">        translateParseResult (<span class="dt">ParseFailed</span> _) <span class="fu">=</span> <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">        translateParseResult (<span class="dt">ParseOk</span> _ gpd) <span class="fu">=</span> <span class="dt">Just</span> gpd</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">    <span class="kw">in</span> bracket (openFile fn <span class="dt">ReadMode</span>) hClose</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">        (\ h <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">            contents <span class="ot">&lt;-</span> hGetContents h</a>
+<a class="sourceLine" id="cb1-7" data-line-number="7">            return <span class="fu">$!</span> translateParseResult <span class="fu">$</span> parsePackageDescription contents)</a></code></pre></div>
+<p>No more manual deletion of cabal files necessary :-)</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2009-02-27-534-more-fun-with-cabal-visualising-dependencies@therning.org?subject=A comment on More fun with Cabal, visualising dependencies&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

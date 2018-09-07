@@ -1,0 +1,949 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="./css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="./css/style.css" />
+    <link rel="stylesheet" type="text/css" href="./css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    
+<article>
+
+  <div class="post-body">
+    <header>
+      <h1 class="post-title"><a href="./posts/2018-07-14-000-quickcheck-on-a-rest-api.html">QuickCheck on a REST API</a></h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2018-07-14">2018-07-14</time> - Magnus Therning</p>
+</header>
+
+<p>Since I’m working with web stuff nowadays I thought I’d play a little with translating my old post on <a href="./posts/2015-06-15-000-using-quickcheck-to-test-c-apis.html">using QuickCheck to test C APIs</a> to the web.</p>
+<h2 id="the-goal-and-how-to-reach-it">The goal and how to reach it</h2>
+<p>I want to use <a href="https://hackage.haskell.org/package/QuickCheck">QuickCheck</a> to test a REST API, just like in the case of the C API the idea is to</p>
+<ol type="1">
+<li>generate a sequence of API calls (a <em>program</em>), then</li>
+<li>run the sequence against a model, as well as</li>
+<li>run the sequence against the web service, and finally</li>
+<li>compare the resulting model against reality.</li>
+</ol>
+<h2 id="the-rest-api">The REST API</h2>
+<p>I’ll use a small web service I’m working on, and then concentrate on only a small part of the API to begin with.</p>
+<p>The parts of the API I’ll use for the programs at this stage are</p>
+<table>
+<colgroup>
+<col style="width: 7%" />
+<col style="width: 13%" />
+<col style="width: 39%" />
+<col style="width: 40%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Method</th>
+<th style="text-align: left;">Route</th>
+<th style="text-align: left;">Example in</th>
+<th style="text-align: left;">Example out</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><code>POST</code></td>
+<td style="text-align: left;"><code>/users</code></td>
+<td style="text-align: left;"><code>{&quot;userId&quot;: 0, &quot;userName&quot;: &quot;Yogi Berra&quot;}</code></td>
+<td style="text-align: left;"><code>{&quot;userId&quot;: 42, &quot;userName&quot;: &quot;Yogi Berra&quot;}</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>DELETE</code></td>
+<td style="text-align: left;"><code>/users/:id</code></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+</tbody>
+</table>
+<p>The following API calls will also be used, but not in the programs</p>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Method</th>
+<th style="text-align: left;">Route</th>
+<th style="text-align: left;">Example in</th>
+<th style="text-align: left;">Example out</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><code>GET</code></td>
+<td style="text-align: left;"><code>/users</code></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"><code>[0,3,7]</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>GET</code></td>
+<td style="text-align: left;"><code>/users/:id</code></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"><code>{&quot;userId&quot;: 42, &quot;userName&quot;: &quot;Yogi Berra&quot;}</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>POST</code></td>
+<td style="text-align: left;"><code>/reset</code></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+</tbody>
+</table>
+<h2 id="representing-api-calls">Representing API calls</h2>
+<p>Given the information about the API above it seems the following is enough to represent the two calls of interest together with a constructor representing the end of a program</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">data</span> <span class="dt">ApiCall</span> <span class="fu">=</span> <span class="dt">AddUser</span> <span class="dt">Text</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">             <span class="fu">|</span> <span class="dt">DeleteUser</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">             <span class="fu">|</span> <span class="dt">EndProgram</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">             <span class="kw">deriving</span> (<span class="dt">Show</span>)</a></code></pre></div>
+<p>and a program is just a sequence of calls, so list of <code>ApiCall</code> will do. However, since I want to generate sequences of calls, i.e. implement <code>Arbitrary</code>, I’ll wrap it in a <code>newtype</code></p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">newtype</span> <span class="dt">Program</span> <span class="fu">=</span> <span class="dt">Prog</span> [<span class="dt">ApiCall</span>]</a></code></pre></div>
+<h2 id="running-against-a-model-simulation">Running against a model (simulation)</h2>
+<p>First of all I need to decide what model to use. Based on the part of the API I’m using I’ll use an ordinary dictionary of <code>Int</code> and <code>Text</code></p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">type</span> <span class="dt">Model</span> <span class="fu">=</span> <span class="dt">M.Map</span> <span class="dt">Int</span> <span class="dt">Text</span></a></code></pre></div>
+<p>Simulating execution of a program is simulating each call against a model that’s updated with each step. I expect the final model to correspond to the state of the real service after the program is run for real. The simulation begins with an empty dictionary.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">simulateProgram ::</span> <span class="dt">Program</span> <span class="ot">-&gt;</span> <span class="dt">Model</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">simulateProgram (<span class="dt">Prog</span> cs) <span class="fu">=</span> foldl simulateCall M.empty cs</a></code></pre></div>
+<p>The simulation of the API calls must then be a function taking a model and a call, returning an updated model</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">simulateCall ::</span> <span class="dt">Model</span> <span class="ot">-&gt;</span> <span class="dt">ApiCall</span> <span class="ot">-&gt;</span> <span class="dt">Model</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">simulateCall m (<span class="dt">AddUser</span> t) <span class="fu">=</span> M.insert k t m</a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">    k <span class="fu">=</span> succ <span class="fu">$</span> foldl max <span class="dv">0</span> (M.keys m)</a>
+<a class="sourceLine" id="cb5-5" data-line-number="5">simulateCall m (<span class="dt">DeleteUser</span> k) <span class="fu">=</span> M.delete k m</a>
+<a class="sourceLine" id="cb5-6" data-line-number="6">simulateCall m <span class="dt">EndProgram</span> <span class="fu">=</span> m</a></code></pre></div>
+<p>Here I have to make a few assumptions. First, I assume the indeces for the users start on <code>1</code>. Second, that the next index used always is the successor of highest currently used index. We’ll see how well this holds up to reality later on.</p>
+<h2 id="running-against-the-web-service">Running against the web service</h2>
+<p>Running the program against the actual web service follows the same pattern, but here I’m dealing with the real world, so it’s a little more messy, i.e. <code>IO</code> is involved. First the running of a single call</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">runCall ::</span> <span class="dt">Manager</span> <span class="ot">-&gt;</span> <span class="dt">ApiCall</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb6-2" data-line-number="2">runCall mgr (<span class="dt">AddUser</span> t) <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb6-3" data-line-number="3">  ireq <span class="ot">&lt;-</span> parseRequest <span class="st">&quot;POST http://localhost:3000/users&quot;</span></a>
+<a class="sourceLine" id="cb6-4" data-line-number="4">  <span class="kw">let</span> req <span class="fu">=</span> ireq { requestBody <span class="fu">=</span> <span class="dt">RequestBodyLBS</span> (encode <span class="fu">$</span> <span class="dt">User</span> <span class="dv">0</span> t)}</a>
+<a class="sourceLine" id="cb6-5" data-line-number="5">  resp <span class="ot">&lt;-</span> httpLbs req mgr</a>
+<a class="sourceLine" id="cb6-6" data-line-number="6">  guard (status201 <span class="fu">==</span> responseStatus resp)</a>
+<a class="sourceLine" id="cb6-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb6-8" data-line-number="8">runCall mgr (<span class="dt">DeleteUser</span> k) <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb6-9" data-line-number="9">  req <span class="ot">&lt;-</span> parseRequest <span class="fu">$</span> <span class="st">&quot;DELETE http://localhost:3000/users/&quot;</span> <span class="fu">++</span> show k</a>
+<a class="sourceLine" id="cb6-10" data-line-number="10">  resp <span class="ot">&lt;-</span> httpNoBody req mgr</a>
+<a class="sourceLine" id="cb6-11" data-line-number="11">  guard (status200 <span class="fu">==</span> responseStatus resp)</a>
+<a class="sourceLine" id="cb6-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb6-13" data-line-number="13">runCall _ <span class="dt">EndProgram</span> <span class="fu">=</span> return ()</a></code></pre></div>
+<p>The running of a program is slightly more involved. Of course I have to set up the <code>Manager</code> needed for the HTTP calls, but I also need to</p>
+<ol type="1">
+<li>ensure that the web service is in a well-known state before starting, and</li>
+<li>extract the state of the web service after running the program, so I can compare it to the model</li>
+</ol>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">runProgram ::</span> <span class="dt">Program</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> <span class="dt">Model</span></a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">runProgram (<span class="dt">Prog</span> cs) <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-3" data-line-number="3">  mgr <span class="ot">&lt;-</span> newManager defaultManagerSettings</a>
+<a class="sourceLine" id="cb7-4" data-line-number="4">  resetReq <span class="ot">&lt;-</span> parseRequest <span class="st">&quot;POST http://localhost:3000/reset&quot;</span></a>
+<a class="sourceLine" id="cb7-5" data-line-number="5">  httpNoBody resetReq mgr</a>
+<a class="sourceLine" id="cb7-6" data-line-number="6">  mapM_ (runCall mgr) cs</a>
+<a class="sourceLine" id="cb7-7" data-line-number="7">  model <span class="ot">&lt;-</span> extractModel mgr</a>
+<a class="sourceLine" id="cb7-8" data-line-number="8">  return model</a></code></pre></div>
+<p>The call to <code>POST /reset</code> resets the web service. I would have liked to simply restart the service completely, but I failed in automating it. I think I’ll have to take a closer look at the implementation of <a href="http://hackage.haskell.org/package/scotty">scotty</a> to find a way.</p>
+<p>Extracting the web service state and packaging it in a <code>Model</code> is a matter of calling <code>GET /users</code> and then repeatedly calling <code>GET /users/:id</code> with each <code>id</code> gotten from the first call</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">extractModel ::</span> <span class="dt">Manager</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> <span class="dt">Model</span></a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">extractModel mgr <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb8-3" data-line-number="3">  req <span class="ot">&lt;-</span> parseRequest <span class="st">&quot;http://localhost:3000/users&quot;</span></a>
+<a class="sourceLine" id="cb8-4" data-line-number="4">  resp <span class="ot">&lt;-</span> httpLbs req mgr</a>
+<a class="sourceLine" id="cb8-5" data-line-number="5">  <span class="kw">let</span> (<span class="dt">Just</span> ids) <span class="fu">=</span> decode (responseBody resp)<span class="ot"> ::</span> <span class="dt">Maybe</span> [<span class="dt">Int</span>]</a>
+<a class="sourceLine" id="cb8-6" data-line-number="6">  users <span class="ot">&lt;-</span> forM ids <span class="fu">$</span> \ id <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb8-7" data-line-number="7">    req <span class="ot">&lt;-</span> parseRequest <span class="fu">$</span> <span class="st">&quot;http://localhost:3000/users/&quot;</span> <span class="fu">++</span> show id</a>
+<a class="sourceLine" id="cb8-8" data-line-number="8">    resp <span class="ot">&lt;-</span> httpLbs req mgr</a>
+<a class="sourceLine" id="cb8-9" data-line-number="9">    <span class="kw">let</span> (<span class="dt">Just</span> (user<span class="fu">:</span>_)) <span class="fu">=</span> decode (responseBody resp)<span class="ot"> ::</span> <span class="dt">Maybe</span> [<span class="dt">User</span>]</a>
+<a class="sourceLine" id="cb8-10" data-line-number="10">    return user</a>
+<a class="sourceLine" id="cb8-11" data-line-number="11">  return <span class="fu">$</span> foldl (\ map (<span class="dt">User</span> id name) <span class="ot">-&gt;</span> M.insert id name map) M.empty users</a></code></pre></div>
+<h2 id="generating-programs">Generating programs</h2>
+<p>My approach to generating a program is based on the idea that given a certain state there is only a limited number of possible calls that make sense. Given a model <code>m</code> it makes sense to make one of the following calls:</p>
+<ul>
+<li>add a new user</li>
+<li>delete an existing user</li>
+<li>end the program</li>
+</ul>
+<p>Based on this writing <code>genProgram</code> is rather straight forward</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">genProgram ::</span> <span class="dt">Gen</span> <span class="dt">Program</span></a>
+<a class="sourceLine" id="cb9-2" data-line-number="2">genProgram <span class="fu">=</span> <span class="dt">Prog</span> <span class="fu">&lt;$&gt;</span> go M.empty</a>
+<a class="sourceLine" id="cb9-3" data-line-number="3">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb9-4" data-line-number="4">    possibleAddUser _ <span class="fu">=</span> [<span class="dt">AddUser</span> <span class="fu">&lt;$&gt;</span> arbitrary]</a>
+<a class="sourceLine" id="cb9-5" data-line-number="5">    possibleDeleteUser m <span class="fu">=</span> map (return <span class="fu">.</span> <span class="dt">DeleteUser</span>) (M.keys m)</a>
+<a class="sourceLine" id="cb9-6" data-line-number="6">    possibleEndProgram _ <span class="fu">=</span> [return <span class="dt">EndProgram</span>]</a>
+<a class="sourceLine" id="cb9-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb9-8" data-line-number="8">    go m <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb9-9" data-line-number="9">      <span class="kw">let</span> possibles <span class="fu">=</span> possibleDeleteUser m <span class="fu">++</span> possibleAddUser m <span class="fu">++</span> possibleEndProgram m</a>
+<a class="sourceLine" id="cb9-10" data-line-number="10">      s <span class="ot">&lt;-</span> oneof possibles</a>
+<a class="sourceLine" id="cb9-11" data-line-number="11">      <span class="kw">let</span> m' <span class="fu">=</span> simulateCall m s</a>
+<a class="sourceLine" id="cb9-12" data-line-number="12">      <span class="kw">case</span> s <span class="kw">of</span></a>
+<a class="sourceLine" id="cb9-13" data-line-number="13">        <span class="dt">EndProgram</span> <span class="ot">-&gt;</span> return []</a>
+<a class="sourceLine" id="cb9-14" data-line-number="14">        _ <span class="ot">-&gt;</span> (s<span class="fu">:</span>) <span class="fu">&lt;$&gt;</span> go m'</a></code></pre></div>
+<p>Armed with that the <code>Arbitrary</code> instance for <code>Program</code> can be implemented as<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a></p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Arbitrary</span> <span class="dt">Program</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb10-2" data-line-number="2">  arbitrary <span class="fu">=</span> genProgram</a>
+<a class="sourceLine" id="cb10-3" data-line-number="3">  shrink p <span class="fu">=</span> []</a></code></pre></div>
+<h2 id="the-property-of-an-api">The property of an API</h2>
+<p>The steps in the <a href="#the-goal-and-how-to-reach-it">first section</a> can be used as a recipe for writing the property</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ot">prop_progCorrectness ::</span> <span class="dt">Program</span> <span class="ot">-&gt;</span> <span class="dt">Property</span></a>
+<a class="sourceLine" id="cb11-2" data-line-number="2">prop_progCorrectness program <span class="fu">=</span> monadicIO <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-3" data-line-number="3">  <span class="kw">let</span> simulatedModel <span class="fu">=</span> simulateProgram program</a>
+<a class="sourceLine" id="cb11-4" data-line-number="4">  runModel <span class="ot">&lt;-</span> run <span class="fu">$</span> runProgram program</a>
+<a class="sourceLine" id="cb11-5" data-line-number="5">  assert <span class="fu">$</span> simulatedModel <span class="fu">==</span> runModel</a></code></pre></div>
+<h2 id="what-next">What next?</h2>
+<p>There are some improvements that I’d like to make:</p>
+<ul>
+<li>Make the generation of <code>Program</code> better in the sense that the programs become longer. I think this is important as I start tackling larger APIs.</li>
+<li>Write an implementation of <code>shrink</code> for <code>Program</code>. With longer programs it’s of course more important to actually implement <code>shrink</code>.</li>
+</ul>
+<p>I’d love to hear if others are using <a href="https://hackage.haskell.org/package/QuickCheck">QuickCheck</a> to test REST APIs in some way, if anyone has suggestions for improvements, and of course ideas for how to implement <code>shrink</code> in a nice way.</p>
+<section class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>Yes, I completely skip the issue of shrinking programs at this point. This is OK at this point though, because the generated <code>Programs</code>s do end up to be very short indeed.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+</ol>
+</section>
+
+
+  </div>
+
+</article>
+
+
+<article>
+
+  <div class="post-body">
+    <header>
+      <h1 class="post-title"><a href="./posts/2018-06-19-000-a-simple-zaw-widget.html">A simple zaw widget for jumping to git projects</a></h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2018-06-19">2018-06-19</time> - Magnus Therning</p>
+</header>
+
+<p>A colleague at work showed me a script he put together to quickly jump to the numerous git projects we work with. It’s based on <code>dmenu</code> and looks rather nice. However, I’d rather have something based on <code>zsh</code>, but when looking around I didn’t find anything that really fit. So, instead I ended up writing a simple widget for <a href="https://github.com/zsh-users/zaw">zaw</a>.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode zsh"><code class="sourceCode zsh"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">function</span><span class="fu"> magus-git-projs()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">    <span class="ot">projs=</span><span class="st">&quot;</span><span class="ot">$(</span><span class="kw">find</span> ~/projs -maxdepth 2 -name .git -exec <span class="kw">dirname</span> <span class="dt">{}</span> <span class="dt">\;</span><span class="ot">)</span><span class="st">&quot;</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">    <span class="ot">candidates=(</span>$<span class="dt">{(f)projs}</span><span class="ot">)</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">    <span class="ot">actions=(</span>magus-git-projs-cd</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">             magus-git-projs-edit-first)</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">}</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">function</span><span class="fu"> magus-git-projs-cd()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9">    zaw-callback-execute <span class="st">&quot;cd </span><span class="ot">${1}</span><span class="st">&quot;</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">}</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">function</span><span class="fu"> magus-git-projs-edit-first()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13">    zaw-callback-replace-buffer <span class="st">&quot;cd </span><span class="ot">${1}</span><span class="st">&quot;</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">}</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16">zaw-register-src -n git-projs magus-git-projs</a></code></pre></div>
+<p>I then attached bound it like this</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode zsh"><code class="sourceCode zsh"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">bindkey</span> -M vicmd <span class="st">'zgp'</span> zaw-git-projs</a></code></pre></div>
+
+
+  </div>
+
+</article>
+
+
+<article>
+
+  <div class="post-body">
+    <header>
+      <h1 class="post-title"><a href="./posts/2017-01-31-000-on-mocks-and-stubs-in-python--free-monad-or-interpreter-pattern-.html">On mocks and stubs in python (free monad or interpreter pattern)</a></h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2017-01-31">2017-01-31</time> - Magnus Therning</p>
+</header>
+
+<p>A few weeks ago I watched a video where <a href="https://youtu.be/EaxDl5NPuCA">Ken Scambler talks about mocks and stubs</a>. In particular he talks about how to get rid of them.</p>
+<p>One part is about coding IO operatioins as data and using the GoF interpreter pattern to</p>
+<p>What he’s talking about is of course free monads, but I feel he’s glossing over a lot of details. Based on some of the questions asked during the talk I think I share that feeling with some people in the audience. Specifically I feel he skipped over the following:</p>
+<ul>
+<li>How does one <em>actually</em> write such code in a mainstream OO/imperative language?</li>
+<li>What’s required of the language in order to allow using the techniques he’s talking about?</li>
+<li>Errors tend to break abstractions, so how does one deal with error (i.e. exceptions)?</li>
+</ul>
+<p>Every time I’ve used mocks and stubs for unit testing I’ve had a feeling that “this can’t be how it’s supposed to be done!” So to me, Ken’s talk offered some hope, and I <em>really</em> want to know how applicable the ideas are in mainstream OO/imperative languages.</p>
+<h3 id="the-example">The example</h3>
+<p>To play around with this I picked the following function (in Python):</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">def</span> count_chars_of_file(fn):</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">    fd <span class="op">=</span> os.<span class="bu">open</span>(fn, os.O_RDONLY)</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">    text <span class="op">=</span> os.read(fd, <span class="dv">10000</span>)</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">    n <span class="op">=</span> <span class="bu">len</span>(text)</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">    os.close(fd)</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">    <span class="cf">return</span> n</a></code></pre></div>
+<p>It’s small and simple, but I think it suffices to highlight a few important points. So the goal is to rewrite this function such that calls to IO operations (actions) (e.g. <code>os.read</code>) are replaced by data (an instance of some data type) conveying the intent of the operation. This data can later be passed to an <em>interpreter of actions</em>.</p>
+<h3 id="thoughts-on-the-execution-of-actions-and-the-interpreter-pattern">Thoughts on the execution of actions and the interpreter pattern</h3>
+<p>When reading the examples in the <a href="http://www.oodesign.com/interpreter-pattern.html">description of the interpreter pattern</a> what stands out to me is that they are either</p>
+<ol type="1">
+<li>a list of expressions, or</li>
+<li>a tree of expressions</li>
+</ol>
+<p>that is passed to an interpreter. Will this do for us when trying to rewrite <code>count_chars_of_file</code>?</p>
+<p>No, it won’t! Here’s why:</p>
+<ul>
+<li>A tree of actions doesn’t really make sense. Our actions are small and simple, they encode the intent of a single IO operation.</li>
+<li>A list of actions can’t deal with interspersed non-actions, in this case it’s the line <code>n = len(text)</code> that causes a problem.</li>
+</ul>
+<p>The interpreter pattern misses something that is crucial in this case: the running of the interpreter must be intermingled with running non-interpreted code. The way I think of it is that not only the action needs to be present and dealt with, but also <em>the rest of the program</em>, that latter thing is commonly called a <em>continuation</em>.</p>
+<p>So, can we introduce actions and rewrite <code>count_chars_of_file</code> such that we pause the program when interpretation of an action is required, interpret it, and then resume where we left off?</p>
+<p>Sure, but it’s not really idiomatic Python code!</p>
+<h3 id="actions-and-continuations">Actions and continuations</h3>
+<p>The IO operations (actions) are represented as a named tuple:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb2-1" data-line-number="1">Op <span class="op">=</span> collections.namedtuple(<span class="st">'Op'</span>, [<span class="st">'op'</span>, <span class="st">'args'</span>, <span class="st">'k'</span>])</a></code></pre></div>
+<p>and the functions returning actions can then be written as</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">def</span> cps_open(fn, k):</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">    <span class="cf">return</span> Op(<span class="st">'open'</span>, [fn], k)</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4"><span class="kw">def</span> cps_read(fd, k):</a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">    <span class="cf">return</span> Op(<span class="st">'read'</span>, [fd], k)</a>
+<a class="sourceLine" id="cb3-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb3-7" data-line-number="7"><span class="kw">def</span> cps_close(fd, k):</a>
+<a class="sourceLine" id="cb3-8" data-line-number="8">    <span class="cf">return</span> Op(<span class="st">'close'</span>, [fd], k)</a></code></pre></div>
+<p>The interpreter is then an <em>if</em> statement checking the value of <code>op.op</code> with each branch executing the IO operation and passing the result to the rest of the program. I decided to wrap it directly in the program runner:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="kw">def</span> runProgram(prog):</a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">    <span class="kw">def</span> runOp(op):</a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">        <span class="cf">if</span> op.op <span class="op">==</span> <span class="st">'open'</span>:</a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">            fd <span class="op">=</span> os.<span class="bu">open</span>(<span class="op">*</span>op.args, os.O_RDONLY)</a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">            <span class="cf">return</span> op.k(fd)</a>
+<a class="sourceLine" id="cb4-6" data-line-number="6">        <span class="cf">elif</span> op.op <span class="op">==</span> <span class="st">'read'</span>:</a>
+<a class="sourceLine" id="cb4-7" data-line-number="7">            text <span class="op">=</span> os.read(<span class="op">*</span>op.args, <span class="dv">10000</span>)</a>
+<a class="sourceLine" id="cb4-8" data-line-number="8">            <span class="cf">return</span> op.k(text)</a>
+<a class="sourceLine" id="cb4-9" data-line-number="9">        <span class="cf">elif</span> op.op <span class="op">==</span> <span class="st">'close'</span>:</a>
+<a class="sourceLine" id="cb4-10" data-line-number="10">            os.close(<span class="op">*</span>op.args)</a>
+<a class="sourceLine" id="cb4-11" data-line-number="11">            <span class="cf">return</span> op.k()</a>
+<a class="sourceLine" id="cb4-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb4-13" data-line-number="13">    <span class="cf">while</span> <span class="bu">isinstance</span>(prog, Op):</a>
+<a class="sourceLine" id="cb4-14" data-line-number="14">        prog <span class="op">=</span> runOp(prog)</a>
+<a class="sourceLine" id="cb4-15" data-line-number="15"></a>
+<a class="sourceLine" id="cb4-16" data-line-number="16">    <span class="cf">return</span> prog</a></code></pre></div>
+<p>So far so good, but what will <code>count_char_of_file</code> all of this do to <code>count_chars_of_file</code>?</p>
+<p>Well, it’s not quite as easy to read any more (basically it’s rewritten in <a href="https://en.wikipedia.org/wiki/Continuation-passing_style">CPS</a>):</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="kw">def</span> count_chars_of_file(fn):</a>
+<a class="sourceLine" id="cb5-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">    <span class="kw">def</span> cont_1(text, fd):</a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">        n <span class="op">=</span> <span class="bu">len</span>(text)</a>
+<a class="sourceLine" id="cb5-5" data-line-number="5">        <span class="cf">return</span> cps_close(fd, <span class="kw">lambda</span> n<span class="op">=</span>n: n)</a>
+<a class="sourceLine" id="cb5-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb5-7" data-line-number="7">    <span class="kw">def</span> cont_0(fd):</a>
+<a class="sourceLine" id="cb5-8" data-line-number="8">        <span class="cf">return</span> cps_read(fd, <span class="kw">lambda</span> text, fd<span class="op">=</span>fd: cont_1(text, fd))</a>
+<a class="sourceLine" id="cb5-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb5-10" data-line-number="10">    <span class="cf">return</span> cps_open(fn, cont_0)</a></code></pre></div>
+<h3 id="generators-to-the-rescue">Generators to the rescue</h3>
+<p>Python does have a notion of continuations in the form of generators.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> By making <code>count_char_of_file</code> into a generator it’s possible to remove the explicit continuations and the program actually resembles the original one again.</p>
+<p>The type for the actions loses one member, and the functions creating them lose an argument:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb6-1" data-line-number="1">Op <span class="op">=</span> collections.namedtuple(<span class="st">'Op'</span>, [<span class="st">'op'</span>, <span class="st">'args'</span>])</a>
+<a class="sourceLine" id="cb6-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb6-3" data-line-number="3"><span class="kw">def</span> gen_open(fn):</a>
+<a class="sourceLine" id="cb6-4" data-line-number="4">    <span class="cf">return</span> Op(<span class="st">'open'</span>, [fn])</a>
+<a class="sourceLine" id="cb6-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb6-6" data-line-number="6"><span class="kw">def</span> gen_read(fd):</a>
+<a class="sourceLine" id="cb6-7" data-line-number="7">    <span class="cf">return</span> Op(<span class="st">'read'</span>, [fd])</a>
+<a class="sourceLine" id="cb6-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb6-9" data-line-number="9"><span class="kw">def</span> gen_close(fd):</a>
+<a class="sourceLine" id="cb6-10" data-line-number="10">    <span class="cf">return</span> Op(<span class="st">'close'</span>, [fd])</a></code></pre></div>
+<p>The interpreter and program runner must be modified to step the generator until its end:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="kw">def</span> runProgram(prog):</a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">    <span class="kw">def</span> runOp(op):</a>
+<a class="sourceLine" id="cb7-3" data-line-number="3">        <span class="cf">if</span> op.op <span class="op">==</span> <span class="st">'open'</span>:</a>
+<a class="sourceLine" id="cb7-4" data-line-number="4">            fd <span class="op">=</span> os.<span class="bu">open</span>(op.args[<span class="dv">0</span>], os.O_RDONLY)</a>
+<a class="sourceLine" id="cb7-5" data-line-number="5">            <span class="cf">return</span> fd</a>
+<a class="sourceLine" id="cb7-6" data-line-number="6">        <span class="cf">elif</span> op.op <span class="op">==</span> <span class="st">'read'</span>:</a>
+<a class="sourceLine" id="cb7-7" data-line-number="7">            text <span class="op">=</span> os.read(op.args[<span class="dv">0</span>], <span class="dv">10000</span>)</a>
+<a class="sourceLine" id="cb7-8" data-line-number="8">            <span class="cf">return</span> text</a>
+<a class="sourceLine" id="cb7-9" data-line-number="9">        <span class="cf">elif</span> op.op <span class="op">==</span> <span class="st">'close'</span>:</a>
+<a class="sourceLine" id="cb7-10" data-line-number="10">            os.close(op.args[<span class="dv">0</span>])</a>
+<a class="sourceLine" id="cb7-11" data-line-number="11">            <span class="cf">return</span> <span class="va">None</span></a>
+<a class="sourceLine" id="cb7-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb7-13" data-line-number="13">    <span class="cf">try</span>:</a>
+<a class="sourceLine" id="cb7-14" data-line-number="14">        op <span class="op">=</span> prog.send(<span class="va">None</span>)</a>
+<a class="sourceLine" id="cb7-15" data-line-number="15">        <span class="cf">while</span> <span class="va">True</span>:</a>
+<a class="sourceLine" id="cb7-16" data-line-number="16">            r <span class="op">=</span> runOp(op)</a>
+<a class="sourceLine" id="cb7-17" data-line-number="17">            op <span class="op">=</span> prog.send(r)</a>
+<a class="sourceLine" id="cb7-18" data-line-number="18">    <span class="cf">except</span> <span class="pp">StopIteration</span> <span class="im">as</span> e:</a>
+<a class="sourceLine" id="cb7-19" data-line-number="19">        <span class="cf">return</span> e.value</a></code></pre></div>
+<p>Finally, the generator-version of <code>count_chars_of_file</code> goes back to being a bit more readable:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="kw">def</span> count_chars_of_file(fn):</a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">    fd <span class="op">=</span> <span class="cf">yield</span> gen_open(fn)</a>
+<a class="sourceLine" id="cb8-3" data-line-number="3">    text <span class="op">=</span> <span class="cf">yield</span> gen_read(fd)</a>
+<a class="sourceLine" id="cb8-4" data-line-number="4">    n <span class="op">=</span> <span class="bu">len</span>(text)</a>
+<a class="sourceLine" id="cb8-5" data-line-number="5">    <span class="cf">yield</span> gen_close(fd)</a>
+<a class="sourceLine" id="cb8-6" data-line-number="6">    <span class="cf">return</span> n</a></code></pre></div>
+<h3 id="generators-all-the-way">Generators all the way</h3>
+<p>Limitations of Python generators mean that we have either have to push the interpreter (<code>runProgram</code>) down to where <code>count_char_of_file</code> is used, or make all intermediate layers into generators and rewrite the interpreter to deal with this. It could look something like this then:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="kw">def</span> runProgram(prog):</a>
+<a class="sourceLine" id="cb9-2" data-line-number="2">    <span class="kw">def</span> runOp(op):</a>
+<a class="sourceLine" id="cb9-3" data-line-number="3">        <span class="cf">if</span> op.op <span class="op">==</span> <span class="st">'open'</span>:</a>
+<a class="sourceLine" id="cb9-4" data-line-number="4">            fd <span class="op">=</span> os.<span class="bu">open</span>(op.args[<span class="dv">0</span>], os.O_RDONLY)</a>
+<a class="sourceLine" id="cb9-5" data-line-number="5">            <span class="cf">return</span> fd</a>
+<a class="sourceLine" id="cb9-6" data-line-number="6">        <span class="cf">elif</span> op.op <span class="op">==</span> <span class="st">'read'</span>:</a>
+<a class="sourceLine" id="cb9-7" data-line-number="7">            text <span class="op">=</span> os.read(op.args[<span class="dv">0</span>], <span class="dv">10000</span>)</a>
+<a class="sourceLine" id="cb9-8" data-line-number="8">            <span class="cf">return</span> text</a>
+<a class="sourceLine" id="cb9-9" data-line-number="9">        <span class="cf">elif</span> op.op <span class="op">==</span> <span class="st">'close'</span>:</a>
+<a class="sourceLine" id="cb9-10" data-line-number="10">            os.close(op.args[<span class="dv">0</span>])</a>
+<a class="sourceLine" id="cb9-11" data-line-number="11">            <span class="cf">return</span> <span class="va">None</span></a>
+<a class="sourceLine" id="cb9-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb9-13" data-line-number="13">    <span class="cf">try</span>:</a>
+<a class="sourceLine" id="cb9-14" data-line-number="14">        op <span class="op">=</span> prog.send(<span class="va">None</span>)</a>
+<a class="sourceLine" id="cb9-15" data-line-number="15">        <span class="cf">while</span> <span class="va">True</span>:</a>
+<a class="sourceLine" id="cb9-16" data-line-number="16">            <span class="cf">if</span> <span class="bu">isinstance</span>(op, Op):</a>
+<a class="sourceLine" id="cb9-17" data-line-number="17">                r <span class="op">=</span> runOp(op)</a>
+<a class="sourceLine" id="cb9-18" data-line-number="18">                op <span class="op">=</span> prog.send(r)</a>
+<a class="sourceLine" id="cb9-19" data-line-number="19">            <span class="cf">elif</span> <span class="bu">isinstance</span>(op, types.GeneratorType):</a>
+<a class="sourceLine" id="cb9-20" data-line-number="20">                r <span class="op">=</span> runProgram(op)</a>
+<a class="sourceLine" id="cb9-21" data-line-number="21">                op <span class="op">=</span> prog.send(r)</a>
+<a class="sourceLine" id="cb9-22" data-line-number="22"></a>
+<a class="sourceLine" id="cb9-23" data-line-number="23">    <span class="cf">except</span> <span class="pp">StopIteration</span> <span class="im">as</span> e:</a>
+<a class="sourceLine" id="cb9-24" data-line-number="24">        <span class="cf">return</span> e.value</a></code></pre></div>
+<h3 id="final-thoughts">Final thoughts</h3>
+<p>I think I’ve shown one way to achieve, at least parts of, what Ken talks about. The resulting code looks almost like “normal Python”. There are some things to note:</p>
+<ol type="1">
+<li>Exception handling is missing. I know of no way to inject an exception into a generator in Python so I’m guessing that exceptions from running the IO operations would have to be passed in via <code>generator.send</code> as a normal value, which means that exception handling code would have to look decidedly non-Pythonic.</li>
+<li>Using this approach means the language must have support for generators (or some other way to represent <em>the rest of the program</em>). I think this rules out Java, but probably it can be done in C#.</li>
+<li>I’ve only used a single interpreter here, but I see no issues with combining interpreters (to combine domains of operations like <em>file operations</em> and <em>network operations</em>). I also think it’d be possible to use it to realize what De Goes calls <a href="http://degoes.net/articles/modern-fp-part-2#onion-architecture">Onion Architecture</a>.</li>
+</ol>
+<p>Would I ever advocate this approach for a larger Python project, or even any project in an OO/imperative language?</p>
+<p>I’m not sure! I think that testing using mocks and stubs has lead to a smelly code base each an every time I’ve used it, but this approach feels a little too far from how OO/imperative code usually is written. I would love to try it out and see what the implications really are.</p>
+<section class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>I know, I know, <em>coroutines</em>! I’m simplifying and brushing over details here, but I don’t think I’m brushing over any details that are <em>important</em> for this example.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+</ol>
+</section>
+
+
+  </div>
+
+</article>
+
+
+<article>
+
+  <div class="post-body">
+    <header>
+      <h1 class="post-title"><a href="./posts/2016-10-21-000-large-project.html">That's a large project</a></h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2016-10-21">2016-10-21</time> - Magnus Therning</p>
+</header>
+
+<p>From <a href="http://lwn.net/Articles/702177/">LWN October 6, 2016</a>:</p>
+<blockquote>
+<p>Over the course of the last year, the project accepted about eight changes per hour — every hour — from over 4,000 developers sponsored by over 400 companies.</p>
+</blockquote>
+
+
+  </div>
+
+</article>
+
+
+<article>
+
+  <div class="post-body">
+    <header>
+      <h1 class="post-title"><a href="./posts/2016-06-18-free--take-2.html">Free, take 2</a></h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2016-06-18">2016-06-18</time> - Magnus Therning</p>
+</header>
+
+<p>The other day I read <a href="https://ocharles.org.uk/blog/posts/2016-01-26-transformers-free-monads-mtl-laws.html">a blog post on monads and stuff</a> after which I felt rather silly about my <a href="./posts/2016-01-13-000-free-play--part-one.html">earlier</a> <a href="./posts/2016-01-15-000-free-play--part-two.html">posts</a> on <a href="./posts/2016-01-17-000-free-play--part-three.html">Free</a>.</p>
+<p>I think this is probably the post I should have written instead :)</p>
+<p>I’ll use three pieces of code, each one builds on the one before:</p>
+<ul>
+<li><code>Free1.hs</code> - Uses a free monad for a single algebra/API (full code <a href="https://gist.github.com/magthe/9fd7fa6c0a5a5b63cdc84d5c81cc50b5#file-free1-hs">here</a>).</li>
+<li><code>Free2.hs</code> - Uses a free monad for a two algebras/APIs, where one decorates the other (full code <a href="https://gist.github.com/magthe/9fd7fa6c0a5a5b63cdc84d5c81cc50b5#file-free2-hs">here</a>).</li>
+<li><code>Free3.hs</code> - Uses a free monad for a three algebras/APIs, where two are used in the program and the remaing one decorates the other two (full code <a href="https://gist.github.com/magthe/9fd7fa6c0a5a5b63cdc84d5c81cc50b5#file-free3-hs">here</a>).</li>
+</ul>
+<h3 id="the-first---one-algebra">The first - one algebra</h3>
+<p>I’m re-using the algebras from my previous posts, but I believe it makes it easier to follow along if the amount of jumping between posts is minimized so here is the first one once again:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">data</span> <span class="dt">SimpleFileF</span> a</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">  <span class="fu">=</span> <span class="dt">LoadFile</span> FilePath (<span class="dt">String</span> <span class="ot">-&gt;</span> a)</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  <span class="fu">|</span> <span class="dt">SaveFile</span> FilePath <span class="dt">String</span> a</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  <span class="kw">deriving</span>(<span class="dt">Functor</span>)</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">type</span> <span class="dt">SimpleFileAPI</span> <span class="fu">=</span> <span class="dt">Free</span> <span class="dt">SimpleFileF</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="ot">loadFile ::</span> FilePath <span class="ot">-&gt;</span> <span class="dt">SimpleFileAPI</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9">loadFile fp <span class="fu">=</span> liftF <span class="fu">$</span> <span class="dt">LoadFile</span> fp id</a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="ot">saveFile ::</span> FilePath <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">SimpleFileAPI</span> ()</a>
+<a class="sourceLine" id="cb1-12" data-line-number="12">saveFile fp d <span class="fu">=</span> liftF <span class="fu">$</span> <span class="dt">SaveFile</span> fp d ()</a></code></pre></div>
+<p>It’s a ridiculously small one, but I believe it’s good enough to work with. In the previous posts I implemented the <code>Functor</code> instances manually. I couldn’t be bothered this time around; I think I pretty much know how to do that for this kind of types now.</p>
+<p>Having a type for the algebra, <code>SimpleFileAPI</code>, is convenient already now, even more so in the other examples.</p>
+<p>The two convenience functions on the end makes it straight forward to write functions using the algebra:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">withSimpleFile ::</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>) <span class="ot">-&gt;</span> FilePath <span class="ot">-&gt;</span> <span class="dt">SimpleFileAPI</span> ()</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">withSimpleFile f fp <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">  d <span class="ot">&lt;-</span> loadFile fp</a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">  <span class="kw">let</span> result <span class="fu">=</span> f d</a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">  saveFile (fp <span class="fu">++</span> <span class="st">&quot;_new&quot;</span>) result</a></code></pre></div>
+<p>This is simple, straight forward monadic code. Easy to read and work with. Of course it doesn’t actually do anything at all yet. For that I need need an interpreter, something that translates (reduces) the algebra, the API, the commands, call them what you will, into the (side-)effects I want. For <a href="http://hackage.haskell.org/package/free-4.12.4/docs/Control-Monad-Free.html#t:Free"><code>Free</code></a> that is <a href="http://hackage.haskell.org/package/free-4.12.4/docs/Control-Monad-Free.html#v:foldFree"><code>foldFree</code></a> together with a suitable function <code class="sourceCode haskell"><span class="ot">f ::</span> <span class="dt">SimpleFileF</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</code>.</p>
+<p>I want <code>LoadFile</code> to translate to a file being read and <code>SaveFile</code> to some data being saved to a file. That makes it pretty obvious how that <code>f</code> needs to be written:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">runSimpleFile ::</span> <span class="dt">SimpleFileAPI</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">runSimpleFile <span class="fu">=</span> foldFree f</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">    f (<span class="dt">LoadFile</span> fp f') <span class="fu">=</span> f' <span class="fu">&lt;$&gt;</span> readFile fp</a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">    f (<span class="dt">SaveFile</span> fp d r) <span class="fu">=</span> writeFile fp d <span class="fu">&gt;&gt;</span> return r</a></code></pre></div>
+<p>At this point it might be good to explain the constructors of <code>SimpleFileF</code> a bit more. At first I thought they looked a bit funny. I mean, why does <code>SaveFile</code> have an <code>a</code> at all since it obviously always should result in <code>()</code>? And what’s up with that function in <code>Loadfile</code>?</p>
+<p>It did become a little clearer to me after some thought and having a look at <code>Free</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Free</span> f a <span class="fu">=</span> <span class="dt">Pure</span> a <span class="fu">|</span> <span class="dt">Free</span> (f (<span class="dt">Free</span> f a))</a></code></pre></div>
+<p>I personally find the latter constructor a bit mind-bending. I can handle recursive functions fairly well, but recursive types have a tendency to confuse me. From what I understand one can think of <code>Free</code> as similar to a list. <code>Pure</code> ends the list (<code>Nil</code>) and <code>Free</code> one instance of <code>f</code> to the rest of the list (<code>Cons</code>). Since <code>Free f a</code> is a monad one can think of <code>a</code> as the result of the command.</p>
+<p>If I were to write <code>saveFile</code> explicitly it’d look like this</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1">saveFile fp d <span class="fu">=</span> <span class="dt">Free</span> (<span class="dt">SaveFile</span> fp d (<span class="dt">Pure</span> ()))</a></code></pre></div>
+<p>and for <code>loadFile</code>:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1">loadFile fp <span class="fu">=</span> <span class="dt">Free</span> (<span class="dt">LoadFile</span> fp (\ s <span class="ot">-&gt;</span> <span class="dt">Pure</span> s))</a></code></pre></div>
+<p>But let’s get back to the type and why ‘a’ occurs like it does in the two constructors. As Gabriel G shows in his post <a href="http://www.haskellforall.com/2012/06/you-could-have-invented-free-monads.html">Why free monads matter</a> a constructor without <code>a</code> would result in termination. In other words, if <code>SaveFile</code> didn’t hold an <code>a</code> I’d not be able to write, in a natural way, a function that saves two files.</p>
+<p>Another limiting factor is that <code>foldFree</code> of the <code>Free</code> implementation I’m using has the type <code class="sourceCode haskell"><span class="dt">Monad</span> m <span class="ot">=&gt;</span> (forall x<span class="fu">.</span> f x <span class="ot">-&gt;</span> m x) <span class="ot">-&gt;</span> <span class="dt">Free</span> f a <span class="ot">-&gt;</span> m a</code>. This sets a requirement on what the function translating from my API into effects may look like, i.e. what <code>f</code> in <code>runSimpleFile</code> may look like. If <code>SaveFile</code> had no <code>a</code> to return what would <code>f (SaveFile {})</code> return, how could it ever satisfy the required type?</p>
+<p>The reason for <code>LoadFile</code> having a function <code>String -&gt; a</code> is simply that there is no data yet, but I still want to be able to manipulate it. Using a function and function composition is the ticket then.</p>
+<p>I think that’s all there is to say about to the first piece of code. To run it take a look at the comment at the end of <a href="https://gist.github.com/magthe/9fd7fa6c0a5a5b63cdc84d5c81cc50b5#file-free1-hs">the file</a> and then play with it. If you want to turn all characters of a file <code>foo</code> into upper case you can use</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1">runSimpleFile <span class="fu">$</span> withSimpleFile (map toUpper) <span class="st">&quot;foo&quot;</span></a></code></pre></div>
+<h3 id="the-second---two-algebras-one-decorating-the-other">The second - two algebras, one decorating the other</h3>
+<p>The second piece of code almost only adds to the first one. There is one exception though, the function <code>runSimpleFile</code> is removed. Instead I’ve taken the transformation function, which used to be called <code>f</code> and was internal to <code>runSimpleFile</code> and moved it out. It’s called <code>stepSimpleFile</code>:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">stepSimpleFile ::</span> <span class="dt">SimpleFileF</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">stepSimpleFile (<span class="dt">LoadFile</span> fp f') <span class="fu">=</span> f' <span class="fu">&lt;$&gt;</span> readFile fp</a>
+<a class="sourceLine" id="cb8-3" data-line-number="3">stepSimpleFile (<span class="dt">SaveFile</span> fp d r) <span class="fu">=</span> writeFile fp d <span class="fu">&gt;&gt;</span> return r</a></code></pre></div>
+<p>The logging API, <code>LogAPI</code>, follows the same pattern as <code>SimpleFileAPI</code> and I’m counting on the description above being clear enough to not have to repeat myself. For completeness I include the code:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="kw">data</span> <span class="dt">LogF</span> a <span class="fu">=</span> <span class="dt">Log</span> <span class="dt">String</span> a</a>
+<a class="sourceLine" id="cb9-2" data-line-number="2">          <span class="kw">deriving</span>(<span class="dt">Functor</span>)</a>
+<a class="sourceLine" id="cb9-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb9-4" data-line-number="4"><span class="kw">type</span> <span class="dt">LogAPI</span> <span class="fu">=</span> <span class="dt">Free</span> <span class="dt">LogF</span></a>
+<a class="sourceLine" id="cb9-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb9-6" data-line-number="6"><span class="ot">stepLog ::</span> <span class="dt">LogF</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</a>
+<a class="sourceLine" id="cb9-7" data-line-number="7">stepLog (<span class="dt">Log</span> s r) <span class="fu">=</span> putStrLn s <span class="fu">&gt;&gt;</span> return r</a></code></pre></div>
+<p>I intend the <code>LogAPI</code> to be used as embellishments on the <code>SimpleFileAPI</code>, in other words I somehow have to turn an operation of <code>SimpleFileAPI</code> into an operation of <code>LogAPI</code>, i.e. I need a transformation. I called it <code>logSimpleFileT</code> and let it turn operations in <code>SimpleFileF</code> (i.e. not exactly <code>SimpleFileAPI</code>) into <code>LogAPI</code> (if you are wondering about my choice of type I hope it’ll become clear below, just trust me for now that this is a good choice):</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">logSimpleFileT ::</span> <span class="dt">SimpleFileF</span> a <span class="ot">-&gt;</span> <span class="dt">LogAPI</span> ()</a>
+<a class="sourceLine" id="cb10-2" data-line-number="2">logSimpleFileT (<span class="dt">LoadFile</span> fp _) <span class="fu">=</span> liftF <span class="fu">$</span> <span class="dt">Log</span> (<span class="st">&quot;** load file &quot;</span> <span class="fu">++</span> fp) ()</a>
+<a class="sourceLine" id="cb10-3" data-line-number="3">logSimpleFileT (<span class="dt">SaveFile</span> fp _ _) <span class="fu">=</span> liftF <span class="fu">$</span> <span class="dt">Log</span> (<span class="st">&quot;** save file &quot;</span> <span class="fu">++</span> fp) ()</a></code></pre></div>
+<p>So far everything is hopefully very straight forward and unsurprising. Now I need to combine the two APIs, I need to add them, in other words, I need a sum type:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="kw">data</span> <span class="dt">S</span> a1 a2 t <span class="fu">=</span> <span class="dt">A1</span> (a1 t) <span class="fu">|</span> <span class="dt">A2</span> (a2 t)</a>
+<a class="sourceLine" id="cb11-2" data-line-number="2">              <span class="kw">deriving</span>(<span class="dt">Functor</span>)</a>
+<a class="sourceLine" id="cb11-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb11-4" data-line-number="4"><span class="kw">type</span> <span class="dt">SumAPI</span> <span class="fu">=</span> <span class="dt">Free</span> (<span class="dt">S</span> <span class="dt">LogF</span> <span class="dt">SimpleFileF</span>)</a></code></pre></div>
+<p>The next question is how to turn my two original APIs, <code>SimpleFileAPI</code> and <code>LogAPI</code>, into <code>SumAPI</code>. Luckily that’s already solved by the function <a href="http://hackage.haskell.org/package/free-4.12.4/docs/Control-Monad-Free.html#v:hoistFree"><code>hoistFree</code></a>:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="ot">hoistFree ::</span> <span class="dt">Functor</span> g <span class="ot">=&gt;</span> (forall a<span class="fu">.</span> f a <span class="ot">-&gt;</span> g a) <span class="ot">-&gt;</span> <span class="dt">Free</span> f b <span class="ot">-&gt;</span> <span class="dt">Free</span> g b </a></code></pre></div>
+<p>With this and <code>logSimpleFileT</code> from above I can use <code>foldFree</code> to decorate each operation with a logging operation like this:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="ot">logSimpleFile ::</span> <span class="dt">SimpleFileAPI</span> a <span class="ot">-&gt;</span> <span class="dt">SumAPI</span> a</a>
+<a class="sourceLine" id="cb13-2" data-line-number="2">logSimpleFile <span class="fu">=</span> foldFree f</a>
+<a class="sourceLine" id="cb13-3" data-line-number="3"><span class="kw">where</span></a>
+<a class="sourceLine" id="cb13-4" data-line-number="4">  f op <span class="fu">=</span> hoistFree <span class="dt">A1</span> (logSimpleFileT op) <span class="fu">*&gt;</span> hoistFree <span class="dt">A2</span> (liftF op)</a></code></pre></div>
+<p>This is where the type of <code>logSimpleFileT</code> hopefully makes sense!</p>
+<p>Just as in the first section of this post, I need an interpreter for my API (<code>SumAPI</code> this time). Once again it’s written using <code>foldFree</code>, but this time I provide the interpreters for the sub-algegras (what I’ve chosen to call step functions):</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="ot">runSum ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> (forall a<span class="fu">.</span> <span class="dt">LogF</span> a <span class="ot">-&gt;</span> m a) <span class="ot">-&gt;</span> (forall a<span class="fu">.</span> <span class="dt">SimpleFileF</span> a <span class="ot">-&gt;</span> m a) <span class="ot">-&gt;</span> <span class="dt">SumAPI</span> b <span class="ot">-&gt;</span> m b</a>
+<a class="sourceLine" id="cb14-2" data-line-number="2">runSum f1 f2 <span class="fu">=</span> foldFree f</a>
+<a class="sourceLine" id="cb14-3" data-line-number="3"><span class="kw">where</span></a>
+<a class="sourceLine" id="cb14-4" data-line-number="4">  f (<span class="dt">A1</span> op) <span class="fu">=</span> f1 op</a>
+<a class="sourceLine" id="cb14-5" data-line-number="5">  f (<span class="dt">A2</span> op) <span class="fu">=</span> f2 op</a></code></pre></div>
+<p><a href="https://gist.github.com/magthe/9fd7fa6c0a5a5b63cdc84d5c81cc50b5#file-free2-hs">The file</a> has a comment at the end for how to run it. The same example as in the previous section, but now with logging, looks like this</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1">runSum stepLog stepSimpleFile <span class="fu">$</span> logSimpleFile <span class="fu">$</span> withSimpleFile (map toUpper) <span class="st">&quot;foo&quot;</span></a></code></pre></div>
+<h3 id="the-third---three-algebras-one-decorating-the-other-two">The third - three algebras, one decorating the other two</h3>
+<p>To combine three algebras I simply take what’s in the previous section and extend it, i.e. a sum type with three constructors:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="kw">data</span> <span class="dt">S</span> a1 a2 a3 t <span class="fu">=</span> <span class="dt">A1</span> (a1 t) <span class="fu">|</span> <span class="dt">A2</span> (a2 t) <span class="fu">|</span> <span class="dt">A3</span> (a3 t)</a>
+<a class="sourceLine" id="cb16-2" data-line-number="2">                <span class="kw">deriving</span>(<span class="dt">Functor</span>)</a>
+<a class="sourceLine" id="cb16-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb16-4" data-line-number="4"><span class="kw">type</span> <span class="dt">SumAPI</span> <span class="fu">=</span> <span class="dt">Free</span> (<span class="dt">S</span> <span class="dt">LogF</span> <span class="dt">SimpleFileF</span> <span class="dt">StdIoF</span>)</a>
+<a class="sourceLine" id="cb16-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb16-6" data-line-number="6"><span class="ot">runSum ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> (forall a<span class="fu">.</span> <span class="dt">LogF</span> a <span class="ot">-&gt;</span> m a)</a>
+<a class="sourceLine" id="cb16-7" data-line-number="7">      <span class="ot">-&gt;</span> (forall a<span class="fu">.</span> <span class="dt">SimpleFileF</span> a <span class="ot">-&gt;</span> m a)</a>
+<a class="sourceLine" id="cb16-8" data-line-number="8">      <span class="ot">-&gt;</span> (forall a<span class="fu">.</span> <span class="dt">StdIoF</span> a <span class="ot">-&gt;</span> m a)</a>
+<a class="sourceLine" id="cb16-9" data-line-number="9">      <span class="ot">-&gt;</span> <span class="dt">SumAPI</span> b <span class="ot">-&gt;</span> m b</a>
+<a class="sourceLine" id="cb16-10" data-line-number="10">runSum f1 f2 f3 <span class="fu">=</span> foldFree f</a>
+<a class="sourceLine" id="cb16-11" data-line-number="11"><span class="kw">where</span></a>
+<a class="sourceLine" id="cb16-12" data-line-number="12">  f (<span class="dt">A1</span> op) <span class="fu">=</span> f1 op</a>
+<a class="sourceLine" id="cb16-13" data-line-number="13">  f (<span class="dt">A2</span> op) <span class="fu">=</span> f2 op</a>
+<a class="sourceLine" id="cb16-14" data-line-number="14">  f (<span class="dt">A3</span> op) <span class="fu">=</span> f3 op</a></code></pre></div>
+<p>With this I’ve already revealed that my three APIs are the two from previous sections, <code>LogAPI</code> (for decorating the other APIs), <code>SimpleFileAPI</code> and a new one, <code>StdIoAPI</code>.</p>
+<p>I want to combine them in such a wat that I can write functions using both APIs at the same time. Then I modify <code>withSimpleFile</code> into</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="ot">withSimpleFile ::</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>) <span class="ot">-&gt;</span> FilePath <span class="ot">-&gt;</span>  <span class="dt">SumAPI</span> ()</a>
+<a class="sourceLine" id="cb17-2" data-line-number="2">withSimpleFile f fp <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb17-3" data-line-number="3">  d <span class="ot">&lt;-</span> loadFile fp</a>
+<a class="sourceLine" id="cb17-4" data-line-number="4">  <span class="kw">let</span> result <span class="fu">=</span> f d</a>
+<a class="sourceLine" id="cb17-5" data-line-number="5">  saveFile (fp <span class="fu">++</span> <span class="st">&quot;_new&quot;</span>) result</a></code></pre></div>
+<p>and I can add another function that uses it with <code>StdIoAPI</code>:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" data-line-number="1"><span class="ot">prog ::</span> FilePath <span class="ot">-&gt;</span> <span class="dt">SumAPI</span> ()</a>
+<a class="sourceLine" id="cb18-2" data-line-number="2">prog fn <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb18-3" data-line-number="3">  stdioPut <span class="st">&quot;About to start&quot;</span></a>
+<a class="sourceLine" id="cb18-4" data-line-number="4">  withSimpleFile (map toUpper) fn</a>
+<a class="sourceLine" id="cb18-5" data-line-number="5">  stdioPut <span class="st">&quot;Done!&quot;</span></a></code></pre></div>
+<p>The way to allow the APIs to be combined this way is to bake in <code>S</code> already in the convenience functions. This means the code for <code>SimpleFileAPI</code> has to change slightly (note the use of <code>A2</code> in <code>loadFile</code> and <code>saveFile</code>):</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="kw">data</span> <span class="dt">SimpleFileF</span> a</a>
+<a class="sourceLine" id="cb19-2" data-line-number="2"><span class="fu">=</span> <span class="dt">LoadFile</span> FilePath (<span class="dt">String</span> <span class="ot">-&gt;</span> a)</a>
+<a class="sourceLine" id="cb19-3" data-line-number="3"><span class="fu">|</span> <span class="dt">SaveFile</span> FilePath <span class="dt">String</span> a</a>
+<a class="sourceLine" id="cb19-4" data-line-number="4"><span class="kw">deriving</span>(<span class="dt">Functor</span>)</a>
+<a class="sourceLine" id="cb19-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb19-6" data-line-number="6"><span class="ot">loadFile ::</span> FilePath <span class="ot">-&gt;</span> <span class="dt">SumAPI</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb19-7" data-line-number="7">loadFile fp <span class="fu">=</span> liftF <span class="fu">$</span> <span class="dt">A2</span> <span class="fu">$</span> <span class="dt">LoadFile</span> fp id</a>
+<a class="sourceLine" id="cb19-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb19-9" data-line-number="9"><span class="ot">saveFile ::</span> FilePath <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">SumAPI</span> ()</a>
+<a class="sourceLine" id="cb19-10" data-line-number="10">saveFile fp d <span class="fu">=</span> liftF <span class="fu">$</span> <span class="dt">A2</span> <span class="fu">$</span> <span class="dt">SaveFile</span> fp d ()</a>
+<a class="sourceLine" id="cb19-11" data-line-number="11"></a>
+<a class="sourceLine" id="cb19-12" data-line-number="12"><span class="ot">stepSimpleFile ::</span> <span class="dt">SimpleFileF</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</a>
+<a class="sourceLine" id="cb19-13" data-line-number="13">stepSimpleFile (<span class="dt">LoadFile</span> fp f') <span class="fu">=</span> f' <span class="fu">&lt;$&gt;</span> readFile fp</a>
+<a class="sourceLine" id="cb19-14" data-line-number="14">stepSimpleFile (<span class="dt">SaveFile</span> fp d r) <span class="fu">=</span> writeFile fp d <span class="fu">&gt;&gt;</span> return r</a></code></pre></div>
+<p>The new API, <code>StdIoAPI</code>, has only one operation:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb20-1" data-line-number="1"><span class="kw">data</span> <span class="dt">StdIoF</span> a <span class="fu">=</span> <span class="dt">PutStrLn</span> <span class="dt">String</span> a</a>
+<a class="sourceLine" id="cb20-2" data-line-number="2">              <span class="kw">deriving</span>(<span class="dt">Functor</span>)</a>
+<a class="sourceLine" id="cb20-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb20-4" data-line-number="4"><span class="ot">stdioPut ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">SumAPI</span> ()</a>
+<a class="sourceLine" id="cb20-5" data-line-number="5">stdioPut s <span class="fu">=</span> liftF <span class="fu">$</span> <span class="dt">A3</span> <span class="fu">$</span> <span class="dt">PutStrLn</span> s ()</a>
+<a class="sourceLine" id="cb20-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb20-7" data-line-number="7"><span class="ot">stepStdIo ::</span> <span class="dt">StdIoF</span> b <span class="ot">-&gt;</span> <span class="dt">IO</span> b</a>
+<a class="sourceLine" id="cb20-8" data-line-number="8">stepStdIo (<span class="dt">PutStrLn</span> s a) <span class="fu">=</span> putStrLn s <span class="fu">&gt;&gt;</span> return a</a></code></pre></div>
+<p>The logging API, <code>LogAPI</code>, looks exactly the same but I now need two transformation functions, one for <code>SimpleFileAPI</code> and one for <code>StdIoAPI</code>.</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb21-1" data-line-number="1"><span class="kw">data</span> <span class="dt">LogF</span> a <span class="fu">=</span> <span class="dt">Log</span> <span class="dt">String</span> a</a>
+<a class="sourceLine" id="cb21-2" data-line-number="2">            <span class="kw">deriving</span>(<span class="dt">Functor</span>)</a>
+<a class="sourceLine" id="cb21-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb21-4" data-line-number="4"><span class="kw">type</span> <span class="dt">LogAPI</span> <span class="fu">=</span> <span class="dt">Free</span> <span class="dt">LogF</span></a>
+<a class="sourceLine" id="cb21-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb21-6" data-line-number="6"><span class="ot">stepLog ::</span> <span class="dt">LogF</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</a>
+<a class="sourceLine" id="cb21-7" data-line-number="7">stepLog (<span class="dt">Log</span> s r) <span class="fu">=</span> putStrLn s <span class="fu">&gt;&gt;</span> return r</a>
+<a class="sourceLine" id="cb21-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb21-9" data-line-number="9"><span class="ot">logSimpleFileT ::</span> <span class="dt">SimpleFileF</span> a <span class="ot">-&gt;</span> <span class="dt">LogAPI</span> ()</a>
+<a class="sourceLine" id="cb21-10" data-line-number="10">logSimpleFileT (<span class="dt">LoadFile</span> fp _) <span class="fu">=</span> liftF <span class="fu">$</span> <span class="dt">Log</span> (<span class="st">&quot;** load file &quot;</span> <span class="fu">++</span> fp) ()</a>
+<a class="sourceLine" id="cb21-11" data-line-number="11">logSimpleFileT (<span class="dt">SaveFile</span> fp _ _) <span class="fu">=</span> liftF <span class="fu">$</span> <span class="dt">Log</span> (<span class="st">&quot;** save file &quot;</span> <span class="fu">++</span> fp) ()</a>
+<a class="sourceLine" id="cb21-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb21-13" data-line-number="13"><span class="ot">logStdIoT ::</span> <span class="dt">StdIoF</span> a <span class="ot">-&gt;</span> <span class="dt">LogAPI</span> ()</a>
+<a class="sourceLine" id="cb21-14" data-line-number="14">logStdIoT (<span class="dt">PutStrLn</span> s _) <span class="fu">=</span> liftF <span class="fu">$</span> <span class="dt">Log</span> (<span class="st">&quot;** on stdio &quot;</span> <span class="fu">++</span> s) ()</a></code></pre></div>
+<p>The new version of <code>logT</code> needs to operate on <code>S</code> in order to decorate both APIs.</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb22-1" data-line-number="1"><span class="ot">logT ::</span> <span class="dt">SumAPI</span> a <span class="ot">-&gt;</span> <span class="dt">SumAPI</span> a</a>
+<a class="sourceLine" id="cb22-2" data-line-number="2">logT <span class="fu">=</span> foldFree f</a>
+<a class="sourceLine" id="cb22-3" data-line-number="3">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb22-4" data-line-number="4">    f (<span class="dt">A2</span> op) <span class="fu">=</span> hoistFree <span class="dt">A1</span> (logSimpleFileT op) <span class="fu">*&gt;</span> hoistFree <span class="dt">A2</span> (liftF op)</a>
+<a class="sourceLine" id="cb22-5" data-line-number="5">    f (<span class="dt">A3</span> op) <span class="fu">=</span> hoistFree <span class="dt">A1</span> (logStdIoT op) <span class="fu">*&gt;</span> hoistFree <span class="dt">A3</span> (liftF op)</a>
+<a class="sourceLine" id="cb22-6" data-line-number="6">    f a<span class="fu">@</span>(<span class="dt">A1</span> _) <span class="fu">=</span> liftF a</a></code></pre></div>
+<p><a href="https://gist.github.com/magthe/9fd7fa6c0a5a5b63cdc84d5c81cc50b5#file-free3-hs">This file</a> also has comments on how to run it at the end. This time there are two examples, one on how to run it without logging</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb23-1" data-line-number="1">runSum undefined stepSimpleFile stepStdIo <span class="fu">$</span> prog <span class="st">&quot;foo&quot;</span></a></code></pre></div>
+<p>and one with logging</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb24-1" data-line-number="1">runSum stepLog stepSimpleFile stepStdIo (logT <span class="fu">$</span> prog <span class="st">&quot;foo&quot;</span>)</a></code></pre></div>
+
+
+  </div>
+
+</article>
+
+
+<article>
+
+  <div class="post-body">
+    <header>
+      <h1 class="post-title"><a href="./posts/2016-05-17-000-cmake--externaldata--and-custom-fetch-script.html">CMake, ExternalData, and custom fetch script</a></h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2016-05-17">2016-05-17</time> - Magnus Therning</p>
+</header>
+
+<p>I failed to find a concrete example on how to use the <a href="https://cmake.org/documentation/">CMake</a> module <a href="https://cmake.org/cmake/help/v3.5/module/ExternalData.html">ExternalData</a> with a custom fetch script. Since I finally manage to work out how to use it I thought I’d try to help out the next person who needs to go down this route.</p>
+<h3 id="why-externaldata">Why ExternalData?</h3>
+<p>I thought I’d start with a short justification of why I was looking at the module at all.</p>
+<p>At work I work with a product that processes images and video. When writing tests we often need some rather large files (from MiB to GiB) as input. The two obvious options are:</p>
+<ol type="1">
+<li>Check the files into our Git repo, or</li>
+<li>Put them on shared storage</li>
+</ol>
+<p>Neither of these are very appealing. The former just doesn’t feel quite right, these are large binary files that rarely, if ever, change, why place them under version control at all? And if they do change the Git repo is likely to balloon in size and impact cloning times negatively. The latter makes it difficult to run our tests on a machine that isn’t on the office network and any changes to the files will break older tests, unless we always only add files, never modify any in place. On the other hand, the former guarantees that the files needed for testing are always available and it is possible to modify the files without breaking older tests. The pro of the latter is that we only download the files needed for the current tests.</p>
+<p>ExternalData is <em>one</em> option to address this. On some level it feels like it offers a combination of both options above:</p>
+<ul>
+<li>It’s possible to use the shared storage</li>
+<li>When the shared storage isn’t available it’s possible to fall back on downloading the files via other means</li>
+<li>The layout of the storage is such that modifying in place is much less likely</li>
+<li>Only the files needed for the currest tests will be downloaded when building off-site</li>
+</ul>
+<h3 id="the-object-store">The object store</h3>
+<p>We do our building in <a href="https://www.docker.com/">docker</a> images that do have our shared storage mapped in, so I’d like them to take advantage of that. At the same time I want the builds performed off-site to download the files. To get this behaviour I defined two object stores:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cmake"><code class="sourceCode cmake"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">set</span>(<span class="dv">ExternalData_OBJECT_STORES</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">  <span class="dv">${CMAKE_BINARY_DIR}</span>/ExternalData/Objects</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  /mnt/shared/over/nfs/Objects</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  )</a></code></pre></div>
+<p>The module will search each of these for the required files and download only if they aren’t found. Downloaded files will be put into the first of the stores. Oh, and it’s <em>very</em> important that the first store is given with an absolute path!</p>
+<p>The store on the shared storage looks something like this:</p>
+<pre><code>/mnt/share/over/nfs/Objects
+└── MD5
+    ├── 94ed17f9b6c74a732fba7b243ab945ff
+    └── a2036177b190fbee6e9e038b718f1c20</code></pre>
+<p>I can then drop a file <code>MyInput.avi.md5</code> in my source tree with the md5 of the real file (e.g. <code>a2036177b190fbee6e9e038b718f1c20</code>) as the content. Once that is done I can follow the example found in the <a href="https://cmake.org/cmake/help/v3.5/module/ExternalData.html#introduction">introduction</a> of the reference documentation.</p>
+<h3 id="curl-vs-sftp">curl vs sftp</h3>
+<p>So far so good. This now works on-site, but for off-site use I need to fetch the needed files. The last section of the reference documentation is called <a href="https://cmake.org/cmake/help/v3.5/module/ExternalData.html#custom-fetch-scripts">Custom Fetch Scripts</a>. It mentions that files are normally downloaded using <code>file(DOWNLOAD)</code>. Neither there, nor in the <a href="https://cmake.org/cmake/help/v3.5/command/file.html#command:file">documentation for file</a> is there a mention of what is used under the hood to fetch the files. After asking on in <code>#cmake</code> I found out that it’s <a href="https://curl.haxx.se/">curl</a>. While <code>curl</code> does handle SFTP I didn’t get it to work with my <code>known_hosts</code> file, nor with my SSH agent (both from <a href="http://www.openssh.com/">OpenSSH</a>). On the other hand it was rather easy to configure <code>sftp</code> to fetch a file from the internet-facing SSH server we have. Now I just had to hook it into CMake somehow.</p>
+<h3 id="custom-fetch-script">Custom fetch script</h3>
+<p>As the section on “Custom Fetch Scripts” mention three things are needed:</p>
+<ol type="1">
+<li>Specify the script via the <code>ExternalDataCustomScript://</code> protocol.</li>
+<li>Tell CMake where it can find the fetch script.</li>
+<li>The fetch script itself.</li>
+</ol>
+<p>The first two steps are done by providing a URL template and pointing to the script via a special variable:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cmake"><code class="sourceCode cmake"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">set</span>(<span class="dv">ExternalData_URL_TEMPLATES</span> <span class="st">&quot;ExternalDataCustomScript://sftp/mnt/shared/over/nfs/Objects/%(algo)/%(hash)&quot;</span>)</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2"><span class="kw">set</span>(<span class="dv">ExternalData_CUSTOM_SCRIPT_sftp</span> <span class="dv">${CMAKE_SOURCE_DIR}</span>/cmake/FetchFromSftp.cmake)</a></code></pre></div>
+<p>It took me a ridiculous amount of time to work out how to write a script that turns out to be rather short. This is an experience that seems to repeat itself when using CMake; it could say something about me, or something about CMake.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cmake"><code class="sourceCode cmake"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="kw">get_filename_component</span>(FFS_ObjStoreDir <span class="dv">${ExternalData_CUSTOM_FILE}</span> <span class="ot">DIRECTORY</span>)</a>
+<a class="sourceLine" id="cb4-2" data-line-number="2"><span class="kw">get_filename_component</span>(FFS_InputFilename <span class="dv">${ExternalData_CUSTOM_LOCATION}</span> <span class="ot">NAME</span>)</a>
+<a class="sourceLine" id="cb4-3" data-line-number="3"><span class="kw">get_filename_component</span>(FFS_OutputFilename <span class="dv">${ExternalData_CUSTOM_FILE}</span> <span class="ot">NAME</span>)</a>
+<a class="sourceLine" id="cb4-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb4-5" data-line-number="5"><span class="kw">execute_process</span>(<span class="ot">COMMAND</span> sftp sftp.company.com:/<span class="dv">${ExternalData_CUSTOM_LOCATION}</span></a>
+<a class="sourceLine" id="cb4-6" data-line-number="6">  <span class="ot">RESULT_VARIABLE</span> FFS_SftpResult</a>
+<a class="sourceLine" id="cb4-7" data-line-number="7">  <span class="ot">OUTPUT_QUIET</span></a>
+<a class="sourceLine" id="cb4-8" data-line-number="8">  <span class="ot">ERROR_VARIABLE</span> FFS_SftpErr</a>
+<a class="sourceLine" id="cb4-9" data-line-number="9">  )</a>
+<a class="sourceLine" id="cb4-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb4-11" data-line-number="11"><span class="kw">if</span>(FFS_SftpResult)</a>
+<a class="sourceLine" id="cb4-12" data-line-number="12">  <span class="kw">set</span>(<span class="dv">ExternalData_CUSTOM_ERROR</span> <span class="st">&quot;Failed to fetch from SFTP - </span><span class="dv">${</span>FFS_SftpErr<span class="dv">}</span><span class="st">&quot;</span>)</a>
+<a class="sourceLine" id="cb4-13" data-line-number="13"><span class="kw">else</span>(FFS_SftpResult)</a>
+<a class="sourceLine" id="cb4-14" data-line-number="14">  <span class="kw">file</span>(<span class="ot">MAKE_DIRECTORY</span> <span class="dv">${</span>FFS_ObjStoreDir<span class="dv">}</span>)</a>
+<a class="sourceLine" id="cb4-15" data-line-number="15">  <span class="kw">file</span>(<span class="ot">RENAME</span> <span class="dv">${</span>FFS_InputFilename<span class="dv">}</span> <span class="dv">${</span>FFS_ObjStoreDir<span class="dv">}</span>/<span class="dv">${</span>FFS_OutputFilename<span class="dv">}</span>)</a>
+<a class="sourceLine" id="cb4-16" data-line-number="16"><span class="kw">endif</span>(FFS_SftpResult)</a></code></pre></div>
+<p>This script is run with <code>cmake -P</code> in the binary dir of the <code>CMakeLists.txt</code> where the test is defined, which means it’s oblivious about the project it’s part of. <code>PROJECT_BINARY_DIR</code> is empty and <code>CMAKE_BINARY_DIR</code> is the same as <code>CMAKE_CURRENT_BINARY_DIR</code>. This is the reason why the first store in <code>ExternalData_OBJECT_STORES</code> has to be an absolute path – it’s very difficult, if not impossible, to find the correct placement of the object store otherwise.</p>
+
+
+  </div>
+
+</article>
+
+
+<article>
+
+  <div class="post-body">
+    <header>
+      <h1 class="post-title"><a href="./posts/2016-04-07-000-qt5%2Bdbus%2Bcmake--a-complete-example.html">Qt5+D-Bus+CMake, a complete example</a></h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2016-04-07">2016-04-07</time> - Magnus Therning</p>
+</header>
+
+<p>Yesterday I started digging into Qt5 and D-Bus. I never found a complete example, so I put one together myself: <a href="https://gist.github.com/magthe/2cf7220655bd8bf431259cc7dee99f64" class="uri">https://gist.github.com/magthe/2cf7220655bd8bf431259cc7dee99f64</a>.</p>
+
+
+  </div>
+
+</article>
+
+
+<article>
+
+  <div class="post-body">
+    <header>
+      <h1 class="post-title"><a href="./posts/2016-03-08-000-final-version-of-json-to-sum-type.html">Final version of JSON to sum type</a></h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2016-03-08">2016-03-08</time> - Magnus Therning</p>
+</header>
+
+<p>After some feedback on my <a href="./posts/2016-03-06-000-from-json-to-sum-type.html">previous post</a> I ended up with the following implementation.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">V.VersionRange</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">  parseJSON <span class="fu">=</span> withObject <span class="st">&quot;VersionRange&quot;</span> go</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">    <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">      go o <span class="fu">=</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">        V.thisVersion <span class="fu">&lt;$&gt;</span> o <span class="fu">.:</span> <span class="st">&quot;ThisVersion&quot;</span> <span class="fu">&lt;|&gt;</span></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">        V.laterVersion <span class="fu">&lt;$&gt;</span> o <span class="fu">.:</span> <span class="st">&quot;LaterVersion&quot;</span> <span class="fu">&lt;|&gt;</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7">        V.earlierVersion <span class="fu">&lt;$&gt;</span> o <span class="fu">.:</span> <span class="st">&quot;EarlierVersion&quot;</span> <span class="fu">&lt;|&gt;</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8">        <span class="dt">V.WildcardVersion</span> <span class="fu">&lt;$&gt;</span> o <span class="fu">.:</span> <span class="st">&quot;WildcardVersion&quot;</span> <span class="fu">&lt;|&gt;</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9">        nullaryOp V.anyVersion <span class="fu">&lt;$&gt;</span> o <span class="fu">.:</span> <span class="st">&quot;AnyVersion&quot;</span> <span class="fu">&lt;|&gt;</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10">        binaryOp V.unionVersionRanges <span class="fu">&lt;$&gt;</span> o <span class="fu">.:</span> <span class="st">&quot;UnionVersionRanges&quot;</span> <span class="fu">&lt;|&gt;</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11">        binaryOp V.intersectVersionRanges <span class="fu">&lt;$&gt;</span> o <span class="fu">.:</span> <span class="st">&quot;IntersectVersionRanges&quot;</span> <span class="fu">&lt;|&gt;</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12">        <span class="dt">V.VersionRangeParens</span> <span class="fu">&lt;$&gt;</span> o <span class="fu">.:</span> <span class="st">&quot;VersionRangeParens&quot;</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="ot">      nullaryOp ::</span> a <span class="ot">-&gt;</span> <span class="dt">Value</span> <span class="ot">-&gt;</span> a</a>
+<a class="sourceLine" id="cb1-15" data-line-number="15">      nullaryOp <span class="fu">=</span> const</a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17">      binaryOp f [a, b] <span class="fu">=</span> f a b</a></code></pre></div>
+<p>Thanks David for your suggestions.</p>
+
+
+  </div>
+
+</article>
+
+
+<article>
+
+  <div class="post-body">
+    <header>
+      <h1 class="post-title"><a href="./posts/2016-03-06-000-from-json-to-sum-type.html">From JSON to sum type</a></h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2016-03-06">2016-03-06</time> - Magnus Therning</p>
+</header>
+
+<p>For a while I’ve been planning to take full ownership of the JSON serialisation and parsing in <a href="https://github.com/magthe/cblrepo/">cblrepo</a>. The recent inclusion of instances of <code>ToJSON</code> and <code>FromJSON</code> for <a href="http://hackage.haskell.org/package/base-4.8.2.0/docs/Data-Version.html#t:Version"><code>Version</code></a> pushed me to take the first step by writing my own instances for all external types.</p>
+<p>When doing this I noticed that all examples in the <a href="http://hackage.haskell.org/package/aeson">aeson</a> docs use a product</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Person</span> <span class="fu">=</span> <span class="dt">Person</span> {</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="ot">      name ::</span> <span class="dt">Text</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">    ,<span class="ot"> age  ::</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">    }</a></code></pre></div>
+<p>whereas I had to deal with quite a few sums, e.g. <a href="http://hackage.haskell.org/package/Cabal-1.22.8.0/docs/Distribution-Version.html#t:VersionRange"><code>VersionRange</code></a>. At first I struggled a little with how to write an instance of <code>FromJSON</code>. After quite a bit of thinking I came up with the following, which I think is fairly nice, but I’d really like to hear what others think about it. Maybe I’ve just missed a much simpler way of implementing <code>parseJSON</code>:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">V.VersionRange</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">  parseJSON <span class="fu">=</span> withObject <span class="st">&quot;VersionRange&quot;</span> go</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">    <span class="kw">where</span></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">      go o <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">        lv <span class="ot">&lt;-</span> (o <span class="fu">.:?</span> <span class="st">&quot;LaterVersion&quot;</span>) <span class="fu">&gt;&gt;=</span> return <span class="fu">.</span> fmap V.laterVersion</a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">        tv <span class="ot">&lt;-</span> (o <span class="fu">.:?</span> <span class="st">&quot;ThisVersion&quot;</span>) <span class="fu">&gt;&gt;=</span> return <span class="fu">.</span> fmap V.thisVersion</a>
+<a class="sourceLine" id="cb2-7" data-line-number="7">        ev <span class="ot">&lt;-</span> (o <span class="fu">.:?</span> <span class="st">&quot;EarlierVersion&quot;</span>) <span class="fu">&gt;&gt;=</span> return <span class="fu">.</span> fmap V.earlierVersion</a>
+<a class="sourceLine" id="cb2-8" data-line-number="8">        av <span class="ot">&lt;-</span> (o <span class="fu">.:?</span> <span class="st">&quot;AnyVersion&quot;</span>) <span class="fu">&gt;&gt;=</span> \ (<span class="ot">_::</span><span class="dt">Maybe</span> [(<span class="dt">Int</span>,<span class="dt">Int</span>)]) <span class="ot">-&gt;</span> return <span class="fu">$</span> <span class="dt">Just</span> V.anyVersion</a>
+<a class="sourceLine" id="cb2-9" data-line-number="9">        wv <span class="ot">&lt;-</span> (o <span class="fu">.:?</span> <span class="st">&quot;WildcardVersion&quot;</span>) <span class="fu">&gt;&gt;=</span> return <span class="fu">.</span> fmap <span class="dt">V.WildcardVersion</span></a>
+<a class="sourceLine" id="cb2-10" data-line-number="10">        uvr <span class="ot">&lt;-</span> (o <span class="fu">.:?</span> <span class="st">&quot;UnionVersionRanges&quot;</span>) <span class="fu">&gt;&gt;=</span> return <span class="fu">.</span> fmap toUvr</a>
+<a class="sourceLine" id="cb2-11" data-line-number="11">        ivr <span class="ot">&lt;-</span> (o <span class="fu">.:?</span> <span class="st">&quot;IntersectVersionRanges&quot;</span>) <span class="fu">&gt;&gt;=</span> return <span class="fu">.</span> fmap toIvr</a>
+<a class="sourceLine" id="cb2-12" data-line-number="12">        vrp <span class="ot">&lt;-</span> (o <span class="fu">.:?</span> <span class="st">&quot;VersionRangeParens&quot;</span>) <span class="fu">&gt;&gt;=</span> return <span class="fu">.</span> fmap <span class="dt">V.VersionRangeParens</span></a>
+<a class="sourceLine" id="cb2-13" data-line-number="13">        maybe (typeMismatch <span class="st">&quot;VersionRange&quot;</span> <span class="fu">$</span> <span class="dt">Object</span> o)</a>
+<a class="sourceLine" id="cb2-14" data-line-number="14">          return</a>
+<a class="sourceLine" id="cb2-15" data-line-number="15">          (lv <span class="fu">&lt;|&gt;</span> tv <span class="fu">&lt;|&gt;</span> ev <span class="fu">&lt;|&gt;</span> uvr <span class="fu">&lt;|&gt;</span> ivr <span class="fu">&lt;|&gt;</span> wv <span class="fu">&lt;|&gt;</span> vrp <span class="fu">&lt;|&gt;</span> av)</a>
+<a class="sourceLine" id="cb2-16" data-line-number="16"></a>
+<a class="sourceLine" id="cb2-17" data-line-number="17">      toUvr [v0, v1] <span class="fu">=</span> V.unionVersionRanges v0 v1</a>
+<a class="sourceLine" id="cb2-18" data-line-number="18">      toIvr [v0, v1] <span class="fu">=</span> V.intersectVersionRanges v0 v1</a></code></pre></div>
+<p>Any and all comments and suggestions are more than welcome!</p>
+
+
+  </div>
+
+</article>
+
+
+<article>
+
+  <div class="post-body">
+    <header>
+      <h1 class="post-title"><a href="./posts/2016-01-24-000-freer-play-with-effects.html">Freer play with effects</a></h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2016-01-24">2016-01-24</time> - Magnus Therning</p>
+</header>
+
+<p>In the previous posts on my <a href="./posts/2016-01-13-000-free-play--part-one.html">playing</a> <a href="./posts/2016-01-15-000-free-play--part-two.html">with</a> <a href="./posts/2016-01-17-000-free-play--part-three.html">free</a> I got stuck at combining APIs. I recalled reading a <a href="http://okmij.org/ftp/Haskell/extensible/exteff.pdf">paper on extensible effects</a> as an alternatve to monad transformers. I have to admit to not having finished the paper, and not quite understanding the part I did read. When looking it up again I found that the work had continued and that there is a <a href="http://okmij.org/ftp/Haskell/extensible/more.pdf">paper on more extensible effects</a>. (I got to it via <a href="http://okmij.org/ftp/Haskell/extensible/" class="uri">http://okmij.org/ftp/Haskell/extensible/</a>.)</p>
+<p>A quick search of <a href="http://hackage.haskell.org/">Hackage</a> revealed the package <a href="http://hackage.haskell.org/package/extensible-effects">extensible-effects</a> with an implementation of the ideas, including the stuff in the latter paper. So, what would the examples from my previous posts look like using extensible effects?</p>
+<h3 id="opening">Opening</h3>
+<p>The examples require a few extensions and modules:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE FlexibleContexts #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="ot">{-# LANGUAGE GADTs #-}</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="ot">{-# LANGUAGE TypeOperators #-}</span></a></code></pre></div>
+<p>and</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">import</span> <span class="dt">Control.Eff</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2"><span class="kw">import</span> <span class="dt">Control.Eff.Lift</span></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3"><span class="kw">import</span> <span class="dt">Control.Eff.Operational</span></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4"><span class="kw">import</span> <span class="dt">Data.Typeable</span></a></code></pre></div>
+<h3 id="just-an-api">Just an API</h3>
+<p>This part was greatly helped by the fact that there is a <a href="http://hackage.haskell.org/package/extensible-effects-1.11.0.1/docs/Control-Eff-Operational-Example.html">example in extensible-effects</a>.</p>
+<p>I start with defining the <code>SimpleFile</code> API using GADTs</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">data</span> <span class="dt">SimpleFileAPI</span> a <span class="kw">where</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="dt">LoadFile</span><span class="ot"> ::</span> FilePath <span class="ot">-&gt;</span> <span class="dt">SimpleFileAPI</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">  <span class="dt">SaveFile</span><span class="ot"> ::</span> FilePath <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">SimpleFileAPI</span> ()</a></code></pre></div>
+<p>The usage of the constructors need to be wrapped up in <code>singleton</code>. To remember that I create two convenience functions</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">loadFile ::</span> <span class="dt">Member</span> (<span class="dt">Program</span> <span class="dt">SimpleFileAPI</span>) r <span class="ot">=&gt;</span> FilePath <span class="ot">-&gt;</span> <span class="dt">Eff</span> r <span class="dt">String</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">loadFile <span class="fu">=</span> singleton <span class="fu">.</span> <span class="dt">LoadFile</span></a>
+<a class="sourceLine" id="cb4-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4"><span class="ot">saveFile ::</span> <span class="dt">Member</span> (<span class="dt">Program</span> <span class="dt">SimpleFileAPI</span>) r <span class="ot">=&gt;</span> FilePath <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Eff</span> r ()</a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">saveFile fp <span class="fu">=</span> singleton <span class="fu">.</span> <span class="dt">SaveFile</span> fp</a></code></pre></div>
+<p>For <code>withSimpleFile</code> I only have to modify the type</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">withSimpleFile ::</span> <span class="dt">Member</span> (<span class="dt">Program</span> <span class="dt">SimpleFileAPI</span>) r <span class="ot">=&gt;</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>) <span class="ot">-&gt;</span> FilePath <span class="ot">-&gt;</span> <span class="dt">Eff</span> r ()</a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">withSimpleFile f fp <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">  d <span class="ot">&lt;-</span> loadFile fp</a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">  <span class="kw">let</span> result <span class="fu">=</span> f d</a>
+<a class="sourceLine" id="cb5-5" data-line-number="5">  saveFile (fp <span class="fu">++</span> <span class="st">&quot;_new&quot;</span>) result</a></code></pre></div>
+<p>Now for the gut of it, the interpreter.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">runSimpleFile ::</span> (<span class="dt">Member</span> (<span class="dt">Lift</span> <span class="dt">IO</span>) r, <span class="dt">SetMember</span> <span class="dt">Lift</span> (<span class="dt">Lift</span> <span class="dt">IO</span>) r) <span class="ot">=&gt;</span> <span class="dt">Eff</span> (<span class="dt">Program</span> <span class="dt">SimpleFileAPI</span> <span class="fu">:&gt;</span> r) a <span class="ot">-&gt;</span> <span class="dt">Eff</span> r a</a>
+<a class="sourceLine" id="cb6-2" data-line-number="2">runSimpleFile <span class="fu">=</span> runProgram f</a>
+<a class="sourceLine" id="cb6-3" data-line-number="3">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb6-4" data-line-number="4"><span class="ot">    f ::</span> (<span class="dt">Member</span> (<span class="dt">Lift</span> <span class="dt">IO</span>) r, <span class="dt">SetMember</span> <span class="dt">Lift</span> (<span class="dt">Lift</span> <span class="dt">IO</span>) r) <span class="ot">=&gt;</span> <span class="dt">SimpleFileAPI</span> a <span class="ot">-&gt;</span> <span class="dt">Eff</span> r a</a>
+<a class="sourceLine" id="cb6-5" data-line-number="5">    f (<span class="dt">LoadFile</span> fp) <span class="fu">=</span> lift <span class="fu">$</span> readFile fp</a>
+<a class="sourceLine" id="cb6-6" data-line-number="6">    f (<span class="dt">SaveFile</span> fp s) <span class="fu">=</span> lift <span class="fu">$</span> writeFile fp s</a></code></pre></div>
+<p>Runnnig it is fairly simple after this</p>
+<pre><code>&gt; :! cat test.txt 
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec a diam lectus.
+Sed sit amet ipsum mauris. Maecenas congue ligula ac quam viverra nec
+consectetur ante hendrerit.
+&gt; runLift $ runSimpleFile $ withSimpleFile (map toUpper) &quot;test.txt&quot;
+&gt; :! cat test.txt_new 
+LOREM IPSUM DOLOR SIT AMET, CONSECTETUR ADIPISCING ELIT. DONEC A DIAM LECTUS.
+SED SIT AMET IPSUM MAURIS. MAECENAS CONGUE LIGULA AC QUAM VIVERRA NEC
+CONSECTETUR ANTE HENDRERIT.</code></pre>
+<p>Now, that was pretty easy. It looks almost exactly like when using <code>Free</code>, only without the <code>Functor</code> instance and rather more complicated types.</p>
+<h3 id="combining-two-apis">Combining two APIs</h3>
+<p>Now I get to the stuff that I didn’t manage to do using <code>Free</code>; combining two different APIs.</p>
+<p>I start with defining another API. This one is truly a play example, sorry for that, but it doesn’t really matter. The type with convenience function looks like this</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="kw">data</span> <span class="dt">StdIoAPI</span> a <span class="kw">where</span></a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">  <span class="dt">WriteStrLn</span><span class="ot"> ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">StdIoAPI</span> ()</a>
+<a class="sourceLine" id="cb8-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb8-4" data-line-number="4"><span class="ot">writeStrLn ::</span> <span class="dt">Member</span> (<span class="dt">Program</span> <span class="dt">StdIoAPI</span>) r <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Eff</span> r ()</a>
+<a class="sourceLine" id="cb8-5" data-line-number="5">writeStrLn <span class="fu">=</span> singleton <span class="fu">.</span> <span class="dt">WriteStrLn</span></a></code></pre></div>
+<p>The interpreter then is straight forward</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">runStdIo ::</span> (<span class="dt">Member</span> (<span class="dt">Lift</span> <span class="dt">IO</span>) r, <span class="dt">SetMember</span> <span class="dt">Lift</span> (<span class="dt">Lift</span> <span class="dt">IO</span>) r) <span class="ot">=&gt;</span> <span class="dt">Eff</span> (<span class="dt">Program</span> <span class="dt">StdIoAPI</span> <span class="fu">:&gt;</span> r) a <span class="ot">-&gt;</span> <span class="dt">Eff</span> r a</a>
+<a class="sourceLine" id="cb9-2" data-line-number="2">runStdIo <span class="fu">=</span> runProgram f</a>
+<a class="sourceLine" id="cb9-3" data-line-number="3">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb9-4" data-line-number="4"><span class="ot">    f ::</span> (<span class="dt">Member</span> (<span class="dt">Lift</span> <span class="dt">IO</span>) r, <span class="dt">SetMember</span> <span class="dt">Lift</span> (<span class="dt">Lift</span> <span class="dt">IO</span>) r) <span class="ot">=&gt;</span> <span class="dt">StdIoAPI</span> a <span class="ot">-&gt;</span> <span class="dt">Eff</span> r a</a>
+<a class="sourceLine" id="cb9-5" data-line-number="5">    f (<span class="dt">WriteStrLn</span> s) <span class="fu">=</span> lift <span class="fu">$</span> putStrLn s</a></code></pre></div>
+<p>Now I just need a program that combines the two APIs</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">verboseWithSimpleFile ::</span> (<span class="dt">Member</span> (<span class="dt">Program</span> <span class="dt">StdIoAPI</span>) r, <span class="dt">Member</span> (<span class="dt">Program</span> <span class="dt">SimpleFileAPI</span>) r) <span class="ot">=&gt;</span></a>
+<a class="sourceLine" id="cb10-2" data-line-number="2">                         (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>) <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Eff</span> r ()</a>
+<a class="sourceLine" id="cb10-3" data-line-number="3">verboseWithSimpleFile f fp <span class="fu">=</span> writeStrLn (<span class="st">&quot;verboseWithSimpleFile on &quot;</span> <span class="fu">++</span> fp) <span class="fu">&gt;&gt;</span> withSimpleFile f fp</a></code></pre></div>
+<p>That type is surprisingly clear I find, albeit a bit on the long side. Running it is just a matter of combining <code>runStdIo</code> and <code>runSimpleFile</code>.</p>
+<pre><code>&gt; :! cat test.txt 
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec a diam lectus.
+Sed sit amet ipsum mauris. Maecenas congue ligula ac quam viverra nec
+consectetur ante hendrerit.
+&gt; runLift $ runSimpleFile $ runStdIo $ verboseWithSimpleFile (map toUpper) &quot;test.txt&quot;
+verboseWithSimpleFile on test.txt
+&gt; :! cat test.txt_new 
+LOREM IPSUM DOLOR SIT AMET, CONSECTETUR ADIPISCING ELIT. DONEC A DIAM LECTUS.
+SED SIT AMET IPSUM MAURIS. MAECENAS CONGUE LIGULA AC QUAM VIVERRA NEC
+CONSECTETUR ANTE HENDRERIT.</code></pre>
+<p>Oh, and it doesn’t matter in what order the interpreters are run!</p>
+<p>At this point I got really excited about <code>Eff</code> because now it’s obvious that I’ll be able to write the logging “decorator”, in fact it’s clear that it’ll be rather simple too.</p>
+<h3 id="the-logging">The logging</h3>
+<p>As before I start with a data type and a convenience function</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="kw">data</span> <span class="dt">LoggerAPI</span> a <span class="kw">where</span></a>
+<a class="sourceLine" id="cb12-2" data-line-number="2">  <span class="dt">Log</span><span class="ot"> ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">LoggerAPI</span> ()</a>
+<a class="sourceLine" id="cb12-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb12-4" data-line-number="4"><span class="ot">logStr ::</span> <span class="dt">Member</span> (<span class="dt">Program</span> <span class="dt">LoggerAPI</span>) r <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Eff</span> r ()</a>
+<a class="sourceLine" id="cb12-5" data-line-number="5">logStr <span class="fu">=</span> singleton <span class="fu">.</span> <span class="dt">Log</span></a></code></pre></div>
+<p>For the decorating I can make use of the fact that APIs can be combined like I did above. That is, I don’t need to bother with any <em>coproduct</em> (<code>Sum</code>) or anything like that, I can simply just push in a call to <code>logStr</code> before each use of <code>SimpleFileAPI</code></p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="ot">logSimpleFileOp ::</span> (<span class="dt">Member</span> (<span class="dt">Program</span> <span class="dt">SimpleFileAPI</span>) r, <span class="dt">Member</span> (<span class="dt">Program</span> <span class="dt">LoggerAPI</span>) r) <span class="ot">=&gt;</span> <span class="dt">SimpleFileAPI</span> a <span class="ot">-&gt;</span> <span class="dt">Eff</span> r a</a>
+<a class="sourceLine" id="cb13-2" data-line-number="2">logSimpleFileOp op<span class="fu">@</span>(<span class="dt">LoadFile</span> fp) <span class="fu">=</span> logStr (<span class="st">&quot;LoadFile &quot;</span> <span class="fu">++</span> fp) <span class="fu">*&gt;</span> singleton op</a>
+<a class="sourceLine" id="cb13-3" data-line-number="3">logSimpleFileOp op<span class="fu">@</span>(<span class="dt">SaveFile</span> fp _) <span class="fu">=</span> logStr (<span class="st">&quot;SaveFile &quot;</span> <span class="fu">++</span> fp) <span class="fu">*&gt;</span> singleton op</a></code></pre></div>
+<p>Of course an interpreter is needed as well</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="ot">runLogger ::</span> (<span class="dt">Member</span> (<span class="dt">Lift</span> <span class="dt">IO</span>) r, <span class="dt">SetMember</span> <span class="dt">Lift</span> (<span class="dt">Lift</span> <span class="dt">IO</span>) r) <span class="ot">=&gt;</span> <span class="dt">Eff</span> (<span class="dt">Program</span> <span class="dt">LoggerAPI</span> <span class="fu">:&gt;</span> r) a <span class="ot">-&gt;</span> <span class="dt">Eff</span> r a</a>
+<a class="sourceLine" id="cb14-2" data-line-number="2">runLogger <span class="fu">=</span> runProgram f</a>
+<a class="sourceLine" id="cb14-3" data-line-number="3">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb14-4" data-line-number="4"><span class="ot">    f ::</span> (<span class="dt">Member</span> (<span class="dt">Lift</span> <span class="dt">IO</span>) r, <span class="dt">SetMember</span> <span class="dt">Lift</span> (<span class="dt">Lift</span> <span class="dt">IO</span>) r) <span class="ot">=&gt;</span> <span class="dt">LoggerAPI</span> a <span class="ot">-&gt;</span> <span class="dt">Eff</span> r a</a>
+<a class="sourceLine" id="cb14-5" data-line-number="5">    f (<span class="dt">Log</span> s) <span class="fu">=</span> lift <span class="fu">$</span> putStrLn s</a></code></pre></div>
+<p>Running is, once again, a matter of stacking interpreters</p>
+<pre><code>&gt; :! cat test.txt
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec a diam lectus.
+Sed sit amet ipsum mauris. Maecenas congue ligula ac quam viverra nec
+consectetur ante hendrerit.
+&gt; runLift $ runLogger $ runSimpleFile $ runProgram logSimpleFileOp $ withSimpleFile (map toUpper) &quot;test.txt&quot;
+LoadFile test.txt
+SaveFile test.txt_new
+&gt; :! cat test.txt_new 
+LOREM IPSUM DOLOR SIT AMET, CONSECTETUR ADIPISCING ELIT. DONEC A DIAM LECTUS.
+SED SIT AMET IPSUM MAURIS. MAECENAS CONGUE LIGULA AC QUAM VIVERRA NEC
+CONSECTETUR ANTE HENDRERIT.</code></pre>
+<h3 id="closing-thoughts">Closing thoughts</h3>
+<p>With <code>Eff</code> I’ve pretty much arrived where I wanted, I can</p>
+<ul>
+<li>define APIs of operations in a simple way (simpler than when using <code>Free</code> even).</li>
+<li>write a definitional interpreter for the operations.</li>
+<li>combine two different APIs in the same function.</li>
+<li>translate from one API to another (or even to a set of other APIs).</li>
+</ul>
+<p>On top, I can do this without having to write a ridiculous amount of code.</p>
+<p>I’m sure there are drawbacks as well. There’s a mention of some of them in the paper. However, for my typical uses of Haskell I haven’t read anything that would be a deal breaker.</p>
+
+
+  </div>
+
+</article>
+
+
+
+<article>
+  <div class="info-box">
+    <p><a href="archive.html">All posts</a></p>
+  </div>
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

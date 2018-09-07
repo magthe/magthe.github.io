@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Missing data encodings?</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2009-04-06">2009-04-06</time> - Magnus Therning</p>
+</header>
+
+<p>Dear lazyweb, are there any useful data encodings missing from the following list?</p>
+<ul>
+<li>Uuencode</li>
+<li>Base64</li>
+<li>Base64Url</li>
+<li>Base32</li>
+<li>Base32Hex</li>
+<li>Base16</li>
+<li>Base85</li>
+<li>yEncoding</li>
+</ul>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/data_encoding.html">data_encoding</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2009-04-05-560-my-thoughts-on-debianisation-of-haskell-packages.html">⟸ My thoughts on debianisation of haskell packages</a>
+
+
+
+<a href="../posts/2009-04-23-568-dataenc-01210-released.html">dataenc 0.12.1.0 released ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-175191"></a>
+  <header>
+    <p><b>Crutcher Dunnavant</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-04-06">2009-04-06</time></p>
+  </header>
+<p>Rot13 - yes it is stupid, but it is perniciously common.</p>
+<p>Octal? (Base8)</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-175215"></a>
+  <header>
+    <p><b>John Dorsey</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-04-07">2009-04-07</time></p>
+  </header>
+<p>How about Base36? I understand it still sees some use.</p>
+<p><a href="http://tinyurl.com/jfvqr" class="uri">http://tinyurl.com/jfvqr</a></p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-175224"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-04-07">2009-04-07</time></p>
+  </header>
+<p><em><span class="citation" data-cites="Crutcher">@Crutcher</span></em>, is rot13 on data (as in <em>(v + 13) mod 255</em>) really established? I’ve seen it used as a text encoding but not as a data encoding.</p>
+<p>I’m not sure what you mean by <em>Octal (Base8)</em>, do you have any URL for it?</p>
+<p><em><span class="citation" data-cites="John">@John</span></em>, thanks for that link, I haven’t come across Base36 before myself.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-175241"></a>
+  <header>
+    <p><b>solrize</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-04-07">2009-04-07</time></p>
+  </header>
+<p>Yes, several, why not look at the ones included with python and incorporate all of them.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-175245"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-04-07">2009-04-07</time></p>
+  </header>
+<p><em><span class="citation" data-cites="solrize">@solrize</span></em>, where do I find a list of the data encodings included with Python?</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-175252"></a>
+  <header>
+    <p><b>csoroz</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-04-07">2009-04-07</time></p>
+  </header>
+<p>Xxencode, Binhex, Quoted-Printable (<a href="http://en.wikipedia.org/wiki/Binary-to-text_encoding">encodings</a>).</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-175356"></a>
+  <header>
+    <p><b>solrize</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-04-08">2009-04-08</time></p>
+  </header>
+<p><a href="http://docs.python.org/library/codecs.html#standard-encodings" class="uri">http://docs.python.org/library/codecs.html#standard-encodings</a></p>
+<p>Hmm, there’s an awful lot. The list for Java is probably even worse.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-175360"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-04-08">2009-04-08</time></p>
+  </header>
+<p><em><span class="citation" data-cites="csoroz">@csoroz</span></em>, thanks for that link. Now I have some more stuff to put into my Haskell data encoding library.</p>
+<p><em><span class="citation" data-cites="solrize">@solrize</span></em>, the vast majority of those encodings are for text (the first table), I’ll have a look at the ones in the second table some of them would be useful to have.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-175610"></a>
+  <header>
+    <p><b>Niklas</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-04-10">2009-04-10</time></p>
+  </header>
+<p>How about quoted-printable and URL encoding? I guess they are both most useful when the data is mostly ASCII but they can be used to encode arbitrary data.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-175612"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-04-10">2009-04-10</time></p>
+  </header>
+<p><em><span class="citation" data-cites="Niklas">@Niklas</span></em>, they are included in the list I have so far: xxencode, binhex (hexadecimal), quoted-printable, python-string-escaping, and URI encoding (percent encoding).</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-175624"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-04-10">2009-04-10</time></p>
+  </header>
+<p><em><span class="citation" data-cites="John">@John</span></em>, on reading more about Base 36 it seems it isn’t a data encoding at all, it’s only a numeral system with base 36 (just like hexadecimal is a numeral system with base 16). It’s confusing that the name is so similar to Base64 and others.</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2009-04-06-566-missing-data-encodings@therning.org?subject=A comment on Missing data encodings?&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

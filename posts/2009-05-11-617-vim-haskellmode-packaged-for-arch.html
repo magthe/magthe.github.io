@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Vim haskellmode packaged for Arch</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2009-05-11">2009-05-11</time> - Magnus Therning</p>
+</header>
+
+<p>A few days ago I packaged the <a href="http://projects.haskell.org/haskellmode-vim/">vim haskellmode</a> for Arch Linux and uploaded it to <a href="http://aur.archlinux.org/packages.php?ID=26343">AUR</a>.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/arch.html">arch</a>, <a href="../tags/aur.html">aur</a>, <a href="../tags/haskell.html">haskell</a>, <a href="../tags/vim.html">vim</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2009-05-09-611-configuring-audio-for-my-arch-desktop.html">⟸ Configuring audio for my Arch desktop</a>
+
+
+
+<a href="../posts/2009-05-13-620-randal-schwartz-on-why-dynamic-beat-static-a-rather-rubbish-talk.html">Randal Schwartz on why dynamic beat static---a rather rubbish talk ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-178677"></a>
+  <header>
+    <p><b>brian</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-05-12">2009-05-12</time></p>
+  </header>
+<p>Thanks for doing this. But when I tried to install, I found that vim-scripts-haskellmode depends on vim-scripts-mgr, which depends on haskell-missingh. I have MissingH installed, but I manage haskell packages in $HOME with cabal-install rather than using pacman. I don’t know what to do about this situation, but I thought I’d mention it.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-178765"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-05-13">2009-05-13</time></p>
+  </header>
+<p><em><span class="citation" data-cites="brian">@brian</span></em>, the easiest solution is probably to modify the PKGBUILD for <code>vim-scrips-mgr</code> manually to not rely on <code>MissingH</code>.</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2009-05-11-617-vim-haskellmode-packaged-for-arch@therning.org?subject=A comment on Vim haskellmode packaged for Arch&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

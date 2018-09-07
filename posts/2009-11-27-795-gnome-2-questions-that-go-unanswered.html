@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Gnome: 2 questions that go unanswered</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2009-11-27">2009-11-27</time> - Magnus Therning</p>
+</header>
+
+<p>Since no one on the Gnome mailing list seems to be able to answer these questions I thought I’d try some other venues for getting them answered. The audience for my blog isn’t that big, but just maybe there’s someone out there who knows the answers to these questions related to Gnome configuration. <a href="http://mail.gnome.org/archives/gnome-list/2009-November/msg00011.html">Mail one</a> and <a href="http://mail.gnome.org/archives/gnome-list/2009-November/msg00012.html">mail two</a>.</p>
+<h3 id="running-gui-tool-after-nm-has-brought-up-network">1: Running GUI tool after NM has brought up network</h3>
+<p>I run <a href="http://www.dropbox.com/">dropbox</a> on my laptop, but their software is crap at handling that the network comes up only after the dropbox service has started ((I’ve noticed no problem when network goes away and then comes back, dropbox picks that up just fine. But if the network isn’t there to start with, that it can’t handle. I’m somehow at a loss how to write a program that handles the former <em>but not the latter</em>. :-) ))</p>
+<p>I know of the possibility of dropping a file in <code>/etc/NetworkManager/dispatcher.d/</code>, but that doesn’t work in this case since I need the program to run “in my desktop”. Well, at least I haven’t managed to get the dropbox server to throw up an icon in my Gnome tool bar like it should, unless I run it from inside the desktop environment.</p>
+<p>Any suggestions on how to solve this problem?</p>
+<h3 id="changing-background-of-the-gnome-screensaver">2: Changing background of the Gnome screensaver</h3>
+<p>I think Gnome comes with quite possibly the ugliest background for a screensaver I’ve ever seen. It’s a close-up on a green leaf or something. Absolutely hideous. I want to change it. To something nice, like a solid black. Actually just about anything else would do. But how?</p>
+<p>GDM came with the same ugly background. Luckily I managed to find <a href="http://wiki.archlinux.org/index.php/GNOME#Configure">instructions on the Arch wiki to change GDM background</a>. I’ve tried and failed to use a similar trick on the screensaver.</p>
+<p>Please, help me escape the ugly background of the Gnome screensaver!</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/dropbox.html">dropbox</a>, <a href="../tags/gnome.html">gnome</a>, <a href="../tags/network_manager.html">network_manager</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2009-11-05-783-bash-is-simply-insane.html">⟸ Bash is simply insane</a>
+
+
+
+<a href="../posts/2010-02-10-800-good-online-stores-for-yoga-equipment.html">Good online stores for yoga equipment ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-194171"></a>
+  <header>
+    <p><b>lilac</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-11-27">2009-11-27</time></p>
+  </header>
+<p>1: NM runs a DBUS service, which broadcasts an event when the network comes up. You should be able to write a program which runs at desktop startup, listens for that event, and does whatever you want when it happens. See:</p>
+<p><a href="http://people.redhat.com/dcbw/NetworkManager/NetworkManager%20DBUS%20API.txt">http://people.redhat.com/dcbw/NetworkManager/NetworkManager%20DBUS%20API.txt</a></p>
+<p>I think the DeviceNowActive signal is the one you want.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-194194"></a>
+  <header>
+    <p><b>Quentin Moser</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-11-28">2009-11-28</time></p>
+  </header>
+<p>For your first question, would something like this work?</p>
+<pre><code>#!/bin/sh
+
+su -c 'DISPLAY=:0 [mycommand]' [myuser]</code></pre>
+<p>There’s probably also an obscure way of finding “The user currently logged on :0” to make it cleaner, but I honestly have no idea.</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2009-11-27-795-gnome-2-questions-that-go-unanswered@therning.org?subject=A comment on Gnome: 2 questions that go unanswered&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

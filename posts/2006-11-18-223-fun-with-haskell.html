@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Fun with Haskell</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2006-11-18">2006-11-18</time> - Magnus Therning</p>
+</header>
+
+<p>What better way is there to spend a Saturday than playing with Haskell? I sure don’t know :-)</p>
+<p>I do have a goal in mind, but for now I’m mostly fooling around with some file-related stuff.</p>
+<p>First, I wanted to wanted to load an entire file and print it on <code>stdout</code>. Basically a primitive <code>cat</code>. I came up with the following <code>main</code>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">main <span class="fu">=</span> liftM (<span class="fu">!!</span> <span class="dv">0</span>) getArgs <span class="fu">&gt;&gt;=</span> catFile <span class="fu">&gt;&gt;=</span> mapM_ putStrLn</a></code></pre></div>
+<p>As you can see I did spend some time thinking about Monads lately. Something that’s especially pressing if one wants to do IO in Haskell since the <code>IO</code> Monad can’t be escaped from. Next <code>catFile</code> (which based on the use above should have the type <code>FilePath -&gt; IO [String]</code>). I did some experimenting and searching in <a href="http://haskell.org/hoogle/">Hoogle</a> among the <code>System.IO</code> functions. I found <code>openFile</code>, <code>hGetContents</code> that would let me open and read the file. I played a bit with that:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">catFile fname <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">    hf <span class="ot">&lt;-</span> openFile fname <span class="dt">ReadMode</span></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">    conts <span class="ot">&lt;-</span> hGetContents hf</a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">    hClose hf</a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">    return conts</a></code></pre></div>
+<p>That doesn’t have quite the required type, but that isn’t the only problem. The combination of <code>hGetContents</code> and <code>hClose</code> doesn’t quite work—the file is never read (laziness in action!). I removed the <code>hClose</code> (since the process isn’t very long-lived that doesn’t bother me so much) and I added a <code>lines</code>:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1">catFile fname <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">    hf <span class="ot">&lt;-</span> openFile fname <span class="dt">ReadMode</span></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">    conts <span class="ot">&lt;-</span> hGetContents hf</a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">    return <span class="fu">$</span> lines conts</a></code></pre></div>
+<p>Then I stumbled on <code>readFile</code> and rewrote it as</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">catFile fname <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">    content <span class="ot">&lt;-</span> readFile fname</a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">    return <span class="fu">$</span> lines content</a></code></pre></div>
+<p>which can be written even shorter as</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1">catFile fname <span class="fu">=</span> readFile fname <span class="fu">&gt;&gt;=</span> return <span class="fu">.</span> lines</a></code></pre></div>
+<p>I guess it’s time to explain the reason for returning <code>IO [String]</code> rather than <code>IO String</code>. The latter would have simplified both <code>catFile</code> and <code>main</code>. What I really wanted was to make each line of a file an item in a set. My first thought was to fold it:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1">catFile <span class="st">&quot;test_file&quot;</span> <span class="fu">&gt;&gt;=</span> (\l <span class="ot">-&gt;</span> return <span class="fu">$</span> foldr Set.insert Set.empty l)</a></code></pre></div>
+<p>Which can be re-written in point-free style (I hope I’ve gotten point-free right here):</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1">catFile <span class="st">&quot;test_file&quot;</span> <span class="fu">&gt;&gt;=</span> return <span class="fu">.</span> foldr Set.insert Set.empty</a></code></pre></div>
+<p>Then I decided to look into <code>Data.Set</code> and found <code>fromList</code>. My first naÃ¯ve attempt and my point-free:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1">catFile <span class="st">&quot;test_file&quot;</span> <span class="fu">&gt;&gt;=</span> (\l <span class="ot">-&gt;</span> return <span class="fu">$</span> Set.fromList l)</a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">catFile <span class="st">&quot;test_file&quot;</span> <span class="fu">&gt;&gt;=</span> return <span class="fu">.</span> Set.fromList</a></code></pre></div>
+<p>Then I reversed my thinking and tried to lift the function into the monad instead:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1">liftM Set.fromList <span class="fu">$</span> catFile <span class="st">&quot;test_file&quot;</span></a></code></pre></div>
+<p>At that point I felt I had somewhat exhausted this particular little playground and went on to listing files and directories, but that’s a story for another post.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/hoogle.html">hoogle</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2006-11-14-222-epilicious-010.html">⟸ Epilicious 0.10</a>
+
+
+
+<a href="../posts/2006-11-20-224-controlling-moguls.html">Controlling moguls... ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2006-11-18-223-fun-with-haskell@therning.org?subject=A comment on Fun with Haskell&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

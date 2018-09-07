@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Adding some strictness</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2014-12-26">2014-12-26</time> - Magnus Therning</p>
+</header>
+
+<p>I’ve finally found some time to solve a few more exercises on <a href="http://exercism.io/">exercim.io</a>. One exercise, called <em>Robot Simulation</em>, I solved in a straight forward way and promptly got the feedback that my choice of data type could lead to space leaks. Since it’s a dimension of Haskell programming that I rarely (read “never”) have had to think about I thought I’d take the chance to play a bit.</p>
+<h3 id="a-simplified-solution">A simplified solution</h3>
+<p>I don’t want to give away the solution to the exercise so I’m using some code of a similar shape.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">import</span> <span class="dt">Data.List</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw">newtype</span> <span class="dt">P</span> <span class="fu">=</span> <span class="dt">P</span> (<span class="dt">Int</span>, <span class="dt">Int</span>)</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">    <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="ot">step ::</span> <span class="dt">P</span> <span class="ot">-&gt;</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">P</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7">step (<span class="dt">P</span> c) <span class="ch">'A'</span> <span class="fu">=</span> <span class="dt">P</span> (c <span class="ot">`add`</span> (<span class="dv">0</span>, <span class="dv">1</span>))</a>
+<a class="sourceLine" id="cb1-8" data-line-number="8">step _ _ <span class="fu">=</span> undefined</a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="ot">add ::</span> (<span class="dt">Num</span> a, <span class="dt">Num</span> b) <span class="ot">=&gt;</span> (a, b) <span class="ot">-&gt;</span> (a, b) <span class="ot">-&gt;</span> (a, b)</a>
+<a class="sourceLine" id="cb1-11" data-line-number="11">add (x0, y0) (x1, y1) <span class="fu">=</span> (x0 <span class="fu">+</span> x1, y0 <span class="fu">+</span> y1)</a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="ot">p ::</span> <span class="dt">P</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14">p <span class="fu">=</span> foldl' step (<span class="dt">P</span> (<span class="dv">0</span>, <span class="dv">0</span>)) <span class="fu">$</span> replicate <span class="dv">5000000</span> <span class="ch">'A'</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb1-17" data-line-number="17">main <span class="fu">=</span> print p</a></code></pre></div>
+<p>There’s nothing complicated about the code, but the memory usage is rather ridiculous:</p>
+<pre><code>   1,132,746,080 bytes allocated in the heap
+   1,149,823,448 bytes copied during GC
+     346,747,064 bytes maximum residency (11 sample(s))
+       3,817,608 bytes maximum slop
+             600 MB total memory in use (0 MB lost due to fragmentation)
+
+                                    Tot time (elapsed)  Avg pause  Max pause
+  Gen  0      2148 colls,     0 par    0.58s    0.58s     0.0003s    0.0006s
+  Gen  1        11 colls,     0 par    0.56s    0.56s     0.0510s    0.2278s
+
+  INIT    time    0.00s  (  0.00s elapsed)
+  MUT     time    0.25s  (  0.25s elapsed)
+  GC      time    1.15s  (  1.14s elapsed)
+  EXIT    time    0.02s  (  0.02s elapsed)
+  Total   time    1.42s  (  1.41s elapsed)
+
+  %GC     time      80.9%  (81.0% elapsed)
+
+  Alloc rate    4,593,597,274 bytes per MUT second
+
+  Productivity  19.0% of total user, 19.1% of total elapsed</code></pre>
+<p>Surely it ought to be possible to add 5 million numbers in less than 600MB, right?</p>
+<p>The reason, AFAIU is that tuples are lazy, which means a lot of thunk building when doing the additions.</p>
+<h3 id="using-a-stricter-data-type">Using a stricter data type</h3>
+<p>The maybe easiest way to add some strictness is to add a few exclamations marks in the data type. Modifying the data type brings a few other changes though, so here’s first a version without any strictness annotations so I have something to compare with later on<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">{-# LANGUAGE RecordWildCards #-}</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2"><span class="kw">import</span> <span class="dt">Data.List</span></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4"><span class="kw">data</span> <span class="dt">P</span> <span class="fu">=</span> <span class="dt">P</span> {<span class="ot"> pX ::</span> <span class="dt">Int</span>,<span class="ot"> pY ::</span> <span class="dt">Int</span> }</a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">    <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</a>
+<a class="sourceLine" id="cb3-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb3-7" data-line-number="7"><span class="ot">p ::</span> <span class="dt">P</span></a>
+<a class="sourceLine" id="cb3-8" data-line-number="8">p <span class="fu">=</span> foldl' step (<span class="dt">P</span> <span class="dv">0</span> <span class="dv">0</span>) <span class="fu">$</span> replicate <span class="dv">5000000</span> <span class="ch">'A'</span></a>
+<a class="sourceLine" id="cb3-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb3-10" data-line-number="10"><span class="ot">step ::</span> <span class="dt">P</span> <span class="ot">-&gt;</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">P</span></a>
+<a class="sourceLine" id="cb3-11" data-line-number="11">step q<span class="fu">@</span>(<span class="dt">P</span> {<span class="fu">..</span>}) <span class="ch">'A'</span> <span class="fu">=</span> q { pX <span class="fu">=</span> pX <span class="fu">+</span><span class="dv">1</span> }</a>
+<a class="sourceLine" id="cb3-12" data-line-number="12">step _ _ <span class="fu">=</span> undefined</a>
+<a class="sourceLine" id="cb3-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb3-14" data-line-number="14"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb3-15" data-line-number="15">main <span class="fu">=</span> print p</a></code></pre></div>
+<p>This solution uses about half as much memory:</p>
+<pre><code>     766,417,952 bytes allocated in the heap
+     639,064,600 bytes copied during GC
+     155,866,064 bytes maximum residency (11 sample(s))
+       1,914,016 bytes maximum slop
+             345 MB total memory in use (0 MB lost due to fragmentation)
+
+                                    Tot time (elapsed)  Avg pause  Max pause
+  Gen  0      1460 colls,     0 par    0.32s    0.32s     0.0002s    0.0006s
+  Gen  1        11 colls,     0 par    0.33s    0.33s     0.0303s    0.1071s
+
+  INIT    time    0.00s  (  0.00s elapsed)
+  MUT     time    0.15s  (  0.15s elapsed)
+  GC      time    0.65s  (  0.65s elapsed)
+  EXIT    time    0.01s  (  0.01s elapsed)
+  Total   time    0.81s  (  0.81s elapsed)
+
+  %GC     time      80.2%  (80.2% elapsed)
+
+  Alloc rate    5,212,863,895 bytes per MUT second
+
+  Productivity  19.8% of total user, 19.8% of total elapsed</code></pre>
+<p>Halving the memory usage is rather nice, but adding some strictness ought to make it better still. The code with added exclamation marks:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">{-# LANGUAGE RecordWildCards #-}</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2"><span class="kw">import</span> <span class="dt">Data.List</span></a>
+<a class="sourceLine" id="cb5-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4"><span class="kw">data</span> <span class="dt">P</span> <span class="fu">=</span> <span class="dt">P</span> {<span class="ot"> pX ::</span> <span class="fu">!</span><span class="dt">Int</span>,<span class="ot"> pY ::</span> <span class="fu">!</span><span class="dt">Int</span> }</a>
+<a class="sourceLine" id="cb5-5" data-line-number="5">    <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</a>
+<a class="sourceLine" id="cb5-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb5-7" data-line-number="7"><span class="ot">p ::</span> <span class="dt">P</span></a>
+<a class="sourceLine" id="cb5-8" data-line-number="8">p <span class="fu">=</span> foldl' step (<span class="dt">P</span> <span class="dv">0</span> <span class="dv">0</span>) <span class="fu">$</span> replicate <span class="dv">5000000</span> <span class="ch">'A'</span></a>
+<a class="sourceLine" id="cb5-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb5-10" data-line-number="10"><span class="ot">step ::</span> <span class="dt">P</span> <span class="ot">-&gt;</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">P</span></a>
+<a class="sourceLine" id="cb5-11" data-line-number="11">step q<span class="fu">@</span>(<span class="dt">P</span> {<span class="fu">..</span>}) <span class="ch">'A'</span> <span class="fu">=</span> q { pX <span class="fu">=</span> pX <span class="fu">+</span><span class="dv">1</span> }</a>
+<a class="sourceLine" id="cb5-12" data-line-number="12">step _ _ <span class="fu">=</span> undefined</a>
+<a class="sourceLine" id="cb5-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb5-14" data-line-number="14"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb5-15" data-line-number="15">main <span class="fu">=</span> print p</a></code></pre></div>
+<p>The runtime behaviour of this code is remarkably more frugal with memory:</p>
+<pre><code>     480,054,816 bytes allocated in the heap
+          57,968 bytes copied during GC
+          44,312 bytes maximum residency (2 sample(s))
+          21,224 bytes maximum slop
+               1 MB total memory in use (0 MB lost due to fragmentation)
+
+                                    Tot time (elapsed)  Avg pause  Max pause
+  Gen  0       918 colls,     0 par    0.00s    0.00s     0.0000s    0.0000s
+  Gen  1         2 colls,     0 par    0.00s    0.00s     0.0000s    0.0000s
+
+  INIT    time    0.00s  (  0.00s elapsed)
+  MUT     time    0.09s  (  0.09s elapsed)
+  GC      time    0.00s  (  0.00s elapsed)
+  EXIT    time    0.00s  (  0.00s elapsed)
+  Total   time    0.09s  (  0.09s elapsed)
+
+  %GC     time       2.4%  (2.4% elapsed)
+
+  Alloc rate    5,630,441,644 bytes per MUT second
+
+  Productivity  97.3% of total user, 98.2% of total elapsed</code></pre>
+<p>Indeed, 1MB is a bit more like it!</p>
+<h3 id="strictness-with-the-original-type">Strictness with the original type</h3>
+<p>However impressive the results when using a stricter data type, it might still be preferable to keep the original, somewhat simpler, type. It is possible to do just that by placing some explicit strictness in well chosen places. Since my suspicion is that it’s the addition in <code>step</code> that causes the space leak we’ll rewrite it:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="kw">import</span> <span class="dt">Data.List</span></a>
+<a class="sourceLine" id="cb7-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb7-3" data-line-number="3"><span class="kw">import</span> <span class="dt">Control.DeepSeq</span></a>
+<a class="sourceLine" id="cb7-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb7-5" data-line-number="5"><span class="kw">newtype</span> <span class="dt">P</span> <span class="fu">=</span> <span class="dt">P</span> (<span class="dt">Int</span>, <span class="dt">Int</span>)</a>
+<a class="sourceLine" id="cb7-6" data-line-number="6">    <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</a>
+<a class="sourceLine" id="cb7-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb7-8" data-line-number="8"><span class="ot">add ::</span> (<span class="dt">Num</span> a, <span class="dt">Num</span> b) <span class="ot">=&gt;</span> (a, b) <span class="ot">-&gt;</span> (a, b) <span class="ot">-&gt;</span> (a, b)</a>
+<a class="sourceLine" id="cb7-9" data-line-number="9">add (x0, y0) (x1, y1) <span class="fu">=</span> (x0 <span class="fu">+</span> x1, y0 <span class="fu">+</span> y1)</a>
+<a class="sourceLine" id="cb7-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb7-11" data-line-number="11"><span class="ot">p ::</span> <span class="dt">P</span></a>
+<a class="sourceLine" id="cb7-12" data-line-number="12">p <span class="fu">=</span> foldl' step (<span class="dt">P</span> (<span class="dv">0</span>, <span class="dv">0</span>)) <span class="fu">$</span> replicate <span class="dv">5000000</span> <span class="ch">'A'</span></a>
+<a class="sourceLine" id="cb7-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb7-14" data-line-number="14"><span class="ot">step ::</span> <span class="dt">P</span> <span class="ot">-&gt;</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">P</span></a>
+<a class="sourceLine" id="cb7-15" data-line-number="15">step (<span class="dt">P</span> c) <span class="ch">'A'</span> <span class="fu">=</span> <span class="kw">let</span> np <span class="fu">=</span> c <span class="ot">`add`</span> (<span class="dv">0</span>, <span class="dv">1</span>) <span class="kw">in</span> np <span class="ot">`deepseq`</span> <span class="dt">P</span> np</a>
+<a class="sourceLine" id="cb7-16" data-line-number="16">step _ _ <span class="fu">=</span> undefined</a>
+<a class="sourceLine" id="cb7-17" data-line-number="17"></a>
+<a class="sourceLine" id="cb7-18" data-line-number="18"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb7-19" data-line-number="19">main <span class="fu">=</span> print p</a></code></pre></div>
+<p>Note that it’s not enough to use <code>seq</code>; a bit more force is needed, which is what <code>deepseq</code> offers. It delivers sure enough:</p>
+<pre><code>     920,052,632 bytes allocated in the heap
+         198,736 bytes copied during GC
+          44,312 bytes maximum residency (2 sample(s))
+          21,224 bytes maximum slop
+               1 MB total memory in use (0 MB lost due to fragmentation)
+
+                                    Tot time (elapsed)  Avg pause  Max pause
+  Gen  0      1774 colls,     0 par    0.00s    0.00s     0.0000s    0.0000s
+  Gen  1         2 colls,     0 par    0.00s    0.00s     0.0001s    0.0001s
+
+  INIT    time    0.00s  (  0.00s elapsed)
+  MUT     time    0.29s  (  0.29s elapsed)
+  GC      time    0.00s  (  0.00s elapsed)
+  EXIT    time    0.00s  (  0.00s elapsed)
+  Total   time    0.30s  (  0.30s elapsed)
+
+  %GC     time       1.4%  (1.4% elapsed)
+
+  Alloc rate    3,124,303,717 bytes per MUT second
+
+  Productivity  98.5% of total user, 98.9% of total elapsed</code></pre>
+<p>A further slight change is possible: implement <code>NFData</code> for <code>P</code> itself. That way it’s not necessary to pull out and force evaluation of the innards of <code>P</code>. Using the default implementation of <code>rnf</code> did not cut it though, since it uses <code>seq</code> it just isn’t forceful enough:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="kw">import</span> <span class="dt">Data.List</span></a>
+<a class="sourceLine" id="cb9-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb9-3" data-line-number="3"><span class="kw">import</span> <span class="dt">Control.DeepSeq</span></a>
+<a class="sourceLine" id="cb9-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb9-5" data-line-number="5"><span class="kw">newtype</span> <span class="dt">P</span> <span class="fu">=</span> <span class="dt">P</span> (<span class="dt">Int</span>, <span class="dt">Int</span>)</a>
+<a class="sourceLine" id="cb9-6" data-line-number="6">    <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</a>
+<a class="sourceLine" id="cb9-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb9-8" data-line-number="8"><span class="kw">instance</span> <span class="dt">NFData</span> <span class="dt">P</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb9-9" data-line-number="9">    rnf (<span class="dt">P</span> q) <span class="fu">=</span> deepseq q ()</a>
+<a class="sourceLine" id="cb9-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb9-11" data-line-number="11"><span class="ot">add ::</span> (<span class="dt">Num</span> a, <span class="dt">Num</span> b) <span class="ot">=&gt;</span> (a, b) <span class="ot">-&gt;</span> (a, b) <span class="ot">-&gt;</span> (a, b)</a>
+<a class="sourceLine" id="cb9-12" data-line-number="12">add (x0, y0) (x1, y1) <span class="fu">=</span> (x0 <span class="fu">+</span> x1, y0 <span class="fu">+</span> y1)</a>
+<a class="sourceLine" id="cb9-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb9-14" data-line-number="14"><span class="ot">p ::</span> <span class="dt">P</span></a>
+<a class="sourceLine" id="cb9-15" data-line-number="15">p <span class="fu">=</span> foldl' step (<span class="dt">P</span> (<span class="dv">0</span>, <span class="dv">0</span>)) <span class="fu">$</span> replicate <span class="dv">5000000</span> <span class="ch">'A'</span></a>
+<a class="sourceLine" id="cb9-16" data-line-number="16"></a>
+<a class="sourceLine" id="cb9-17" data-line-number="17"><span class="ot">step ::</span> <span class="dt">P</span> <span class="ot">-&gt;</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">P</span></a>
+<a class="sourceLine" id="cb9-18" data-line-number="18">step (<span class="dt">P</span> c) <span class="ch">'A'</span> <span class="fu">=</span> <span class="kw">let</span> np <span class="fu">=</span> <span class="dt">P</span> (c <span class="ot">`add`</span> (<span class="dv">0</span>, <span class="dv">1</span>)) <span class="kw">in</span> force np</a>
+<a class="sourceLine" id="cb9-19" data-line-number="19">step _ _ <span class="fu">=</span> undefined</a>
+<a class="sourceLine" id="cb9-20" data-line-number="20"></a>
+<a class="sourceLine" id="cb9-21" data-line-number="21"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb9-22" data-line-number="22">main <span class="fu">=</span> print p</a></code></pre></div>
+<p>The result is close to the previous:</p>
+<pre><code>     920,052,632 bytes allocated in the heap
+         198,736 bytes copied during GC
+          44,312 bytes maximum residency (2 sample(s))
+          21,224 bytes maximum slop
+               1 MB total memory in use (0 MB lost due to fragmentation)
+
+                                    Tot time (elapsed)  Avg pause  Max pause
+  Gen  0      1774 colls,     0 par    0.00s    0.00s     0.0000s    0.0000s
+  Gen  1         2 colls,     0 par    0.00s    0.00s     0.0001s    0.0001s
+
+  INIT    time    0.00s  (  0.00s elapsed)
+  MUT     time    0.33s  (  0.33s elapsed)
+  GC      time    0.00s  (  0.00s elapsed)
+  EXIT    time    0.00s  (  0.00s elapsed)
+  Total   time    0.33s  (  0.33s elapsed)
+
+  %GC     time       1.2%  (1.2% elapsed)
+
+  Alloc rate    2,817,175,186 bytes per MUT second
+
+  Productivity  98.7% of total user, 99.0% of total elapsed</code></pre>
+<p>It looks like it’s slightly slower though, which might be caused by the double call to <code>deepseq</code> in this version.</p>
+<h3 id="conclusion">Conclusion</h3>
+<p>From this little example it’s clear that a little strictness in well-chosen places can go a long way in reducing memory footprint. The various solutions also show that the results can vary quite a bit depending on the strategy for introducing strictness. In this particular case I think the stricter data type (see <a href="#using-a-stricter-data-type">Using a stricter data type</a> above) is the best choice, it’s both faster and uses less memory than any of the others.</p>
+<section class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>I’m using <code>RecordWildCards</code> to simplify the code a bit, which possibly might influence evaluation as well. I’m simply not sure.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+</ol>
+</section>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/exercism.html">exercism</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2014-12-07-000-fp101-completed.html">⟸ FP101x completed</a>
+
+
+
+<a href="../posts/2015-01-03-000-simple-state-machines-in-haskell.html">Simple state machines in Haskell ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2014-12-26-000-adding-some-strictness@therning.org?subject=A comment on Adding some strictness&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Playing unsafe haskell</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2007-01-19">2007-01-19</time> - Magnus Therning</p>
+</header>
+
+<p>Well, at first I thought I’d call this post “Doing Haskell without a condom” but decided it was probably best not to. :-) I can’t really take full credit for this post, I’ve stolen almost all of it from emails after I posted a question on <a href="http://www.haskell.org/pipermail/haskell-cafe/2007-January/021367.html">haskell-cafe</a>. All praise should go to the helpful people there!</p>
+<p>What I wanted to do was model a finite stream of external events as a list and then map a function on that list. The processing of an event should happen as soon as an event is encoutered (one could say that the list of events should be lazy). Due to the wording “external events” the solution will have to be in the IO monad. It’s all a bit vague at this point, so let’s take it down to a more concrete level and then at the end make the solution more generic again. Let’s read characters until we read a <code>q</code> and print them.</p>
+<h3 id="first-attempt-infinite-list">First attempt, infinite list</h3>
+<p>Let’s start with an infinite list:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">listChars ::</span> [<span class="dt">IO</span> <span class="dt">Char</span>]</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">listChars <span class="fu">=</span> repeat getChars</a></code></pre></div>
+<p>Then I can map <code>printChar</code> like this:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">mapM_ (\ x <span class="ot">-&gt;</span> x <span class="fu">&gt;&gt;=</span> printChar) listChars</a></code></pre></div>
+<p>The result is almost what I want, each character is printed immediately. The only problem is that there is no end to the stream of characters. This means that the processing never terminates, that’s not a good thing.</p>
+<h3 id="recursive-non-solution">Recursive (non-)solution</h3>
+<p>Solving the problem with the infinite list is easy if we do it recursively:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">processChars ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">processChars <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">    c <span class="ot">&lt;-</span> getChar</a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">    printChar c</a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">    <span class="kw">if</span> c <span class="fu">==</span> <span class="ch">'q'</span></a>
+<a class="sourceLine" id="cb3-6" data-line-number="6">        <span class="kw">then</span> return ()</a>
+<a class="sourceLine" id="cb3-7" data-line-number="7">        <span class="kw">else</span> processChars</a></code></pre></div>
+<p>This is easy to make more generic, but I expressively wanted to map a function on a list. So a recursive solution won’t cut it this time. However, the same pattern can be used to create a list inside the IO monad:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">listChars ::</span> <span class="dt">IO</span> [<span class="dt">Char</span>]</a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">listChars <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">    c <span class="ot">&lt;-</span> getChar</a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">    <span class="kw">if</span> c <span class="fu">==</span> <span class="ch">'q'</span></a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">        <span class="kw">then</span> return [c]</a>
+<a class="sourceLine" id="cb4-6" data-line-number="6">        <span class="kw">else</span> liftM2 (<span class="fu">:</span>) (return c) listChars</a></code></pre></div>
+<p>Now mapping <code>putChar</code> on the result of this doesn’t quite produce the desired result.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1">listChar <span class="fu">&gt;&gt;=</span> mapM_ putChar</a></code></pre></div>
+<p>It doesn’t print characters as soon as they are entered. That is, it’s not lazy.</p>
+<h3 id="adding-laziness">Adding laziness</h3>
+<p>Monads have an ordering effect on things. Since <code>listChar</code> executes in the IO monad, and the result then is passed to <code>putChar</code>, which also executes in the IO monad, we get a strict ordering between the two functions. What we need is to somehow interleave the IO in <code>listChars</code> with the IO in <code>putChar</code>. Put <em>interleave</em> into <a href="http://haskell.org/hoogle/">Hoogle</a> and you’re pointed to <code>unsafeInterleaveIO</code> in <code>System.IO.Unsafe</code>. We can put it to use like this:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">listChars ::</span> <span class="dt">IO</span> [<span class="dt">Char</span>]</a>
+<a class="sourceLine" id="cb6-2" data-line-number="2">listChars <span class="fu">=</span> unsafeInterleaveIO <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb6-3" data-line-number="3">    c <span class="ot">&lt;-</span> getChar</a>
+<a class="sourceLine" id="cb6-4" data-line-number="4">    <span class="kw">if</span> c <span class="fu">==</span> <span class="ch">'q'</span></a>
+<a class="sourceLine" id="cb6-5" data-line-number="5">        <span class="kw">then</span> return [c]</a>
+<a class="sourceLine" id="cb6-6" data-line-number="6">        <span class="kw">else</span> liftM2 (<span class="fu">:</span>) (return c) listChars</a></code></pre></div>
+<p>And now we get the required behaviour. Great!</p>
+<p><a href="http://haskell.org/haskellwiki/IO_inside">IO inside</a> on the <a href="http://haskell.org/haskellwiki/">haskell wiki</a> has the following comment on <code>unsafeInterleaveIO</code>:</p>
+<blockquote>
+<p>But there is an even stranger operation called ‘unsafeInterleaveIO’ that gets the “official baton”, makes its own pirate copy, and then runs an “illegal” relay-race in parallel with the main one! I can’t talk further about its behavior without causing grief and indignation, so it’s no surprise that this operation is widely used in countries that are hotbeds of software piracy such as Russia and China! ;) Don’t even ask me - I won’t say anything more about this dirty trick I use all the time ;)</p>
+</blockquote>
+<p>So, I suppose it’s worth the effort to think through just how we put it to use here. Basically one can say that <code>unsafeInterleaveIO</code> creates a second IO monad, and in order to keep some level of determinism in the program the use of the new one should be kept separate from the use of the main IO monad, i.e. the one that <code>main</code> executes in. In this case the main IO monad is used to print characters to <code>stdout</code> while the one created by <code>unsafeInterleaveIO</code> reads characters from <code>stdin</code>. According to my limited understanding of IO in haskell this should mean we are safe, the two IO monads run no risk of ever “crossing”.</p>
+<h3 id="another-solution">Another solution</h3>
+<p>Joachim Breitner suggested another, very cute <a href="http://www.haskell.org/pipermail/haskell-cafe/2007-January/021373.html">solution</a> based on cutting the infinite list short.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1">listChars <span class="fu">=</span></a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">    <span class="kw">let</span></a>
+<a class="sourceLine" id="cb7-3" data-line-number="3">        sequence' (x<span class="fu">:</span>xs) <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-4" data-line-number="4">            r  <span class="ot">&lt;-</span> x</a>
+<a class="sourceLine" id="cb7-5" data-line-number="5">            rs <span class="ot">&lt;-</span> unsafeInterleaveIO (sequence' xs)</a>
+<a class="sourceLine" id="cb7-6" data-line-number="6">            return (r<span class="fu">:</span>rs)</a>
+<a class="sourceLine" id="cb7-7" data-line-number="7">    <span class="kw">in</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-8" data-line-number="8">        allChars <span class="ot">&lt;-</span> sequence' <span class="fu">$</span> repeat getChar</a>
+<a class="sourceLine" id="cb7-9" data-line-number="9">        <span class="kw">let</span> getChars <span class="fu">=</span> takeWhile (<span class="fu">/=</span> <span class="ch">'q'</span>) allChars</a>
+<a class="sourceLine" id="cb7-10" data-line-number="10">        return getChars</a></code></pre></div>
+<h3 id="generalisations">Generalisations</h3>
+<p>Recursive solution:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">listIO ::</span> <span class="dt">IO</span> [a] <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> <span class="dt">IO</span> [a]</a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">listIO getF testF <span class="fu">=</span> unsafeInterleaveIO <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb8-3" data-line-number="3">    c <span class="ot">&lt;-</span> getF</a>
+<a class="sourceLine" id="cb8-4" data-line-number="4">    <span class="kw">if</span> testF c</a>
+<a class="sourceLine" id="cb8-5" data-line-number="5">        <span class="kw">then</span> return [c]</a>
+<a class="sourceLine" id="cb8-6" data-line-number="6">        <span class="kw">else</span> liftM2 (<span class="fu">:</span>) (return c) listIO</a>
+<a class="sourceLine" id="cb8-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb8-8" data-line-number="8">listChars <span class="fu">=</span> listIO getChar (<span class="ch">'q'</span> <span class="fu">==</span>)</a></code></pre></div>
+<p>Joachim’s solution:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">listIO ::</span> <span class="dt">IO</span> [a] <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> <span class="dt">IO</span> [a]</a>
+<a class="sourceLine" id="cb9-2" data-line-number="2">listIO getF testF<span class="fu">=</span></a>
+<a class="sourceLine" id="cb9-3" data-line-number="3">    <span class="kw">let</span></a>
+<a class="sourceLine" id="cb9-4" data-line-number="4">        sequence' (x<span class="fu">:</span>xs) <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb9-5" data-line-number="5">            r  <span class="ot">&lt;-</span> x</a>
+<a class="sourceLine" id="cb9-6" data-line-number="6">            rs <span class="ot">&lt;-</span> unsafeInterleaveIO (sequence' xs)</a>
+<a class="sourceLine" id="cb9-7" data-line-number="7">            return (r<span class="fu">:</span>rs)</a>
+<a class="sourceLine" id="cb9-8" data-line-number="8">    <span class="kw">in</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb9-9" data-line-number="9">        allChars <span class="ot">&lt;-</span> sequence' <span class="fu">$</span> repeat getF</a>
+<a class="sourceLine" id="cb9-10" data-line-number="10">        <span class="kw">let</span> getA <span class="fu">=</span> takeWhile testF allChars</a>
+<a class="sourceLine" id="cb9-11" data-line-number="11">        return getA</a>
+<a class="sourceLine" id="cb9-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb9-13" data-line-number="13">listChars <span class="fu">=</span> listIO getChar (<span class="ch">'q'</span> \<span class="fu">=</span>)</a></code></pre></div>
+<h3 id="could-listt-be-used-in-a-solution">Could <code>ListT</code> be used in a solution?</h3>
+<p>This was one of my first thoughts. I mean what I want is the combination of two monads, List and IO. So, <code>ListT IO Char</code> should offer a solution right?</p>
+<p>In theory it could! In practice it doesn’t! Apparantly <a href="http://www.haskell.org/hawiki/ListTDoneRight">ListT imposes unnecessary strictness</a>. That means that it doesn’t offer a solution in this case.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/haskell.html">haskell</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2007-01-15-248-some-of-my-thoughts-on-drm.html">⟸ Some of my thoughts on DRM...</a>
+
+
+
+<a href="../posts/2007-01-23-250-epilicious-0102.html">Epilicious 0.10.2 ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-38015"></a>
+  <header>
+    <p><b>Alan Falloon</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-05-07">2007-05-07</time></p>
+  </header>
+<p>If your event stream is actually the characters of stdin, then <code>getContents</code> already hides the details of the <code>unsafeInterleaveIO</code> for you. As in:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">getContents <span class="fu">&gt;&gt;=</span> mapM_ yourFunc <span class="fu">.</span> takeWhile (<span class="fu">/=</span> <span class="ch">'q'</span>)</a></code></pre></div>
+<p>However, understanding the internals makes it possible to generalize this approach to one where the event stream contains richer data (such as GUI events).</p>
+<p>Perhaps there is more that can be learned from <a href="http://www.haskell.org/frp/">FRP</a> (functional reactive programming)</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-38598"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-05-09">2007-05-09</time></p>
+  </header>
+<p>Alan,</p>
+<p>That’s a very good point. I’ve found that quite a few standard functions are “lazy enough”, just like <code>getContents</code>.</p>
+<p>Thanks for the link to FRP!</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2007-01-19-249-playing-unsafe-haskell@therning.org?subject=A comment on Playing unsafe haskell&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

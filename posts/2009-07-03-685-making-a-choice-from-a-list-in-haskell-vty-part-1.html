@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Making a choice from a list in Haskell, Vty (part 1)</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2009-07-03">2009-07-03</time> - Magnus Therning</p>
+</header>
+
+<p>After posting the <a href="../posts/2009-06-28-664-making-a-choice-from-a-list-in-haskell-vty-part-0.html">zeroth part</a> of this series I realised I hadn’t said anything about the final goal of this exercise. The first post contained code for choosing one one-line string (<code>String</code>) out of a list of one-line strings (<code>[String]</code>). What I really want is the ability to choose one item out of a list of items, where each may render to be multiple lines. It would also be really cool if an item could be collapsed and expanded in the rendering. This is the first step in my journey towards these loosely specified requriements.</p>
+<p>Rendering items into strings sounds like pretty-printing to me, so I played around a little with a few pretty-printing libraries. Finally I settled on the <a href="http://hackage.haskell.org/package/wl-pprint">Wadler/Leijen Pretty Printer</a> (<code>Text.PrettyPrint.Leijen</code>). I didn’t really have any strong reason for choosing it, beyond that it comes with its own type class whereas the pretty-printing library that ships with GHC (<code>Text.PrettyPrint.HughesPJ</code>) doesn’t (though there is a <a href="http://hackage.haskell.org/package/prettyclass">package on HackageDB</a> with a class for it).</p>
+<p>I did the smallest change I could think of to add pretty-printing. First the module needs to be imported of course:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">import</span> <span class="dt">Text.PrettyPrint.Leijen</span></a></code></pre></div>
+<p>Then I added a function to turn a list of items into a document (<code>Doc</code>) where each item is pretty-printed on its own line:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">myPrettyList ::</span> <span class="dt">Pretty</span> a <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">Doc</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">myPrettyList <span class="fu">=</span> vcat <span class="fu">.</span> map pretty</a></code></pre></div>
+<p>I then decided that <code>_getChoice</code> should be left unchanged and instead modified <code>getChoice</code> to turn the list of items into a list of strings:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1">getChoice vt opts <span class="fu">=</span> <span class="kw">let</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">        _converted_opts <span class="fu">=</span> myPrettyList opts</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">    <span class="kw">in</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">        (sx, sy) <span class="ot">&lt;-</span> getSize vt</a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">        _getChoice vt (lines <span class="fu">$</span> show _converted_opts) <span class="dv">0</span> sx sy</a></code></pre></div>
+<p>That’s it. The first step, albeit a small one.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/vty.html">vty</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2009-07-03-674-setting-up-epiphany-to-play-with-seed-extensions.html">⟸ Setting up Epiphany to play with Seed extensions</a>
+
+
+
+<a href="../posts/2009-07-09-689-making-a-choice-from-a-list-in-haskell-vty-part-2.html">Making a choice from a list in Haskell, Vty (part 2) ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2009-07-03-685-making-a-choice-from-a-list-in-haskell-vty-part-1@therning.org?subject=A comment on Making a choice from a list in Haskell, Vty (part 1)&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

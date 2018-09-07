@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Mail!</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2007-12-19">2007-12-19</time> - Magnus Therning</p>
+</header>
+
+<p>Yes, I think there’s an <a href="http://koweycode.blogspot.com/2007/12/mail.html">opening for an email client</a>, it doesn’t have to be written in Haskell of course, but if I ever get my arse into gear it will be. Especially now that <a href="http://mutt-ng.berlios.de/">mutt-ng</a> seems to have stalled in development, and even though <a href="http://www.mutt.org/">mutt</a> still is being developed I’ve gotten too spoilt by using mutt-ng exclusively for the last year or so. I’ve looked extensively at <a href="http://sup.rubyforge.org/">sup</a> and it’s sweet, but due to some recent changes in what kind of machines I have access to on the web it doesn’t quite fit me anymore.</p>
+<p>What would my ideal email client look like?</p>
+<ul>
+<li>GMail as backend, accessed through Python’s <a href="http://libgmail.sourceforge.net/">libgmail</a>. Hopefully it won’t be too difficult to write a Haskell module to deliver this part, but using Python to begin with is absolutely acceptable.</li>
+<li>Haskell for the frontend, specifically using <a href="http://hackage.haskell.org/cgi-bin/hackage-scripts/package/vty-3.0.0">vty</a> for the UI.</li>
+<li>Vim, Yi, or any other old terminal-based editor to write email.</li>
+</ul>
+<p>I’m confident <code>vty</code> has enough functionality. I’ve played with <code>libgmail</code> enough to be confident it offers enough access to mail data to do most everything <em>I</em> want from a client (the missing part is sending PGP/MIME messages, but sending mail through Google’s SMTP server is a workable solution). I’ve just started looking at options for mail parsing in Haskell, identifying three and already discarding one…</p>
+<p>Yes, it’s all vapourware at this point, but hey, I can dream, right?</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/gmail.html">gmail</a>, <a href="../tags/haskell.html">haskell</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2007-12-08-330-n-queens-in-haskell.html">⟸ N-Queens in Haskell</a>
+
+
+
+<a href="../posts/2007-12-26-332-a-somewhat-surprising-catch.html">A somewhat surprising catch ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2007-12-19-331-mail@therning.org?subject=A comment on Mail!&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

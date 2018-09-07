@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">LVM rocks!</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2007-07-11">2007-07-11</time> - Magnus Therning</p>
+</header>
+
+<p>I knew my persistence with using LVM would pay off one day. Despite the little mishap I had <a href="http://therning.org/magnus/archives/122">last year</a> :-)</p>
+<p>For a shiny new install of 64-bit Debian I chose to let the installer partition up my entire harddisk and instructed it to use LVM. This morning I noticed that the root partition was down to only 25% free space and during an upgrade it ran out of space. Not really a good thing. So, shut down the machine and out with the extra harddisk I’ve been putting off sticking in the machine. Here’s what I did after booting:</p>
+<ol type="1">
+<li><p>Create a single large partition and make it of type <code>Linux LVM</code> (<code>8e</code>) using <code>cfdisk</code>.</p></li>
+<li><p>Prepare the new partition for use with LVM:</p>
+<pre><code> # pvcreate /dev/sdb1</code></pre></li>
+<li><p>Add the new ‘physical volume’ into the ‘virtual group’:</p>
+<pre><code> # vgextend mainvg /dev/sdb1</code></pre></li>
+<li><p>Extend the ‘logical volume’ where root lives:</p>
+<pre><code> # lvextend --extents +50%LV /dev/mainvg/root</code></pre></li>
+<li><p>Then it turns out that Ext3 has no problem with extending a mounted filesystem so the last step was easy, but a little nerve wrecking since it was my root partition:</p>
+<pre><code> # resize2fs /dev/mainvg/root</code></pre></li>
+</ol>
+<p>All done!</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/linux.html">linux</a>, <a href="../tags/lvm.html">lvm</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2007-07-05-306-continuing-with-continuations.html">⟸ Continuing with continuations</a>
+
+
+
+<a href="../posts/2007-07-13-308-why-is-constant-improvement-such-an-alien-concept-in-large-organisations.html">Why is constant improvement such an alien concept in large organisations? ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-99721"></a>
+  <header>
+    <p><b>Stefan Monnier</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-01-25">2008-01-25</time></p>
+  </header>
+<p>Just a note about spreading a volume group over several disks: be careful that the volumes you create in this volume group are not spread over 2 disks, otherwise, if you lose one of the disks, you’ll lose the whole filesystem.</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2007-07-11-307-lvm-rocks@therning.org?subject=A comment on LVM rocks!&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

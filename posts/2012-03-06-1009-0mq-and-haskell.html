@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">0MQ and Haskell</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2012-03-06">2012-03-06</time> - Magnus Therning</p>
+</header>
+
+<p>Ever since I heard the <a href="http://twit.tv/show/floss-weekly/195">FLOSS weekly episode on 0MQ</a> I’ve been looking for a reason to take a look at it. Well, to hell with reason, I’ll have a first look without any specific goal in mind.</p>
+<p>I found a simple introduction to it in Nicholas Piël’s post <a href="http://nichol.as/zeromq-an-introduction">ZeroMQ an introduction</a>. The only issue was that it was based on Python, and Python2 at that. So here are my attempts at translating two of the clients to Haskell (using <a href="http://hackage.haskell.org/package/zeromq-haskell">zeromq-haskell</a>).</p>
+<h2 id="req-rep">req-rep</h2>
+<p>Here’s the client in Python3 first:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python lineNumbers"><code class="sourceCode python"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="im">import</span> zmq</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">ctx <span class="op">=</span> zmq.Context()</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">socket <span class="op">=</span> ctx.socket(zmq.REQ)</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">socket.<span class="ex">connect</span>(<span class="st">'tcp://127.0.0.1:5000'</span>)</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">10</span>):</a>
+<a class="sourceLine" id="cb1-8" data-line-number="8">    msg <span class="op">=</span> <span class="st">&quot;msg </span><span class="sc">%s</span><span class="st">&quot;</span> <span class="op">%</span> i</a>
+<a class="sourceLine" id="cb1-9" data-line-number="9">    socket.send_unicode(msg)</a>
+<a class="sourceLine" id="cb1-10" data-line-number="10">    <span class="bu">print</span>(<span class="st">'Sending'</span>, msg)</a>
+<a class="sourceLine" id="cb1-11" data-line-number="11">    msg_in <span class="op">=</span> socket.recv()</a></code></pre></div>
+<p>And here in Haskell:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell lineNumbers"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">import</span> <span class="dt">System.ZMQ</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2"><span class="kw">import</span> <span class="dt">Data.ByteString.Char8</span> <span class="kw">as</span> <span class="dt">CBS</span></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">main <span class="fu">=</span> withContext <span class="dv">1</span> <span class="fu">$</span> \ ctx <span class="ot">-&gt;</span> withSocket ctx <span class="dt">Req</span> <span class="fu">$</span> \ soc <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">    connect soc <span class="st">&quot;tcp://127.0.0.1:5000&quot;</span></a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">    <span class="kw">let</span> msgs <span class="fu">=</span> [pack (<span class="st">&quot;msg &quot;</span> <span class="fu">++</span> show i) <span class="fu">|</span> i <span class="ot">&lt;-</span> [<span class="dv">0</span><span class="fu">..</span><span class="dv">9</span>]]</a>
+<a class="sourceLine" id="cb2-7" data-line-number="7">    flip mapM_ msgs <span class="fu">$</span> \ msg <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-8" data-line-number="8">        send soc msg []</a>
+<a class="sourceLine" id="cb2-9" data-line-number="9">        CBS.putStrLn msg</a>
+<a class="sourceLine" id="cb2-10" data-line-number="10">        receive soc []</a></code></pre></div>
+<h2 id="pub-sub">pub-sub</h2>
+<p>In Python3:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python lineNumbers"><code class="sourceCode python"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="im">import</span> zmq</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">ctx <span class="op">=</span> zmq.Context()</a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">socket <span class="op">=</span> ctx.socket(zmq.SUB)</a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">socket.<span class="ex">connect</span>(<span class="st">'tcp://127.0.0.1:5000'</span>)</a>
+<a class="sourceLine" id="cb3-6" data-line-number="6">socket.setsockopt(zmq.SUBSCRIBE, b<span class="st">'sweden'</span>)</a>
+<a class="sourceLine" id="cb3-7" data-line-number="7">socket.setsockopt(zmq.SUBSCRIBE, b<span class="st">'denmark'</span>)</a>
+<a class="sourceLine" id="cb3-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb3-9" data-line-number="9"><span class="cf">while</span> <span class="va">True</span>:</a>
+<a class="sourceLine" id="cb3-10" data-line-number="10">    <span class="bu">print</span>(socket.recv())</a></code></pre></div>
+<p>Haskell:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell lineNumbers"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="kw">import</span> <span class="dt">System.ZMQ</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2"><span class="kw">import</span> <span class="dt">Control.Monad</span></a>
+<a class="sourceLine" id="cb4-3" data-line-number="3"><span class="kw">import</span> <span class="dt">Data.ByteString.Char8</span> <span class="kw">as</span> <span class="dt">CBS</span></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">main <span class="fu">=</span> withContext <span class="dv">1</span> <span class="fu">$</span> \ ctx <span class="ot">-&gt;</span> withSocket ctx <span class="dt">Sub</span> <span class="fu">$</span> \ soc <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb4-6" data-line-number="6">    connect soc <span class="st">&quot;tcp://127.0.0.1:5000&quot;</span></a>
+<a class="sourceLine" id="cb4-7" data-line-number="7">    subscribe soc <span class="st">&quot;sweden&quot;</span></a>
+<a class="sourceLine" id="cb4-8" data-line-number="8">    subscribe soc <span class="st">&quot;denmark&quot;</span></a>
+<a class="sourceLine" id="cb4-9" data-line-number="9">    forever <span class="fu">$</span> receive soc [] <span class="fu">&gt;&gt;=</span> CBS.putStrLn</a></code></pre></div>
+<p>Two comments on the Haskell code here:</p>
+<ul>
+<li>I’m not sure why, but the Haskell client dies after receiving just a few messages (they are properly filtered though).</li>
+<li>The API for <code>subscribe</code> is a bit strange, it would make more sense if it took a <code>ByteString</code> rather than a <code>String</code>.</li>
+</ul>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/0mq.html">0mq</a>, <a href="../tags/haskell.html">haskell</a>, <a href="../tags/zeromq.html">zeromq</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2012-02-28-1003-shelltestrunner-to-the-rescue.html">⟸ Shelltestrunner to the rescue</a>
+
+
+
+<a href="../posts/2012-03-11-1019-lxde-and-multiple-screens-replacing-lxrandr-with-a-script.html">LXDE and multiple screens: replacing lxrandr with a script ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-235303"></a>
+  <header>
+    <p><b>anonymous</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2012-03-07">2012-03-07</time></p>
+  </header>
+<blockquote>
+<p>I’m not sure why, but the Haskell client dies after receiving just a few messages (they are properly filtered though).</p>
+</blockquote>
+<p>Someone should write a blog post where they successfully debug a problem like this. That would be a pretty interesting display of real world Haskell and its development tools.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-235319"></a>
+  <header>
+    <p><b>Mark Wotton</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2012-03-07">2012-03-07</time></p>
+  </header>
+<p>Xavier Lange and I have been working on a pure Haskell implementation of 0MQ too. I’ve been using the binding pretty heavily, but there are some things you can’t do directly with it. Still, it’s exciting technology, I’ve put a large part of ninjablocks.com’s back end onto it (albeit using ruby) and I’m looking forward to shifting more of it to Haskell.</p>
+<p><a href="http://github.com/ninjablocks/zmqhs" class="uri">http://github.com/ninjablocks/zmqhs</a> (at least until Xavier pulls my changes in)</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-235644"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2012-03-11">2012-03-11</time></p>
+  </header>
+<p><em><span class="citation" data-cites="anonymous">@anonymous</span></em>, indeed, I’d love reading something like that too. Have you started writing it yet? ;)</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-235650"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2012-03-11">2012-03-11</time></p>
+  </header>
+<p><em><span class="citation" data-cites="Mark">@Mark</span></em>, Cool, do you already have some numbers comparing your pure Haskell implementation against the FFI implementation in zeromq?</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-235672"></a>
+  <header>
+    <p><b>Mark</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2012-03-11">2012-03-11</time></p>
+  </header>
+<p><span class="citation" data-cites="Magnus">@Magnus</span> not yet, it’s still at a very early stage. We can successfully receive and send messages, but we haven’t got proper support for the different socket types. I’m a bit torn here, actually - the C implementation uses a state machine to model the allowable patterns (ie, a REQ socket has to send then receive in strict alternation, and vice-versa for a REP socket) - it feels like something we ought to be able to model in the type system in Haskell.</p>
+<p>Interestingly, I’ve found it changes the way I write C much more than the way I write Haskell. The appeal for Haskell is in being able to interoperate with other runtimes, i think: if you just wanted intra-process coordination, you already have cheap threads and MVar/TVar/STM etc.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-236869"></a>
+  <header>
+    <p><b>Dag</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2012-03-22">2012-03-22</time></p>
+  </header>
+<p>You know <code>forM_ = flip mapM_</code> right, just trying to spare an import?</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2012-03-06-1009-0mq-and-haskell@therning.org?subject=A comment on 0MQ and Haskell&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

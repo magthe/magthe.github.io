@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Using msmtp with darcs</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2009-06-09">2009-06-09</time> - Magnus Therning</p>
+</header>
+
+<p>To get <a href="http://www.darcs.net/">darcs</a> to use <code>msmtp</code> I put the following in my <code>~/.darcs/defaults</code>:</p>
+<pre><code>send sendmail-command /usr/bin/msmtp %t %&lt;</code></pre>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/darcs.html">darcs</a>, <a href="../tags/msmtp.html">msmtp</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2009-06-09-651-using-msmtp-with-mercurial.html">⟸ Using msmtp with Mercurial</a>
+
+
+
+<a href="../posts/2009-06-28-664-making-a-choice-from-a-list-in-haskell-vty-part-0.html">Making a choice from a list in Haskell, Vty (part 0) ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-181168"></a>
+  <header>
+    <p><b>Austin Seipp</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-06-09">2009-06-09</time></p>
+  </header>
+<p>Shouldn’t it be <code>/usr/bin/msmtp -t %&lt;</code>?</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-181173"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-06-09">2009-06-09</time></p>
+  </header>
+<p><em><span class="citation" data-cites="Austin">@Austin</span> Seipp</em>, No, I meant exactly what I wrote :-) However using <code>-t</code> is better, thanks for that.</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2009-06-09-656-using-msmtp-with-darcs@therning.org?subject=A comment on Using msmtp with darcs&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

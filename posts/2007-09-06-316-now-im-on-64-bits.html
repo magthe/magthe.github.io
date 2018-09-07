@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Now I'm on 64 bits...</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2007-09-06">2007-09-06</time> - Magnus Therning</p>
+</header>
+
+<p>Finally I have built and set up my new system the way I want it. Until about a week ago I was running Debian on a 32-bit AMD with 1GB RAM on a cheap-and-cheerful motherboard from <a href="http://www.amazon.co.uk/Foxconn-760GXK8MC-RS-Motherboard-SiS760GX-6-channel/dp/B000FDK6OM">Winfast</a>. From now on I’m running Debian on a 64-bit Intel Core2 Duo with 2GB RAM on an <a href="http://www.intel.com/products/motherboard/DG965SS/index.htm">Intel DG965SS</a>.</p>
+<p>I did have some problems with getting everything set up:</p>
+<ul>
+<li><p>Like many others have found out it’s possible to boot a Debian install CD on the system, but it’s not easy to actually install! The CD drive isn’t recognised once the Linux system takes over from the BIOS (or whatever). Apparently it’s possible to get around it by passing <code>all-generic-ide pci=mmnoconf</code> to the kernel at boot time. I didn’t find that out until after having made my first install. My solution was to use a live CD (Kubuntu, because that was the only 64-bit live CD I had around) to stick the <a href="http://www.debian.org/distrib/netinst">Debian Net Installer</a> kernel and initial ramdisk on a temporary partition (that’s the files <code>linux</code> and <code>initrd.gz</code> from <a href="http://http.us.debian.org/debian/dists/etch/main/installer-amd64/current//images/netboot/debian-installer/amd64/">here</a>. Then I installed GRUB on a USB disk and used that to boot the installer. Not the most straight forward of paths, but it got me where I wanted to go. (I should note that after upgrading the kernel to 2.6.22 on the installed system I had no problems getting the CD to be recognised after booting.)</p></li>
+<li><p>It seems Intel had an intern make a crucial design decision when developing the BIOS for the DG965SS: a harddisk without any partition marked as bootable shouldn’t be consered during the boot process. I quickly turned on the <code>bootable</code> flag on the partition that GRUB is on, but the BIOS is a bit picky; having the bootable flag on a logical partition (<code>/dev/sda5</code>) where it’s the second partition that’s extended wasn’t good enough. After a complete re-shuffle I now have GRUB on <code>dev/sda1</code> (mounted on <code>/boot</code>) with the bootable flag on. Everything boots just fine now.</p></li>
+<li><p>Sound turned out to be no problem once I had screwed on my own head right and put the green plug in the green hole :-)</p></li>
+</ul>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/my%20life.html">my life</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2007-08-07-315-haskell-and-c-structs.html">⟸ Haskell and C---structs</a>
+
+
+
+<a href="../posts/2007-09-06-317-invite-to-discussion-would-be-a-good-feature-in-an-enterprise-email-client.html">Invite-to-discussion would be a good feature in an enterprise email client ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2007-09-06-316-now-im-on-64-bits@therning.org?subject=A comment on Now I'm on 64 bits...&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

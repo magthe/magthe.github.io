@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Another way to start Xmonad in Gnome</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2009-02-21">2009-02-21</time> - Magnus Therning</p>
+</header>
+
+<p>I stumbled on this <a href="http://thread.gmane.org/gmane.comp.lang.haskell.xmonad/6557">email thread</a> on starting Xmonad in Fedora 10. In anticipation of Gnome 2.24 being installable from Debian Experimental I dropped the following into <code>/usr/share/applications/xmonad.desktop</code>:</p>
+<pre><code>[Desktop Entry]
+Type=Application
+Encoding=UTF-8
+Name=Xmonad
+Exec=xmonad
+NoDisplay=true
+X-GNOME-WMName=Xmonad
+X-GNOME-Autostart-Phase=WindowManager
+X-GNOME-Provides=windowmanager
+X-GNOME-Autostart-Notify=true</code></pre>
+<p>and modified the GConf key <code>/desktop/gnome/applications/window_manager/current</code> to hold the value <code>/usr/bin/xmonad</code>. Last but not least I removed my <code>~/.gnomerc</code>. Log out, log in. Enjoy!</p>
+<p>Yes, this is mentioned on the <a href="http://haskell.org/haskellwiki/Xmonad/Using_xmonad_in_Gnome#Setting_up_Gnome_to_use_Xmonad">Xmonad wiki</a>, though with slightly less details. I’ll hold off updating the page until I have Gnome 2.24 on my desktop.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/gnome.html">gnome</a>, <a href="../tags/xmonad.html">xmonad</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2009-02-17-505-please-tell-me-theres-an-easier-way.html">⟸ Python extensions: Please tell me there's an easier way!</a>
+
+
+
+<a href="../posts/2009-02-24-514-514.html">Simple Cabal parsing ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-171130"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-02-21">2009-02-21</time></p>
+  </header>
+<p>Bug <a href="http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=516397">#516397</a> has been raised to request a .desktop file to be shipped with the Debian package.</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2009-02-21-509-another-way-to-start-xmonad-in-gnome@therning.org?subject=A comment on Another way to start Xmonad in Gnome&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

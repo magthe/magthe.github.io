@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">More on the weirdness that is del.icio.us API</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2007-03-30">2007-03-30</time> - Magnus Therning</p>
+</header>
+
+<p>As I’ve <a href="../magnus/archives/265">said</a> <a href="../magnus/archives/237">before</a> del.icio.us is not easy to program against. Here’s a brief recount of my latest explorations into how to program against del.icio.us.</p>
+<p>I received a report about some problems with epilicious, to which I responded with a pointer to my post about my past experiences. In response I got a suggestion to pick apart the <a href="http://del.icio.us/help/firefox/bookmarks/quicktour">“official” Firefox plugin for del.icio.us</a>. It turned up some interesting details. AFAICS they are using the API in an undocumented way!</p>
+<p>First of all every single request is a <code>POST</code> rather than a <code>GET</code>. The data they send is <code>_user=&lt;cookie&gt;</code>. That cookie is retrieved from Firefoxes cookie jar; it’s set after the user logs in at <a href="https://secure.del.icio.us/login" class="uri">https://secure.del.icio.us/login</a>. Apparently this allows them to use <em>cookie:cookie</em> as the username and password for Basic Authentication. Also, every request has <code>src=ffbmext1.4.27</code> as an argument in the URI (1.4.27 is the current version of their plugin). There’s also an undocumented “function” for getting only the hashes of the bookmarks at <code>https://api.del.icio.us/v1/posts/hashes?</code>. The maybe most interesting detail is that they don’t seem to bother with the threat of throttling at all!</p>
+<p>Hopeful that this might offer a way around the increasingly erratic behaviour of the API I <a href="http://therning.org/magnus/archives/270">played around with python</a>. No luck though! A few hours of investigation, some quick hacking and long testing (once you’re throttled it takes a <em>LONG</em> time for del.icio.us to let you back in, sometimes more than 10 minutes!!) later I found myself not being able to hold back on profanities. The <a href="http://del.icio.us/help/api/">API usage description</a> is a joke! Programming against something like that is little better than programming Windows based on MSDN ;-)</p>
+<p>It seem the official plugin can get away with disregarding throttling because all interaction with del.icio.us happens with user interaction between each call. It takes a very fast user to trigger the throttling.</p>
+<p>I can understand that del.icio.us wasn’t designed to be used a base for synchronising bookmarks, the throttling clearly shows that. However, one second between requests <em>is not</em> enough to avoid throttling and there is no indication on how long one remains in a throttled state.</p>
+<p>This exercise has pushed me to put more energy into looking for alternative backends for <a href="../magnus/computer/epilicious">epilicious</a>. So far <a href="http://ma.gnolia.com/">ma.gnolia</a> seems <a href="../magnus/archives/265">good</a> and I’d like to add support for <a href="http://www.google.com/bookmarks/">Google bookmarks</a> as well.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/delicious.html">delicious</a>, <a href="../tags/epilicious.html">epilicious</a>, <a href="../tags/frustration.html">frustration</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2007-03-29-270-python-web-forms-and-cookies.html">⟸ Python, web forms and cookies</a>
+
+
+
+<a href="../posts/2007-04-02-272-more-magnolia-in-epilicious.html">More ma.gnolia in epilicious ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-72679"></a>
+  <header>
+    <p><b>Nate</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-07-11">2007-07-11</time></p>
+  </header>
+<p>I just started getting throttled by Del.icio.us this morning when logging into Bumpzee. I’m not even sure what this means as it’s the first time I’ve seen this. I have a lot of syndicated bookmarks as I find them useful and love the plugin. I’m just wondering if I’m being penalized somehow for overuse. Is this possible?</p>
+<p>Hmm.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-72709"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-07-11">2007-07-11</time></p>
+  </header>
+<p>Nate, I’m not sure. At times I’ve thought I was being penalised as well for overuse, but then my paranoia subsided and I went back to believing that the “fair use” policy for Delicious as described simply don’t agree with the implementation.</p>
+<p>As to whether it is possible to penalise individuals; yes, I think it is. I also believe it’d be fairly expensive to do and simply not worth it. This belief is based solely on gut feeling and clueless assumptions though ;-)</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2007-03-30-271-more-on-the-weirdness-that-is-delicious-api@therning.org?subject=A comment on More on the weirdness that is del.icio.us API&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Python has optional arguments...</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2006-12-12">2006-12-12</time> - Magnus Therning</p>
+</header>
+
+<p>I think the <a href="http://sequence.complete.org/node/248">answer to this</a> is currying. It’s not quite as cute:</p>
+<pre><code>foo a b = ...</code></pre>
+<p>Later becomes</p>
+<pre><code>foo = foo1 const
+foo1 c a b = ...</code></pre>
+<p>If you don’t like sticking <code>c</code> at the front you’ll have to use lambda:</p>
+<pre><code>foo a b = \ a b -&gt; foo 1 a b const
+foo1 a b c = ...</code></pre>
+<p>In some cases you can use <code>flip</code> I suppose. Someone who knows haskell better than me might have better solutions to it…</p>
+<p>Oh yes, I have to say that requiring an account is not inviting casual commenters…</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/haskell.html">haskell</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2006-12-08-240-darcsweblighttpd-on-debian.html">⟸ darcsweb+lighttpd on Debian</a>
+
+
+
+<a href="../posts/2007-01-05-242-bye-bye-wallet.html">Bye, bye, wallet! ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2006-12-12-241-python-has-optional-arguments@therning.org?subject=A comment on Python has optional arguments...&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Validating names in SSL certificates using OpenSSL (0.9.8)</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2010-03-17">2010-03-17</time> - Magnus Therning</p>
+</header>
+
+<p>Recently I’ve battled with <a href="http://openssl.org/">OpenSSL</a> at work. One thing I needed to do was add name validation to a program that previously hasn’t had it. In an attempt to avoid obvious mistakes I went looking for existing examples for how to do it. I came across some code from <a href="http://secureprogramming.com/">Secure Programming.com</a>, it can be found in the <a href="http://secureprogramming.com/downloads/spc-1.1.tar.gz">code from the book</a> in “/spc-1.1/chapter10/8-unix.c”. Just too bad only a part of the code actually works as advertised. On top of that the working part uses old functions which remain in the API only for backwards compatibility.</p>
+<p>In trying to fix up that code I wrote the following little example code for extracting CN and subjectAltName:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode c"><code class="sourceCode c"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="pp">#include </span><span class="im">&lt;stdlib.h&gt;</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="pp">#include </span><span class="im">&lt;stdio.h&gt;</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="pp">#include </span><span class="im">&lt;openssl/pem.h&gt;</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="pp">#include </span><span class="im">&lt;openssl/x509v3.h&gt;</span></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="dt">void</span> getCN( X509 * );</a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="dt">void</span> getSubjectAltName( X509 * );</a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="dt">int</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11">main( <span class="dt">int</span> argc, <span class="dt">char</span> **argv )</a>
+<a class="sourceLine" id="cb1-12" data-line-number="12">{</a>
+<a class="sourceLine" id="cb1-13" data-line-number="13">    <span class="dt">FILE</span> *fpem;</a>
+<a class="sourceLine" id="cb1-14" data-line-number="14">    X509 *cert;</a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16">    <span class="cf">if</span>( !( fpem = fopen( argv[<span class="dv">1</span>], <span class="st">&quot;r&quot;</span> ))) {</a>
+<a class="sourceLine" id="cb1-17" data-line-number="17">        fprintf( stderr, <span class="st">&quot;Couldn't open the PEM file: %s</span><span class="sc">\n</span><span class="st">&quot;</span>, argv[<span class="dv">1</span>] );</a>
+<a class="sourceLine" id="cb1-18" data-line-number="18">        <span class="cf">return</span>( EXIT_FAILURE );</a>
+<a class="sourceLine" id="cb1-19" data-line-number="19">    }</a>
+<a class="sourceLine" id="cb1-20" data-line-number="20"></a>
+<a class="sourceLine" id="cb1-21" data-line-number="21">    <span class="cf">if</span>( !( cert = PEM_read_X509( fpem, NULL, NULL, NULL ))) {</a>
+<a class="sourceLine" id="cb1-22" data-line-number="22">        fclose( fpem );</a>
+<a class="sourceLine" id="cb1-23" data-line-number="23">        fprintf( stderr, <span class="st">&quot;Failed to read the PEM file: %s</span><span class="sc">\n</span><span class="st">&quot;</span>, argv[<span class="dv">1</span>] );</a>
+<a class="sourceLine" id="cb1-24" data-line-number="24">        <span class="cf">return</span>( EXIT_FAILURE );</a>
+<a class="sourceLine" id="cb1-25" data-line-number="25">    }</a>
+<a class="sourceLine" id="cb1-26" data-line-number="26"></a>
+<a class="sourceLine" id="cb1-27" data-line-number="27">    getCN( cert );</a>
+<a class="sourceLine" id="cb1-28" data-line-number="28">    getSubjectAltName( cert );</a>
+<a class="sourceLine" id="cb1-29" data-line-number="29"></a>
+<a class="sourceLine" id="cb1-30" data-line-number="30">    fclose( fpem );</a>
+<a class="sourceLine" id="cb1-31" data-line-number="31">    <span class="cf">return</span>( EXIT_SUCCESS );</a>
+<a class="sourceLine" id="cb1-32" data-line-number="32">}</a>
+<a class="sourceLine" id="cb1-33" data-line-number="33"></a>
+<a class="sourceLine" id="cb1-34" data-line-number="34"><span class="dt">void</span></a>
+<a class="sourceLine" id="cb1-35" data-line-number="35">getCN( X509 *cert )</a>
+<a class="sourceLine" id="cb1-36" data-line-number="36">{</a>
+<a class="sourceLine" id="cb1-37" data-line-number="37">    printf( <span class="st">&quot;## %s</span><span class="sc">\n</span><span class="st">&quot;</span>, __PRETTY_FUNCTION__ );</a>
+<a class="sourceLine" id="cb1-38" data-line-number="38"></a>
+<a class="sourceLine" id="cb1-39" data-line-number="39">    X509_NAME *subjName;</a>
+<a class="sourceLine" id="cb1-40" data-line-number="40">    <span class="dt">int</span> idx;</a>
+<a class="sourceLine" id="cb1-41" data-line-number="41"></a>
+<a class="sourceLine" id="cb1-42" data-line-number="42">    <span class="cf">if</span>( !( subjName = X509_get_subject_name( cert )))</a>
+<a class="sourceLine" id="cb1-43" data-line-number="43">        fprintf( stderr, <span class="st">&quot;X509_get_subject_name failed&quot;</span> );</a>
+<a class="sourceLine" id="cb1-44" data-line-number="44"></a>
+<a class="sourceLine" id="cb1-45" data-line-number="45">    idx = X509_NAME_get_index_by_NID( subjName, NID_commonName, <span class="dv">-1</span> );</a>
+<a class="sourceLine" id="cb1-46" data-line-number="46">    X509_NAME_ENTRY *entry = X509_NAME_get_entry( subjName, idx );</a>
+<a class="sourceLine" id="cb1-47" data-line-number="47">    ASN1_STRING *entryData = X509_NAME_ENTRY_get_data( entry );</a>
+<a class="sourceLine" id="cb1-48" data-line-number="48">    <span class="dt">unsigned</span> <span class="dt">char</span> *utf8;</a>
+<a class="sourceLine" id="cb1-49" data-line-number="49">    <span class="dt">int</span> length = ASN1_STRING_to_UTF8( &amp;utf8, entryData );</a>
+<a class="sourceLine" id="cb1-50" data-line-number="50">    printf( <span class="st">&quot;CN value: %s</span><span class="sc">\n</span><span class="st">&quot;</span>, utf8 );</a>
+<a class="sourceLine" id="cb1-51" data-line-number="51">    printf( <span class="st">&quot;CN length: %d</span><span class="sc">\n</span><span class="st">&quot;</span>, length );</a>
+<a class="sourceLine" id="cb1-52" data-line-number="52">    OPENSSL_free( utf8 );</a>
+<a class="sourceLine" id="cb1-53" data-line-number="53"></a>
+<a class="sourceLine" id="cb1-54" data-line-number="54">    <span class="cf">return</span>;</a>
+<a class="sourceLine" id="cb1-55" data-line-number="55">}</a>
+<a class="sourceLine" id="cb1-56" data-line-number="56"></a>
+<a class="sourceLine" id="cb1-57" data-line-number="57"><span class="dt">void</span> getSubjectAltName( X509 *cert )</a>
+<a class="sourceLine" id="cb1-58" data-line-number="58">{</a>
+<a class="sourceLine" id="cb1-59" data-line-number="59">    printf( <span class="st">&quot;## %s</span><span class="sc">\n</span><span class="st">&quot;</span>, __PRETTY_FUNCTION__ );</a>
+<a class="sourceLine" id="cb1-60" data-line-number="60"></a>
+<a class="sourceLine" id="cb1-61" data-line-number="61">    GENERAL_NAMES *sANs;</a>
+<a class="sourceLine" id="cb1-62" data-line-number="62"></a>
+<a class="sourceLine" id="cb1-63" data-line-number="63">    <span class="cf">if</span>( !( sANs = X509_get_ext_d2i( cert, NID_subject_alt_name, <span class="dv">0</span>, <span class="dv">0</span> ))) {</a>
+<a class="sourceLine" id="cb1-64" data-line-number="64">        printf( <span class="st">&quot;No subjectAltName extension</span><span class="sc">\n</span><span class="st">&quot;</span> );</a>
+<a class="sourceLine" id="cb1-65" data-line-number="65">        <span class="cf">return</span>;</a>
+<a class="sourceLine" id="cb1-66" data-line-number="66">    }</a>
+<a class="sourceLine" id="cb1-67" data-line-number="67"></a>
+<a class="sourceLine" id="cb1-68" data-line-number="68">    <span class="dt">int</span> i, numAN = sk_GENERAL_NAME_num( sANs );</a>
+<a class="sourceLine" id="cb1-69" data-line-number="69">    printf( <span class="st">&quot;subjectAltName entries: %d</span><span class="sc">\n</span><span class="st">&quot;</span>, numAN );</a>
+<a class="sourceLine" id="cb1-70" data-line-number="70">    <span class="cf">for</span>( i = <span class="dv">0</span>; i &lt; numAN; ++i ) {</a>
+<a class="sourceLine" id="cb1-71" data-line-number="71">        GENERAL_NAME *sAN = sk_GENERAL_NAME_value( sANs, i );</a>
+<a class="sourceLine" id="cb1-72" data-line-number="72">        <span class="co">// we only care about DNS entries</span></a>
+<a class="sourceLine" id="cb1-73" data-line-number="73">        <span class="cf">if</span>( GEN_DNS == sAN-&gt;type ) {</a>
+<a class="sourceLine" id="cb1-74" data-line-number="74">            <span class="dt">unsigned</span> <span class="dt">char</span> *dns;</a>
+<a class="sourceLine" id="cb1-75" data-line-number="75">            ASN1_STRING_to_UTF8( &amp;dns, sAN-&gt;d.dNSName );</a>
+<a class="sourceLine" id="cb1-76" data-line-number="76">            printf( <span class="st">&quot;subjectAltName DNS: %s</span><span class="sc">\n</span><span class="st">&quot;</span>, dns );</a>
+<a class="sourceLine" id="cb1-77" data-line-number="77">            OPENSSL_free( dns );</a>
+<a class="sourceLine" id="cb1-78" data-line-number="78">        }</a>
+<a class="sourceLine" id="cb1-79" data-line-number="79">    }</a>
+<a class="sourceLine" id="cb1-80" data-line-number="80"></a>
+<a class="sourceLine" id="cb1-81" data-line-number="81">    <span class="cf">return</span>;</a>
+<a class="sourceLine" id="cb1-82" data-line-number="82">}</a></code></pre></div>
+<p>Based on this I should be able to finish the patch I’ve been working on.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/c.html">c</a>, <a href="../tags/openssl.html">openssl</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2010-02-11-804-my-new-browser-setup-at-work.html">⟸ My new browser setup at work</a>
+
+
+
+<a href="../posts/2010-07-30-825-modifying-twitter-tools-wordpress-plugin-for-use-with-identi-ca.html">Modifying Twitter Tools (WordPress plugin) for use with identi.ca ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-366201"></a>
+  <header>
+    <p><b>Kyle T.</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2014-07-15">2014-07-15</time></p>
+  </header>
+<p>Just dropping a line to say thank you Magnus. OpenSSL documentation is horrific and this helped point me in the correct direction.</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2010-03-17-812-validating-names-in-ssl-certificates-using-openssl-0-9-8@therning.org?subject=A comment on Validating names in SSL certificates using OpenSSL (0.9.8)&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

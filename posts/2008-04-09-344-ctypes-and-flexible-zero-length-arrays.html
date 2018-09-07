@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">ctypes and flexible (zero-length) arrays</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2008-04-09">2008-04-09</time> - Magnus Therning</p>
+</header>
+
+<p>Dear lazyweb, I’ve been racking my brain trying to get information out of the following C struct in a nice way when using <a href="http://python.net/crew/theller/ctypes/">ctypes</a>:</p>
+<pre lang="c">
+struct Foo
+{
+    unsigned int length;
+    char name[];
+};
+</pre>
+<p>I wrote a little C function to get instance of the struct easily into python:</p>
+<pre lang="c">
+struct Foo *
+put_name(char *name)
+{
+    struct Foo *foo = malloc(sizeof(struct Foo) + strlen(name));
+    foo->length = strlen(name);
+    memcpy(foo->name, name, foo->length);
+    return(foo);
+}
+</pre>
+<p>Now, how do I actually get the full contents of <code>Foo.name</code> in python? The only way I could think of that actually works is to create a dummy-struct type in order to get the length out and then use it to dynamically create a new sub-class of <code>ctypes.Structure</code>, then create an instance based on the address of what was returned. I think the following shows it pretty clearly:</p>
+<pre lang="python">
+class FOO(Structure):
+    _fields_ = [('length', c_uint), ('name', c_char * 0)]
+
+liblib = cdll.LoadLibrary('./_build/liblib.so')
+c_put_name = liblib.put_name
+c_put_name.argtypes = [c_char_p]
+c_put_name.restype = POINTER(FOO)
+
+def put_name(str):
+    f = c_put_name(str)
+    K = type('FOO%s' % f.contents.length, (Structure,),
+                        {'_fields_' : [('length', c_uint), ('name', c_char * f.contents.length)]})
+    return K.from_address(addressof(f.contents))
+</pre>
+<p>I still think there ought to be some other way that ‘feels’ nicer. I mean the use of “short arrays” (declared as here with <code>[]</code>, or zero size as supported by GCC, or the more portable array of size one) seems to be common enough to warrant some support from ctypes, right?</p>
+<p>Any suggestions for improvements?</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/c.html">c</a>, <a href="../tags/ctypes.html">ctypes</a>, <a href="../tags/python.html">python</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2008-03-30-341-kids-play-with-html-in-haskell.html">⟸ Kid's play with HTML in Haskell</a>
+
+
+
+<a href="../posts/2008-04-21-345-packages-for-omnicodec-and-dataenc.html">Packages for omnicodec and dataenc ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2008-04-09-344-ctypes-and-flexible-zero-length-arrays@therning.org?subject=A comment on ctypes and flexible (zero-length) arrays&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

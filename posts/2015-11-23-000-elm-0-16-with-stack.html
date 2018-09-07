@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Elm 0.16 with stack</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2015-11-23">2015-11-23</time> - Magnus Therning</p>
+</header>
+
+<p>I just noticed that there’s been a new release of the <a href="http://elm-lang.org">elm tools</a>. The previous release was fairly easy to <a href="../posts/2015-10-13-000-building-elm-with-stack.html">build using stack</a>, but this release made it a little bit easier still.</p>
+<p>The script for cloning should be modified to look like this:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="co">#! /usr/bin/zsh</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="va">repos=(</span><span class="st">&quot;git clone -b 0.16 https://github.com/elm-lang/elm-compiler.git&quot;</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">       <span class="st">&quot;git clone -b 0.16 https://github.com/elm-lang/elm-package.git&quot;</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">       <span class="st">&quot;git clone -b 0.16 https://github.com/elm-lang/elm-make.git&quot;</span></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">       <span class="st">&quot;git clone -b 0.16 https://github.com/elm-lang/elm-reactor.git&quot;</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7">       <span class="st">&quot;git clone -b 0.16 https://github.com/elm-lang/elm-repl.git&quot;</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8">      )</a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">for</span> <span class="ex">r</span> in <span class="va">${repos[@]}</span><span class="kw">;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11">    <span class="bu">eval</span> <span class="va">${r}</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">done</span></a></code></pre></div>
+<p>When creating the inital <code>stack.yaml</code> tell <em>stack</em> to use release 7.10.2 of <em>ghc</em>:</p>
+<pre><code>% stack init --resolver ghc-7.10.2</code></pre>
+<p>That makes it possible to use the installed version of <em>ghc</em>. It’s also unecessary to provide any flag for <em>aeson</em>, which means there’s no need for any manual changed to <code>stack.yaml</code> prior to running (add <code>--install-ghc</code> if you don’t have it on your system already)</p>
+<pre><code>% stack solver --modify-stack-yaml</code></pre>
+<p>Now just build and install as before:</p>
+<pre><code>% stack install elm-{compiler,make,package,repl}
+% stack install elm-reactor</code></pre>
+<p>That’s it!</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/elm.html">elm</a>, <a href="../tags/haskell.html">haskell</a>, <a href="../tags/stack.html">stack</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2015-11-13-000-unit-testing-failure-cases.html">⟸ How can I unit test failure cases?</a>
+
+
+
+<a href="../posts/2015-11-26-001-trick-for-pre-processing-source-in-cmake.html">Trick for pre-processing source in CMake ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2015-11-23-000-elm-0-16-with-stack@therning.org?subject=A comment on Elm 0.16 with stack&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

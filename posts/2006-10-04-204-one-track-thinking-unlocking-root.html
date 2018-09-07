@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">One-track thinking (unlocking root)</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2006-10-04">2006-10-04</time> - Magnus Therning</p>
+</header>
+
+<p>It seems I never quite learn. I like a clean system, so when I get a chance I remove unused packages. This practice has gotten me in <a href="http://therning.org/magnus/archives/122">trouble before</a>. It got me in trouble again just the other day.</p>
+<p>My now second machine used to be my primary. When it was demoted I left GNOME installed on it since you never know when it might come in handy. Over the last few months I’ve had no use for a GUI on it at all so last Friday I decided to remove GNOME. That got me in trouble because <code>sudo</code> is installed as a dependency of GNOME’s, and it’s marked “automatic” in <code>aptitude</code>. Couple that with my habit of locking the <code>root</code> account and I ended up with a system that I don’t have full access to anymore. Not good!</p>
+<p>My immediate thought was to boot a live CD, <code>chroot</code> to the root filesystem of the installed system and unlock the <code>root</code> password. Except the damn box refused to boot from CD. I tried all my live and install CDs, Ubuntu (Breezy and Dapper), Knoppix, STD, Debian install (Woody and Sarge). Nothing worked.</p>
+<p>A short search later and I found <a href="http://mulinux.dotsrc.org/">muLinux</a>. A one-floppy live system that on paper seemed capable of doing what I needed. Now I had another problem, where do I get a floppy nowadays? The system admins downstairs had one they could spare. Good! Next problem—where to find a machine with a floppy drive that I can use to create the floppy?</p>
+<p>That’s when it hit me. This plan wasn’t the best one, it just happened to be the first one that popped into my mind. I had been too focused on my first idea to take the time to stop and think of other ways of getting my <code>root</code> account back.</p>
+<p>In the end I didn’t need to use a live CD/floppy, I could just use the system already present on the box:</p>
+<ol type="1">
+<li>Boot straight into <code>bash</code> by sticking <code>init=/bin/bash</code> on the boot line in GRUB</li>
+<li>Remount the root filesystem, <code>mount -o remount,rw /</code></li>
+<li>Unlock the password, <code>passwd -u root</code></li>
+</ol>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/linux.html">linux</a>, <a href="../tags/mulinux.html">mulinux</a>, <a href="../tags/st00pid.html">st00pid</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2006-10-02-203-on-being-tech-support.html">⟸ On being tech support...</a>
+
+
+
+<a href="../posts/2006-10-06-205-replacing-google-with-scroogle.html">Replacing Google with Scroogle ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2006-10-04-204-one-track-thinking-unlocking-root@therning.org?subject=A comment on One-track thinking (unlocking root)&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Fork/exec in Haskell</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2009-08-21">2009-08-21</time> - Magnus Therning</p>
+</header>
+
+<p>Here’s some simple code I put together. I’m mostly posting it so I won’t have any problems finding it in the future.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw">import</span> <span class="dt">Control.Monad</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="kw">import</span> <span class="dt">System.Exit</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">System.Posix.IO</span></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">System.Posix.Process</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8">executeChild <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9">    mapM_ closeFd [stdInput, stdOutput, stdError]</a>
+<a class="sourceLine" id="cb1-10" data-line-number="10">    devnull <span class="ot">&lt;-</span> openFd <span class="st">&quot;/dev/null&quot;</span> <span class="dt">ReadWrite</span> <span class="dt">Nothing</span> defaultFileFlags</a>
+<a class="sourceLine" id="cb1-11" data-line-number="11">    dup devnull; dup devnull</a>
+<a class="sourceLine" id="cb1-12" data-line-number="12">    executeFile <span class="st">&quot;./Child&quot;</span> <span class="dt">False</span> [] <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14">main <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15">    child <span class="ot">&lt;-</span> forkProcess executeChild</a>
+<a class="sourceLine" id="cb1-16" data-line-number="16">    putStrLn <span class="st">&quot;ForkExec: main - forked, going to wait&quot;</span></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17">    s <span class="ot">&lt;-</span> getProcessStatus <span class="dt">True</span> <span class="dt">True</span> child</a>
+<a class="sourceLine" id="cb1-18" data-line-number="18">    <span class="kw">case</span> s <span class="kw">of</span></a>
+<a class="sourceLine" id="cb1-19" data-line-number="19">        <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="co">-- this shouldn't happen, ever</span></a>
+<a class="sourceLine" id="cb1-20" data-line-number="20">            print s <span class="fu">&gt;&gt;</span>  exitFailure</a>
+<a class="sourceLine" id="cb1-21" data-line-number="21">        <span class="dt">Just</span> s <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-22" data-line-number="22">            print s</a>
+<a class="sourceLine" id="cb1-23" data-line-number="23">            <span class="kw">case</span> s <span class="kw">of</span></a>
+<a class="sourceLine" id="cb1-24" data-line-number="24">                <span class="dt">Exited</span> _ <span class="ot">-&gt;</span> putStrLn <span class="st">&quot;Child exited properly, though possibly unsuccessfully&quot;</span></a>
+<a class="sourceLine" id="cb1-25" data-line-number="25">                <span class="dt">Terminated</span> _ <span class="ot">-&gt;</span> putStrLn <span class="st">&quot;Terminated!&quot;</span></a>
+<a class="sourceLine" id="cb1-26" data-line-number="26">                <span class="dt">Stopped</span> _ <span class="ot">-&gt;</span> putStrLn <span class="st">&quot;Stopped (only SIGSTOP?)&quot;</span></a>
+<a class="sourceLine" id="cb1-27" data-line-number="27">            exitSuccess</a>
+<a class="sourceLine" id="cb1-28" data-line-number="28">    exitFailure</a></code></pre></div>
+<p>It’d be really nice to be able to, after the fork, close <em>all</em> open file descriptors in the child. But how can I find all the open file descriptors in a process? Ideally it should be fairly portable, though portability to major Unix/Linux systems is enough for me.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/exec.html">exec</a>, <a href="../tags/fork.html">fork</a>, <a href="../tags/haskell.html">haskell</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2009-08-16-719-json-in-haskell.html">⟸ JSON in Haskell</a>
+
+
+
+<a href="../posts/2009-08-23-732-making-a-choice-from-a-list-in-haskell-vty-part-5-the-last-one.html">Making a choice from a list in Haskell, Vty (part 5, the last one) ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-186876"></a>
+  <header>
+    <p><b>bbb</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-08-21">2009-08-21</time></p>
+  </header>
+<p>The classic Unix way to do this is to find out the maximum valid file descriptor and then close all of them in a for loop (e.g., see bash). Looking over <code>System.Posix.IO</code>, it seems that it is lacking a function of the sort</p>
+<pre><code>unsafeMakeFd :: Int -&gt; Fd</code></pre>
+<p>to replicate that strategy.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-186877"></a>
+  <header>
+    <p><b>Twan van Laarhoven</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-08-21">2009-08-21</time></p>
+  </header>
+<p>Why are you using fork/exec as opposed to System.Process?</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-186879"></a>
+  <header>
+    <p><b>ephemient</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-08-21">2009-08-21</time></p>
+  </header>
+<ol type="a">
+<li><p>Just try to close all FDs up to getdtablesize() or sysconf(_SC_OPEN_MAX). Slow but mostly portable.</p></li>
+<li><p>Look at /proc/self/fd/. Faster but not as portable.</p></li>
+</ol>
+</article>
+
+<article class="comment-body">
+  <a name="comment-186883"></a>
+  <header>
+    <p><b>Blame</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-08-21">2009-08-21</time></p>
+  </header>
+<p><a href="http://haskell.org/ghc/docs/latest/html/libraries/base/Control-Exception.html#v:finally">finally</a></p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-186886"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-08-21">2009-08-21</time></p>
+  </header>
+<p><em><span class="citation" data-cites="Twan">@Twan</span></em>, For this example there isn’t much reason, but in many cases it is nice to separate fork and exec.</p>
+<p><em><span class="citation" data-cites="ephemient">@ephemient</span></em>, Yes, it was <code>getdtablesize()</code> I was looking for, but couldn’t find.</p>
+<p><em><span class="citation" data-cites="Blame">@Blame</span></em>, Huh?</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-186894"></a>
+  <header>
+    <p><b>ifp5</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-08-22">2009-08-22</time></p>
+  </header>
+<p>I’d better use /dev/fd/* instead of /proc/self/*, it’s much more portable.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-186918"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-08-22">2009-08-22</time></p>
+  </header>
+<p><em><span class="citation" data-cites="bbb">@bbb</span></em>, It seems rather silly to iterate over all <em>valid</em> file descriptors, it’d be much nicer to only iterate over all <em>open</em> file descriptors. I’ll have to take a look at the bash code though, for educational purposes.</p>
+<p><em><span class="citation" data-cites="ifp5">@ifp5</span></em>, Yes, that sounds like a good way to go.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-188716"></a>
+  <header>
+    <p><b>Emmelaich</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-09-15">2009-09-15</time></p>
+  </header>
+<p>Set ‘close on exec’ on the descriptors. <a href="http://en.wikipedia.org/wiki/Fork-exec" class="uri">http://en.wikipedia.org/wiki/Fork-exec</a></p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2009-08-21-727-forkexec-in-haskell@therning.org?subject=A comment on Fork/exec in Haskell&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

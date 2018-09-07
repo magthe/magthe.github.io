@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Per-user Gnome 3 configuration</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2011-05-06">2011-05-06</time> - Magnus Therning</p>
+</header>
+
+<p>Gnome 3 just hit the official <a href="http://www.archlinux.org/">ArchLinux</a> repos a few days ago. It’s new, it’s slick, it’s shiny… but I don’t think it’s ready for general use just yet. It seems stable enough, but there’s just a few too many things missing to make it feel like it’s complete. Anyway, running Arch means that at times one has to live with not-quite-release-ready software anyway :-)</p>
+<p>The biggest issue I’ve come across with Gnome 3, and especially Gnome Shell and the window manager, is configuring the themes. I was pointed to a fairly <a href="http://blog.fpmurphy.com/2011/03/customizing-the-gnome-3-shell.html">good article on customising the Gnome Shell</a>, but it suggests modifying system files which is a bad thing to do even on single-user systems. So this post should be read as an addendum to that one.</p>
+<p>First of all install the User Theme <a href="http://live.gnome.org/GnomeShell/Extensions">Gnome Shell Extension</a>. The <a href="http://aur.archlinux.org/packages.php?ID=48614">AUR</a> <a href="http://aur.archlinux.org/packages.php?ID=47501">packages</a> available pull the source from its <a href="http://git.gnome.org/browse/gnome-shell-extensions/">git repo</a> because there doesn’t seem to be any releases of the extensions just yet. When using the bleeding edge source I ran into problems with Gnome Shell crashing so I advise against using it. I’ve had success with the source tagged at 3.0.1, you can find an <a href="http://www.kiwilight.com/~magnus/gnome-shell-extension-user-theme-3.0.1-1.src.tar.gz">Arch source package for Gnome Shell User Theme</a> that I put together based on one of the AUR packages. Build and install that, then restart Gnome Shell (Alt-F2, r, return). Then verify that the extension has been loaded by using <a href="http://live.gnome.org/GnomeShell/LookingGlass">Looking Glass</a>.</p>
+<p>Then create copies of the default themes using <code>rsync</code>:</p>
+<pre><code>% rsync -a /usr/share/themes/Adwaita ~/.themes
+% mv ~/.themes/Adwaita ~/.themes/Adwaita2
+% mkdir -p ~/.themes/Default/gnome-shell
+% rsync -a /usr/share/gnome-shell/theme ~/.themes/Default/gnome-shell</code></pre>
+<p>Then modify the file <code>~/.themes/Adwaita2/index.theme</code> so that each mention of <code>Adwaita</code> says <code>Adwaita2</code> instead, except for the cursor theme.</p>
+<p>Make sure <code>gnome-tweak-tool</code> is installed (it’s in a package with the same name). Run it and change the shell theme to <code>Default</code>,the windows theme to <code>Adwaita2</code>, and the interface gtk+ theme to <code>Adwaita2</code> as well.</p>
+<p>Now you return to <a href="http://blog.fpmurphy.com/2011/03/customizing-the-gnome-3-shell.html">the article on configuring Gnome Shell</a>, but instead of modifying the system files modify the ones in your <code>~/.themes</code>.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/arch.html">arch</a>, <a href="../tags/configuration.html">configuration</a>, <a href="../tags/gnome3.html">gnome3</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2011-05-04-928-archhaskell-habs-with-cblrepo.html">⟸ ArchHaskell HABS with cblrepo</a>
+
+
+
+<a href="../posts/2011-05-08-938-xmonad-and-gnome-3.html">Xmonad and Gnome 3 ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2011-05-06-933-per-user-gnome-3-configuration@therning.org?subject=A comment on Per-user Gnome 3 configuration&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

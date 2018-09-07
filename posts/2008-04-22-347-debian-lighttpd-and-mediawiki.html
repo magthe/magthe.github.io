@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Debian, lighttpd and MediaWiki</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2008-04-22">2008-04-22</time> - Magnus Therning</p>
+</header>
+
+<p>I just went through the exercise of setting up <a href="http://www.mediawiki.org/">MediaWiki</a> on a Debian Etch box, but instead of serving it using the common choice of <a href="http://apache.org/">Apache</a> I wanted to use <a href="http://www.lighttpd.net/">lighttpd</a>. It seems the combination MediaWiki and Apache is well supported on Debian. There was even an install-time question whether I wanted the configuration files set up for me. Well, it’s boring to follow the common path, right?</p>
+<p>It seems the combination MediaWiki and Apache is well supported on Debian. Luckily that doesn’t mean it’s difficult to serve it with lighttpd. Here’s how I configured things, and luckily it all seems to work just fine ;-)</p>
+<p>###Installation</p>
+<p>First off, I installed <code>mediawiki1.7</code>, <code>lighttpd</code>, <code>php5-cgi</code>, and <code>mysql-server</code>. I made sure that aptitude only pulled in required packages and then I started un-choosing all Apache-related packages. By the time you get to installing <a href="http://www.mysql.com/">MySQL</a> you’ll be asked for a root password, that is if your <code>debconf</code> is set to ask medium-level questions.</p>
+<p>###Setting up MediaWiki</p>
+<p>The Debian package for MediaWiki creates a site in <code>/var/lib/mediawiki1.7</code> consisting mostly of symbolic links to the actual location of its files. I kept lighttpd’s default document root of <code>/var/www</code> and linked the two by creating a symbolic link <code>/var/www/mw</code> pointing to the MediaWiki site (<code>/var/lib/mediawiki1.7</code>).</p>
+<p>###Configuration of lighttpd</p>
+<p>First enable FastCGI by linking <code>/etc/lighttpd/conf-available/10-fastgi.conf</code> into <code>/etc/lighttpd/conf-enabled/</code>. Then go in and change the <code>bin-path</code> to point to <code>/usr/bin/php5-cgi</code>. To prepare for the MediaWiki configuration, enable <code>mod_rewrite</code> in <code>/etc/lighttpd/lighttpd.conf</code> and finally create the file <code>/etc/lighttpd/conf-enabled/20-mediawiki.conf</code> with the following contents:</p>
+<pre><code>url.rewrite-once = (
+    &quot;^/$&quot; =&gt; &quot;/mw/index.php&quot;,
+    &quot;^/wiki/([^?]*)(?:\?(.*))?&quot; =&gt; &quot;/mw/index.php?title=$1&amp;$2&quot;
+  )</code></pre>
+<p>Now it’s time to restart lighttpd.</p>
+<p>###Configuration of MediaWiki</p>
+<p>Point a browser to <em>http://your.server/mw/config/index.php</em> to configure the site settings. When that’s done copy the file <code>/var/lib/mediawiki1.7/config/LocalSettings.php</code> one layer up.</p>
+<p>That should be it! Enjoy!</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/debian.html">debian</a>, <a href="../tags/lighttpd.html">lighttpd</a>, <a href="../tags/mediawiki.html">mediawiki</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2008-04-21-346-debian-pbuilder-tip.html">⟸ Debian: pbuilder tip</a>
+
+
+
+<a href="../posts/2008-04-29-348-rubber-and-lhs.html">Rubber and lhs? ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2008-04-22-347-debian-lighttpd-and-mediawiki@therning.org?subject=A comment on Debian, lighttpd and MediaWiki&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

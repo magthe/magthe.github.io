@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Simple state machines in Haskell</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2015-01-03">2015-01-03</time> - Magnus Therning</p>
+</header>
+
+<p>During this past autumn I’ve had to work with products implementing two small and simple protocols, one was USB based, the other completely proprietary. In both cases I found it very helpful to write clients where the central behaviour was modelled as a state machine. In the case of the proprietary protocol I’ve ended up writing a couple of servers implementing a subset of the behaviour of the real product, also here I found using a state machine as the central piece to be very useful.</p>
+<p>I started out having a look at [Hackage][] to see if there was already some tool or DSL that would help me create machines. Surprisingly I found nothing, which probably just means I didn’t look carefully enough. Anyway, after reading the Wikipedia articles on <a href="https://en.wikipedia.org/wiki/Finite-state_machine">Finite-state machine</a>, <a href="https://en.wikipedia.org/wiki/Finite_state_transducer">finite state transducer</a>, <a href="https://en.wikipedia.org/wiki/Moore_machine">Moore machine</a> and <a href="https://en.wikipedia.org/wiki/Mealy_machine">Mealy machine</a> I decided to write my own naïve implementation of something resembling Mealy machines.</p>
+<p>A Mealy machine is a 6-tuple comprising</p>
+<ul>
+<li>a finite set of states</li>
+<li>a start state</li>
+<li>a finite set called the input alphabet</li>
+<li>a finite set called the output alphabet</li>
+<li>a transition function mapping a state and an input symbol to the next state</li>
+<li>an output function mapping a state and an input symbol to an output symbol</li>
+</ul>
+<p>If the transition and output functions are combined into a single function, and we don’t care about being able to reset a machine, it’s possible to use a representation as simple as this:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Machine</span> state event signal <span class="fu">=</span> <span class="dt">Machine</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">    {<span class="ot"> mCurState ::</span> state</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">    ,<span class="ot"> mTransFunction ::</span> state <span class="ot">-&gt;</span> event <span class="ot">-&gt;</span> (state, signal)</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">    }</a></code></pre></div>
+<p>I’ve opted to call the input alphabet <em>event</em> and the output alphabet <em>signal</em>.</p>
+<p>Stepping a machine is then performed by passing the current state and an event to the combined function and updating the machine with the result. Of course the generated signal has to be dealt with too. Or in other words:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">stepMachine ::</span> <span class="dt">Machine</span> state event signal <span class="ot">-&gt;</span> event <span class="ot">-&gt;</span> (<span class="dt">Machine</span> state event signal, signal)</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">stepMachine machine event <span class="fu">=</span> (machine {mCurState <span class="fu">=</span> newState}, output)</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">    <span class="kw">where</span></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">        curState <span class="fu">=</span> mCurState machine</a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">        (newState, output) <span class="fu">=</span> mTransFunction machine curState event</a></code></pre></div>
+<p>I also decided to add a function for creating a machine given a start state and a function. With the definition above it becomes trivial:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">createMachine ::</span> state <span class="ot">-&gt;</span> (state <span class="ot">-&gt;</span> event <span class="ot">-&gt;</span> (state, signal)) <span class="ot">-&gt;</span> <span class="dt">Machine</span> state event signal</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">createMachine <span class="fu">=</span> <span class="dt">Machine</span></a></code></pre></div>
+<p>That’s it, really. Except of course that the actual transition function still has to be written. However, with the pattern matching of Haskell I’ve found that to be rather simple, but I’ll keep that for the next post.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/fsm.html">fsm</a>, <a href="../tags/transducer.html">transducer</a>, <a href="../tags/mealy.html">mealy</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2014-12-26-000-adding-some-strictness.html">⟸ Adding some strictness</a>
+
+
+
+<a href="../posts/2015-01-06-000-adder-as-a-state-machine.html">Adder as a state machine ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2015-01-03-000-simple-state-machines-in-haskell@therning.org?subject=A comment on Simple state machines in Haskell&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

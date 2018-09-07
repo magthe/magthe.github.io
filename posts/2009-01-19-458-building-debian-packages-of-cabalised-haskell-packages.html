@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Building Debian packages of (cabalised) Haskell packages</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2009-01-19">2009-01-19</time> - Magnus Therning</p>
+</header>
+
+<p>I’ve just spent the last hour or so ironing out the details required to automate the building of cabalised Haskell packages for Debian. At the same time I also built Debian packages for 5 Haskell packages (<a href="http://hackage.haskell.org/cgi-bin/hackage-scripts/package/test-framework">test-framework</a> and its dependencies).</p>
+<p>These are the basic steps I’ve followed:</p>
+<ol type="1">
+<li>Extract the tar-ball in the working directory.</li>
+<li>Rename the directory to match the form <code>haskell-X-0.1</code>.</li>
+<li>Re-tar the directory into an archive named <code>haskell-X_0.1.orig.tar.gz</code>.</li>
+<li>Change into the package directory.</li>
+<li>Run Cabal’s <code>configure</code> command followed by <code>register --gen-pkg-conf=pkg.conf</code>.</li>
+<li><p>Modify the generated file and turn it into a <em>.ini</em>-style file:</p>
+<pre><code> echo '[conf]' &gt; pkg.conf.tmp; cat pkg.conf &gt;&gt; pkg.conf.tmp; mv pkg.conf.tmp pkg.conf</code></pre></li>
+<li><p>Use Python to extract the dependencies:</p>
+<pre><code> python &lt;&lt; EOF
+ from ConfigParser import ConfigParser
+ cfg = ConfigParser()
+ cfg.read('pkg.conf')
+ deps = cfg.get('conf', 'depends').split()
+ for d in map(lambda s: s.rsplit('-', 1)[0].lower(), deps):
+     print d
+ EOF</code></pre></li>
+<li>Clean up by <code>rm pkg.conf</code> and running Cabal’s <code>clean</code> command.</li>
+<li>Create the <code>debian</code> directory.</li>
+<li>Create <code>debian/compat</code>: <code>echo 5 &gt; debian/compat</code></li>
+<li><p>Create <code>debian/changelog</code>, it should be something like:</p>
+<pre><code> haskell-X (0.1-1) unstable; urgency=low
+
+   * Automatic build.
+
+  -- Magnus Therning &lt;magnus@therning.org&gt;  Mon, 19 Jan 2009 22:35:00 +0000</code></pre></li>
+<li>Create <code>debian/control</code>. This is by far the most time consuming part to do manually. It’s also a bit long so I’ll leave it out of this post. Take a look in <a href="http://therning.org/magnus_apt/unstable/">my APT repo</a> if you are interested in the details.</li>
+<li>Copy <code>hlibrary.mk</code> into <code>debian/</code>. At some point it will be included in some Debian package (<a href="http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=462482">bug #462482</a>) but for now it can be found <a href="http://people.debian.org/~kaol/repos/hlibrary/hlibrary.mk">here</a>.</li>
+<li><p>Create <code>debian/rules</code> with</p>
+<pre><code> #!/usr/bin/make -f
+ include $(CURDIR)/debian/hlibrary.mk</code></pre>
+and make it executable, <code>chmod +x debian/rules</code>.</li>
+<li><p>Done. Run <code>debuild</code>.</p></li>
+</ol>
+<p>My intention is to at some point encode these steps in a tool so that I can spew out Debian packages for all interesting packages on <a href="http://hackage.haskell.org/packages/hackage.html">HackageDB</a> at the press of a button. Of course that tool will be written in Haskell, and it sure won’t rely on Python for any part of the process ;-)</p>
+<p>Readers who are familiar with the rules for Debian packages will notice that this won’t create well-formed packages. I’m not particularly interested in getting these packages into Debian proper, I see the package generated this way living in an unofficial repo. So there is no need to make sure they are acceptable for inclusion in the distribution itself. The resulting packages might offer a good starting point for someone who feels that a package deserves to become official. I also suspect that a tool that generates fully compliant packages, and is able to deal with keeping them up-to-date, is too big a task for me. I’m also not sure it really is worth it, better to keep things as simple as possible in order to deal with the amazing rate of new releases on Hackage.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/debian.html">debian</a>, <a href="../tags/haskell.html">haskell</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2009-01-18-451-ubuntu-now-found-in-the-uk-too.html">⟸ Ubuntu - now found in the UK too</a>
+
+
+
+<a href="../posts/2009-01-21-476-experience-with-cabal-debian.html">Experience with cabal-debian ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-168841"></a>
+  <header>
+    <p><b>Mikhail Glushenkov</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-01-20">2009-01-20</time></p>
+  </header>
+<p>Looks like we really need a cabal2deb tool.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-168846"></a>
+  <header>
+    <p><b>Clifford Beshers</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-01-20">2009-01-20</time></p>
+  </header>
+<p>Magnus, we have a tool called cabal-debian that does a lot of this automatically. It is incomplete and imperfect, but it’s written in Haskell ;-). See http://src.seereason.com/cabal-debian/. There is also a much larger tool called the autobuilder that actually builds full repositories: http://src.seereason.com/autobuilder.</p>
+<p>Clifford Beshers SeeReason Partners, LLC</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-168848"></a>
+  <header>
+    <p><b>Jeremy Shaw</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-01-20">2009-01-20</time></p>
+  </header>
+<p>You may be interested in cabal-debian and the autobuilder:</p>
+<ul>
+<li><a href="http://src.seereason.com/cabal-debian/" class="uri">http://src.seereason.com/cabal-debian/</a></li>
+<li><a href="http://src.seereason.com/autobuilder/" class="uri">http://src.seereason.com/autobuilder/</a></li>
+</ul>
+<p>Those are the tools used to maintain the repos here: <a href="http://deb.seereason.com/" class="uri">http://deb.seereason.com/</a></p>
+<p>cabal-debian is a simple tool for debianizing cabal packages. Go into the top-level directory of a cabalized package and run <code>cabal-debian --debianize</code>.</p>
+<p>The autobuilder is a bit more complex. It is a complete system for automatically building debian packages. It can get the package source via http, darcs, hg, svn, tla, and more. It automatically tracks build dependency and source changes to rebuild packages as needed, and installing the packages in an apt-gettable debian repository. There is an example config directory Example, which is the actual config file we use to build our repository.</p>
+<p>The ‘missing’ pieces are:</p>
+<ul>
+<li>cabal-debian does not automatically fetch packages from hackage</li>
+<li>the process of updating the debianization when a new upstream release is made is not fully automated</li>
+<li>adding new packages to the autobuilder config is currently done by hand</li>
+</ul>
+<p>These features would be nice to have, but the pain of doing them by hand has yet to overshadow the time required to develop those features.</p>
+<p>These tools are all written in Haskell. If you find them useful, we would love any patches you come up with. We really ought to upload this stuff to hackage, but haven’t for some reason (probably lack of time). I think there is no good reason not too if someone was inclined.</p>
+<p>The autobuilder is horribly undocumented, so if you are interested in using it, you will probably need a bit of hand holding to get you started. It’s pretty straight-forward once you know the magic though. I am stepcut on IRC.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-168860"></a>
+  <header>
+    <p><b>roy_hu</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-01-20">2009-01-20</time></p>
+  </header>
+<p>There’s also the cabal-debian project (<a href="http://www.haskell.org/pipermail/haskell-cafe/2008-August/046272.html" class="uri">http://www.haskell.org/pipermail/haskell-cafe/2008-August/046272.html</a>). But last time I tried, the process wasn’t so successful. Don’t know what status it’s in now.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-171710"></a>
+  <header>
+    <p><b>Valery V. Vorotyntsev</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-03-01">2009-03-01</time></p>
+  </header>
+<p>Step #0: Thanks for the howto!</p>
+<p>Step #6: The line could be [25 chars] shorter:</p>
+<pre><code>echo '[conf]' | cat - pkg.conf &amp;gt; /tmp/1; mv /tmp/1 pkg.conf</code></pre>
+<p>Step #14: Consider updating this step according to your own <a href="http://lists.debian.org/debian-haskell/2009/02/msg00079.html">message</a> to debian-haskell.</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2009-01-19-458-building-debian-packages-of-cabalised-haskell-packages@therning.org?subject=A comment on Building Debian packages of (cabalised) Haskell packages&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

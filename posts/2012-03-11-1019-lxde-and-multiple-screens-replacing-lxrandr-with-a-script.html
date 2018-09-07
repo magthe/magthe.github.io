@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">LXDE and multiple screens: replacing lxrandr with a script</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2012-03-11">2012-03-11</time> - Magnus Therning</p>
+</header>
+
+<p>When using Gnome3 I was really impressed with the support for multiple screens. Then I switched to LXDE and was <em>very</em> disappointed in that desktop’s support for multiple screens. In fact so disappointed that I sat down and read the man-page for ‘randr’ and hacked up the following script:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash lineNumbers"><code class="sourceCode bash"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="co">#! /bin/bash</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="va">cmd=$1</span>; <span class="bu">shift</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">case</span> <span class="va">$cmd</span><span class="kw"> in</span></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">    on<span class="kw">)</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7">        <span class="co"># turn on VGA1, auto-select size, right of laptop screen</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8">        <span class="ex">xrandr</span> --output VGA1 --auto --right-of LVDS1</a>
+<a class="sourceLine" id="cb1-9" data-line-number="9">        <span class="kw">;;</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10">    off<span class="kw">)</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11">        <span class="ex">xrandr</span> --output VGA1 --off</a>
+<a class="sourceLine" id="cb1-12" data-line-number="12">        <span class="kw">;;</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13">    list<span class="kw">)</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14">        <span class="ex">xrandr</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15">        <span class="kw">;;</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16">    *<span class="kw">)</span></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17">        <span class="bu">echo</span> <span class="st">&quot;Commands: on, off, list&quot;</span></a>
+<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">esac</span></a></code></pre></div>
+<p>In my mind it’s vastly more usable than ‘lxrandr’ :)</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/lxde.html">lxde</a>, <a href="../tags/randr.html">randr</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2012-03-06-1009-0mq-and-haskell.html">⟸ 0MQ and Haskell</a>
+
+
+
+<a href="../posts/2012-04-09-1023-manual-setup-of-qteclipse-on-windows.html">Manual setup of Qt+Eclipse on Windows ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2012-03-11-1019-lxde-and-multiple-screens-replacing-lxrandr-with-a-script@therning.org?subject=A comment on LXDE and multiple screens: replacing lxrandr with a script&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

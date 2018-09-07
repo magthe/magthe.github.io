@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Optparse-applicative and custom argument parsers</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2014-10-13">2014-10-13</time> - Magnus Therning</p>
+</header>
+
+<p>The latest update of <a href="http://hackage.haskell.org/package/optparse-applicative">optparse-applicative</a> triggered me to look over the functions in <a href="http://hackage.haskell.org/package/cblrepo">cblrepo</a> for parsing a few custom command line options. I used to do the parsing in a rather ad-hoc way with lots of use of list functions to split on specific characters. For instance, some option values are pairs of package name and version separated by a comma: <code>PKG-NAME,VERSION</code>. This worked fine and was easy to plug into version 0.10 of <em>optparse-applicative</em>. It was also easily extended to triples, <code>PKG-NAME,VERSION,RELEASE</code>, but it started feeling a bit brittle when some tuples got extended with an optional list of flag assignments, <code>PKG-NAME,VERSION[:FLAG,FLAG,FLAG,...]</code>. The recent release of version 0.11 of <em>optparse-applicative</em> changed the API for custom option value parsers radically; instead of passing a string to the parser, the parser has to use <code>readerAsk</code> to get the string. In short, <code>ReaderM</code> turned into a state monad.</p>
+<p>In adjusting to the new API I noticed that the code was organised in such a way that some low-level parsing functions were used directly from command line option definitions, while also being used as building blocks for the more complex parsers. This of course meant that the structuring of the functions needed to be changed completely to deal with the API change.</p>
+<p>It turns out there already was a parser that was written in a different style (here already adjusted to the 0.11 API):</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">readerGhcVersion ::</span> <span class="dt">ReadM</span> <span class="dt">Version</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">readerGhcVersion <span class="fu">=</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">    arg <span class="ot">&lt;-</span> readerAsk</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">    <span class="kw">case</span> lastMay <span class="fu">$</span> readP_to_S parseVersion arg <span class="kw">of</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">        <span class="dt">Just</span> (v, <span class="st">&quot;&quot;</span>) <span class="ot">-&gt;</span> return v</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">        _ <span class="ot">-&gt;</span> fail <span class="fu">$</span> <span class="st">&quot;cannot parse value `&quot;</span> <span class="fu">++</span> arg <span class="fu">++</span> <span class="st">&quot;`&quot;</span></a></code></pre></div>
+<p>So I rewrote the rest of the parsers in a similar style. The arguably most complicated is this one:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">readPkgNVersion ::</span> <span class="dt">ReadP</span> (<span class="dt">String</span>, <span class="dt">Version</span>)</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">readPkgNVersion <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">    n <span class="ot">&lt;-</span> many (satisfy (<span class="fu">/=</span> <span class="ch">','</span>))</a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">    char <span class="ch">','</span></a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">    v <span class="ot">&lt;-</span> parseVersion</a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">    return (n, v)</a>
+<a class="sourceLine" id="cb2-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb2-8" data-line-number="8"><span class="ot">readFlag ::</span> <span class="dt">ReadP</span> (<span class="dt">FlagName</span>, <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb2-9" data-line-number="9">readFlag <span class="fu">=</span> readNegFlag <span class="fu">&lt;++</span> readPosFlag</a>
+<a class="sourceLine" id="cb2-10" data-line-number="10">    <span class="kw">where</span></a>
+<a class="sourceLine" id="cb2-11" data-line-number="11">        readNegFlag <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-12" data-line-number="12">            char <span class="ch">'-'</span></a>
+<a class="sourceLine" id="cb2-13" data-line-number="13">            n <span class="ot">&lt;-</span> many (satisfy (<span class="fu">/=</span> <span class="ch">','</span>))</a>
+<a class="sourceLine" id="cb2-14" data-line-number="14">            return (<span class="dt">FlagName</span> n, <span class="dt">False</span>)</a>
+<a class="sourceLine" id="cb2-15" data-line-number="15"></a>
+<a class="sourceLine" id="cb2-16" data-line-number="16">        readPosFlag <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-17" data-line-number="17">            n0 <span class="ot">&lt;-</span> get</a>
+<a class="sourceLine" id="cb2-18" data-line-number="18">            n <span class="ot">&lt;-</span> many (satisfy (<span class="fu">/=</span> <span class="ch">','</span>))</a>
+<a class="sourceLine" id="cb2-19" data-line-number="19">            return (<span class="dt">FlagName</span> (n0 <span class="fu">:</span> n), <span class="dt">True</span>)</a>
+<a class="sourceLine" id="cb2-20" data-line-number="20"></a>
+<a class="sourceLine" id="cb2-21" data-line-number="21"><span class="ot">strCblPkgArgReader ::</span> <span class="dt">ReadM</span> (<span class="dt">String</span>, <span class="dt">Version</span>, <span class="dt">FlagAssignment</span>)</a>
+<a class="sourceLine" id="cb2-22" data-line-number="22">strCblPkgArgReader <span class="fu">=</span> <span class="kw">let</span></a>
+<a class="sourceLine" id="cb2-23" data-line-number="23">        readWithFlags <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-24" data-line-number="24">            (n, v) <span class="ot">&lt;-</span> readPkgNVersion</a>
+<a class="sourceLine" id="cb2-25" data-line-number="25">            char <span class="ch">':'</span></a>
+<a class="sourceLine" id="cb2-26" data-line-number="26">            fas <span class="ot">&lt;-</span> sepBy readFlag (char <span class="ch">','</span>)</a>
+<a class="sourceLine" id="cb2-27" data-line-number="27">            return (n, v, fas)</a>
+<a class="sourceLine" id="cb2-28" data-line-number="28"></a>
+<a class="sourceLine" id="cb2-29" data-line-number="29">        readWithoutFlags <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-30" data-line-number="30">            (n, v) <span class="ot">&lt;-</span> readPkgNVersion</a>
+<a class="sourceLine" id="cb2-31" data-line-number="31">            return (n, v, [])</a>
+<a class="sourceLine" id="cb2-32" data-line-number="32"></a>
+<a class="sourceLine" id="cb2-33" data-line-number="33">    <span class="kw">in</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-34" data-line-number="34">        s <span class="ot">&lt;-</span> readerAsk</a>
+<a class="sourceLine" id="cb2-35" data-line-number="35">        <span class="kw">case</span> lastMay (readP_to_S (readWithFlags <span class="fu">&lt;++</span> readWithoutFlags) s) <span class="kw">of</span></a>
+<a class="sourceLine" id="cb2-36" data-line-number="36">            <span class="dt">Just</span> (r, <span class="st">&quot;&quot;</span>) <span class="ot">-&gt;</span> return r</a>
+<a class="sourceLine" id="cb2-37" data-line-number="37">            _ <span class="ot">-&gt;</span> fail <span class="fu">$</span> <span class="st">&quot;Cannot parse: &quot;</span> <span class="fu">++</span> s</a></code></pre></div>
+<p>It is slightly longer, but it’s rather a lot easier to read what’s happening after this rewrite. <code>ReadP</code> feels like a lighter option than pulling in <a href="http://hackage.haskell.org/package/parsec">parsec</a> as a dependency, but I’d love to hear any comments or suggestions, as well as pointers to how other people deal with parsing of non-trivial types of arguments in combination with <em>optparse-applicative</em>.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/parsing.html">parsing</a>, <a href="../tags/arguments.html">arguments</a>, <a href="../tags/optparse-applicative.html">optparse-applicative</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2014-10-04-000-bbwp.html">⟸ Script for migrating from WordPress to Hakyll</a>
+
+
+
+<a href="../posts/2014-10-20-000-dijkstra-ewd1284.html">Dijkstra quotes from EWD1284 ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2014-10-13-000-optparse-applicative@therning.org?subject=A comment on Optparse-applicative and custom argument parsers&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

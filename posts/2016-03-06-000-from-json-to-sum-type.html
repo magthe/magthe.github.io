@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">From JSON to sum type</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2016-03-06">2016-03-06</time> - Magnus Therning</p>
+</header>
+
+<p>For a while I’ve been planning to take full ownership of the JSON serialisation and parsing in <a href="https://github.com/magthe/cblrepo/">cblrepo</a>. The recent inclusion of instances of <code>ToJSON</code> and <code>FromJSON</code> for <a href="http://hackage.haskell.org/package/base-4.8.2.0/docs/Data-Version.html#t:Version"><code>Version</code></a> pushed me to take the first step by writing my own instances for all external types.</p>
+<p>When doing this I noticed that all examples in the <a href="http://hackage.haskell.org/package/aeson">aeson</a> docs use a product</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Person</span> <span class="fu">=</span> <span class="dt">Person</span> {</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="ot">      name ::</span> <span class="dt">Text</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">    ,<span class="ot"> age  ::</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">    }</a></code></pre></div>
+<p>whereas I had to deal with quite a few sums, e.g. <a href="http://hackage.haskell.org/package/Cabal-1.22.8.0/docs/Distribution-Version.html#t:VersionRange"><code>VersionRange</code></a>. At first I struggled a little with how to write an instance of <code>FromJSON</code>. After quite a bit of thinking I came up with the following, which I think is fairly nice, but I’d really like to hear what others think about it. Maybe I’ve just missed a much simpler way of implementing <code>parseJSON</code>:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">V.VersionRange</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">  parseJSON <span class="fu">=</span> withObject <span class="st">&quot;VersionRange&quot;</span> go</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">    <span class="kw">where</span></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">      go o <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">        lv <span class="ot">&lt;-</span> (o <span class="fu">.:?</span> <span class="st">&quot;LaterVersion&quot;</span>) <span class="fu">&gt;&gt;=</span> return <span class="fu">.</span> fmap V.laterVersion</a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">        tv <span class="ot">&lt;-</span> (o <span class="fu">.:?</span> <span class="st">&quot;ThisVersion&quot;</span>) <span class="fu">&gt;&gt;=</span> return <span class="fu">.</span> fmap V.thisVersion</a>
+<a class="sourceLine" id="cb2-7" data-line-number="7">        ev <span class="ot">&lt;-</span> (o <span class="fu">.:?</span> <span class="st">&quot;EarlierVersion&quot;</span>) <span class="fu">&gt;&gt;=</span> return <span class="fu">.</span> fmap V.earlierVersion</a>
+<a class="sourceLine" id="cb2-8" data-line-number="8">        av <span class="ot">&lt;-</span> (o <span class="fu">.:?</span> <span class="st">&quot;AnyVersion&quot;</span>) <span class="fu">&gt;&gt;=</span> \ (<span class="ot">_::</span><span class="dt">Maybe</span> [(<span class="dt">Int</span>,<span class="dt">Int</span>)]) <span class="ot">-&gt;</span> return <span class="fu">$</span> <span class="dt">Just</span> V.anyVersion</a>
+<a class="sourceLine" id="cb2-9" data-line-number="9">        wv <span class="ot">&lt;-</span> (o <span class="fu">.:?</span> <span class="st">&quot;WildcardVersion&quot;</span>) <span class="fu">&gt;&gt;=</span> return <span class="fu">.</span> fmap <span class="dt">V.WildcardVersion</span></a>
+<a class="sourceLine" id="cb2-10" data-line-number="10">        uvr <span class="ot">&lt;-</span> (o <span class="fu">.:?</span> <span class="st">&quot;UnionVersionRanges&quot;</span>) <span class="fu">&gt;&gt;=</span> return <span class="fu">.</span> fmap toUvr</a>
+<a class="sourceLine" id="cb2-11" data-line-number="11">        ivr <span class="ot">&lt;-</span> (o <span class="fu">.:?</span> <span class="st">&quot;IntersectVersionRanges&quot;</span>) <span class="fu">&gt;&gt;=</span> return <span class="fu">.</span> fmap toIvr</a>
+<a class="sourceLine" id="cb2-12" data-line-number="12">        vrp <span class="ot">&lt;-</span> (o <span class="fu">.:?</span> <span class="st">&quot;VersionRangeParens&quot;</span>) <span class="fu">&gt;&gt;=</span> return <span class="fu">.</span> fmap <span class="dt">V.VersionRangeParens</span></a>
+<a class="sourceLine" id="cb2-13" data-line-number="13">        maybe (typeMismatch <span class="st">&quot;VersionRange&quot;</span> <span class="fu">$</span> <span class="dt">Object</span> o)</a>
+<a class="sourceLine" id="cb2-14" data-line-number="14">          return</a>
+<a class="sourceLine" id="cb2-15" data-line-number="15">          (lv <span class="fu">&lt;|&gt;</span> tv <span class="fu">&lt;|&gt;</span> ev <span class="fu">&lt;|&gt;</span> uvr <span class="fu">&lt;|&gt;</span> ivr <span class="fu">&lt;|&gt;</span> wv <span class="fu">&lt;|&gt;</span> vrp <span class="fu">&lt;|&gt;</span> av)</a>
+<a class="sourceLine" id="cb2-16" data-line-number="16"></a>
+<a class="sourceLine" id="cb2-17" data-line-number="17">      toUvr [v0, v1] <span class="fu">=</span> V.unionVersionRanges v0 v1</a>
+<a class="sourceLine" id="cb2-18" data-line-number="18">      toIvr [v0, v1] <span class="fu">=</span> V.intersectVersionRanges v0 v1</a></code></pre></div>
+<p>Any and all comments and suggestions are more than welcome!</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/json.html">json</a>, <a href="../tags/aeson.html">aeson</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2016-01-24-000-freer-play-with-effects.html">⟸ Freer play with effects</a>
+
+
+
+<a href="../posts/2016-03-08-000-final-version-of-json-to-sum-type.html">Final version of JSON to sum type ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-0"></a>
+  <header>
+    <p><b>David Turner</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2016-03-07">2016-03-07</time></p>
+  </header>
+<p>Isn’t</p>
+<pre><code>f &gt;&gt;= return . g</code></pre>
+<p>The same as</p>
+<pre><code>fmap g f</code></pre>
+<p>?</p>
+<p>Or something like that anyway?</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-1"></a>
+  <header>
+    <p><b>Magnus Therning</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2016-03-07">2016-03-07</time></p>
+  </header>
+<p><span class="citation" data-cites="David">@David</span>, yes, <code>f &gt;&gt;= return . g</code> is the same as <code>fmap g f</code>. However, since in this case <code>g</code> is of the form <code>fmap h</code> it would end up looking like</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">fmap (fmap h) f</a></code></pre></div>
+<p>and then I find <code>f &gt;&gt;= return . fmap h</code> to be a bit easier to read and understand.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-2"></a>
+  <header>
+    <p><b>David Turner</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2016-03-07">2016-03-07</time></p>
+  </header>
+<p>Actually, a couple of other ideas too. First, why not just use <code>.:</code>? Parsers themselves are instances of Alternative so you can use <code>&lt;|&gt;</code> to combine two <em>parsers</em> where if the first fails then the second is tried.</p>
+<p>Secondly, I’d recommend not naming all the intermediate results and then combining them at the bottom. Too many times have I come across a bug where there was one missing in the final list! I can’t remember off the top of my head whether there’s a <code>choice</code> operator here as there is in e.g. attoprasec, but if there isn’t there should be!</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-3"></a>
+  <header>
+    <p><b>David Turner</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2016-03-07">2016-03-07</time></p>
+  </header>
+<p>So here’s how I would write this function:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">VersionRange</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">  parseJSON <span class="fu">=</span> withObject <span class="st">&quot;VersionRange&quot;</span> <span class="fu">$</span> \o <span class="ot">-&gt;</span> msum</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">    [ nullaryOp anyVersion            <span class="fu">&lt;$&gt;</span> o <span class="fu">.:</span> <span class="st">&quot;AnyVersion&quot;</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">    , thisVersion                     <span class="fu">&lt;$&gt;</span> o <span class="fu">.:</span> <span class="st">&quot;ThisVersion&quot;</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">    , laterVersion                    <span class="fu">&lt;$&gt;</span> o <span class="fu">.:</span> <span class="st">&quot;LaterVersion&quot;</span></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">    , earlierVersion                  <span class="fu">&lt;$&gt;</span> o <span class="fu">.:</span> <span class="st">&quot;EarlierVersion&quot;</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7">    , <span class="dt">WildcardVersion</span>                 <span class="fu">&lt;$&gt;</span> o <span class="fu">.:</span> <span class="st">&quot;WildcardVersion&quot;</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8">    , binaryOp unionVersionRanges     <span class="fu">=&lt;&lt;</span> o <span class="fu">.:</span> <span class="st">&quot;UnionVersionRanges&quot;</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9">    , binaryOp intersectVersionRanges <span class="fu">=&lt;&lt;</span> o <span class="fu">.:</span> <span class="st">&quot;IntersectVersionRanges&quot;</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10">    , <span class="dt">VersionRangeParens</span>              <span class="fu">&lt;$&gt;</span> o <span class="fu">.:</span> <span class="st">&quot;VersionRangeParens&quot;</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11">    ] <span class="kw">where</span><span class="ot"> nullaryOp ::</span> a <span class="ot">-&gt;</span> <span class="dt">Value</span> <span class="ot">-&gt;</span> a</a>
+<a class="sourceLine" id="cb1-12" data-line-number="12">            nullaryOp <span class="fu">=</span> const</a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="ot">            binaryOp ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> m b</a>
+<a class="sourceLine" id="cb1-15" data-line-number="15">            binaryOp f [a,b] <span class="fu">=</span> return <span class="fu">$</span> f a b</a>
+<a class="sourceLine" id="cb1-16" data-line-number="16">            binaryOp _ _     <span class="fu">=</span> fail <span class="st">&quot;binary operator did not have two arguments&quot;</span></a></code></pre></div>
+</article>
+
+<article class="comment-body">
+  <a name="comment-4"></a>
+  <header>
+    <p><b>Никита Тимофеев</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2016-03-07">2016-03-07</time></p>
+  </header>
+<p>Perhaps it would be better to use a transformer MaybeT?</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">V.VersionRange</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">  parseJSON <span class="fu">=</span> withObject <span class="st">&quot;VersionRange&quot;</span> go</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">    <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">      go o <span class="fu">=</span> fromMaybe (typeMismatch <span class="st">&quot;VersionRange&quot;</span> <span class="fu">$</span> <span class="dt">Object</span> o) <span class="fu">&lt;$&gt;</span> runMaybeT <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">        <span class="dt">MaybeT</span> ((o <span class="fu">.:?</span> <span class="st">&quot;LaterVersion&quot;</span>) <span class="fu">&gt;&gt;=</span> return <span class="fu">.</span> fmap V.laterVersion) <span class="fu">&lt;|&gt;</span></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">        <span class="dt">MaybeT</span> ((o <span class="fu">.:?</span> <span class="st">&quot;ThisVersion&quot;</span>) <span class="fu">&gt;&gt;=</span> return <span class="fu">.</span> fmap V.thisVersion) <span class="fu">&lt;|&gt;</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7">        <span class="dt">MaybeT</span> ((o <span class="fu">.:?</span> <span class="st">&quot;EarlierVersion&quot;</span>) <span class="fu">&gt;&gt;=</span> return <span class="fu">.</span> fmap V.earlierVersion) <span class="fu">&lt;|&gt;</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8">        <span class="dt">MaybeT</span> ((o <span class="fu">.:?</span> <span class="st">&quot;AnyVersion&quot;</span>) <span class="fu">&gt;&gt;=</span> \ (<span class="ot">_::</span><span class="dt">Maybe</span> [(<span class="dt">Int</span>,<span class="dt">Int</span>)]) <span class="ot">-&gt;</span> return <span class="fu">$</span> <span class="dt">Just</span> V.anyVersion) <span class="fu">&lt;|&gt;</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9">        <span class="dt">MaybeT</span> ((o <span class="fu">.:?</span> <span class="st">&quot;WildcardVersion&quot;</span>) <span class="fu">&gt;&gt;=</span> return <span class="fu">.</span> fmap <span class="dt">V.WildcardVersion</span>) <span class="fu">&lt;|&gt;</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10">        <span class="dt">MaybeT</span> ((o <span class="fu">.:?</span> <span class="st">&quot;UnionVersionRanges&quot;</span>) <span class="fu">&gt;&gt;=</span> return <span class="fu">.</span> fmap toUvr) <span class="fu">&lt;|&gt;</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11">        <span class="dt">MaybeT</span> ((o <span class="fu">.:?</span> <span class="st">&quot;IntersectVersionRanges&quot;</span>) <span class="fu">&gt;&gt;=</span> return <span class="fu">.</span> fmap toIvr) <span class="fu">&lt;|&gt;</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12">        <span class="dt">MaybeT</span> ((o <span class="fu">.:?</span> <span class="st">&quot;VersionRangeParens&quot;</span>) <span class="fu">&gt;&gt;=</span> return <span class="fu">.</span> fmap <span class="dt">V.VersionRangeParens</span>)</a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14">      toUvr [v0, v1] <span class="fu">=</span> V.unionVersionRanges v0 v1</a>
+<a class="sourceLine" id="cb1-15" data-line-number="15">      toIvr [v0, v1] <span class="fu">=</span> V.intersectVersionRanges v0 v1</a></code></pre></div>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2016-03-06-000-from-json-to-sum-type@therning.org?subject=A comment on From JSON to sum type&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

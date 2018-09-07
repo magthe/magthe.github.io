@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Haskell and Time</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2008-09-16">2008-09-16</time> - Magnus Therning</p>
+</header>
+
+<p>I’ve found myself getting confused over the <a href="http://hackage.haskell.org/packages/archive/time/1.1.2.1/doc/html/Data-Time.html">Data.Time</a> modules a few times now. Today I wanted to do something that I ought to be simple both to do (it was) and find out how to do (it wasn’t, at least not for me). I thought I’d write it down, because I’m bound to forget about it otherwise, and it might be helpful for some other poor soul out there.</p>
+<p>I wanted to store a date in a database (<a href="http://sqlite.org/">SQLite</a>) using Haskell (<a href="http://hackage.haskell.org/cgi-bin/hackage-scripts/package/HDBC">HDBC</a>). Since I’m only interested in the date and not the time I chose to represent it in Haskell as a <a href="http://hackage.haskell.org/packages/archive/time/1.1.2.1/doc/html/Data-Time-Calendar.html#t%3ADay">Date.Time.Calendar.Day</a>. For <code>Day</code> 0 means 1858-11-17. HDBC on the other hand needs the date in seconds since epoch (1970-01-01 00:00 UTC), which conveniently can be represented with a single <code>Integer</code>. <a href="http://hackage.haskell.org/packages/archive/time/1.1.2.1/doc/html/Data-Time-Clock-POSIX.html">Time.Data.Clock.POSIX</a> contains a few handy functions to convert between <code>POSIXTime</code> (<code>NominalDiffTime</code>) and <code>UTCTime</code>. However, there are no special functions for converting between an <code>Integer</code> and <code>NominalDiffTime</code>. The way I found was to do it via the class types that <code>NominalDiffTime</code> implements.</p>
+<p>First I thought that <code>Enum</code> might offer the solution, but my experiments with that was a bit confusing:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="fu">&gt;</span> pt <span class="ot">&lt;-</span> getPOSIXTime</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="fl">1221603766.526661</span>s</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="fu">&gt;</span> fromEnum pt</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="dv">4118657661830593344</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="fu">&gt;</span> toEnum <span class="dv">4118657661830593344</span><span class="ot"> ::</span> <span class="dt">POSIXTime</span> </a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="fl">4118657.661830593344</span>s</a></code></pre></div>
+<p>Not really the result I had hoped for. No, instead the function to use to get the <code>Integer</code> is <code>floor</code>, and the only way I found to convert a <code>NominalDiffTime</code> from an <code>Integer</code> is to go via a <code>Ratio</code>:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="fu">&gt;</span> fromRational (<span class="dv">1221603766</span> <span class="fu">%</span> <span class="dv">1</span>)<span class="ot"> ::</span> <span class="dt">POSIXTime</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">1221603766s</a></code></pre></div>
+<p>Have I missed something or is this the best way to achieve this?</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/hdbc.html">hdbc</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2008-09-13-385-gpg-and-gmail.html">⟸ GPG and Gmail?</a>
+
+
+
+<a href="../posts/2008-09-27-396-what-money-is.html">What money is ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-148832"></a>
+  <header>
+    <p><b>Micha Bartoszkiewicz</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-09-16">2008-09-16</time></p>
+  </header>
+<p>You can use <code>fromInteger</code> from the <code>Num</code> class:</p>
+<pre><code>&gt; fromInteger 42 :: POSIXTime
+42s</code></pre>
+</article>
+
+<article class="comment-body">
+  <a name="comment-148833"></a>
+  <header>
+    <p><b>Andy</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-09-16">2008-09-16</time></p>
+  </header>
+<p><code>fromIntegral 1221603766 :: POSIXTime</code> seems to work too, though it isn’t much shorter.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-148904"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-09-17">2008-09-17</time></p>
+  </header>
+<p><span class="citation" data-cites="Micha">@Micha</span> &amp; Andy: thanks for pointing that out.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-168598"></a>
+  <header>
+    <p><b>Mechanic</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-01-15">2009-01-15</time></p>
+  </header>
+<p>I don’t understand how to do this conversion, please, explain:</p>
+<pre><code>fromInteger 43 :: POSIXTime
+43s</code></pre>
+<p>but</p>
+<pre><code>getPOSIXTime &gt;&gt;= (return .  fromInteger)
+
+:1:28:
+    Couldn't match expected type 'time-1.1.2.2:Data.Time.Clock.UTC.NominalDiffTime'
+           against inferred type 'Integer'</code></pre>
+<p>or another example</p>
+<pre><code>Prelude Data.Time.Clock.POSIX&gt; a &lt;- getPOSIXTime
+Prelude Data.Time.Clock.POSIX&gt; :type a
+a :: POSIXTime
+Prelude Data.Time.Clock.POSIX&gt; fromInteger a
+
+:1:12:
+    Couldn't match expected type 'Integer'
+           against inferred type 'POSIXTime'</code></pre>
+</article>
+
+<article class="comment-body">
+  <a name="comment-168608"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-01-15">2009-01-15</time></p>
+  </header>
+<p><span class="citation" data-cites="Mechanic">@Mechanic</span>, I think you’ve got it the wrong way around. One would use <code>fromInteger</code> to convert an integer <em>to</em> <code>POSIXTime</code>.</p>
+<p>In both your examples you are trying pass a <code>POSIXTime</code> to <code>fromInteger</code>, as expected you get type errors when you do that.</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2008-09-16-389-haskell-and-time@therning.org?subject=A comment on Haskell and Time&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

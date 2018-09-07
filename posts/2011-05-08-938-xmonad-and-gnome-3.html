@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Xmonad and Gnome 3</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2011-05-08">2011-05-08</time> - Magnus Therning</p>
+</header>
+
+<p>The upgrade to Gnome3 in <a href="http://www.archlinux.org/">ArchLinux</a> a few days ago broke my previous setup that combined <a href="http://www.xmonad.org">xmonad</a> with Gnome. Gnome 3 has a fallback mode, but I found that the instructions for replacing metacity under Gnome 2 no longer worked. With some help from the xmonad mailing list (in particular Jens Petersen and his efforts of providing a working setup on Fedora) I now finally have a working setup again. Here’s how I did it.</p>
+<p>Add a session file for use by Gnome Session (<code>/usr/share/gnome-session/sessions/xmonad.session</code>):</p>
+<pre><code>[GNOME Session]
+Name=Xmonad session
+RequiredComponents=gnome-panel;gnome-settings-daemon;
+RequiredProviders=windowmanager;notifications;
+DefaultProvider-windowmanager=xmonad
+DefaultProvider-notifications=notification-daemon</code></pre>
+<p>And a desktop file for GDM (<code>/usr/share/xsessions/xmonad-gnome-session.desktop</code>):</p>
+<pre><code>[Desktop Entry]
+Name=Xmonad GNOME
+Comment=Tiling window manager
+TryExec=/usr/bin/gnome-session
+Exec=gnome-session --session=xmonad
+Type=XSession</code></pre>
+<p>That’s all it takes. Of course I’ve raised a <a href="https://bugs.archlinux.org/task/24165">ticket against the Arch package</a>.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/arch.html">arch</a>, <a href="../tags/gnome.html">gnome</a>, <a href="../tags/gnome3.html">gnome3</a>, <a href="../tags/xmonad.html">xmonad</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2011-05-06-933-per-user-gnome-3-configuration.html">⟸ Per-user Gnome 3 configuration</a>
+
+
+
+<a href="../posts/2011-12-08-974-lxde-and-xmonad.html">LXDE and xmonad ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-216919"></a>
+  <header>
+    <p><b>Jacob</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2011-05-12">2011-05-12</time></p>
+  </header>
+<p>Hey Magnus</p>
+<p>Had the same problem. Thanks for sharing the fix! :)</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-216937"></a>
+  <header>
+    <p><b>dixie</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2011-05-12">2011-05-12</time></p>
+  </header>
+<p>thanks!</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-218358"></a>
+  <header>
+    <p><b>Tayfur Yilmaz</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2011-05-31">2011-05-31</time></p>
+  </header>
+<p>Thanks for notes I want to use Xmonad+Gnome3 on Pardus and I edit this changes on my system and on Login Screen I choose Xmonad+Gnome and I want to login but this message shown to screen.</p>
+<p>“failed to load xmonad session”</p>
+<p>How to solve this problem?</p>
+<p>Best Regars</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-222863"></a>
+  <header>
+    <p><b>Bruno</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2011-09-01">2011-09-01</time></p>
+  </header>
+<p>Hello, How does it render? Could you maybe share a screenshot?</p>
+<p>Thank you.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-224177"></a>
+  <header>
+    <p><b>Vladimir Gordeev</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2011-10-05">2011-10-05</time></p>
+  </header>
+<blockquote>
+<p>“failed to load xmonad session”</p>
+</blockquote>
+<p>same problem.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-224328"></a>
+  <header>
+    <p><b>pconwell</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2011-10-09">2011-10-09</time></p>
+  </header>
+<p>Ditto:</p>
+<pre><code>failed to load session &quot;xmonad&quot;</code></pre>
+</article>
+
+<article class="comment-body">
+  <a name="comment-224333"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2011-10-09">2011-10-09</time></p>
+  </header>
+<p>I’ve actually stopped using Xmonad since I wrote this. Soon after Gnome 3 was released I started looking around for alternatives to Gnome in the Gnome+Xmonad combo. Nothing seemed to really suit me though so I decided to give the Gnome Shell a serious chance instead. I’ve gotten to the point where it’s very usable and hence I don’t use the setup I describe in this post myself.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-224797"></a>
+  <header>
+    <p><b>emchristiansen</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2011-10-17">2011-10-17</time></p>
+  </header>
+<p>Oddly, this worked on one of my Ubuntu 11.10 machines but not the other. The error I’m getting on the other is ‘Failed to load session “xmonad”’, and I can’t figure out the difference between the machines.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-224800"></a>
+  <header>
+    <p><b>Alex</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2011-10-17">2011-10-17</time></p>
+  </header>
+<p>I was having the <code>failed to load session &quot;xmonad&quot;</code> issue. I fixed it by running “sudo apt-get install gnome-panel” and modifying the xmonad.session file as follows:</p>
+<pre><code>/usr/share/gnome-session/sessions/xmonad.session
+[GNOME Session]
+Name=Xmonad session
+RequiredComponents=gnome-panel;gnome-settings-daemon;
+RequiredProviders=windowmanager
+DefaultProvider-windowmanager=xmonad</code></pre>
+<p>I tried using Gnome 3, but it’s a little clunky for my computer and xmonad makes using workspaces a zillion times more efficient.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-224832"></a>
+  <header>
+    <p><b>David</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2011-10-17">2011-10-17</time></p>
+  </header>
+<p>I was getting <code>failed to load session &quot;xmonad&quot;</code> because I did not have the notification-daemon installed. To install the notification-daemon on Ubuntu 11.10 I used:</p>
+<pre><code>sudo apt-get install notification-daemon</code></pre>
+</article>
+
+<article class="comment-body">
+  <a name="comment-227214"></a>
+  <header>
+    <p><b>Anshuman Bhaduri</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2011-12-08">2011-12-08</time></p>
+  </header>
+<p>Like it says on the <a href="http://www.haskell.org/haskellwiki/Xmonad/Using_xmonad_in_Gnome#Setting_up_Gnome_to_use_Xmonad">Xmonad GNOME wiki page</a>, I also needed the <code>applications/xmonad.desktop</code> file. This made the <code>failed to load session &quot;xmonad&quot;</code> message disappear, however I’m still trying to get stuff to work just right.</p>
+<pre><code>$ cat /usr/share/applications/xmonad.desktop
+[Desktop Entry]
+Type=Application
+Encoding=UTF-8
+Name=Xmonad
+Exec=xmonad
+NoDisplay=true
+X-GNOME-WMName=Xmonad
+X-GNOME-Autostart-Phase=WindowManager
+X-GNOME-Provides=windowmanager
+X-GNOME-Autostart-Notify=false</code></pre>
+</article>
+
+<article class="comment-body">
+  <a name="comment-227215"></a>
+  <header>
+    <p><b>Anshuman Bhaduri</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2011-12-08">2011-12-08</time></p>
+  </header>
+<p>Ah yup, <a href="https://wiki.archlinux.org/index.php/Xmonad#GNOME_3_and_xmonad">the Arch Linux wiki</a> also states the same thing that I mentioned in my previous comment. Also, as mentioned in the <a href="http://www.haskell.org/haskellwiki/Xmonad/Using_xmonad_in_Gnome#Configure_Xmonad_to_interoperate_with_Gnome">Xmonad wiki</a>, I had to have my <code>~/.xmonad/xmonad.hs</code> config as</p>
+<pre><code>import XMonad
+import XMonad.Config.Gnome
+
+main = xmonad gnomeConfig</code></pre>
+<p>(this requires the <code>xmonad-contrib</code> package on Arch Linux). Now GNOME panel shows up just fine, along with a list of workspaces. I guess it shouldn’t be too hard from here.</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2011-05-08-938-xmonad-and-gnome-3@therning.org?subject=A comment on Xmonad and Gnome 3&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Making a choice from a list in Haskell, Vty (part 3)</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2009-07-24">2009-07-24</time> - Magnus Therning</p>
+</header>
+
+<p>This is the third part, and it’s likely to be the longest one in the series. The <a href="../posts/2009-06-28-664-making-a-choice-from-a-list-in-haskell-vty-part-0.html">three</a> <a href="../posts/2009-07-03-685-making-a-choice-from-a-list-in-haskell-vty-part-1.html">previous</a> <a href="../posts/2009-07-09-689-making-a-choice-from-a-list-in-haskell-vty-part-2.html">parts</a> have been rather short, but now it’s time for a longer post because in this one I completely change the representation of the options that are rendered.</p>
+<p>Instead of using a list and an integer I’ll use what is basically a zipper (with some extra fields for book keeping). At the same time I also add a new field to the <code>Option</code> type to keep track of how many lines the option renders to. At the moment it will always be one line, but the next part will actually make use of it. (Yes, that part probably should have been kept in a separate part, but this happens to be how I wrote the code.)</p>
+<p>First some changes to the <code>Option</code> type and its implementation of <code>Pretty</code>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Option</span> <span class="fu">=</span> <span class="dt">Option</span> {<span class="ot"> optionRange::</span>(<span class="dt">Int</span>, <span class="dt">Int</span>),<span class="ot"> optionS1::</span><span class="dt">String</span> }</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">    <span class="kw">deriving</span> (<span class="dt">Show</span>)</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="kw">instance</span> <span class="dt">Pretty</span> <span class="dt">Option</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">    pretty (<span class="dt">Option</span> _ s) <span class="fu">=</span> string s</a></code></pre></div>
+<p>Then two functions related to the “range” of an <code>Option</code>. The first to update based on a new start line (<em>n</em>ew <em>b</em>eginning), the second checks whether a line falls within the range of an <code>Option</code>:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">optionSetRange nb o <span class="fu">=</span> <span class="kw">let</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">        l <span class="fu">=</span> length <span class="fu">$</span> lines <span class="fu">$</span> show <span class="fu">$</span> pretty o</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">    <span class="kw">in</span> o { optionRange <span class="fu">=</span> (nb, nb <span class="fu">+</span> l <span class="fu">-</span> <span class="dv">1</span>) }</a>
+<a class="sourceLine" id="cb2-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">optionIsInRange (<span class="dt">Option</span> (b, e) _) i <span class="fu">=</span> b <span class="fu">&lt;=</span> i <span class="fu">&amp;&amp;</span> i <span class="fu">&lt;=</span> e</a></code></pre></div>
+<p>Now it’s time to introduce the zipper that replaces the list of options. The basic idea is that there are two parts to a list, the left side (<code>ozLS</code>) and the right side (<code>ozRS</code>), and a current item. In this list zipper the current item is the first item on the right side:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">data</span> <span class="dt">OptionZipper</span> <span class="fu">=</span> <span class="dt">OptionZipper</span> {<span class="ot"> ozIdx::</span><span class="dt">Int</span>,<span class="ot"> ozLS::</span>[<span class="dt">Option</span>],<span class="ot"> ozRS::</span>[<span class="dt">Option</span>]</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">}</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">    <span class="kw">deriving</span> (<span class="dt">Show</span>)</a></code></pre></div>
+<p>Making the zipper an instance of <code>Pretty</code> is as simple as this:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Pretty</span> <span class="dt">OptionZipper</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">    pretty <span class="fu">=</span> vcat <span class="fu">.</span> map pretty <span class="fu">.</span> ozToList</a></code></pre></div>
+<p>It’s useful to be able to both convert to and from lists (as seen just above in the <code>Pretty</code> instance):</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1">ozFromList l <span class="fu">=</span> <span class="dt">OptionZipper</span> <span class="dv">0</span> [] l</a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">ozFromListWithMod f <span class="fu">=</span> ozCursorMod f <span class="fu">.</span> ozFromList</a>
+<a class="sourceLine" id="cb5-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">ozToList (<span class="dt">OptionZipper</span> _ l r) <span class="fu">=</span> reverse l <span class="fu">++</span> r</a></code></pre></div>
+<p>The function for getting the current item is obvious. At the same time I’ll define a function that applies a function to the item at the cursor.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1">ozCursor (<span class="dt">OptionZipper</span> _ _ (r<span class="fu">:</span>_)) <span class="fu">=</span> <span class="dt">Just</span> r</a>
+<a class="sourceLine" id="cb6-2" data-line-number="2">ozCursor _ <span class="fu">=</span> <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb6-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb6-4" data-line-number="4">ozCursorMod f o<span class="fu">@</span>(<span class="dt">OptionZipper</span> _ _ (r<span class="fu">:</span>rs)) <span class="fu">=</span> o { ozRS <span class="fu">=</span> (f r<span class="fu">:</span>rs) }</a>
+<a class="sourceLine" id="cb6-5" data-line-number="5">ozCursorMod _ o <span class="fu">=</span> o</a></code></pre></div>
+<p>Usually a list zipper has functions to move the cursor, i.e. move items between the left and right sides. In this zipper there is some extra bookkeeping that has to be done to make sure that the index is correct and that the current item has a correct range:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1">ozLeft (<span class="dt">OptionZipper</span> _ (l<span class="fu">:</span>ls) rs) <span class="fu">=</span> <span class="kw">let</span></a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">        (newIdx, _) <span class="fu">=</span> optionRange l</a>
+<a class="sourceLine" id="cb7-3" data-line-number="3">    <span class="kw">in</span> <span class="dt">OptionZipper</span> newIdx ls (l<span class="fu">:</span>rs)</a>
+<a class="sourceLine" id="cb7-4" data-line-number="4">ozLeft o <span class="fu">=</span> o</a>
+<a class="sourceLine" id="cb7-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb7-6" data-line-number="6">ozRight (<span class="dt">OptionZipper</span> _ ls (r<span class="fu">:</span>rs)) <span class="fu">=</span> <span class="kw">let</span></a>
+<a class="sourceLine" id="cb7-7" data-line-number="7">        (_, pe) <span class="fu">=</span> optionRange r</a>
+<a class="sourceLine" id="cb7-8" data-line-number="8">    <span class="kw">in</span> ozCursorMod (optionSetRange <span class="fu">$</span> pe <span class="fu">+</span> <span class="dv">1</span>) <span class="fu">$</span> <span class="dt">OptionZipper</span> (pe <span class="fu">+</span> <span class="dv">1</span>) (r<span class="fu">:</span>ls) rs</a>
+<a class="sourceLine" id="cb7-9" data-line-number="9">ozRight o <span class="fu">=</span> o</a></code></pre></div>
+<p>That’s all good and well, but what I <em>really</em> need is to be able to navigate based on lines. Expressing that using <code>ozLeft</code> and <code>ozRight</code> is fairly straight forward. Let’s start with shifting to the next line, <code>ozNextLine</code>, it has two cases, one general case and one when the cursor points to the last item:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1">ozNextLine o<span class="fu">@</span>(<span class="dt">OptionZipper</span> i _ [c]) <span class="fu">=</span></a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">    <span class="kw">if</span> optionIsInRange c (i <span class="fu">+</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb8-3" data-line-number="3">        <span class="kw">then</span> o { ozIdx <span class="fu">=</span> i <span class="fu">+</span> <span class="dv">1</span> }</a>
+<a class="sourceLine" id="cb8-4" data-line-number="4">        <span class="kw">else</span> o</a>
+<a class="sourceLine" id="cb8-5" data-line-number="5">ozNextLine o <span class="fu">=</span> <span class="kw">let</span></a>
+<a class="sourceLine" id="cb8-6" data-line-number="6">        c <span class="fu">=</span> fromJust <span class="fu">$</span> ozCursor o</a>
+<a class="sourceLine" id="cb8-7" data-line-number="7">        i <span class="fu">=</span> ozIdx o</a>
+<a class="sourceLine" id="cb8-8" data-line-number="8">    <span class="kw">in</span> <span class="kw">if</span> optionIsInRange c (i <span class="fu">+</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb8-9" data-line-number="9">        <span class="kw">then</span> o { ozIdx <span class="fu">=</span> i <span class="fu">+</span> <span class="dv">1</span> }</a>
+<a class="sourceLine" id="cb8-10" data-line-number="10">        <span class="kw">else</span> ozRight o</a></code></pre></div>
+<p>Anyone who pays attention will realise that this definition of <code>ozNextLine</code> isn’t complete. The zipper is capable of pointing to the empty spot after the last item (when <code>ozRS</code> is <code>[]</code>, as would be the case for an empty list turned into a zipper). For this occasion that is all right, but this would need some attention when using this in a proper program.</p>
+<p>The definition of <code>ozPreviousLine</code> also has two cases:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1">ozPreviousLine o<span class="fu">@</span>(<span class="dt">OptionZipper</span> <span class="dv">0</span> _ _) <span class="fu">=</span> o</a>
+<a class="sourceLine" id="cb9-2" data-line-number="2">ozPreviousLine o <span class="fu">=</span> <span class="kw">let</span></a>
+<a class="sourceLine" id="cb9-3" data-line-number="3">        c <span class="fu">=</span> fromJust <span class="fu">$</span> ozCursor o</a>
+<a class="sourceLine" id="cb9-4" data-line-number="4">        i <span class="fu">=</span> ozIdx o</a>
+<a class="sourceLine" id="cb9-5" data-line-number="5">    <span class="kw">in</span> <span class="kw">if</span> optionIsInRange c (i <span class="fu">-</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb9-6" data-line-number="6">        <span class="kw">then</span> o { ozIdx <span class="fu">=</span> i <span class="fu">-</span> <span class="dv">1</span> }</a>
+<a class="sourceLine" id="cb9-7" data-line-number="7">        <span class="kw">else</span> ozLeft o</a></code></pre></div>
+<p>Yes, this function also has some assumptions built into it, just like for <code>ozNextLine</code> it’s enough to just realise that for this exercise.</p>
+<p>That’s it for the zipper, now it’s possible to create the options:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1">options <span class="fu">=</span> ozFromListWithMod (optionSetRange <span class="dv">0</span>) [<span class="dt">Option</span> (<span class="dv">0</span>, <span class="dv">0</span>) ((show i) <span class="fu">++</span> <span class="st">&quot; Foo&quot;</span>) <span class="fu">|</span> i <span class="ot">&lt;-</span> [<span class="dv">0</span><span class="fu">..</span><span class="dv">99</span>]]</a></code></pre></div>
+<p>The introduction of the zipper requires large changes to both <code>getChoice</code> and <code>_getChoice</code>. The changes are however very straight forward and in my opinion they make both functions easier to read and understand. I’ll simply copy in the definitions without any comments in the hope that thanks to using a zipper the code is self-explanatory :-) It might be worth pointing out though that <code>render</code> is still passed a list of strings to render, so it requires no changes at this point.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1">getChoice vt opts <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-2" data-line-number="2">    (sx, sy) <span class="ot">&lt;-</span> getSize vt</a>
+<a class="sourceLine" id="cb11-3" data-line-number="3">    _getChoice vt opts sx sy</a>
+<a class="sourceLine" id="cb11-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb11-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb11-6" data-line-number="6">_getChoice vt opts sx sy <span class="fu">=</span></a>
+<a class="sourceLine" id="cb11-7" data-line-number="7">    <span class="kw">let</span></a>
+<a class="sourceLine" id="cb11-8" data-line-number="8">        _converted_opts <span class="fu">=</span> lines <span class="fu">$</span> show <span class="fu">$</span> pretty opts</a>
+<a class="sourceLine" id="cb11-9" data-line-number="9">        _idx <span class="fu">=</span> ozIdx opts</a>
+<a class="sourceLine" id="cb11-10" data-line-number="10">        _calcTop winHeight listLength idx <span class="fu">=</span> max <span class="dv">0</span> ((min listLength ((max <span class="dv">0</span> (idx <span class="fu">-</span> winHeight <span class="ot">`div`</span> <span class="dv">2</span>)) <span class="fu">+</span> winHeight)) <span class="fu">-</span> winHeight)</a>
+<a class="sourceLine" id="cb11-11" data-line-number="11">        _top <span class="fu">=</span> _calcTop sy (length _converted_opts) _idx</a>
+<a class="sourceLine" id="cb11-12" data-line-number="12">        _visible_opts <span class="fu">=</span> take sy (drop _top _converted_opts)</a>
+<a class="sourceLine" id="cb11-13" data-line-number="13">    <span class="kw">in</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-14" data-line-number="14">        update vt (render _visible_opts (_idx <span class="fu">-</span> _top) sx)</a>
+<a class="sourceLine" id="cb11-15" data-line-number="15">        k <span class="ot">&lt;-</span> getEvent vt</a>
+<a class="sourceLine" id="cb11-16" data-line-number="16">        <span class="kw">case</span> k <span class="kw">of</span></a>
+<a class="sourceLine" id="cb11-17" data-line-number="17">            <span class="dt">EvKey</span> <span class="dt">KDown</span> [] <span class="ot">-&gt;</span> _getChoice vt (ozNextLine opts) sx sy</a>
+<a class="sourceLine" id="cb11-18" data-line-number="18">            <span class="dt">EvKey</span> <span class="dt">KUp</span> [] <span class="ot">-&gt;</span> _getChoice vt (ozPreviousLine opts) sx sy</a>
+<a class="sourceLine" id="cb11-19" data-line-number="19">            <span class="dt">EvKey</span> <span class="dt">KEsc</span> [] <span class="ot">-&gt;</span> shutdown vt <span class="fu">&gt;&gt;</span> return <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb11-20" data-line-number="20">            <span class="dt">EvKey</span> <span class="dt">KEnter</span> [] <span class="ot">-&gt;</span> shutdown vt <span class="fu">&gt;&gt;</span> return (<span class="dt">Just</span> <span class="fu">$</span> (_idx, ozCursor opts))</a>
+<a class="sourceLine" id="cb11-21" data-line-number="21">            <span class="dt">EvResize</span> nx ny <span class="ot">-&gt;</span> _getChoice vt opts nx ny</a>
+<a class="sourceLine" id="cb11-22" data-line-number="22">            _ <span class="ot">-&gt;</span> _getChoice vt opts sx sy</a></code></pre></div>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/vty.html">vty</a>, <a href="../tags/zipper.html">zipper</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2009-07-21-698-ping-server-in-haskell-not-that-kind-of-ping-and-rather-silly.html">⟸ Ping server in Haskell (not that kind of ping, and rather silly)</a>
+
+
+
+<a href="../posts/2009-07-31-710-making-a-choice-from-a-list-in-haskell-vty-part-4.html">Making a choice from a list in Haskell, Vty (part 4) ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2009-07-24-702-making-a-choice-from-a-list-in-haskell-vty-part-3@therning.org?subject=A comment on Making a choice from a list in Haskell, Vty (part 3)&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

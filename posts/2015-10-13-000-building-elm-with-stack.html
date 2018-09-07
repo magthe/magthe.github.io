@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Building elm with stack</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2015-10-13">2015-10-13</time> - Magnus Therning</p>
+</header>
+
+<p>Building <a href="http://elm-lang.org/">elm</a> is a slightly invasive procedure if your distro doesn’t have any pre-built packages for it and has a non-ancient version of <em>ghc</em>. Removing all haskell packages and installing <a href="https://www.haskell.org/platform/">HaskellPlatform</a> didn’t really appeal to me. Then it occured to me that <a href="http://www.stackage.org/">stack</a> ought to be perfectly suited for this task. It took me a while to sort it out, but here’s how I got a working build of the elm tools installed on Archlinux.</p>
+<h2 id="installing-stack-and-cabal">Installing <em>stack</em> and <em>cabal</em></h2>
+<p>Add the <em>ArchHaskell</em> repo by following the instructions <a href="https://wiki.archlinux.org/index.php/ArchHaskell">on the wiki</a>. Then install the <code>haskell-stack-bin</code> package. For <em>stack</em> to work fully one also needs the <a href="https://aur.archlinux.org/packages/libtinfo/">libtinfo package from AUR</a>.</p>
+<p>If you aren’t using Archlinux there are instructions on the <em>stack</em> page.</p>
+<p>Now build <em>cabal-install</em> using stack:</p>
+<pre><code>% stack --install-ghc install cabal-install</code></pre>
+<p>After this make sure <code>~/.local/bin</code> is in your <code>$PATH</code>.</p>
+<h2 id="cloning-the-elm-tool-repos">Cloning the elm tool repos</h2>
+<p>The elm developers have decided to not use Hackage so to get the tools one has to clone the repos from GitHub. I used the following shell script to get them all cloned in one go:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="co">#! /usr/bin/zsh</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3"><span class="va">repos=(</span><span class="st">&quot;git clone https://github.com/elm-lang/elm-compiler.git -b 0.15.1&quot;</span></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">       <span class="st">&quot;git clone https://github.com/elm-lang/elm-package.git -b 0.5.1&quot;</span></a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">       <span class="st">&quot;git clone https://github.com/elm-lang/elm-make.git -b 0.2&quot;</span></a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">       <span class="st">&quot;git clone https://github.com/elm-lang/elm-reactor.git -b 0.3.2&quot;</span></a>
+<a class="sourceLine" id="cb2-7" data-line-number="7">       <span class="st">&quot;git clone https://github.com/elm-lang/elm-repl.git -b 0.4.2&quot;</span></a>
+<a class="sourceLine" id="cb2-8" data-line-number="8">      )</a>
+<a class="sourceLine" id="cb2-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb2-10" data-line-number="10"><span class="kw">for</span> <span class="ex">r</span> in <span class="va">${repos[@]}</span><span class="kw">;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-11" data-line-number="11">    <span class="bu">eval</span> <span class="va">${r}</span></a>
+<a class="sourceLine" id="cb2-12" data-line-number="12"><span class="kw">done</span></a></code></pre></div>
+<h2 id="creating-stack.yaml">Creating <code>stack.yaml</code></h2>
+<p>To create the initial <code>stack.yalm</code> run</p>
+<pre><code>% stack init --resolver ghc-7.8.4</code></pre>
+<p>Now open it and make a couple of modifications. First add the line</p>
+<pre><code>system-ghc: false</code></pre>
+<p>This is to make sure <em>stack</em> won’t try to use any <em>ghc</em> version already installed on the system. Then add a flag for <code>aeson</code>:</p>
+<pre><code>flags:
+  aeson:
+    old-locale: true</code></pre>
+<p>Now use <em>stack</em> to create the full <code>stack.yaml</code>:</p>
+<pre><code>% stack --install-ghc solver --modify-stack-yaml</code></pre>
+<h2 id="patch-elm-reactor">Patch <em>elm-reactor</em></h2>
+<p>In order to build <em>elm-reactor</em> it first needs a tiny patch:</p>
+<pre><code>diff --git a/backend/Socket.hs b/backend/Socket.hs
+index b80a98f..69fe488 100644
+--- a/backend/Socket.hs
++++ b/backend/Socket.hs
+@@ -18,7 +18,7 @@ fileChangeApp :: FilePath -&gt; WS.ServerApp
+ fileChangeApp watchedFile pendingConnection =
+   do  connection &lt;- WS.acceptRequest pendingConnection
+       Notify.withManager $ \notifyManager -&gt;
+-        do  _ &lt;- NDevel.treeExtExists notifyManager &quot;.&quot; &quot;elm&quot; (sendHotSwap watchedFile connection)
++        do  _ &lt;- NDevel.treeExtExists notifyManager &quot;.&quot; &quot;elm&quot; (sendHotSwap watchedFile connection . FP.decodeString)
+             keepAlive connection</code></pre>
+<h2 id="building-the-tools">Building the tools</h2>
+<p>Now build the elm tools (it’s important that <em>elm-reactor</em> is built after <em>elm-make</em>):</p>
+<pre><code>% stack install elm-{compiler,make,package,repl}
+% stack install elm-reactor</code></pre>
+<p>Now just sit back and wait for the building to finish.</p>
+<h2 id="verify-that-it-works">Verify that it works</h2>
+<p>Follow the instructions for running <a href="https://github.com/evancz/elm-architecture-tutorial/tree/master/examples/1">example 1</a> of the <a href="https://github.com/evancz/elm-architecture-tutorial/">elm architecture tutorial</a>. I had to use the following two commands to get it running properly:</p>
+<pre><code>% elm make
+% elm reactor</code></pre>
+<p>Then I can point my browser at <a href="http://localhost:8000/Main.elm?debug" class="uri">http://localhost:8000/Main.elm?debug</a> and play with the counter.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/elm.html">elm</a>, <a href="../tags/stack.html">stack</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2015-09-29-000-extracting-titles-and-links-from-atom-feed.html">⟸ Extracting titles and links from atom feed</a>
+
+
+
+<a href="../posts/2015-10-22-000-docker-container-with-ip-address-on-local-network.html">Docker container with ip address on local network ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2015-10-13-000-building-elm-with-stack@therning.org?subject=A comment on Building elm with stack&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

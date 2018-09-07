@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Free play, part one</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2016-01-13">2016-01-13</time> - Magnus Therning</p>
+</header>
+
+<p>When I read John A De Goes post <a href="http://degoes.net/articles/modern-fp">A Modern Architecture for FP</a> I found it to be a bit too vague for me, but the topic was just interesting enough to finally push me to play a little with <em>free monads</em>. It’s not the first post I’ve read on the topic, there have <a href="http://www.haskellforall.com/2012/06/you-could-have-invented-free-monads.html">been</a> <a href="https://www.schoolofhaskell.com/user/dolio/many-roads-to-free-monads">many</a> <a href="http://okmij.org/ftp/Computation/free-monad.html">before</a>. None have quite managed to push me into actually doing something though!</p>
+<h3 id="a-file-api">A file API</h3>
+<p>To make it concrete but still short enough to not bore readers I came up with a small API for working with files:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">data</span> <span class="dt">SimpleFileF</span> a <span class="fu">=</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">  <span class="dt">LoadFile</span> FilePath (<span class="dt">String</span> <span class="ot">-&gt;</span> a)</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  <span class="fu">|</span> <span class="dt">SaveFile</span> FilePath <span class="dt">String</span> a</a></code></pre></div>
+<p>The free monad wraps a <em>functor</em>, so here’s an implementation of that</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Functor</span> <span class="dt">SimpleFileF</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">  fmap f (<span class="dt">LoadFile</span> fp f')<span class="fu">=</span> <span class="dt">LoadFile</span> fp (f <span class="fu">.</span> f')</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">  fmap f (<span class="dt">SaveFile</span> fp d a) <span class="fu">=</span> <span class="dt">SaveFile</span> fp d (f a)</a></code></pre></div>
+<p>Now for some convenient functions to work with the API type</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">loadFile ::</span> FilePath <span class="ot">-&gt;</span> <span class="dt">Free</span> <span class="dt">SimpleFileF</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">loadFile fp <span class="fu">=</span> liftF <span class="fu">$</span> <span class="dt">LoadFile</span> fp id</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4"><span class="ot">saveFile ::</span> FilePath <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Free</span> <span class="dt">SimpleFileF</span> ()</a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">saveFile fp d <span class="fu">=</span> liftF <span class="fu">$</span> <span class="dt">SaveFile</span> fp d ()</a></code></pre></div>
+<p>With this in place I can write a somewhat more complex one</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">withSimpleFile ::</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>) <span class="ot">-&gt;</span> FilePath <span class="ot">-&gt;</span> <span class="dt">Free</span> <span class="dt">SimpleFileF</span> ()</a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">withSimpleFile f fp <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">  d <span class="ot">&lt;-</span> loadFile fp</a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">  <span class="kw">let</span> result <span class="fu">=</span> f d</a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">  saveFile (fp <span class="fu">++</span> <span class="st">&quot;_new&quot;</span>) result</a></code></pre></div>
+<p>Now I need a way to run programs using the API</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">runSimpleFile ::</span> <span class="dt">Free</span> <span class="dt">SimpleFileF</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">runSimpleFile <span class="fu">=</span> foldFree f</a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">    f (<span class="dt">LoadFile</span> fp f') <span class="fu">=</span> liftM f' <span class="fu">$</span> readFile fp</a>
+<a class="sourceLine" id="cb5-5" data-line-number="5">    f (<span class="dt">SaveFile</span> fp d r) <span class="fu">=</span> writeFile fp d <span class="fu">&gt;&gt;</span> return r</a></code></pre></div>
+<p>If this code was save in the file <code>FreePlay.hs</code> I can now convert it all to upper case by using</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1">runSimpleFile <span class="fu">$</span> withSimpleFile toUpper <span class="st">&quot;FreePlay.hs&quot;</span></a></code></pre></div>
+<p>which of course will create the file <code>FreePlay.hs_new</code>.</p>
+<h3 id="what-have-i-bought-so-far">What have I bought so far?</h3>
+<p>Well, not much really.</p>
+<p>So far it’s not much more than a rather roundabout way to limit what IO actions are available. In other words it’s not much more than what can be done by creating a limited IO, as in my earlier posts <a href="../posts/2009-09-07-738-wrapping-io-part-1.html">here</a> and <a href="../posts/2009-09-07-742-wrapping-io-part-2.html">here</a>.</p>
+<p>Of course it would be possible to write another <em>run</em> function, e.g. one that doesn’t actually perform the file actions but just says what it <em>would</em> do. The nice thing though is, to use that same metaphor as John does, that I can add a layer to the onion. In other words, I can decorate each use of my <code>SimpleFileF</code> API with some other API. I think it was John’s description of this layering that pushed me to play with <code>Free</code>.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/free.html">free</a>, <a href="../tags/haskell.html">haskell</a>, <a href="../tags/monad.html">monad</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2015-11-26-001-trick-for-pre-processing-source-in-cmake.html">⟸ Trick for pre-processing source in CMake</a>
+
+
+
+<a href="../posts/2016-01-15-000-free-play--part-two.html">Free play, part two ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2016-01-13-000-free-play--part-one@therning.org?subject=A comment on Free play, part one&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

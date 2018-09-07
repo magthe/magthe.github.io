@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">More sensible comments on cabal-debian</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2009-01-22">2009-01-22</time> - Magnus Therning</p>
+</header>
+
+<p>First of all I decided to make this a new post rather then answer in the comment section in <a href="../posts/2009-01-21-476-experience-with-cabal-debian.html">my previous post</a>. I think that this way the chance is greater that both David and Jeremy will read this :-)</p>
+<p>So, first let’s set the stage… It’s almost midnight and I’ve just spent somewhere between 30 and 45 minutes hunting down packages on Haskell and navigating the directory listings on <a href="http://src.seereason.com/">src.seereason.com</a>. I’ve been sent in the wrong direction once (downloading a Debian package that seems to be from Linspire instead of grabbing the identically named package from the seereason site. I’m tired and slightly frustrated. I run <code>cabal-debian</code>, it works, then I run <code>debuild</code> just to be told that I really should have build cabal-debian itself into a Debian package and installed it that way and I also need another package that isn’t in Debian at all.</p>
+<p>Anyway, having slept and let almost 24 pass by I’ve come to my senses somewhat ;-)</p>
+<p>Here’s what think is a slightly more tempered whishlist:</p>
+<ol type="1">
+<li>Remove <code>haskell-devscripts-cdbs</code> and include <code>hlibrary.mk</code> in <code>haskell-devscripts</code>.</li>
+<li>Modify <code>dh_haskell*</code> so that the two snippets for <code>-doc</code> are automatically generated instead (just like the script snippets for <code>-dev</code> already are).</li>
+</ol>
+<p>I think it would be easy to stick that in seereason’s repos for public consumption. Then interested people, like me, can start thinking about how to use that as a base to make Debian the best Haskell platform in the world, or at least making it better than Arch ;-)</p>
+<h3 id="completely-unrelated-question-for-seereason-people">Completely unrelated question for seereason people</h3>
+<p>I have the following line in my <code>source.list</code>:</p>
+<pre><code>deb     http://deb.seereason.com/debian sid-seereason main</code></pre>
+<p>Why don’t I see the <code>seereason-keyring</code> package?</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/debian.html">debian</a>, <a href="../tags/haskell.html">haskell</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2009-01-21-476-experience-with-cabal-debian.html">⟸ Experience with cabal-debian</a>
+
+
+
+<a href="../posts/2009-01-24-498-a-really-good-version-of-star-wars.html">A really good version of Star Wars ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-169087"></a>
+  <header>
+    <p><b>Jeremy Shaw</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-01-23">2009-01-23</time></p>
+  </header>
+<p>You definitely have the right to feel frustrated, we have not really made things as obvious or accessible as they should be. I am working on correcting this.</p>
+<p>This first step is to get all the required packages uploaded to hackagedb.(The debian package on hackage is the right debian package, it’s just version 1.x and you need 3.x. I uploaded a newer version but it failed to build, I am tracking that down now).</p>
+<p>The second step is to figure out what to do about haskell-devscripts-cdbs. The difficulty is that haskell-devscripts is maintained by John Goerzen in a git repo while hlibrary.mk is maintained by Kari Pahula in a darcs repository. We could host our own version of haskell-devscripts on src.seereason.com, which includes hlibrary.mk plus our changes, but then it will be hard for people to recognize that the version of haskell-devscripts in debian and ubuntu is not going to work. That was the supposed advantage of introducing a new package, haskell-devscripts-cdbs – we could depend on a different package to ensure we got a version that had our changes.</p>
+<p>We had some discussion among ourselves today came up with one possibility:</p>
+<ol type="1">
+<li>send our changes to haskell-devscripts back to J. Goerzen. They should not break any existing users of haskell-devscripts, and may in fact make things better.</li>
+<li>convince Kari Pahula to take our changes to hlibrary.mk and to also debianize hlibrary.mk in it’s own debian package so that it can be installed system-wide.</li>
+</ol>
+<p>I think the only issue is that we added some hooks to hlibrary.mk (and possibly haskell-devscripts) which are only used by cabal-debian, or which call cabal-debian. But I believe these hooks detect if cabal-debian is present and everything works normally if you don’t have cabal-debian installed. So this should not have any negative implications for existing users of haskell-devscripts and hlibrary.mk.</p>
+<p>In any case, we need to divide the code up, and sweet talk the other maintainers.</p>
+<p>Regarding the seereason-keyring package – that is an oversight. I will add seereason-keyring to the autobuilder for the debian repo. I will also let david comment on the freshness of the debian packages. We primarily use the ubuntu hardy stuff right now, but I know david tries to get everything built occasionally. I suspect that after he gets everything building with ghc 6.10 on ubuntu, he will also update debian.</p>
+<p>I am going to refrain from commenting on your second wishlist item, because I am not familiar with the internals of what is going on, so I don’t really know what it means.</p>
+<p>Anyway, thanks for your feedback! I’ll will keep you posted as we get things into shape.</p>
+<ul>
+<li>jeremy</li>
+</ul>
+</article>
+
+<article class="comment-body">
+  <a name="comment-169106"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-01-23">2009-01-23</time></p>
+  </header>
+<p><em><span class="citation" data-cites="Jeremy">@Jeremy</span></em>,</p>
+<p>First of all, thanks for commenting on this at all :-)</p>
+<p>I think the best route is to get things into Debian. The <code>haskell-devscripts</code> I have on my Sid system is maintained by Arjan Oosting though, not by John Goerzen. I don’t know if I can help in any way in convincing the maintainer to include your changes, and ideally to also upload cabal-debian itself to Debian proper, but I’d be more than willing to chip in if you want me to. Arjan, if you are reading this, please help out a poor Debian user here! ;-)</p>
+<p>I’ll try to explain what I mean with the second item. During building of the package <code>dh_haskell_prep</code> is called and it generates two snippets, <code>libghc6-dataenc-dev.postinst.debhelper</code> and <code>libghc6-dataenc-dev.prerm.debhelper</code>. The former has the following contents (taken from my use of cabal-debian on dataenc):</p>
+<pre><code># Automatically added by dh_haskell_prep
+GHC_PKG=/usr/lib/ghc-6.8.2/bin/ghc-pkg 
+CONFIGFILE=/usr/lib/haskell-packages/ghc6/lib/dataenc-0.12/installed-pkg-config
+
+
+case &quot;$1&quot; in
+    abort-deconfigure|abort-remove|abort-upgrade|configure)
+    OLDVERSIONS=`$GHC_PKG --global field dataenc version 2&amp;gt; /dev/null | sed &quot;s/version: //&quot;`
+    for VERSION in $OLDVERSIONS ; do
+        $GHC_PKG --global hide dataenc-$VERSION || true
+    done
+    $GHC_PKG --global --auto-ghci-libs register $CONFIGFILE
+    ;;
+    *)
+        echo &quot;postinst called with unknown argument \`$1'&quot; &amp;gt;&amp;amp;2
+        exit 1
+    ;;
+esac
+
+
+
+# arch-tag: haskell-devscripts generic GHC postinst template
+# End automatically added section</code></pre>
+<p>I think it should be possible to get <code>dh_haskell_prep</code> to also generate the <code>libghc6-X-doc.post{inst,rm}</code>. To me that seems like an improvement that it’d be very easy to sell to the maintainer of <code>haskell-devscripts</code>.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-169245"></a>
+  <header>
+    <p><b>Jeremy Shaw</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-01-24">2009-01-24</time></p>
+  </header>
+<p>Hello,</p>
+<p>Sorry, we are using the version of haskell-devscripts that is maintained by Arjan Oosting as well – I forgot that the maintainer for that package had changed.</p>
+<p>Here is the current state of things:</p>
+<ul>
+<li>I have uploaded a newer version of the debian library to hackage (version 3.18.1). (the cabal-debian binary is part of this cabal package. The darcs repo named cabal-debian is obsolete, and is being moved into the attic).</li>
+<li>the patches to haskell-devscripts are now split into some quilt patches.</li>
+<li>we have debianized the latest version of hlibrary.mk so that it gets installed globally, (similar to gnome.mk, kde.mk, etc). We also added some patches so that it can use cabal-debian to generate binary dependencies, and do some other checks.</li>
+</ul>
+<p><a href="http://src.seereason.com/ghc610/quilt/haskell-devscripts-quilt/" class="uri">http://src.seereason.com/ghc610/quilt/haskell-devscripts-quilt/</a> <a href="http://src.seereason.com/ghc610/haskell-cdbs/" class="uri">http://src.seereason.com/ghc610/haskell-cdbs/</a></p>
+<p>There are still some unresolved issues though – such as cabal-debian build-depending on itself.</p>
+<p>I’ll keep you posted.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-215011"></a>
+  <header>
+    <p><b>Adam Jones</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2011-04-02">2011-04-02</time></p>
+  </header>
+<p>Well, I’ve seen that information generated from a <em>source build</em> (debuild -S is what I tend to use). I suppose it could be incomplete if the rules file modifies the control file. I would hope that’s a fairly rare setup though. Surely it isn’t something that cabal-debian engages in, right?</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2009-01-22-485-more-sensible-comments-on-cabal-debian@therning.org?subject=A comment on More sensible comments on cabal-debian&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

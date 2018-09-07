@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">TCLAP for command line argument parsing in C++</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2013-10-13">2013-10-13</time> - Magnus Therning</p>
+</header>
+
+<p>A long while ago I was looking for a way to handle command line arguments in a C++ program I was writing for Windows. At the time I only found <a href="http://www.boost.org/doc/libs/1_54_0/doc/html/program_options.html">Boost.Program_options</a>. After a bit of experimenting I found that the pre-built Boost libs I found back then had some issues and after a bit of thinking I decided to write the program in Python instead :) Now I once again find that I need to handle command line arguments in C++ on Windows, but this time I found quite a few options, <a href="https://github.com/schuhschuh/gflags">gflags</a>, <a href="http://ezoptionparser.sourceforge.net/">ezOptionParser</a>, <a href="http://tclap.sourceforge.net/">TCLAP</a>. They are all stand-alone, meaning that I don’t need to pull in a huge dependency like Boost or Qt, and liberally licensed (<a href="http://opensource.org/licenses/BSD-3-Clause">BSD3</a> and <a href="http://opensource.org/licenses/MIT">MIT</a>) so usage in at work is no problem. After a bit of playing with all three I found that TCLAP is most to my liking, but gflags does have one nice little feature–it allows putting command line option definitions pretty much anywhere in the code. This would solve one of the problems I’m facing; the tool shall consist of a main program and pluggable modules, where each module must be able to add command line arguments of its own. However, it turns out that the TCLAP API easily allows implementing such a scheme. Here’s how I implemented it in the experiment code I’ve been playing with this weekend.</p>
+<h2 id="how-it-works">How it works</h2>
+<p>The basic idea is to create a central instance of <code>TCLAP::CmdLine</code> that can be used to register options with in the program and the pluggable modules. By declaring the option instances as top-level variables in compilation units it will be enough to just load a pluggable to the constructors run, and by passing the central <code>TCLAP::CmdLine</code> to the constructors they will register themselves properly. This seems to be same idea used in gflags.</p>
+<h2 id="registering-a-command-line-option">Registering a command line option</h2>
+<p>The following code is the code my pluggable module used to register an option:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode numberSource cpp numberLines"><code class="sourceCode cpp"><a class="sourceLine" id="cb1-1" data-line-number="1">TCLAP::ValueArg&lt;<span class="dt">int</span>&gt; value(<span class="st">&quot;v&quot;</span>,</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">                           <span class="st">&quot;value&quot;</span>,</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">                           <span class="st">&quot;ONE: the value to return&quot;</span>,</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">                           <span class="kw">false</span>,</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">                           <span class="dv">42</span>,</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">                           <span class="st">&quot;integer&quot;</span>,</a>
+<a class="sourceLine" id="cb1-7" data-line-number="7">                           argparse::argparser);</a></code></pre></div>
+<h2 id="the-parser">The parser</h2>
+<p>I put the parser in its own namespace, and due to the API of <code>TCLAP::CmdLine</code> I found that I needed to subclass it.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode numberSource cpp numberLines"><code class="sourceCode cpp"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="pp">#include </span><span class="im">&lt;tclap/CmdLine.h&gt;</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3"><span class="kw">namespace</span> argparse {</a>
+<a class="sourceLine" id="cb2-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb2-5" data-line-number="5"><span class="kw">class</span> ArgParser : <span class="kw">public</span> TCLAP::CmdLine {</a>
+<a class="sourceLine" id="cb2-6" data-line-number="6"><span class="kw">public</span>:</a>
+<a class="sourceLine" id="cb2-7" data-line-number="7">    ArgParser() : TCLAP::CmdLine(<span class="st">&quot;No message set.&quot;</span>, <span class="ch">' '</span>, <span class="st">&quot;No version set.&quot;</span>) {}</a>
+<a class="sourceLine" id="cb2-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb2-9" data-line-number="9">    <span class="dt">void</span> setMessage(<span class="bu">std::</span>string msg) { _message = msg; }</a>
+<a class="sourceLine" id="cb2-10" data-line-number="10">    <span class="dt">void</span> setVersion(<span class="bu">std::</span>string version) { _version = version; }</a>
+<a class="sourceLine" id="cb2-11" data-line-number="11">};</a>
+<a class="sourceLine" id="cb2-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb2-13" data-line-number="13"><span class="at">extern</span> ArgParser argparser;</a>
+<a class="sourceLine" id="cb2-14" data-line-number="14"></a>
+<a class="sourceLine" id="cb2-15" data-line-number="15">}</a></code></pre></div>
+<h2 id="the-main-function">The <code>main</code> function</h2>
+<p>After this I just need to instantiate the central parser instance and set it up.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode numberSource cpp numberLines"><code class="sourceCode cpp"><a class="sourceLine" id="cb3-1" data-line-number="1">argparse::ArgParser argparse::argparser;</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3"><span class="dt">int</span> main(<span class="dt">int</span> ac, <span class="dt">char</span> **av)</a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">{</a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">    argparse::argparser.setMessage(<span class="st">&quot;The message.&quot;</span>);</a>
+<a class="sourceLine" id="cb3-6" data-line-number="6">    argparse::argparser.setVersion(<span class="st">&quot;0.0.0&quot;</span>);</a>
+<a class="sourceLine" id="cb3-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb3-8" data-line-number="8">    <span class="co">// load the the plugin modules</span></a>
+<a class="sourceLine" id="cb3-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb3-10" data-line-number="10">    argparse::argparser.parse(ac, av);</a>
+<a class="sourceLine" id="cb3-11" data-line-number="11"></a>
+<a class="sourceLine" id="cb3-12" data-line-number="12">    <span class="co">// do the work</span></a>
+<a class="sourceLine" id="cb3-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb3-14" data-line-number="14">    <span class="cf">return</span> <span class="dv">0</span>;</a>
+<a class="sourceLine" id="cb3-15" data-line-number="15">}</a></code></pre></div>
+<h2 id="limitations">Limitations</h2>
+<p>The main limitation I can see with this approach, and AFAICS that would be true with gflags as well, is that it’s not very easy to find the plugin modules to load by passing them on the command line. If the TCLAP API allowed parsing without acting on <code>--help</code> and <code>--version</code>, as well as be forgiving with arguments it didn’t know how to handle, it would be possible to use an option in the main application to find the modules, load them, and then re-parse the command line. In my particular case it doesn’t matter much, the plugin modules will all be found in a well-known place and all available modules should be loaded every time. It does make testing a bit more cumbersome though.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/cpp.html">cpp</a>, <a href="../tags/tclap.html">tclap</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2012-08-09-1099-eclipse-and-greyed-out-ifdef-sections.html">⟸ Eclipse and greyed out</a>
+
+
+
+<a href="../posts/2013-11-18-1125-how-do-professional-windows-programmers-visual-studio.html">How do professional Windows programmers stand Visual Studio? ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2013-10-13-1113-tclap-for-command-line-argument-parsing-in-c@therning.org?subject=A comment on TCLAP for command line argument parsing in C++&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

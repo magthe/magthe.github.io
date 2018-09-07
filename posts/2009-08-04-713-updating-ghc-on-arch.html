@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Updating GHC on Arch</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2009-08-04">2009-08-04</time> - Magnus Therning</p>
+</header>
+
+<p>Arch is somewhat of a hybrid distribution in the sense that if you have any sort of ‘peculiar’ needs then you are likely to have to build packages from source. As expected developing in Haskell is a “peculiar need” :-)</p>
+<p>After every upgrade of GHC I find myself in the situation where the system (pacman) and GHC have different views of what packages are available. What is needed then is somehow finding out the difference, and this is how I found that difference after the recent 6.10.3 -&gt; 6.10.4 upgrade of GHC. Once I know what packages are missing from GHC’s view of the world I can use <code>pacman</code> to first remove and then <code>yaourt</code> to rebuild the packages.</p>
+<p>First I noted that the old <code>package.conf</code> file wasn’t deleted during the upgrade, apparently <code>pacman</code> noted the changes that installing packages resulted in and saved the file as <code>package.conf.pacsave</code>. Finding the name of all the ‘missing’ packages was then as simple as loading both <code>/usr/lib/ghc-6.10.3/package.conf.pacsave</code> and <code>/usr/lib/ghc-6.10.4/package.conf</code>, filter out the package names and take the difference:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">printMissingPackages <span class="fu">=</span> <span class="kw">let</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">        pkgNameStr <span class="fu">=</span> <span class="dt">PackageName</span> <span class="fu">.</span> display <span class="fu">.</span> packageName</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">    <span class="kw">in</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">        oldPackConf <span class="ot">&lt;-</span> readFile <span class="st">&quot;/usr/lib/ghc-6.10.3/package.conf.pacsave&quot;</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">        curPackConf <span class="ot">&lt;-</span> readFile <span class="st">&quot;/usr/lib/ghc-6.10.4/package.conf&quot;</span></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">        <span class="kw">let</span> oldPacks <span class="fu">=</span> (read oldPackConf)<span class="ot"> ::</span> [<span class="dt">InstalledPackageInfo_</span> <span class="dt">String</span>]</a>
+<a class="sourceLine" id="cb1-7" data-line-number="7">        <span class="kw">let</span> curPacks <span class="fu">=</span> (read curPackConf)<span class="ot"> ::</span> [<span class="dt">InstalledPackageInfo_</span> <span class="dt">String</span>]</a>
+<a class="sourceLine" id="cb1-8" data-line-number="8">        <span class="kw">let</span> gonePacks <span class="fu">=</span> (map pkgNameStr oldPacks) \\ (map pkgNameStr curPacks)</a>
+<a class="sourceLine" id="cb1-9" data-line-number="9">        putStrLn <span class="st">&quot;Missing packages:&quot;</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10">        mapM_ (putStrLn <span class="fu">.</span> display) gonePacks</a></code></pre></div>
+<p>That isn’t the most useful output however, so I decided to modify it to print out the name of the Arch package that needed re-compilation. The following functions generates the name of the <code>.hi</code> of the first module in the Haskell package, it then uses <code>pacman</code> to look up the owner of the file:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">ghcPkg2ArchPkg pkg <span class="fu">=</span> <span class="kw">let</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">        hsFileLoc <span class="fu">=</span> head <span class="fu">$</span> libraryDirs pkg</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">        hsFile <span class="fu">=</span> map (\ c <span class="ot">-&gt;</span> <span class="kw">if</span> c <span class="fu">==</span> <span class="ch">'.'</span> <span class="kw">then</span> <span class="ch">'/'</span> <span class="kw">else</span> c) <span class="fu">$</span> head <span class="fu">$</span> exposedModules pkg</a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">        hsFullFile <span class="fu">=</span> hsFileLoc <span class="fu">&lt;/&gt;</span> hsFile <span class="fu">&lt;.&gt;</span> <span class="st">&quot;hi&quot;</span></a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">    <span class="kw">in</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">        exists <span class="ot">&lt;-</span> doesDirectoryExist hsFullFile</a>
+<a class="sourceLine" id="cb2-7" data-line-number="7">        <span class="kw">if</span> exists</a>
+<a class="sourceLine" id="cb2-8" data-line-number="8">            <span class="kw">then</span> liftM <span class="dt">Just</span> <span class="fu">$</span> archOwnerOfFile hsFullFile</a>
+<a class="sourceLine" id="cb2-9" data-line-number="9">            <span class="kw">else</span> return <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb2-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb2-11" data-line-number="11">archOwnerOfFile fn <span class="fu">=</span> <span class="kw">let</span></a>
+<a class="sourceLine" id="cb2-12" data-line-number="12">        pkgFromPacmanOutput <span class="fu">=</span> head <span class="fu">.</span> tail <span class="fu">.</span> reverse <span class="fu">.</span> words</a>
+<a class="sourceLine" id="cb2-13" data-line-number="13">    <span class="kw">in</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-14" data-line-number="14">        res <span class="ot">&lt;-</span> rawSystemStdout silent <span class="st">&quot;/usr/bin/pacman&quot;</span> [<span class="st">&quot;-Qo&quot;</span>, fn]</a>
+<a class="sourceLine" id="cb2-15" data-line-number="15">        return <span class="fu">$</span> pkgFromPacmanOutput res</a></code></pre></div>
+<p>Now I can find the list of Arch packages that aren’t known to the new version of GHC by mapping <code>ghcPkg2ArchPkg</code> over <code>gonePkgs</code>. In other words that is the list of packages that need to be removed, but that can be different from the list of packages that needs to be rebuilt with <code>yaourt</code> (basically I only want to tell it to build and install the ‘top-level’ packages, i.e. packages that aren’t dependencies of any other packages. It’s of course possible to build that second list from the first one, with the help of <code>pacman</code>.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1">archGetRequiredBy pkg <span class="fu">=</span> <span class="kw">let</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">        extractPkgs pkgDesc <span class="fu">=</span> <span class="kw">let</span></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">                deps <span class="fu">=</span> (drop <span class="dv">3</span> <span class="fu">.</span> words <span class="fu">.</span> head <span class="fu">.</span> filter (isPrefixOf <span class="st">&quot;Required By&quot;</span>) <span class="fu">.</span> lines) pkgDesc</a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">            <span class="kw">in</span></a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">                <span class="kw">if</span> deps <span class="fu">==</span> [<span class="st">&quot;None&quot;</span>]</a>
+<a class="sourceLine" id="cb3-6" data-line-number="6">                    <span class="kw">then</span> []</a>
+<a class="sourceLine" id="cb3-7" data-line-number="7">                    <span class="kw">else</span> deps</a>
+<a class="sourceLine" id="cb3-8" data-line-number="8">    <span class="kw">in</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb3-9" data-line-number="9">        res <span class="ot">&lt;-</span> rawSystemStdout silent <span class="st">&quot;/usr/bin/pacman&quot;</span> [<span class="st">&quot;-Qi&quot;</span>, pkg]</a>
+<a class="sourceLine" id="cb3-10" data-line-number="10">        return <span class="fu">$</span> extractPkgs res</a></code></pre></div>
+<p>Now I can modify <code>printMissingPackages</code> to print some more useful information. This is the full function:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">printMissingPackages <span class="fu">=</span> <span class="kw">let</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">        pkgNameStr <span class="fu">=</span> <span class="dt">PackageName</span> <span class="fu">.</span> display <span class="fu">.</span> packageName</a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">    <span class="kw">in</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">        oldPackConf <span class="ot">&lt;-</span> readFile <span class="st">&quot;/usr/lib/ghc-6.10.3/package.conf.pacsave&quot;</span></a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">        curPackConf <span class="ot">&lt;-</span> readFile <span class="st">&quot;/usr/lib/ghc-6.10.4/package.conf&quot;</span></a>
+<a class="sourceLine" id="cb4-6" data-line-number="6">        <span class="kw">let</span> oldPacks <span class="fu">=</span> (read oldPackConf)<span class="ot"> ::</span> [<span class="dt">InstalledPackageInfo_</span> <span class="dt">String</span>]</a>
+<a class="sourceLine" id="cb4-7" data-line-number="7">        <span class="kw">let</span> curPacks <span class="fu">=</span> (read curPackConf)<span class="ot"> ::</span> [<span class="dt">InstalledPackageInfo_</span> <span class="dt">String</span>]</a>
+<a class="sourceLine" id="cb4-8" data-line-number="8">        <span class="kw">let</span> gonePacks <span class="fu">=</span> (map pkgNameStr oldPacks) \\ (map pkgNameStr curPacks)</a>
+<a class="sourceLine" id="cb4-9" data-line-number="9">        putStrLn <span class="st">&quot;Missing packages:&quot;</span></a>
+<a class="sourceLine" id="cb4-10" data-line-number="10">        mapM_ (putStrLn <span class="fu">.</span> display) gonePackprints</a>
+<a class="sourceLine" id="cb4-11" data-line-number="11">        <span class="kw">let</span> gonePkgs <span class="fu">=</span> filter (\ p <span class="ot">-&gt;</span> pkgNameStr p <span class="ot">`elem`</span> gonePacks) oldPacks</a>
+<a class="sourceLine" id="cb4-12" data-line-number="12">        archPkgs <span class="ot">&lt;-</span> liftM catMaybes <span class="fu">$</span> mapM ghcPkg2ArchPkg gonePkgs</a>
+<a class="sourceLine" id="cb4-13" data-line-number="13">        putStrLn <span class="st">&quot;Packages to remove:&quot;</span></a>
+<a class="sourceLine" id="cb4-14" data-line-number="14">        mapM_ putStrLn archPkgs</a>
+<a class="sourceLine" id="cb4-15" data-line-number="15">        archTopPkgs <span class="ot">&lt;-</span> filterM (liftM ([] <span class="fu">==</span>) <span class="fu">.</span> archGetRequiredBy) archPkgs</a>
+<a class="sourceLine" id="cb4-16" data-line-number="16">        putStrLn <span class="st">&quot;\nPackages to install:&quot;</span></a>
+<a class="sourceLine" id="cb4-17" data-line-number="17">        mapM_ putStrLn archTopPkgs</a></code></pre></div>
+<p>On my system it produced the following output:</p>
+<pre><code>Missing packages:
+terminfo
+vty
+wl-pprint
+
+Packages to remove:
+haskell-terminfo
+haskell-vty
+haskell-wl-pprint
+
+Packages to install:
+haskell-vty
+haskell-wl-pprint</code></pre>
+<p>And after a quick <code>pacman -Rn ...</code> and a not so quick <code>yaourt -S ...</code> I reran it and the output was</p>
+<pre><code>Packages to remove:
+
+Packages to install:</code></pre>
+<p>Exactly as expected.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/arch.html">arch</a>, <a href="../tags/ghc.html">ghc</a>, <a href="../tags/haskell.html">haskell</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2009-07-31-710-making-a-choice-from-a-list-in-haskell-vty-part-4.html">⟸ Making a choice from a list in Haskell, Vty (part 4)</a>
+
+
+
+<a href="../posts/2009-08-16-719-json-in-haskell.html">JSON in Haskell ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-185929"></a>
+  <header>
+    <p><b>Lennart Kolmodin</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-08-05">2009-08-05</time></p>
+  </header>
+<p>Gentoo Linux users interested in doing the equivalent can use the haskell-updater tools, which replaces our previous ghc-updater tool. It’s available both through the overlay and from the portage tree. See the announce here: <a href="http://gentoohaskell.wordpress.com/2009/07/22/announcing-haskell-updater/" class="uri">http://gentoohaskell.wordpress.com/2009/07/22/announcing-haskell-updater/</a></p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-185930"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-08-05">2009-08-05</time></p>
+  </header>
+<p><em><span class="citation" data-cites="Lennart">@Lennart</span> Kolmodin</em>, yes, I’ve looked at that. The long-term goal is to rework my code into a similar tool for Arch. One thing I need to look at a bit more carefully is how to handle updated libraries.</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2009-08-04-713-updating-ghc-on-arch@therning.org?subject=A comment on Updating GHC on Arch&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

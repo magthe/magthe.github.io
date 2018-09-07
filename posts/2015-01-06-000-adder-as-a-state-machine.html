@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Adder as a state machine</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2015-01-06">2015-01-06</time> - Magnus Therning</p>
+</header>
+
+<p>In my <a href="../posts/2015-01-03-000-simple-state-machines-in-haskell.html">previous post</a> I wrote about a, probably rather naïve, approach to constructing state machines in Haskell. I ended it with a saying that the pattern matching of Haskell makes it rather simple to manually write the step function required to create a working state machines. Hopefully this post can convince you I’m right.</p>
+<p>The vehicle I’ve chosen is a very simple machine capable of reading two integers and adding them. In slightly more detail it’s a machine that:</p>
+<ol type="1">
+<li>reads a total of three parts, two integers followed by a plus sign (<code>+</code>)</li>
+<li>each part is separated by whitespace</li>
+<li>on errors the machine resets and starts over</li>
+</ol>
+<p>The signals (a.k.a. the output alphabet) is the following type</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">data</span> <span class="dt">CalcSignal</span> <span class="fu">=</span> <span class="dt">CalcNothing</span> <span class="fu">|</span> <span class="dt">CalcResult</span> <span class="dt">Int</span> <span class="fu">|</span> <span class="dt">CalcError</span> <span class="dt">CalcStates</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">    <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</a></code></pre></div>
+<p>The events (a.k.a. the input alphabet) is simply <code>Char</code>. The states are</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">data</span> <span class="dt">CalcStates</span> <span class="fu">=</span> <span class="dt">Start</span> <span class="fu">|</span> <span class="dt">ReadFirst</span> <span class="dt">Int</span> <span class="fu">|</span> <span class="dt">ReadSecond</span> <span class="dt">Int</span> <span class="dt">Int</span> <span class="fu">|</span> <span class="dt">ReadOperator</span> <span class="dt">Int</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">    <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</a></code></pre></div>
+<p>where the names hopefully are self explanatory. The type of the machine is then</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">type</span> <span class="dt">CalcMachine</span> <span class="fu">=</span> <span class="dt">Machine</span> <span class="dt">CalcStates</span> <span class="dt">Char</span> <span class="dt">CalcSignal</span></a></code></pre></div>
+<p>The machine itself can then be written like this:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">calcMachine ::</span> <span class="dt">CalcMachine</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">calcMachine <span class="fu">=</span> createMachine <span class="dt">Start</span> go</a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">    <span class="kw">where</span></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">        go <span class="dt">Start</span> e</a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">            <span class="fu">|</span> isNumber e <span class="fu">=</span> (<span class="dt">ReadFirst</span> (read [e]), <span class="dt">CalcNothing</span>)</a>
+<a class="sourceLine" id="cb4-6" data-line-number="6">            <span class="fu">|</span> otherwise <span class="fu">=</span> (<span class="dt">Start</span>, <span class="dt">CalcError</span> <span class="dt">Start</span> <span class="st">&quot;No number&quot;</span>)</a>
+<a class="sourceLine" id="cb4-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb4-8" data-line-number="8">        go s<span class="fu">@</span>(<span class="dt">ReadFirst</span> i) e</a>
+<a class="sourceLine" id="cb4-9" data-line-number="9">            <span class="fu">|</span> isNumber e <span class="fu">=</span> (<span class="dt">ReadFirst</span> (<span class="dv">10</span> <span class="fu">*</span> i <span class="fu">+</span> read [e]), <span class="dt">CalcNothing</span>)</a>
+<a class="sourceLine" id="cb4-10" data-line-number="10">            <span class="fu">|</span> isSpace e <span class="fu">=</span> (<span class="dt">ReadSecond</span> i <span class="dv">0</span>, <span class="dt">CalcNothing</span>)</a>
+<a class="sourceLine" id="cb4-11" data-line-number="11">            <span class="fu">|</span> otherwise <span class="fu">=</span> (<span class="dt">Start</span>, <span class="dt">CalcError</span> s <span class="st">&quot;Bad format&quot;</span>)</a>
+<a class="sourceLine" id="cb4-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb4-13" data-line-number="13">        go s<span class="fu">@</span>(<span class="dt">ReadSecond</span> l i) e</a>
+<a class="sourceLine" id="cb4-14" data-line-number="14">            <span class="fu">|</span> isNumber e <span class="fu">=</span> (<span class="dt">ReadSecond</span> l (<span class="dv">10</span> <span class="fu">*</span> i <span class="fu">+</span> read [e]), <span class="dt">CalcNothing</span>)</a>
+<a class="sourceLine" id="cb4-15" data-line-number="15">            <span class="fu">|</span> isSpace e <span class="fu">=</span> (<span class="dt">ReadOperator</span> l i, <span class="dt">CalcNothing</span>)</a>
+<a class="sourceLine" id="cb4-16" data-line-number="16">            <span class="fu">|</span> otherwise <span class="fu">=</span> (<span class="dt">Start</span>, <span class="dt">CalcError</span> s <span class="st">&quot;Bad format&quot;</span>)</a>
+<a class="sourceLine" id="cb4-17" data-line-number="17"></a>
+<a class="sourceLine" id="cb4-18" data-line-number="18">        go s<span class="fu">@</span>(<span class="dt">ReadOperator</span> i j) e</a>
+<a class="sourceLine" id="cb4-19" data-line-number="19">            <span class="fu">|</span> e <span class="fu">==</span> <span class="ch">'+'</span> <span class="fu">=</span> (<span class="dt">Start</span>, <span class="dt">CalcResult</span> (i <span class="fu">+</span> j))</a>
+<a class="sourceLine" id="cb4-20" data-line-number="20">            <span class="fu">|</span> isSpace e <span class="fu">=</span> (s, <span class="dt">CalcNothing</span>)</a>
+<a class="sourceLine" id="cb4-21" data-line-number="21">            <span class="fu">|</span> otherwise <span class="fu">=</span> (<span class="dt">Start</span>, <span class="dt">CalcError</span> s <span class="st">&quot;Bad operator&quot;</span>)</a></code></pre></div>
+<p>That’s rather simple and easy to read I find. Though I’m not sure it scales too well to much larger machines. I’ve not really used any DSLs to create large machines either, so I don’t know how well <em>any</em> method scales ;)</p>
+<p>To do a bit of exploratory testing it’s handy to create the following function</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">calculate ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">calculate <span class="fu">=</span> foldM_ go calcMachine</a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">    <span class="kw">where</span> </a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">        go mach c <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb5-5" data-line-number="5">            <span class="kw">let</span> (m, s) <span class="fu">=</span> stepMachine mach c</a>
+<a class="sourceLine" id="cb5-6" data-line-number="6">            print s </a>
+<a class="sourceLine" id="cb5-7" data-line-number="7">            return m</a></code></pre></div>
+<p>Using that function it’s easy to check if the machine works as intended.</p>
+<pre><code>&gt; calculate &quot;56 67 +&quot;
+CalcNothing
+CalcNothing
+CalcNothing
+CalcNothing
+CalcNothing
+CalcNothing
+CalcResult 123</code></pre>
+<p>So far so good. What about the behaviour on errors?</p>
+<pre><code>&gt; calculate &quot;5a6 67 +&quot;
+CalcNothing
+CalcError (ReadFirst 5) &quot;Bad format&quot;
+CalcNothing
+CalcNothing
+CalcNothing
+CalcNothing
+CalcNothing
+CalcResult 73</code></pre>
+<p>That looks good enough to me. Though there is (at least) one detail of how the machine works that might be surprising and hence should be fixed, but I’ll leave that as an exercise for the reader ;)</p>
+<p>As I mentioned in the previous post I’ve been using this method for writing state machines to implement two different protocols. For the IO I used <a href="http://hackage.haskell.org/package/conduit">conduit</a> which means I had to turn the state machine into a conduit. I’ll write about that in a later post though.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/fsm.html">fsm</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2015-01-03-000-simple-state-machines-in-haskell.html">⟸ Simple state machines in Haskell</a>
+
+
+
+<a href="../posts/2015-01-13-000-state-machine-with-conduit.html">State machine with conduit ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-0"></a>
+  <header>
+    <p><b>Tobias Florek</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2015-01-07">2015-01-07</time></p>
+  </header>
+<p>Have you considered using Ed Kmett’s <a href="http://hackage.haskell.org/package/machines">machines</a> library?</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-1"></a>
+  <header>
+    <p><b>Magnus Therning</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2015-01-07">2015-01-07</time></p>
+  </header>
+<p><em><span class="citation" data-cites="Tobias">@Tobias</span></em> Yeah, I did have a brief look at it, and spent some time failing to find some documentation on it. AFAIU I could use it as a replacement for <em>conduits</em>, but I kind of like <em>conduits</em> and know a little about how to use it already. So, for now I’ve left <em>machines</em> on my list of modules to have a look at.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-2"></a>
+  <header>
+    <p><b>Tobias Florek</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2015-01-14">2015-01-14</time></p>
+  </header>
+<p>I was confused when I wrote the comment. Have you had a look at Ed Kmett’s <a href="https://hackage.haskell.org/package/folds">folds</a> library? It supports many different machines, e.g. a Mealy machine.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-3"></a>
+  <header>
+    <p><b>Magnus Therning</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2015-01-14">2015-01-14</time></p>
+  </header>
+<p><em><span class="citation" data-cites="Tobias">@Tobias</span></em> No, I haven’t had a look at it, but now I have yet another thing on my list of Haskell stuff to take a look at. Thanks for the tip.</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2015-01-06-000-adder-as-a-state-machine@therning.org?subject=A comment on Adder as a state machine&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

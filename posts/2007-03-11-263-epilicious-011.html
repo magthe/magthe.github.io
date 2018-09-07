@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Epilicious 0.11</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2007-03-11">2007-03-11</time> - Magnus Therning</p>
+</header>
+
+<p>I’ve been sitting on a few changes for a while now and now I’ve finally rolled them into a release version. Get it in the <a href="http://gnomefiles.org/app.php/Epilicious">normal place</a>.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/epilicious.html">epilicious</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2007-03-11-262-my-programmer-personality.html">⟸ My programmer personality</a>
+
+
+
+<a href="../posts/2007-03-13-264-you-know-you-are-a-bit-screwed-up-when.html">You know you are a bit screwed up when... ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-23554"></a>
+  <header>
+    <p><b>rodgersan</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-03-27">2007-03-27</time></p>
+  </header>
+<p>Hello, I found a bug (I presume it is)</p>
+<p>I can reproduce it:</p>
+<ol type="1">
+<li>Configure epilicious with login, password and a tag that I will named: test</li>
+<li>Now synchronize your bookmarks.</li>
+<li>Change the tag name: test2</li>
+<li>Synchronize again and the process will fail.</li>
+</ol>
+<p>I tried some kinds of configuration:</p>
+<p>Deleting all the bookmarks in epiphany and using a tag with a compound name (hum)</p>
+<p>I also tested again with a tag “test” and it was working.</p>
+<p>I’m using a patched epiphany from the gnome 2.16.1 release and epilicious 0.11</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-23877"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-03-28">2007-03-28</time></p>
+  </header>
+<p>rodgersan,</p>
+<p>Thanks. Would it be possible for you to raise this as a bug in <a href="http://bugzilla.gnome.org/">GNOME’s Bugzilla</a> instead? It would make it a lot easier for me to track that way.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-23976"></a>
+  <header>
+    <p><b>rodgersan</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-03-28">2007-03-28</time></p>
+  </header>
+<p>I’m a little new to these bug reports, so I ask you before I register at &lt;gnome.bugzilla.org&gt;. Could you tell me where I must report the bug? Is there a specific section for epilicious?</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-24761"></a>
+  <header>
+    <p><b>rodgersan</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-03-30">2007-03-30</time></p>
+  </header>
+<p>To make it working again, I must delete the older epilicious (epilicious_old) file in my /.gnome2/epiphany folder.</p>
+<p>I hope it will help you to track that bug</p>
+<p>Regards</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-24817"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-03-30">2007-03-30</time></p>
+  </header>
+<p>Yes, there is a section for epilicious, you’ll find it under epiphany-extensions.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-26036"></a>
+  <header>
+    <p><b>rodgersan</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-04-04">2007-04-04</time></p>
+  </header>
+<p>I did a bug report but it’s always unconfirmed, maybe did I something wrong?</p>
+<p><a href="http://bugzilla.gnome.org/show_bug.cgi?id=424935" class="uri">http://bugzilla.gnome.org/show_bug.cgi?id=424935</a></p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-28179"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-04-10">2007-04-10</time></p>
+  </header>
+<p>rodgersan, as the “Bugzilla tip” says:</p>
+<blockquote>
+UNCONFIRMED means that this bug has yet to be triaged, but still may have been seen and/or actively worked on by the developer. Due to the high amount of bugs filed every day it may take a while before someone triages this bug.
+</blockquote>
+</blockquote>
+<p>In short, it’ll be confirmed as soon as I get around to reproduce it.</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2007-03-11-263-epilicious-011@therning.org?subject=A comment on Epilicious 0.11&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

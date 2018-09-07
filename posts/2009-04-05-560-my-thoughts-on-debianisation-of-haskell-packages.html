@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">My thoughts on debianisation of haskell packages</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2009-04-05">2009-04-05</time> - Magnus Therning</p>
+</header>
+
+<p>I have written a few posts on <a href="../posts/2009-01-19-458-building-debian-packages-of-cabalised-haskell-packages.html">debianising</a> <a href="../posts/2009-01-21-476-experience-with-cabal-debian.html">haskell</a> <a href="../posts/2009-01-22-485-more-sensible-comments-on-cabal-debian.html">packages</a> in the past. Back then I stopped looking at it because of the age of the ghc-related packages in Debian Sid. Things have since improved and I’ve finally found some time to revisit the problem. This isn’t however a technical post, but rather a post on the strategy I think would be best for making Debian the best Haskell development environment in the universe.</p>
+<p>In my opinion there is no point in trying to get all packages on <a href="http://hackage.haskell.org/">Hackage</a> into Debian proper. The few Debian developers (DD) who are interested in Haskell and maintain the existing packages are already terribly short on time and adding further burden would improve the chance of timely availability of GHC in the future. Sure, it would be possible to recruit more DDs with an interest in Haskell (I’ve considered in the past to try to become a DD, but the timing was off on both sides and I decided to postpone it) but it would take time. Maintaining 1000 packages is a huge task, and would require quite a large team I think. I suspect the recruiting would be such that if one were to plot the number of packages the team could maintain as it grew over time, compared to the number of packages on Hackage, then the lines would diverge rather than converge ;-)</p>
+<p>Instead I think all packages on Hackage should first be debianised and put in a source-only repository. As some packages grow in importance and get added into Debian proper (e.g. a killer-app written in Haskell) then it and its dependencies are removed.</p>
+<p>I believe that with this solution it’d be possible to quickly make a large part of Hackage available on Debian while still giving the DDs time to grow the number of “Haskell-friendlies” within Debian.</p>
+<p>This of course rests on a few assumptions:</p>
+<ol type="1">
+<li>It would require a smaller team to maintain source packages than binary packages. At least it would require less time from DDs.</li>
+<li>There is some space to store the source packages, ideally non-Debian space since that would mean even less involvement required by DDs.</li>
+<li>There’s a tool available in Debian that makes it easy for end-users to download, compile, and install source packages.</li>
+<li>There’s a tool that automates the creation of a Debian source package from a Cabal package.</li>
+</ol>
+<p>In my optimism I’ve decided to not worry about the two first points and instead focus on the last two. Besides the optimism they also feel like the points I can actually address on my own, I’ll need help with the first two.</p>
+<p>The tool in Debian for handling source packages is <code>apt-src</code>. In my opinion it will suffice, but if the developer would address <a href="http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=522688">one issue</a> then it would be perfect.</p>
+<p>The tool for automating the creation of Debian source packages could be <code>cabal-debian</code>. It is a very good tool, and it seems to be suited for maintaining Debian packages. I only have two objections to it. The first objection I have is that it is almost too well engineered; it does more than is necessary, e.g. there is no need to maintain proper changelogs in the source repo. The second is that it requires all dependencies of a package to be installed when it’s debianised. It is almost certainly the tool for the team charged with maintaining a large set of Cabal-based packages in Debian proper, but for the source-repo it might be too much. Because of that I’ve started hacking on a simplistic tool that I feel would be better suited for the source-repo.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/debian.html">debian</a>, <a href="../tags/hackage.html">hackage</a>, <a href="../tags/haskell.html">haskell</a>, <a href="../tags/thoughts.html">thoughts</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2009-04-01-549-virtualbox-with-linux-2629.html">⟸ VirtualBox with Linux 2.6.29</a>
+
+
+
+<a href="../posts/2009-04-06-566-missing-data-encodings.html">Missing data encodings? ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-175169"></a>
+  <header>
+    <p><b>Jeremy Shaw</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-04-06">2009-04-06</time></p>
+  </header>
+<p>The darcs version of cabal-debian no longer requires the dependencies to be installed just to create a debian directory. I’m not sure if I understand the proper changelog complaint. cabal-debian just generates a pretty generic debian/changelog the first time you run it so that you can build the package. What would it do instead?</p>
+<p>IMO, if you can create a repository of source debs that actually build, it should not be too hard to also create a binary repository using the autobuilder (<a href="http://src.seereason.com/ghc610/autobuilder/" class="uri">http://src.seereason.com/ghc610/autobuilder/</a>). The autobuilder can already download individual source debs from a repository and build them. It would be trivial to download the Sources index and automatically create targets for all the source packages on-the-fly. (the haskell-debian library already provides all the functions for fetching and parsing Sources files). The autobuilder already knows how to track build-dependencies and rebuild packages when build-dependencies change.</p>
+<p>I guess the take away is that you shouldn’t have to do anything special to support the autobuilder. Simply creating a working source deb repo should be enough…</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-175182"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-04-06">2009-04-06</time></p>
+  </header>
+<p><em><span class="citation" data-cites="Jeremy">@Jeremy</span></em>,</p>
+<p>Let me know when that version makes onto Hackage, I’ll be interested in checking it out. The changelog comment is simply related to the <code>--update-debianization</code> argument you can pass to <code>cabal-debian</code>. In my mind it won’t be necessary to update the quick-and-dirty source packages. <code>cabal-debian</code> simply does more than what is needed for what I hope to do.</p>
+<p>So you are saying that I should take a look at <code>autobuilder</code> rather than spend more time on <code>apt-src</code>? What you say sounds very good.</p>
+<p>When will <code>autobuilder</code> be available on Hackage? ;-)</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-175183"></a>
+  <header>
+    <p><b>Jeremy Shaw</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-04-06">2009-04-06</time></p>
+  </header>
+<p>It should be trivial to make a <code>--replace-debianization</code> that would remove the existing debian directory and create a fresh one. Is that what you are looking for?</p>
+<p>The autobuilder is definitely not a replacement for apt-src. It is designed to allow a team of people to maintain one or more debian repositories. It has features like:</p>
+<ol type="1">
+<li>the list of packages to be built can be checked into a shared repository</li>
+<li>ability to build packages that are stored in many different ways: tla, hg, darcs, tarballs, quilt-patches, Debian source repositories, svn, and more</li>
+<li>system/tools for uploading packages to a package server and installing them into a debian repository</li>
+<li>detect when packages need to be rebuilt due to build dependency changes or changes to the source.</li>
+<li>works with Debian and Ubuntu</li>
+<li>packages are built in a clean chroot that is based on what dist the package is being built for</li>
+<li>and more…</li>
+</ol>
+<p>So, it could be the right tool for maintaining a binary distribution, but it is definitely fills a different niche than apt-src.</p>
+<p>Similar to what happened with the cabal-debian stuff, the autobuilder will need to go through a few iterations of cleanup before it is suitable for general purpose use. The biggest stumbling block is that there is very little documentation on how to use it or what the big picture looks like. While it is not hard to use, we have had the luxury of newcomers starting with a working configuration and having easy access to hands on training.</p>
+<p>I’ll see if I can get the latest cabal-debian and autobuilder up on hackage tomorrow as a starting point.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-175226"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-04-07">2009-04-07</time></p>
+  </header>
+<p><em><span class="citation" data-cites="Jeremy">@Jeremy</span></em>, thanks for the clarification on <em>autobuilder</em>.</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2009-04-05-560-my-thoughts-on-debianisation-of-haskell-packages@therning.org?subject=A comment on My thoughts on debianisation of haskell packages&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

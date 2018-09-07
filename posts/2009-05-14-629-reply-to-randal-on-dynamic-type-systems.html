@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Reply to Randal on dynamic type systems</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2009-05-14">2009-05-14</time> - Magnus Therning</p>
+</header>
+
+<p>At first this I wrote this as a comment on my <a href="../posts/2009-05-13-620-randal-schwartz-on-why-dynamic-beat-static-a-rather-rubbish-talk.html">original post</a>, but it grew a bit too long so I decided to post it like this instead.</p>
+<p><strong><span class="citation" data-cites="Randal">@Randal</span></strong>, “Static typing is still effectively a syntax check, not a semantic check though.” Now, I think we might have a different understanding of the word “syntax”. I can guess at yours, but my understanding mirrors what’s on <a href="http://foldoc.org/syntax">Foldoc</a>, that is syntax determines what is a valid string in a program, in this case it determines <em>where</em> a type declaration/definition/statement goes, but not <em>what</em> type declaration/definition/statement is <em>semantically</em> valid in a particular position in a string. That “<em>what</em>” is very much part of the semantics in my mind, it tells the world (me, other users of my library, the compiler) a part of the intention of a function, it tells how something may be used. I gather you are mostly familiar with type systems like Java so what is clearer to you, this declaration:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode java"><code class="sourceCode java"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="dt">int</span> <span class="fu">add</span>(<span class="dt">int</span> i, <span class="dt">int</span> j);</a></code></pre></div>
+<p>or this declaration:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode java"><code class="sourceCode java"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="dt">int</span> <span class="fu">add</span>(i, j);</a></code></pre></div>
+<p>In the former the intent of the function is obvious, it adds integers. In the latter it isn’t, does it handle complex numbers? Does it handle matrices? In dynamic languages you’d have to document it somewhere, but there is no consistency check between code and documentation (maybe there are external tools for that though, but why not use the compiler to check?). You would also have to test that no caller of this function can be tricked into calling <code>add</code> with a non-integer.</p>
+<p>Also, though your example of “semantic type checking” in the talk is interesting (I simply don’t know if there are any type systems that could deal with it) you completely skip all the cases where the type system <em>can</em> do the job and where it <em>does</em> save on testing and typing. In these cases you would have a <em>proof</em> relating to your use of types in the program, unit testing can <em>never</em> give that proof it can only show you haven’t disproved it yet :-)</p>
+<p>If you remain unconvinced then I strongly urge you to read <a href="http://blog.moertel.com/articles/2006/10/18/a-type-based-solution-to-the-strings-problem">Tom Moertel’s post on providing safe strings</a>, and the assurance you can achieve by using a strong type system in relation to information flow through your program. The same technique has been used in Darcs (watch the <a href="http://www.londonhug.net/2008/02/02/video-darcs-and-gadts/">video</a>, the bit relevant for this dicussion starts about 43 minutes in).</p>
+<p>I urge you to read Kristian’s blog post (linked to in his <a href="../posts/2009-05-13-620-randal-schwartz-on-why-dynamic-beat-static-a-rather-rubbish-talk.html#comment-178794">comment</a>).</p>
+<p>If you want a podcast to listen to there’s <a href="http://www.se-radio.net/podcast/2007-07/episode-62-martin-odersky-scala">episode 62 of Software Engineering Radio</a> where Martin Odersky talks about Scala (a statically typed language built on the JVM).</p>
+<p>I’d also like to clear one thing up, I don’t dislike dynamic languages and I don’t think that static languages are inherently better. What I do dislike about your talk is that it’s uninformed, presents very narrow arguments and then draws conclusions that are very general and simply don’t follow from the given arguments.</p>
+<p>Finally, I <em>really</em> enjoy <a href="http://twit.tv/FLOSS">FLOSS Weekly</a>. You and Leo are doing a fantastic job on it, but since it is where I first heard of your talk (I suspect <a href="http://www.cincomsmalltalk.com/blog/blogView?searchCategory=podcast">Industry Misinterpretations</a> might not get a lot of attention outside the Smalltalk community) I really think you should talk to someone from the FLOSS FP community. Get someone who can explain, much better than me, what a modern, advanced, strong, statically typed language will get you. I only have experience with OCaml and Haskell, and there are others, like Scala, all are FLOSS and hopefully it wouldn’t be too much work to find someone knowledgable who’d be willing to set you straight on the dynamic vs static typing issue. I’d be happy to do what I can to help you find someone, just let me know if you are insterested :-)</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/dynamic%20languages.html">dynamic languages</a>, <a href="../tags/floss%20weekly.html">floss weekly</a>, <a href="../tags/haskell.html">haskell</a>, <a href="../tags/randal%20schwartz.html">randal schwartz</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2009-05-13-626-struggling-with-the-arch-way.html">⟸ Struggling with "the Arch way"</a>
+
+
+
+<a href="../posts/2009-06-05-647-using-msmtp-for-a-desktop-system.html">Using msmtp for a desktop system ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-178854"></a>
+  <header>
+    <p><b>Gabriel C</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-05-14">2009-05-14</time></p>
+  </header>
+<p>On a similar vein, last month <a href="http://gabrielsw.blogspot.com/2009/04/spare-change-at-whole-static-vs-dynamic.html">I wrote about what I think are some advantages of static type systems.</a> Even the “lowly” Java. If I’m doing more than exploratory programming, not having to write tests for things that the compiler will catch for free is a win.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-178867"></a>
+  <header>
+    <p><b>Michael NIessner</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-05-14">2009-05-14</time></p>
+  </header>
+<p>Your example of the dynamic definition is poor. That method would most likely be defined as: add(integer, otherInteger). In fact, I find such a definitions to generally be more readable than the static equivalent since you don’t have meaningless names like i and j.</p>
+<p>One area where I think statically typed languages do get a big readability benefit is the explicit definition of interfaces versus just relying on duck typing. That benefit can be reduced by defining a class to represent the interface, even if no other classes inherit from it. Unfortunately, in most of the code I’ve read it is not done.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-178869"></a>
+  <header>
+    <p><b>Robert K</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-05-14">2009-05-14</time></p>
+  </header>
+<p>The example you give is trivial: add(int i, int j)</p>
+<p>More interesting would be how static typing helps or hinders tackling of more complex problems</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-178875"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-05-14">2009-05-14</time></p>
+  </header>
+<p><em><span class="citation" data-cites="Michael">@Michael</span></em>, you are right, the <em>better</em> way to document types of arguments in a dynamic language is through naming, but then you rely on everyone following that practice. That’s hard to achieve if you are interested in using 3rd-party libraries. Also, what do you name arguments in polymorphic functions, e.g. <code>int</code> in Python, <code>int(convertableToInt)</code>?</p>
+<p><em><span class="citation" data-cites="Robert">@Robert</span></em>, I chose that example <em>because</em> it is trivial. It’s something as central as a function call, something that shows up much more in programs than data types that require dynamic type checking like a date type. It is probably true that not <em>all</em> types can be automatically checked in a static language, but how can dynamic beat static if there is a need to manually check <em>every</em> function call in order to achieve the same assurance you get for free in a static language with a type system such as Java’s, not to mention Haskell or Scala?</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-178877"></a>
+  <header>
+    <p><b>Tony Morris</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-05-14">2009-05-14</time></p>
+  </header>
+<p>I’ll educate Randall on type systems if he likes. I’ve had to do it before based on similar mythologies but it was person to person/ However given the depth of his errors and the fact that I’d have to do it remotely, I think it would be difficult. I’ll give it a shot anyway – hopefully Randall is aware that perhaps he made a big mistake and will readily retract if need be – if only for his own learning purposes and make it easier to teach for me.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-178881"></a>
+  <header>
+    <p><b>Michael NIessner</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-05-14">2009-05-14</time></p>
+  </header>
+<p>I’d probably go with int(string_or_numeric). I wouldn’t go with convertableToInt unless I had defined a class/interface ConvertableToInt that implemented something like to_int or to_int_with_radix(integer), and int delegated to it.</p>
+<p>I tend to find that type safety doesn’t help me much in this situation. I’m much more likely to pass it an incorrectly formatted string than I am to make the mistake of calling int(employee_tuple) or int(customer_array).</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-178887"></a>
+  <header>
+    <p><b>unconvinced</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-05-14">2009-05-14</time></p>
+  </header>
+<p>This piece would be much more persuasive were it not for the fact that so many people in the FP world (specifically the Haskell community) are guilty of exactly that which you now accuse Randal of: specifically, holding up a lesser example from another, competing paradigm as proof of your preferred paradigm’s superiority.</p>
+<p>Haskell bigots readily portray Python or Javascript (non-homoiconic languages) as prime examples of dynamic languages generally, even though they know full well of the existence of Lisp and Smalltalk. Even better, many of them persist in using Java or C# as examples of object-oriented languages. I have yet to see one pompous ass with a lambda symbol featured prominently on his blog write an intelligent, thoughtful critique of OOP that does not use C#/Java/Python/some-other-non-pure-OO-language in its examples, and instead uses Smalltalk or Self. The Haskell Wiki even has the gall to use C++! You would never take seriously someone who attempted to criticize FP using a non-pure language that had some support for functional programming, such as Perl or Python, and yet you fully expect me to do just that when you criticize OOP in the same fashion?</p>
+<p>Such hypocrisy and intellectual dishonestly is unbecoming of a community that prides itself on being more academic, better educated.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-178889"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-05-14">2009-05-14</time></p>
+  </header>
+<p><em><span class="citation" data-cites="unconvinced">@unconvinced</span></em>, Besides that this post seems to have hit a nerve with you, you’re absolutely right, it isn’t acceptable anywhere. Please remember that communities are made up of individuals though.</p>
+<p>This post is about <em>a talk on dynamic typing</em>, not dynamic typing itself. It is also not a discussion on FP vs OOP, or any other paradigm for that matter.</p>
+<p>My reason for referring to Python rather than Lisp, Smalltalk, Perl, Ruby or any other dynamically typed language is simply that Python is the dynamic language I know best. I also don’t <em>believe</em> that the dynamic aspects of the type systems in those languages differ enough to be relevant in <em>this</em> discussion. Feel free to prove me wrong on that last bit though :-)</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-178909"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-05-15">2009-05-15</time></p>
+  </header>
+<p>There is a <a href="http://www.reddit.com/r/programming/comments/8kf9n/reply_to_randal_schwartz_on_dynamic_type_systems/">discussion on Reddit</a> about this blog post.</p>
+<p>(OT: I wonder if I’m the only one who thinks that Reddit might do more harm than good in that thanks to it discussions don’t take place “at the source”.)</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-178929"></a>
+  <header>
+    <p><b>mark</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-05-15">2009-05-15</time></p>
+  </header>
+<p>There is one problem - the (int bla, int ble) does not allow anything else to be used at all. In Ruby for example, you do - or the object in question does - have the freedom to dynamically respond to whatever the OBJECT can, and act on that.</p>
+<p>In most situations this may not be needed, but having this very ability completely changes everything. It is like using your eyes, as opposed to using a spyglass:</p>
+<p>Spyglass is of not much use in the close distance, but it beats the eye easily for remote distances.</p>
+<p>Bot versions <code>int add(int i, int j); int add(i, j);</code> suck because they do require restricting systems ultimately (ints are used in both cases, why cant it simply be add(i,j) and it just works in the most logical way possible?). And let’s be honest - this was done to make the compiler happy, it was NOT done to make the human happy ….</p>
+<p>PS: I would love to see a scripting language that retains being dynamic AND learned from PROLOG. Now that would be a very interesting language to see - down strict logical, but also attempting to stay as agile as possible. Sounds like conflicting interest… but could be cool</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-178945"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-05-15">2009-05-15</time></p>
+  </header>
+<p><em><span class="citation" data-cites="mark">@mark</span></em>, What do you mean by “this was done to make the compiler happy, it was NOT done to make the human happy”? In what sense wasn’t the “human” happy, and what “human” is that? Developer of the code in question, developer who uses the code as a 3rd party module, the end user?</p>
+<p>For all those cases of “humans” I know people who are happy with static typing, I also know people who aren’t happy with static typing.</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2009-05-14-629-reply-to-randal-on-dynamic-type-systems@therning.org?subject=A comment on Reply to Randal on dynamic type systems&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">On organising photos and Flickr</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2007-08-03">2007-08-03</time> - Magnus Therning</p>
+</header>
+
+<p>We’ve had a <em>very</em> poor organisation of our photos. Sometimes I’ve copied the photos off the camera into folders named after when the pictures were taken, sometimes I’ve just copied them into a folder based on the date I did the copying. Yet other times I couldn’t even be bothered to create a new folder, or rename any of the folders I copied off the camera. My wife has been using Yahoo Photos and for that we’ve sometimes created specific folders with <em>copies of photos</em> for uploading into albums. Well, it was a right mess.</p>
+<p>With Yahoo’s purchase of <a href="http://www.flickr.com/">Flickr</a> they are now closing down Yahoo Photos so this would be an excellent opportunity to not only move the albums but also organise all the photos locally and maybe even back them up. After reading <a href="http://changelog.complete.org/">John Goerzen</a>’s <a href="http://changelog.complete.org/posts/622-Review-of-Flickr.html">review of Flickr</a> I decided that Flickr was the way to go. I started with looking at some photo management software. Reading reviews gave me the feeling that what I wanted wasn’t so much a flashy GUI tool for playing around with our photos; what I wanted was a tool that would organise them for me into a hierarchy of folders. <a href="http://f-spot.org/">F-spot</a> can do that but it kept on crashing on me. Luckily I came across <a href="http://ui3.info/d/proj/photoname.html">photoname</a>, it’s a simple command line tool that does <em>exactly</em> what I want–copy photos into a folder hierarchy based on the EXIF data. Due to our terrible organisation we had several copies of the same photo in different places so it required a lot of manual labour to get all photos in order.</p>
+<p>Once that was done I started looking into how to upload everything to Flickr. I had already seen <a href="http://manishrjain.googlepages.com/flickrfs">flickrfs</a> but I had never tried. Irritatingly it adds the tag <code>flickrfs</code> to all pictures one uploads, thank goodness it’s FOSS; I made a <a href="http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=435661">patch</a>. I decided to tag all photos with year, month and date for now. Due to the hierarchy created by <em>photoname</em> I ended up running the following little shell/python snippet in each “year folder”:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">for</span> <span class="ex">d</span> in *<span class="kw">;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">    <span class="fu">cp</span> --verbose <span class="va">${d}</span>/* ~/tmp/flickrfs/stream:<span class="va">$(</span><span class="ex">python</span> -c \</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">    <span class="st">&quot;print ':'.join(map(''.join, zip(['Y', 'M', 'D'], '</span><span class="va">${d}</span><span class="st">'.split('-'))))&quot;</span><span class="va">)</span>/</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="kw">done</span></a></code></pre></div>
+<p>After quite a long wait I now have almost all the pictures uploaded to Flickr.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/flickr.html">flickr</a>, <a href="../tags/flickrfs.html">flickrfs</a>, <a href="../tags/photoname.html">photoname</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2007-08-03-312-links-and-stuff-382007.html">⟸ Links and stuff (3/8/2007)</a>
+
+
+
+<a href="../posts/2007-08-03-314-oscon-videos-are-available.html">OSCON videos are available ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-76035"></a>
+  <header>
+    <p><b>Pupeno</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-08-03">2007-08-03</time></p>
+  </header>
+<p>I always liked <a href="http://www.kphotoalbum.org/">KPhotoAlbum</a> to organize photos, it is really powerful.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-76041"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-08-03">2007-08-03</time></p>
+  </header>
+<p>Pupeno, I keep on hearing good things about KDE apps, it’s just that I don’t like mixing in KDE apps with my GNOME. Probably a completely misguided behaviour but until QT apps start looking like my GTK/GNOME ones they are too much of an eye-sore.</p>
+<p>I haven’t tried KDE since its pre-version 1 days. It’s probably worth trying it out to see if it beats my GNOME setup :-) Especially since I keep hearing good things about KDE4.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-78270"></a>
+  <header>
+    <p><b>Mortimer</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-08-29">2007-08-29</time></p>
+  </header>
+<p>the photoname link seems to be broken :(</p>
+<p>I tried F-Spot a while back and it was looking promising but not yet ready for really using it to organise my photos. I then tried KPhotoAlbum, and even if it’s “qt ugly” and doesn’t have a great viewer, it’s very nice and fast to tag/search photos.</p>
+<p>Thanks for the tip on uploading to flickr with flickrfs, I will have to try that sooner or later as it sounds really good.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-78271"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-08-29">2007-08-29</time></p>
+  </header>
+<p>Mortimer, yes it seems the page on photoname has been taken off-line :( <a href="http://www.mail-archive.com/haskell@haskell.org/msg20153.html">Here</a>’s a link to the announcement of photoname sent to the Haskell mailing list. It seems the source still is available in a darcs repo :)</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2007-08-03-313-on-organising-photos-and-flickr@therning.org?subject=A comment on On organising photos and Flickr&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

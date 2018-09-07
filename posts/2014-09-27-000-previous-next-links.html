@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Links to previous and next post</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2014-09-27">2014-09-27</time> - Magnus Therning</p>
+</header>
+
+<p>Currently the landing page contains all the posts I’ve written so far. That works for now, but it won’t for very long if I keep on writing posts. It certainly won’t work when I get around to importing all the posts from <a href="http://therning.org/magnus">my old blog</a>. Clearly I need to limit the posts that appear in <code>index.html</code> at some point, but before that two things need to be in place:</p>
+<ol type="1">
+<li>The post titles on the landing page should be links to the single-post page.</li>
+<li>The single-post pages should be linked together with links to the previous and next posts.</li>
+</ol>
+<p>I found another <a href="http://jaspervdj.be/hakyll/">hakyll</a>-based site that already implemented such previous-next links, <a href="http://rgoulter.com/blog/">Richard Goulter’s blog</a>. He even has a <a href="http://rgoulter.com/blog/posts/programming/2014-07-06-adding-nextprevious-post-to-hakyll.html">post about its implemantation</a>. It was a rather straigth-forward implementation and it served well as inspiration.</p>
+<h2 id="code-changes">Code changes</h2>
+<p>I want the links to have the post titles, not just general text like “previous post” and “next post”. That meant putting a total of four values into the context used to render the individual post pages, two URLs and two titles. That means <code>postCtx</code> will look like this:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">let</span> postCtx <span class="fu">=</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">        field <span class="st">&quot;previousPostUrl&quot;</span> (previousPostUrl <span class="st">&quot;posts/*&quot;</span>) <span class="fu">&lt;&gt;</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">        field <span class="st">&quot;previousPostTitle&quot;</span> (previousPostTitle <span class="st">&quot;posts/*&quot;</span>) <span class="fu">&lt;&gt;</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">        field <span class="st">&quot;nextPostUrl&quot;</span> (nextPostUrl <span class="st">&quot;posts/*&quot;</span>) <span class="fu">&lt;&gt;</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">        field <span class="st">&quot;nextPostTitle&quot;</span> (nextPostTitle <span class="st">&quot;posts/*&quot;</span>) <span class="fu">&lt;&gt;</span></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">        baseCtx</a></code></pre></div>
+<p>In implementing the functions to extract the URLs and titles I first tried working on a snapshot but that only resulted in circular dependencies, so I had to follow Richard’s lead and used <code>Identifier</code> to drive the whole thing. When done with functions for extracting both URL and title there was an obvious pattern so I generalised a little and refactored into a single function to do the grunt work:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">withRelatedPost::</span> (<span class="dt">MonadMetadata</span> m, <span class="dt">Alternative</span> m) <span class="ot">=&gt;</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">    (<span class="dt">Identifier</span> <span class="ot">-&gt;</span> [<span class="dt">Identifier</span>] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> t) <span class="ot">-&gt;</span> (t <span class="ot">-&gt;</span> m b) <span class="ot">-&gt;</span> <span class="dt">Pattern</span> <span class="ot">-&gt;</span> <span class="dt">Item</span> a <span class="ot">-&gt;</span> m b</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">withRelatedPost r f pattern item <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">    idents <span class="ot">&lt;-</span> getMatches pattern <span class="fu">&gt;&gt;=</span> sortRecentFirst</a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">    <span class="kw">let</span> id <span class="fu">=</span> itemIdentifier item</a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">        prevId <span class="fu">=</span> r id idents</a>
+<a class="sourceLine" id="cb2-7" data-line-number="7">    <span class="kw">case</span> prevId <span class="kw">of</span></a>
+<a class="sourceLine" id="cb2-8" data-line-number="8">        <span class="dt">Just</span> i <span class="ot">-&gt;</span> f i</a>
+<a class="sourceLine" id="cb2-9" data-line-number="9">        <span class="dt">Nothing</span> <span class="ot">-&gt;</span> empty</a></code></pre></div>
+<p>The <code>r</code> argument is a function that given the ID of the current item, and a list of the IDs of all items (sorted with the most recent first) returns the ID of a single item. With that it’s possible to create two more functions, one that operates on the previous post and one on the next post:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">withPreviousPost ::</span> (<span class="dt">MonadMetadata</span> m, <span class="dt">Alternative</span> m) <span class="ot">=&gt;</span> (<span class="dt">Identifier</span> <span class="ot">-&gt;</span> m b) <span class="ot">-&gt;</span> <span class="dt">Pattern</span> <span class="ot">-&gt;</span> <span class="dt">Item</span> a <span class="ot">-&gt;</span> m b</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">withPreviousPost <span class="fu">=</span> withRelatedPost itemAfter</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">    <span class="kw">where</span></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">        itemAfter x xs <span class="fu">=</span> lookup x <span class="fu">$</span> zip xs (tail xs)</a>
+<a class="sourceLine" id="cb3-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb3-6" data-line-number="6"><span class="ot">withNextPost ::</span> (<span class="dt">MonadMetadata</span> m, <span class="dt">Alternative</span> m) <span class="ot">=&gt;</span> (<span class="dt">Identifier</span> <span class="ot">-&gt;</span> m b) <span class="ot">-&gt;</span> <span class="dt">Pattern</span> <span class="ot">-&gt;</span> <span class="dt">Item</span> a <span class="ot">-&gt;</span> m b</a>
+<a class="sourceLine" id="cb3-7" data-line-number="7">withNextPost <span class="fu">=</span> withRelatedPost itemBefore</a>
+<a class="sourceLine" id="cb3-8" data-line-number="8">    <span class="kw">where</span></a>
+<a class="sourceLine" id="cb3-9" data-line-number="9">        itemBefore x xs <span class="fu">=</span> lookup x <span class="fu">$</span> zip (tail xs) xs</a></code></pre></div>
+<p>Now getting the URLs and titles becomes a few single-line functions:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">previousPostUrl ::</span> <span class="dt">Pattern</span> <span class="ot">-&gt;</span> <span class="dt">Item</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Compiler</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">previousPostUrl <span class="fu">=</span> withPreviousPost (fmap (maybe empty toUrl) <span class="fu">.</span> getRoute)</a>
+<a class="sourceLine" id="cb4-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4"><span class="ot">previousPostTitle ::</span> <span class="dt">Pattern</span> <span class="ot">-&gt;</span> <span class="dt">Item</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Compiler</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">previousPostTitle <span class="fu">=</span> withPreviousPost (\ i <span class="ot">-&gt;</span> getMetadataField' i <span class="st">&quot;title&quot;</span>)</a>
+<a class="sourceLine" id="cb4-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb4-7" data-line-number="7"><span class="ot">nextPostUrl ::</span> <span class="dt">Pattern</span> <span class="ot">-&gt;</span> <span class="dt">Item</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Compiler</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb4-8" data-line-number="8">nextPostUrl <span class="fu">=</span> withNextPost (fmap (maybe empty toUrl) <span class="fu">.</span> getRoute)</a>
+<a class="sourceLine" id="cb4-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb4-10" data-line-number="10"><span class="ot">nextPostTitle ::</span> <span class="dt">Pattern</span> <span class="ot">-&gt;</span> <span class="dt">Item</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Compiler</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb4-11" data-line-number="11">nextPostTitle <span class="fu">=</span> withNextPost (flip getMetadataField' <span class="st">&quot;title&quot;</span>)</a></code></pre></div>
+<p>What’s left is putting the fields to use in a template. The template itself is in the following section. The compilation step is modified to use the new context, and the new template is put in after the snapshot so the added links don’t appear in the <code>index.html</code>.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1">pandocCompiler</a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">    <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/single-post.html&quot;</span> postCtx</a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">    <span class="fu">&gt;&gt;=</span> saveSnapshot <span class="st">&quot;posts-content&quot;</span></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">    <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/single-post-prev-next.html&quot;</span> postCtx</a>
+<a class="sourceLine" id="cb5-5" data-line-number="5">    <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/default.html&quot;</span> postCtx</a>
+<a class="sourceLine" id="cb5-6" data-line-number="6">    <span class="fu">&gt;&gt;=</span> relativizeUrls</a></code></pre></div>
+<h2 id="template-changes">Template changes</h2>
+<p>The added template is short and rather short and obvious:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb6-1" data-line-number="1">$body$</a>
+<a class="sourceLine" id="cb6-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb6-3" data-line-number="3"><span class="kw">&lt;div&gt;</span></a>
+<a class="sourceLine" id="cb6-4" data-line-number="4">$if(previousPostUrl)$</a>
+<a class="sourceLine" id="cb6-5" data-line-number="5"><span class="kw">&lt;a</span><span class="ot"> href=</span><span class="st">&quot;$previousPostUrl$&quot;</span><span class="kw">&gt;</span><span class="dv">&amp;#10232;</span> $previousPostTitle$<span class="kw">&lt;/a&gt;</span></a>
+<a class="sourceLine" id="cb6-6" data-line-number="6">$endif$</a>
+<a class="sourceLine" id="cb6-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb6-8" data-line-number="8">$if(nextPostUrl)$</a>
+<a class="sourceLine" id="cb6-9" data-line-number="9"><span class="kw">&lt;a</span><span class="ot"> href=</span><span class="st">&quot;$nextPostUrl$&quot;</span><span class="kw">&gt;</span>$nextPostTitle$ <span class="dv">&amp;#10233;</span><span class="kw">&lt;/a&gt;</span></a>
+<a class="sourceLine" id="cb6-10" data-line-number="10">$endif$</a>
+<a class="sourceLine" id="cb6-11" data-line-number="11"><span class="kw">&lt;/div&gt;</span></a></code></pre></div>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/hakyll.html">hakyll</a>, <a href="../tags/haskell.html">haskell</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2014-09-25-000-converting-posts-from-wp.html">⟸ Converting posts from WordPress</a>
+
+
+
+<a href="../posts/2014-09-29-000-support-for-comments.html">Adding support for comments ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2014-09-27-000-previous-next-links@therning.org?subject=A comment on Links to previous and next post&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

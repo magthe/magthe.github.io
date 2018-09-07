@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Even more Cabal fun, visualising in 3d</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2009-02-27">2009-02-27</time> - Magnus Therning</p>
+</header>
+
+<p><a href="http://twitter.com/avsm">avsm</a> pointed me to <a href="http://ubietylab.net/ubigraph/">ubigraph</a>. So after a bit of XML-RPC hacking (<a href="http://hackage.haskell.org/cgi-bin/hackage-scripts/package/haxr">haxr</a> <em>really</em> rocks, it is just so amazingly easy to use) I now have code that sends the graph data over to a ubigraph server.</p>
+<p>Of course I had to create a video of it. The <a href="http://therning.org/magnus_files/cabal-deps-ubigraph-01.mpeg">video</a> shows the dependencies of just two packages (<a href="http://hackage.haskell.org/cgi-bin/hackage-scripts/package/dataenc">dataenc</a> and <a href="http://hackage.haskell.org/cgi-bin/hackage-scripts/package/datetime">datetime</a>). I tried creating a second video of the dependencies of more packages, but xvidcap isn’t very reliable it seems. One irritating thing is that I run out of filehandles fairly soon, so I couldn’t create a 3d graph of more than about 75 packages (all packages starting with ‘a’ and ‘b’ on Hackage).</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/cabal.html">cabal</a>, <a href="../tags/haskell.html">haskell</a>, <a href="../tags/ubigraph.html">ubigraph</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2009-02-27-534-more-fun-with-cabal-visualising-dependencies.html">⟸ More fun with Cabal, visualising dependencies</a>
+
+
+
+<a href="../posts/2009-04-01-549-virtualbox-with-linux-2629.html">VirtualBox with Linux 2.6.29 ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-171863"></a>
+  <header>
+    <p><b>Valery V. Vorotyntsev</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-03-03">2009-03-03</time></p>
+  </header>
+<p>Please, correct the link to <code>haxr</code>. (Current one refers to <code>dataenc</code>.) :)</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-171874"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-03-03">2009-03-03</time></p>
+  </header>
+<p><em><span class="citation" data-cites="Valery">@Valery</span></em>, done! Thanks!</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2009-02-27-543-even-more-cabal-fun-visualising-in-3d@therning.org?subject=A comment on Even more Cabal fun, visualising in 3d&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

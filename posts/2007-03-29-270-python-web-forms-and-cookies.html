@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Python, web forms and cookies</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2007-03-29">2007-03-29</time> - Magnus Therning</p>
+</header>
+
+<p>Just the other day I finally got around to something that I’ve wanted to play around with for a fairly long time—posting web forms using python. As an added bonus I also took a look at dealing with cookies in Python.</p>
+<p>For posting forms there is of course a module that makes things a lot easier, <a href="http://wwwsearch.sourceforge.net/mechanize/">mechanize</a>, but I wanted to first of all understand how to do it myself and secondly to avoid using anything but the standard Python modules. It turns out there isn’t much to understand. Say that we have a very simple form, say it’s a login form containing two text entries:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">&lt;form</span><span class="ot"> method=</span><span class="st">&quot;post&quot;</span><span class="ot"> action=</span><span class="st">&quot;/login&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;user_name&quot;</span><span class="kw">&gt;</span>username<span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;text&quot;</span><span class="ot"> name=</span><span class="st">&quot;user_name&quot;</span><span class="ot"> id=</span><span class="st">&quot;user_name&quot;</span><span class="ot"> value=</span><span class="st">&quot;&quot;</span> <span class="kw">/&gt;</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;password&quot;</span><span class="kw">&gt;</span>password<span class="kw">&lt;/label&gt;</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;password&quot;</span><span class="ot"> name=</span><span class="st">&quot;password&quot;</span><span class="ot"> id=</span><span class="st">&quot;password&quot;</span><span class="ot"> class=</span><span class="st">&quot;sized&quot;</span> <span class="kw">/&gt;</span></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;submit&quot;</span><span class="ot"> class=</span><span class="st">&quot;button&quot;</span><span class="ot"> name=</span><span class="st">&quot;login&quot;</span><span class="ot"> value=</span><span class="st">&quot;log in&quot;</span> <span class="kw">/&gt;</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">&lt;/form&gt;</span></a></code></pre></div>
+<p>One way to post this form would be the following:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="im">import</span> urllib</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2"><span class="im">import</span> urllib2</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">login_data <span class="op">=</span> urllib.urlencode({<span class="st">'user_name'</span> : <span class="st">'foo'</span>, <span class="st">'password'</span> : <span class="st">'bar'</span>})</a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">resp <span class="op">=</span> urllib2.urlopen(<span class="st">'http://url.for.my.site/login'</span>, login_data)</a></code></pre></div>
+<p>Simple enough, I’d say. <code>urllib2.urlopen</code> automatically switches from <code>GET</code> to <code>POST</code> on the existance of some data.</p>
+<p>On most sites a cookie is used to track whether a user is logged in or not. Extending the example above to deal with this and enable subsequent requests to the site as a logged-in user leads us to the <code>CookieJar</code>:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="im">import</span> urllib</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2"><span class="im">import</span> urllib2</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3"><span class="im">import</span> cookielib</a>
+<a class="sourceLine" id="cb3-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">cj <span class="op">=</span> cookielib.CookieJar()</a>
+<a class="sourceLine" id="cb3-6" data-line-number="6">opener <span class="op">=</span> urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))</a>
+<a class="sourceLine" id="cb3-7" data-line-number="7">login_data <span class="op">=</span> urllib.urlencode({<span class="st">'user_name'</span> : <span class="st">'foo'</span>, <span class="st">'password'</span> : <span class="st">'bar'</span>})</a>
+<a class="sourceLine" id="cb3-8" data-line-number="8">resp <span class="op">=</span> opener.<span class="bu">open</span>(<span class="st">'http://url.for.my.site/login'</span>, login_data)</a></code></pre></div>
+<p>After this <code>cj</code> will hold all the cookies returned in the response. You can enumerate over them like this:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="cf">for</span> c <span class="kw">in</span> <span class="bu">enumerate</span>(cj):</a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">    <span class="bu">print</span> c.name, c.value</a></code></pre></div>
+<p>Making requests with a cookie <code>c</code> is simple as well, just add <code>c</code> to the cookie jar before making the request:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb5-1" data-line-number="1">cj.set_cookie(c)</a></code></pre></div>
+<p>The cookie jar also has a <a href="http://www.python.org/doc/2.4.4/lib/cookie-policy-objects.html">policy object</a> and a method, <code>set_cookie_if_ok</code> that will set a cookie for a specific request only if the policy allows it. I.e. it seems fairly simple to make sure there is no cookie leakage when making requests to multiple sites. I’ll leaving playing with that for another day though.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/python.html">python</a>, <a href="../tags/web%20programming.html">web programming</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2007-03-23-269-repeat-and-sequence.html">⟸ repeat and sequence</a>
+
+
+
+<a href="../posts/2007-03-30-271-more-on-the-weirdness-that-is-delicious-api.html">More on the weirdness that is del.icio.us API ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-38485"></a>
+  <header>
+    <p><b>Dominique Valentine</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-05-09">2007-05-09</time></p>
+  </header>
+<p>This was great. Thank you.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-59444"></a>
+  <header>
+    <p><b>Travis</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-06-07">2007-06-07</time></p>
+  </header>
+<p>Great explanation, thanks.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-78801"></a>
+  <header>
+    <p><b>chenz</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-09-04">2007-09-04</time></p>
+  </header>
+<p>nice recipe, maybe we can implement a session module using this, which can manage connections from the client.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-78883"></a>
+  <header>
+    <p><b>james</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-09-05">2007-09-05</time></p>
+  </header>
+<p>exactly what i was looking for, thanks!</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-124850"></a>
+  <header>
+    <p><b>marc</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-06-01">2008-06-01</time></p>
+  </header>
+<p>wow thanks. i’ve been looking for this a long time :)</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-163820"></a>
+  <header>
+    <p><b>lee</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-12-03">2008-12-03</time></p>
+  </header>
+<p>thank you, i like this solution without any 3rd party module.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-194464"></a>
+  <header>
+    <p><b>Julien ÉLIE</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-12-01">2009-12-01</time></p>
+  </header>
+<p>I had to use <code>c[1]</code> instead of c because I receive a tuple (at least with Pyhon 2.6).</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="cf">for</span> c <span class="kw">in</span> <span class="bu">enumerate</span>(cj):</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">    <span class="bu">print</span> c[<span class="dv">1</span>].name, c[<span class="dv">1</span>].value</a></code></pre></div>
+<p>Thanks for your article!</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-195248"></a>
+  <header>
+    <p><b>Matt</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-12-16">2009-12-16</time></p>
+  </header>
+<p>Very helpful- but I can’t figure out how to print (or save to txt) the results of the search.</p>
+<p>when i do a print resp command I get this in the shell:</p>
+<pre><code>addinfourl at 21503312 whose fp = &gt;</code></pre>
+<p>could someone please help?</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2007-03-29-270-python-web-forms-and-cookies@therning.org?subject=A comment on Python, web forms and cookies&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

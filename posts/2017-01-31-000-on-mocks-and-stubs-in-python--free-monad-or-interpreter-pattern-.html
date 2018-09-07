@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">On mocks and stubs in python (free monad or interpreter pattern)</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2017-01-31">2017-01-31</time> - Magnus Therning</p>
+</header>
+
+<p>A few weeks ago I watched a video where <a href="https://youtu.be/EaxDl5NPuCA">Ken Scambler talks about mocks and stubs</a>. In particular he talks about how to get rid of them.</p>
+<p>One part is about coding IO operatioins as data and using the GoF interpreter pattern to</p>
+<p>What he’s talking about is of course free monads, but I feel he’s glossing over a lot of details. Based on some of the questions asked during the talk I think I share that feeling with some people in the audience. Specifically I feel he skipped over the following:</p>
+<ul>
+<li>How does one <em>actually</em> write such code in a mainstream OO/imperative language?</li>
+<li>What’s required of the language in order to allow using the techniques he’s talking about?</li>
+<li>Errors tend to break abstractions, so how does one deal with error (i.e. exceptions)?</li>
+</ul>
+<p>Every time I’ve used mocks and stubs for unit testing I’ve had a feeling that “this can’t be how it’s supposed to be done!” So to me, Ken’s talk offered some hope, and I <em>really</em> want to know how applicable the ideas are in mainstream OO/imperative languages.</p>
+<h3 id="the-example">The example</h3>
+<p>To play around with this I picked the following function (in Python):</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">def</span> count_chars_of_file(fn):</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">    fd <span class="op">=</span> os.<span class="bu">open</span>(fn, os.O_RDONLY)</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">    text <span class="op">=</span> os.read(fd, <span class="dv">10000</span>)</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">    n <span class="op">=</span> <span class="bu">len</span>(text)</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">    os.close(fd)</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">    <span class="cf">return</span> n</a></code></pre></div>
+<p>It’s small and simple, but I think it suffices to highlight a few important points. So the goal is to rewrite this function such that calls to IO operations (actions) (e.g. <code>os.read</code>) are replaced by data (an instance of some data type) conveying the intent of the operation. This data can later be passed to an <em>interpreter of actions</em>.</p>
+<h3 id="thoughts-on-the-execution-of-actions-and-the-interpreter-pattern">Thoughts on the execution of actions and the interpreter pattern</h3>
+<p>When reading the examples in the <a href="http://www.oodesign.com/interpreter-pattern.html">description of the interpreter pattern</a> what stands out to me is that they are either</p>
+<ol type="1">
+<li>a list of expressions, or</li>
+<li>a tree of expressions</li>
+</ol>
+<p>that is passed to an interpreter. Will this do for us when trying to rewrite <code>count_chars_of_file</code>?</p>
+<p>No, it won’t! Here’s why:</p>
+<ul>
+<li>A tree of actions doesn’t really make sense. Our actions are small and simple, they encode the intent of a single IO operation.</li>
+<li>A list of actions can’t deal with interspersed non-actions, in this case it’s the line <code>n = len(text)</code> that causes a problem.</li>
+</ul>
+<p>The interpreter pattern misses something that is crucial in this case: the running of the interpreter must be intermingled with running non-interpreted code. The way I think of it is that not only the action needs to be present and dealt with, but also <em>the rest of the program</em>, that latter thing is commonly called a <em>continuation</em>.</p>
+<p>So, can we introduce actions and rewrite <code>count_chars_of_file</code> such that we pause the program when interpretation of an action is required, interpret it, and then resume where we left off?</p>
+<p>Sure, but it’s not really idiomatic Python code!</p>
+<h3 id="actions-and-continuations">Actions and continuations</h3>
+<p>The IO operations (actions) are represented as a named tuple:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb2-1" data-line-number="1">Op <span class="op">=</span> collections.namedtuple(<span class="st">'Op'</span>, [<span class="st">'op'</span>, <span class="st">'args'</span>, <span class="st">'k'</span>])</a></code></pre></div>
+<p>and the functions returning actions can then be written as</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">def</span> cps_open(fn, k):</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">    <span class="cf">return</span> Op(<span class="st">'open'</span>, [fn], k)</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4"><span class="kw">def</span> cps_read(fd, k):</a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">    <span class="cf">return</span> Op(<span class="st">'read'</span>, [fd], k)</a>
+<a class="sourceLine" id="cb3-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb3-7" data-line-number="7"><span class="kw">def</span> cps_close(fd, k):</a>
+<a class="sourceLine" id="cb3-8" data-line-number="8">    <span class="cf">return</span> Op(<span class="st">'close'</span>, [fd], k)</a></code></pre></div>
+<p>The interpreter is then an <em>if</em> statement checking the value of <code>op.op</code> with each branch executing the IO operation and passing the result to the rest of the program. I decided to wrap it directly in the program runner:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="kw">def</span> runProgram(prog):</a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">    <span class="kw">def</span> runOp(op):</a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">        <span class="cf">if</span> op.op <span class="op">==</span> <span class="st">'open'</span>:</a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">            fd <span class="op">=</span> os.<span class="bu">open</span>(<span class="op">*</span>op.args, os.O_RDONLY)</a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">            <span class="cf">return</span> op.k(fd)</a>
+<a class="sourceLine" id="cb4-6" data-line-number="6">        <span class="cf">elif</span> op.op <span class="op">==</span> <span class="st">'read'</span>:</a>
+<a class="sourceLine" id="cb4-7" data-line-number="7">            text <span class="op">=</span> os.read(<span class="op">*</span>op.args, <span class="dv">10000</span>)</a>
+<a class="sourceLine" id="cb4-8" data-line-number="8">            <span class="cf">return</span> op.k(text)</a>
+<a class="sourceLine" id="cb4-9" data-line-number="9">        <span class="cf">elif</span> op.op <span class="op">==</span> <span class="st">'close'</span>:</a>
+<a class="sourceLine" id="cb4-10" data-line-number="10">            os.close(<span class="op">*</span>op.args)</a>
+<a class="sourceLine" id="cb4-11" data-line-number="11">            <span class="cf">return</span> op.k()</a>
+<a class="sourceLine" id="cb4-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb4-13" data-line-number="13">    <span class="cf">while</span> <span class="bu">isinstance</span>(prog, Op):</a>
+<a class="sourceLine" id="cb4-14" data-line-number="14">        prog <span class="op">=</span> runOp(prog)</a>
+<a class="sourceLine" id="cb4-15" data-line-number="15"></a>
+<a class="sourceLine" id="cb4-16" data-line-number="16">    <span class="cf">return</span> prog</a></code></pre></div>
+<p>So far so good, but what will <code>count_char_of_file</code> all of this do to <code>count_chars_of_file</code>?</p>
+<p>Well, it’s not quite as easy to read any more (basically it’s rewritten in <a href="https://en.wikipedia.org/wiki/Continuation-passing_style">CPS</a>):</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="kw">def</span> count_chars_of_file(fn):</a>
+<a class="sourceLine" id="cb5-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">    <span class="kw">def</span> cont_1(text, fd):</a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">        n <span class="op">=</span> <span class="bu">len</span>(text)</a>
+<a class="sourceLine" id="cb5-5" data-line-number="5">        <span class="cf">return</span> cps_close(fd, <span class="kw">lambda</span> n<span class="op">=</span>n: n)</a>
+<a class="sourceLine" id="cb5-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb5-7" data-line-number="7">    <span class="kw">def</span> cont_0(fd):</a>
+<a class="sourceLine" id="cb5-8" data-line-number="8">        <span class="cf">return</span> cps_read(fd, <span class="kw">lambda</span> text, fd<span class="op">=</span>fd: cont_1(text, fd))</a>
+<a class="sourceLine" id="cb5-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb5-10" data-line-number="10">    <span class="cf">return</span> cps_open(fn, cont_0)</a></code></pre></div>
+<h3 id="generators-to-the-rescue">Generators to the rescue</h3>
+<p>Python does have a notion of continuations in the form of generators.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> By making <code>count_char_of_file</code> into a generator it’s possible to remove the explicit continuations and the program actually resembles the original one again.</p>
+<p>The type for the actions loses one member, and the functions creating them lose an argument:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb6-1" data-line-number="1">Op <span class="op">=</span> collections.namedtuple(<span class="st">'Op'</span>, [<span class="st">'op'</span>, <span class="st">'args'</span>])</a>
+<a class="sourceLine" id="cb6-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb6-3" data-line-number="3"><span class="kw">def</span> gen_open(fn):</a>
+<a class="sourceLine" id="cb6-4" data-line-number="4">    <span class="cf">return</span> Op(<span class="st">'open'</span>, [fn])</a>
+<a class="sourceLine" id="cb6-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb6-6" data-line-number="6"><span class="kw">def</span> gen_read(fd):</a>
+<a class="sourceLine" id="cb6-7" data-line-number="7">    <span class="cf">return</span> Op(<span class="st">'read'</span>, [fd])</a>
+<a class="sourceLine" id="cb6-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb6-9" data-line-number="9"><span class="kw">def</span> gen_close(fd):</a>
+<a class="sourceLine" id="cb6-10" data-line-number="10">    <span class="cf">return</span> Op(<span class="st">'close'</span>, [fd])</a></code></pre></div>
+<p>The interpreter and program runner must be modified to step the generator until its end:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="kw">def</span> runProgram(prog):</a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">    <span class="kw">def</span> runOp(op):</a>
+<a class="sourceLine" id="cb7-3" data-line-number="3">        <span class="cf">if</span> op.op <span class="op">==</span> <span class="st">'open'</span>:</a>
+<a class="sourceLine" id="cb7-4" data-line-number="4">            fd <span class="op">=</span> os.<span class="bu">open</span>(op.args[<span class="dv">0</span>], os.O_RDONLY)</a>
+<a class="sourceLine" id="cb7-5" data-line-number="5">            <span class="cf">return</span> fd</a>
+<a class="sourceLine" id="cb7-6" data-line-number="6">        <span class="cf">elif</span> op.op <span class="op">==</span> <span class="st">'read'</span>:</a>
+<a class="sourceLine" id="cb7-7" data-line-number="7">            text <span class="op">=</span> os.read(op.args[<span class="dv">0</span>], <span class="dv">10000</span>)</a>
+<a class="sourceLine" id="cb7-8" data-line-number="8">            <span class="cf">return</span> text</a>
+<a class="sourceLine" id="cb7-9" data-line-number="9">        <span class="cf">elif</span> op.op <span class="op">==</span> <span class="st">'close'</span>:</a>
+<a class="sourceLine" id="cb7-10" data-line-number="10">            os.close(op.args[<span class="dv">0</span>])</a>
+<a class="sourceLine" id="cb7-11" data-line-number="11">            <span class="cf">return</span> <span class="va">None</span></a>
+<a class="sourceLine" id="cb7-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb7-13" data-line-number="13">    <span class="cf">try</span>:</a>
+<a class="sourceLine" id="cb7-14" data-line-number="14">        op <span class="op">=</span> prog.send(<span class="va">None</span>)</a>
+<a class="sourceLine" id="cb7-15" data-line-number="15">        <span class="cf">while</span> <span class="va">True</span>:</a>
+<a class="sourceLine" id="cb7-16" data-line-number="16">            r <span class="op">=</span> runOp(op)</a>
+<a class="sourceLine" id="cb7-17" data-line-number="17">            op <span class="op">=</span> prog.send(r)</a>
+<a class="sourceLine" id="cb7-18" data-line-number="18">    <span class="cf">except</span> <span class="pp">StopIteration</span> <span class="im">as</span> e:</a>
+<a class="sourceLine" id="cb7-19" data-line-number="19">        <span class="cf">return</span> e.value</a></code></pre></div>
+<p>Finally, the generator-version of <code>count_chars_of_file</code> goes back to being a bit more readable:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="kw">def</span> count_chars_of_file(fn):</a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">    fd <span class="op">=</span> <span class="cf">yield</span> gen_open(fn)</a>
+<a class="sourceLine" id="cb8-3" data-line-number="3">    text <span class="op">=</span> <span class="cf">yield</span> gen_read(fd)</a>
+<a class="sourceLine" id="cb8-4" data-line-number="4">    n <span class="op">=</span> <span class="bu">len</span>(text)</a>
+<a class="sourceLine" id="cb8-5" data-line-number="5">    <span class="cf">yield</span> gen_close(fd)</a>
+<a class="sourceLine" id="cb8-6" data-line-number="6">    <span class="cf">return</span> n</a></code></pre></div>
+<h3 id="generators-all-the-way">Generators all the way</h3>
+<p>Limitations of Python generators mean that we have either have to push the interpreter (<code>runProgram</code>) down to where <code>count_char_of_file</code> is used, or make all intermediate layers into generators and rewrite the interpreter to deal with this. It could look something like this then:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="kw">def</span> runProgram(prog):</a>
+<a class="sourceLine" id="cb9-2" data-line-number="2">    <span class="kw">def</span> runOp(op):</a>
+<a class="sourceLine" id="cb9-3" data-line-number="3">        <span class="cf">if</span> op.op <span class="op">==</span> <span class="st">'open'</span>:</a>
+<a class="sourceLine" id="cb9-4" data-line-number="4">            fd <span class="op">=</span> os.<span class="bu">open</span>(op.args[<span class="dv">0</span>], os.O_RDONLY)</a>
+<a class="sourceLine" id="cb9-5" data-line-number="5">            <span class="cf">return</span> fd</a>
+<a class="sourceLine" id="cb9-6" data-line-number="6">        <span class="cf">elif</span> op.op <span class="op">==</span> <span class="st">'read'</span>:</a>
+<a class="sourceLine" id="cb9-7" data-line-number="7">            text <span class="op">=</span> os.read(op.args[<span class="dv">0</span>], <span class="dv">10000</span>)</a>
+<a class="sourceLine" id="cb9-8" data-line-number="8">            <span class="cf">return</span> text</a>
+<a class="sourceLine" id="cb9-9" data-line-number="9">        <span class="cf">elif</span> op.op <span class="op">==</span> <span class="st">'close'</span>:</a>
+<a class="sourceLine" id="cb9-10" data-line-number="10">            os.close(op.args[<span class="dv">0</span>])</a>
+<a class="sourceLine" id="cb9-11" data-line-number="11">            <span class="cf">return</span> <span class="va">None</span></a>
+<a class="sourceLine" id="cb9-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb9-13" data-line-number="13">    <span class="cf">try</span>:</a>
+<a class="sourceLine" id="cb9-14" data-line-number="14">        op <span class="op">=</span> prog.send(<span class="va">None</span>)</a>
+<a class="sourceLine" id="cb9-15" data-line-number="15">        <span class="cf">while</span> <span class="va">True</span>:</a>
+<a class="sourceLine" id="cb9-16" data-line-number="16">            <span class="cf">if</span> <span class="bu">isinstance</span>(op, Op):</a>
+<a class="sourceLine" id="cb9-17" data-line-number="17">                r <span class="op">=</span> runOp(op)</a>
+<a class="sourceLine" id="cb9-18" data-line-number="18">                op <span class="op">=</span> prog.send(r)</a>
+<a class="sourceLine" id="cb9-19" data-line-number="19">            <span class="cf">elif</span> <span class="bu">isinstance</span>(op, types.GeneratorType):</a>
+<a class="sourceLine" id="cb9-20" data-line-number="20">                r <span class="op">=</span> runProgram(op)</a>
+<a class="sourceLine" id="cb9-21" data-line-number="21">                op <span class="op">=</span> prog.send(r)</a>
+<a class="sourceLine" id="cb9-22" data-line-number="22"></a>
+<a class="sourceLine" id="cb9-23" data-line-number="23">    <span class="cf">except</span> <span class="pp">StopIteration</span> <span class="im">as</span> e:</a>
+<a class="sourceLine" id="cb9-24" data-line-number="24">        <span class="cf">return</span> e.value</a></code></pre></div>
+<h3 id="final-thoughts">Final thoughts</h3>
+<p>I think I’ve shown one way to achieve, at least parts of, what Ken talks about. The resulting code looks almost like “normal Python”. There are some things to note:</p>
+<ol type="1">
+<li>Exception handling is missing. I know of no way to inject an exception into a generator in Python so I’m guessing that exceptions from running the IO operations would have to be passed in via <code>generator.send</code> as a normal value, which means that exception handling code would have to look decidedly non-Pythonic.</li>
+<li>Using this approach means the language must have support for generators (or some other way to represent <em>the rest of the program</em>). I think this rules out Java, but probably it can be done in C#.</li>
+<li>I’ve only used a single interpreter here, but I see no issues with combining interpreters (to combine domains of operations like <em>file operations</em> and <em>network operations</em>). I also think it’d be possible to use it to realize what De Goes calls <a href="http://degoes.net/articles/modern-fp-part-2#onion-architecture">Onion Architecture</a>.</li>
+</ol>
+<p>Would I ever advocate this approach for a larger Python project, or even any project in an OO/imperative language?</p>
+<p>I’m not sure! I think that testing using mocks and stubs has lead to a smelly code base each an every time I’ve used it, but this approach feels a little too far from how OO/imperative code usually is written. I would love to try it out and see what the implications really are.</p>
+<section class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>I know, I know, <em>coroutines</em>! I’m simplifying and brushing over details here, but I don’t think I’m brushing over any details that are <em>important</em> for this example.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+</ol>
+</section>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/python.html">python</a>, <a href="../tags/free.html">free</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2016-10-21-000-large-project.html">⟸ That's a large project</a>
+
+
+
+<a href="../posts/2018-06-19-000-a-simple-zaw-widget.html">A simple zaw widget for jumping to git projects ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2017-01-31-000-on-mocks-and-stubs-in-python--free-monad-or-interpreter-pattern-@therning.org?subject=A comment on On mocks and stubs in python (free monad or interpreter pattern)&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

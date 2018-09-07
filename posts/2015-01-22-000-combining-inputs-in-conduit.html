@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Combining inputs in conduit</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2015-01-22">2015-01-22</time> - Magnus Therning</p>
+</header>
+
+<p>The code the post on using my <a href="../posts/2015-01-13-000-state-machine-with-conduit.html">simplistic state machine together with conduit</a> will happily wait forever for input, and the only way to terminate it is pressing Ctrl-C. In this series I’m writing a simple adder machine, but my actual use case for these ideas are protocols for communication (see the <a href="../posts/2015-01-03-000-simple-state-machines-in-haskell.html">first post</a>), and waiting forever isn’t such a good thing; I want my machine to time out if input doesn’t arrive in a timely fashion.</p>
+<p>I can think of a few ways to achieve this:</p>
+<ol type="1">
+<li>Use a watchdog thread that is signalled from the main thread, e.g. by a <code>Conduit</code> that sends a signal as each <code>Char</code> passes through it.</li>
+<li>As each <code>Char</code> is read kick off a “timeout thread” which throws an exception back to the main thread, unless the main thread kills it before the timeout expires.</li>
+<li>Run a thread that creates ticks that then can be combined with the <code>Char</code>s read and fed into the state machine itself.</li>
+</ol>
+<p>Since this is all about state machines I’ve opted for option 3. Furthermore, since I’ve recently finished reading the excellent <em>Parallel and Concurrent Programming in Haskell</em> I decided to attempt writing the <em>conduit</em> code myself instead of using something like <a href="http://hackage.haskell.org/package/stm-conduit">stm-conduit</a>.</p>
+<p>The idea is to write two functions:</p>
+<ol type="1">
+<li>one <code>Source</code> to combine two <code>Source</code>s, and</li>
+<li>one <code>Sink</code> that writes its input into a <code>TMVar</code>.</li>
+</ol>
+<p>The latter of the two is the easiest one. Given a <code>TMVar</code> it just awaits input, stores it in the <code>TMVar</code> and then calls itself:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">sinkTMVar ::</span> <span class="dt">MonadIO</span> m <span class="ot">=&gt;</span> <span class="dt">TMVar</span> a <span class="ot">-&gt;</span> <span class="dt">Sink</span> a m ()</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">sinkTMVar tmv <span class="fu">=</span> forever <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">    v <span class="ot">&lt;-</span> await</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">    <span class="kw">case</span> v <span class="kw">of</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">        <span class="dt">Nothing</span> <span class="ot">-&gt;</span> return ()</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">        <span class="dt">Just</span> v' <span class="ot">-&gt;</span> liftIO (atomically <span class="fu">$</span> putTMVar tmv v')</a></code></pre></div>
+<p>The other one is only slightly more involved:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">whyTMVar ::</span> <span class="dt">MonadIO</span> m <span class="ot">=&gt;</span> <span class="dt">Source</span> (<span class="dt">ResourceT</span> <span class="dt">IO</span>) a <span class="ot">-&gt;</span> <span class="dt">Source</span> (<span class="dt">ResourceT</span> <span class="dt">IO</span>) a <span class="ot">-&gt;</span> <span class="dt">Source</span> m a</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">whyTMVar src1 src2 <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">    t1 <span class="ot">&lt;-</span> liftIO newEmptyTMVarIO </a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">    t2 <span class="ot">&lt;-</span> liftIO newEmptyTMVarIO</a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">    void <span class="fu">$</span> liftIO <span class="fu">$</span> async <span class="fu">$</span> fstProc t1</a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">    void <span class="fu">$</span> liftIO <span class="fu">$</span> async <span class="fu">$</span> sndProc t2</a>
+<a class="sourceLine" id="cb2-7" data-line-number="7">    forever <span class="fu">$</span> liftIO (atomically <span class="fu">$</span> takeTMVar t1 <span class="ot">`orElse`</span> takeTMVar t2) <span class="fu">&gt;&gt;=</span> C.yield</a>
+<a class="sourceLine" id="cb2-8" data-line-number="8">    </a>
+<a class="sourceLine" id="cb2-9" data-line-number="9">    <span class="kw">where</span></a>
+<a class="sourceLine" id="cb2-10" data-line-number="10">        fstProc t <span class="fu">=</span> runResourceT <span class="fu">$</span> src1 <span class="fu">$$</span> sinkTMVar t</a>
+<a class="sourceLine" id="cb2-11" data-line-number="11">        sndProc t <span class="fu">=</span> runResourceT <span class="fu">$</span> src2 <span class="fu">$$</span> sinkTMVar t</a></code></pre></div>
+<p>Rather short and sweet I think. However, there are a few things that I’m not completely sure of yet.</p>
+<dl>
+<dt><code>forkIO</code> vs. <code>async</code> vs. <code>resourceForkIO</code></dt>
+<dd>There is a choice between at least three functions when it comes to creating the threads and I haven’t looked into which one is better to use. AFAIU there may be issues around exception handling and with resources. For now I’ve gone with <code>async</code> for no particular reason at all.
+</dd>
+<dt>Using <code>TMVar</code></dt>
+<dd>In this example the input arrives rather slowly, which means having room for a single piece at a time is enough. If the use case changes and input arrives quicker then this decision has to be revisited. I’d probably choose to use <a href="http://hackage.haskell.org/package/stm-conduit">stm-conduit</a> in that case since it uses <code>TMChan</code> internally.
+</dd>
+<dt>Combining only two <code>Source</code>s</dt>
+<dd>Again, this use case doesn’t call for more than two <code>Source</code>s, at least at this point. If the need arises for using more <code>Source</code>s I’ll switch to <a href="http://hackage.haskell.org/package/stm-conduit">stm-conduit</a> since it already defines a function to combine a list of <code>Source</code>s.
+</dd>
+</dl>
+<p>The next step will be to modify the <em>conduit</em> process and the state machine.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/conduit.html">conduit</a>, <a href="../tags/concurrent.html">concurrent</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2015-01-14-000-thought-on-javascript.html">⟸ Thought on JavaScript</a>
+
+
+
+<a href="../posts/2015-03-01-000-timing-out-in-conduit.html">Timing out in conduit ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2015-01-22-000-combining-inputs-in-conduit@therning.org?subject=A comment on Combining inputs in conduit&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">I wonder...</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2007-10-10">2007-10-10</time> - Magnus Therning</p>
+</header>
+
+<p>After reading some posts in my haskell category of blogs I read I found myself wondering the following:</p>
+<ul>
+<li>Is <a href="http://cdsmith.wordpress.com/2007/10/09/the-lack-of-difference-between-what-and-how/trackback/">cdsmith wondering</a> what the difference is between “requirement phase” and the “implementation phase”?</li>
+<li>When <a href="http://www.serpentine.com/blog/2007/10/09/using-emacs-to-insert-scc-annotations-in-haskell-code/">Bryan talks about space leaks</a>, what does he mean? Is the garbage collector in GHC broken?</li>
+<li><a href="http://antti-juhani.kaijanaho.fi/newblog/archives/263/trackback">Antii-Juhani’s description of trampolines</a> and the need for them is the best I’ve seen so far. When will we see the need go away?</li>
+</ul>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/thoughts.html">thoughts</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2007-09-11-318-keysafe-in-debian.html">⟸ Keysafe in Debian</a>
+
+
+
+<a href="../posts/2007-10-10-321-are-all-languages-leaky.html">Are all languages leaky? ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-82082"></a>
+  <header>
+    <p><b>dolio</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-10-10">2007-10-10</time></p>
+  </header>
+<p>A space leak is different than a memory leak, so it’s not a bug in the garbage collector.</p>
+<p>Essentially, a space leak is when your algorithm uses asymptotically (or, perhaps just significantly) more space than you think it should, usually due to the sharing involved in lazy evaluation preventing the garbage collector from claiming intermediate values that might otherwise be discarded.</p>
+<p>The classic example is probably the powerset function:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">pset []     <span class="fu">=</span> [[]]</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">pset (x<span class="fu">:</span>xs) <span class="fu">=</span> pset xs <span class="fu">++</span> map (x<span class="fu">:</span>) (pset xs)</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">pset'leak [] <span class="fu">=</span> [[]]</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">pset'leak (x<span class="fu">:</span>xs) <span class="fu">=</span> pxs <span class="fu">++</span> map (x<span class="fu">:</span>) pxs</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"> <span class="kw">where</span> pxs <span class="fu">=</span> pset'leak xs</a></code></pre></div>
+<p>So, if you do something like:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">length (pset [<span class="dv">1</span><span class="fu">..</span>n])</a></code></pre></div>
+<p>It will run in constant space. However:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1">length (pset'leak [<span class="dv">1</span><span class="fu">..</span>n])</a></code></pre></div>
+<p>Runs in O(2^n) space (I think).</p>
+<p>The reason for this is that in <code>pset'leak</code>, <code>pxs</code> is shared between the first and second halves of the list, whereas in <code>pset</code>, they are distinct lists. So, in <code>pset</code>, once length gets past an element in the first half of the list, the garbage collector can reclaim that portion of the list. However, in pset’leak, it <em>cannot</em> claim bits of <code>pxs</code> until we’ve used them in the <em>second</em> half of the list, because under lazy evaluation, shared values are supposed to be memoized on their first use until all references to them go out of scope. This means that we have a memoized list of size 2^(n-1) or so sitting around in memory at some point.</p>
+<p>Of course, it’s not always that easy to see why space leaks occur.</p>
+<p>On a side note, the above consequences of lazy evaluation mean that it is possible to write something more like a traditional memory leak in GHC. Namely, if you have a top-level value that potentially takes a lot of memory to store, and you force it, it will not be collected, because it never goes out of scope. So, if you have an infinite list of primes at the top level, and you ask for the trillionth prime, the list of the first trillion primes will sit around in memory for the rest of the life of the program. That’s much more like a traditional memory leak (but it still isn’t something “broken” in the garbage collector, per se).</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-82084"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-10-10">2007-10-10</time></p>
+  </header>
+<p>Thanks, dolio! Just the kind of explanation I was looking for. Sorry for being a bit lazy and posting this rather than go looking myself ;-)</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2007-10-10-319-i-wonder@therning.org?subject=A comment on I wonder...&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Irrefutable patterns for the ignorant</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2007-07-26">2007-07-26</time> - Magnus Therning</p>
+</header>
+
+<p>A few days ago was the first time I ever saw some code like this:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="fu">~</span>[arg] <span class="ot">&lt;-</span> getArgs</a></code></pre></div>
+<p>I hadn’t come across <a href="http://www.haskell.org/tutorial/patterns.html#sect4.4">irrefutable patterns</a> (also called lazy patterns) in Haskell before and was of course curious. This is an attempt at illustrating the difference between lazy and non-lazy pattern matching. Here’s some code not using lazy pattern matching:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">main <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">    putStrLn <span class="st">&quot;Before&quot;</span></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">    [arg1] <span class="ot">&lt;-</span> getArgs</a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">    putStrLn <span class="st">&quot;After&quot;</span></a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">    putStrLn arg1</a></code></pre></div>
+<p>Running it, without giving it any argument, results in:</p>
+<pre><code>Before
+pattern: user error (Pattern match failure in do expression at pattern.hs:9:4-9)</code></pre>
+<p>Here’s almost the same code, but with lazy pattern matching:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">main <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">    putStrLn <span class="st">&quot;Before&quot;</span></a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">    <span class="fu">~</span>[arg1] <span class="ot">&lt;-</span> getArgs</a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">    putStrLn <span class="st">&quot;After&quot;</span></a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">    putStrLn arg1</a></code></pre></div>
+<p>Running it, again without providing any argument, results in:</p>
+<pre><code>Before
+After
+pattern: pattern.hs:(7,7)-(11,16): Irrefutable pattern failed for pattern [arg1]</code></pre>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/haskell.html">haskell</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2007-07-21-310-identity-as-a-transformer-identityt.html">⟸ Identity as a transformer: IdentityT</a>
+
+
+
+<a href="../posts/2007-08-03-312-links-and-stuff-382007.html">Links and stuff (3/8/2007) ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2007-07-26-311-irrefutable-patterns-for-the-ignorant@therning.org?subject=A comment on Irrefutable patterns for the ignorant&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

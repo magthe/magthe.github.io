@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Phabricator on ArchLinux</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2013-12-24">2013-12-24</time> - Magnus Therning</p>
+</header>
+
+<p>At work we’ve been using <a href="http://trac.edgewall.org/">Trac</a> for quite a while now, but it’s always interesting to look at other options. When listening to a recent <a href="http://episodes.gitminutes.com/2013/12/gitminutes-26-campbell-barton-on-tricky.html">episode of git Minutes on Blender’s move to using git</a> I heard of <a href="http://phabricator.org/">Phabricator</a> for the first time. There are good instructions for how to install it on Ubuntu, but I couldn’t find any for <a href="https://www.archlinux.org/">ArchLinux</a>.</p>
+<p>These are my notes for installing Phabricator on ArchLinux. Hopefully someone will find them useful.</p>
+<h2 id="basic-setup">Basic setup</h2>
+<p>I performed this install in a virtual machine (using <a href="https://www.virtualbox.org/">VirtualBox</a>). The virtual machine is configured with a bridged network and I gave it the FQDN of <code>phabarch.vbox.net</code>.</p>
+<h2 id="packages">Packages</h2>
+<p>Beyond the packages installed as part of the basic install I needed the following packages:</p>
+<ul>
+<li>lighttpd</li>
+<li>git</li>
+<li>mariadb</li>
+<li>php</li>
+<li>php-cgi</li>
+<li>php-apcu</li>
+<li>php-gd</li>
+</ul>
+<h2 id="setup-of-mariadb">Setup of <em>mariadb</em></h2>
+<p>Following the instructions on the <a href="https://wiki.archlinux.org/index.php/MySQL">ArchLinux wiki page on <code>mariadb</code></a> is first started the service and then finished the installation:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="co"># systemctl start mysqld.service</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="co"># mysql_secure_installation</span></a></code></pre></div>
+<p>After this I restarted the service, and made sure it’ll restart on system start:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="co"># systemctl restart mysqld.service</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2"><span class="co"># systemctl enable mysqld.service</span></a></code></pre></div>
+<p>I picked the root password <em>mariaroot</em>.</p>
+<h2 id="setup-of-lighttpd">Setup of <em>lighttpd</em></h2>
+<p>Modify <code>/etc/lighttpd/lighttp.conf</code> to look something like this:</p>
+<pre><code>server.modules = (
+  &quot;mod_rewrite&quot;,
+  &quot;mod_fastcgi&quot;,
+)
+
+server.port = 80
+server.username  = &quot;http&quot;
+server.groupname = &quot;http&quot;
+server.document-root = &quot;/srv/http&quot;
+server.errorlog  = &quot;/var/log/lighttpd/error.log&quot;
+dir-listing.activate = &quot;enable&quot;
+index-file.names = ( &quot;index.php&quot;, &quot;index.html&quot; )
+static-file.exclude-extensions = ( &quot;.php&quot; )
+mimetype.assign  = (
+  &quot;.html&quot; =&gt; &quot;text/html&quot;,
+  &quot;.txt&quot; =&gt; &quot;text/plain&quot;,
+  &quot;.css&quot; =&gt; &quot;text/css&quot;,
+  &quot;.js&quot; =&gt; &quot;application/x-javascript&quot;,
+  &quot;.jpg&quot; =&gt; &quot;image/jpeg&quot;,
+  &quot;.jpeg&quot; =&gt; &quot;image/jpeg&quot;,
+  &quot;.gif&quot; =&gt; &quot;image/gif&quot;,
+  &quot;.png&quot; =&gt; &quot;image/png&quot;,
+  &quot;&quot; =&gt; &quot;application/octet-stream&quot;
+  )
+
+fastcgi.server += ( &quot;.php&quot; =&gt;
+  ((
+    &quot;bin-path&quot; =&gt; &quot;/usr/bin/php-cgi&quot;,
+    &quot;socket&quot; =&gt; &quot;/var/run/lighttpd/php.socket&quot;,
+    &quot;max-procs&quot; =&gt; 1,
+    &quot;bin-environment&quot; =&gt; (
+      &quot;PHP_FCGI_CHILDREN&quot; =&gt; &quot;4&quot;,
+      &quot;PHP_FCGI_MAX_REQUESTS&quot; =&gt; &quot;10000&quot;,
+    ),
+    &quot;bin-copy-environment&quot; =&gt; (
+      &quot;PATH&quot;, &quot;SHELL&quot;, &quot;USER&quot;,
+    ),
+    &quot;broken-scriptfilename&quot; =&gt; &quot;enable&quot;,
+  ))
+)
+
+$HTTP[&quot;host&quot;] =~ &quot;phabarch(\.vbox\.net)?&quot; {
+  server.document-root = &quot;/srv/http/phabricator/webroot&quot;
+  url.rewrite-once = (
+    &quot;^(/rsrc/.*)$&quot; =&gt; &quot;$1&quot;,
+    &quot;^(/favicon.ico)$&quot; =&gt; &quot;$1&quot;,
+    # This simulates QSA (query string append) mode in Apache
+    &quot;^(/[^?]*)\?(.*)&quot; =&gt; &quot;/index.php?__path__=$1&amp;$2&quot;,
+    &quot;^(/.*)$&quot; =&gt; &quot;/index.php?__path__=$1&quot;,
+  )
+}</code></pre>
+<h2 id="setup-of-php">Setup of <em>php</em></h2>
+<p>Modify <code>/etc/php/php.ini</code> and enable the following extensions:</p>
+<ul>
+<li><code>mysqli.so</code></li>
+<li><code>openssl.so</code></li>
+<li><code>iconv.so</code></li>
+<li><code>apcu.so</code></li>
+<li><code>gd.so</code></li>
+<li><code>posix.so</code></li>
+</ul>
+<p>Also disable the <code>open_basedir</code> setting.</p>
+<h2 id="getting-and-setting-up-phabricator">Getting and setting up <em>Phabricator</em></h2>
+<h3 id="checking-it-out">Checking it out</h3>
+<p>I placed it in <code>/srv/http</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="co"># cd /srv/http</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2"><span class="co"># git clone git://github.com/facebook/libphutil.git</span></a>
+<a class="sourceLine" id="cb4-3" data-line-number="3"><span class="co"># git clone git://github.com/facebook/arcanist.git</span></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4"><span class="co"># git clone git://github.com/facebook/phabricator.git</span></a></code></pre></div>
+<h3 id="database-configuration">Database configuration</h3>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="co"># cd /srv/http/phabricator</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2"><span class="co"># ./bin/storage upgrade --user root --password mariaroot</span></a>
+<a class="sourceLine" id="cb5-3" data-line-number="3"><span class="co"># ./bin/config set mysql.user root</span></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4"><span class="co"># ./bin/config set mysql.pass mariaroot</span></a></code></pre></div>
+<h3 id="set-the-base-uri">Set the base URI</h3>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="co"># cd /srv/http/phabricator</span></a>
+<a class="sourceLine" id="cb6-2" data-line-number="2"><span class="co"># ./bin/config set phabricator.base-uri 'http://phabarch.vbox.net/'</span></a></code></pre></div>
+<h3 id="diffusion-configuration"><em>Diffusion</em> configuration</h3>
+<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="co"># mkdir /var/repo</span></a>
+<a class="sourceLine" id="cb7-2" data-line-number="2"><span class="co"># ./bin/config set diffusion.allow-http-auth true</span></a></code></pre></div>
+<p>At this point I started <em>lighttpd</em> and used the web interface to configure <code>environment.append-paths</code> to include the path of <code>git-core</code>, <code>/usr/lib/git-core</code>.</p>
+<h3 id="phd-configuration"><em>phd</em> configuration</h3>
+<p>First create the daemon user</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="co"># useradd -r -M -d /tmp phabd</span></a></code></pre></div>
+<p>Then create the <em>phd</em> log dir and set its owner and group:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="co"># mkdir /var/tmp/phd/log</span></a>
+<a class="sourceLine" id="cb9-2" data-line-number="2"><span class="co"># chown -R phabd:phabd /var/tmp/phd/</span></a></code></pre></div>
+<p>Also make the daemon user the owner of the repo folder used by <em>Diffusion</em>:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="co"># chown phabd:phabd /var/repo</span></a></code></pre></div>
+<h3 id="configure-sudo">Configure <em>sudo</em></h3>
+<p>Create the file <code>/etc/sudoers.d/phabricator</code> with this content:</p>
+<pre><code>http ALL=(phabd) SETENV: NOPASSWD: /usr/lib/git-core/git-http-backend</code></pre>
+<h3 id="user-configuration">User configuration</h3>
+<p>In the web interface set a VCS password for the user.</p>
+<h2 id="play">Play</h2>
+<p>Now the system should be ready to be played with :)</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/archlinux.html">archlinux</a>, <a href="../tags/phabricator.html">phabricator</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2013-11-18-1125-how-do-professional-windows-programmers-visual-studio.html">⟸ How do professional Windows programmers stand Visual Studio?</a>
+
+
+
+<a href="../posts/2014-02-07-1150-localised-configuration-in-vim-localcfg.html">Localised configuration in Vim: localcfg ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-339986"></a>
+  <header>
+    <p><b>dummyano</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2014-01-25">2014-01-25</time></p>
+  </header>
+<p>Hi, thank you for sharing this, I can confirm this works and got phabricator up and running.</p>
+<p>If you’re cool with that, I was thinking about doing some PKGBUILDs to automate post install setup as per your instructions (phabricator is missing from the AUR at the moment) and putting the above info on the wiki, all with proper credit to your work of course.</p>
+<p>Dummyano</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-340448"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2014-01-29">2014-01-29</time></p>
+  </header>
+<p><em><span class="citation" data-cites="dummyano">@dummyano</span></em>: Of course, just go ahead and make a package and put it on AUR, with accompanying Wiki page. Anything to make Phabricator more easy to use on ArchLinux.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-371250"></a>
+  <header>
+    <p><b>codenuckl</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2014-09-03">2014-09-03</time></p>
+  </header>
+<p>I followed your guide and I’m trying to publish a repo to Phabricator. What user name do I use? I’m using Xamarin Studio, it just keeps popping up with a password prompt (even though I enter it).</p>
+<p>Please help.</p>
+<p>Also I get this “Missing Binary git-http-backend” while i have a symlink to it.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-372225"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2014-09-09">2014-09-09</time></p>
+  </header>
+<p><span class="citation" data-cites="codenuckl">@codenuckl</span> I’m sorry I can’t help. I don’t know what Xamarin Studio is, and I have no way of knowing why your symbolic links doesn’t work. I suspect you might need more interactive help with setting up phabricator than I can offer via this web site. I suggest you try the <a href="http://phabricator.org">official phabricator site</a> for general information, and IRC (#phabricator on Freenode) for help tracking down what the issue is.</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2013-12-24-1135-phabricator-on-archlinux@therning.org?subject=A comment on Phabricator on ArchLinux&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

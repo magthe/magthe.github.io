@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Using msmtp for a desktop system</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2009-06-05">2009-06-05</time> - Magnus Therning</p>
+</header>
+
+<p>I read all my email via IMAP, and send all email via external SMTP servers, but at times it’s really useful to be able to run something like <code>/usr/sbin/sendmail</code> to send an email. Many tools depend on it, for me I want reports on <code>cron</code> jobs and I like using <code>darcs send</code> straight to an email address. For this a full-fledged SMTP server like exim/postfix/sendmail clearly is overkill. First I had a quick look at <a href="http://www.archlinux.org/packages/extra/x86_64/ssmtp/">ssmtp</a> but it only allows for a system-wide configuration file. Ideally I’d like “system-mails” (like <code>cron</code>) to be sent via my ISP while more personal emails should be sent via my Google account. After a suggestion on the Arch mailing list I checked out <a href="http://www.archlinux.org/packages/extra/x86_64/msmtp/">msmtp</a> and it was exactly what I was looking for.</p>
+<p>I created <code>/etc/msmtprc</code> with the following contents:</p>
+<pre><code>defaults
+logfile ~/.msmtp.log
+    
+# MyISP
+account myisp
+host smtp.myisp.com
+from my.email@myisp.com
+
+account default : myisp</code></pre>
+<p>I then found out that [dcron][3] is severely limited; it doesn’t honour <code>MAILTO</code> in <code>crontabs</code> and it’s not possibly to use anything but <code>/usr/sbin/sendmail</code> to send emails. The lack of support for <code>MAILTO</code> is the deal breaker in this case.</p>
+<p>Rather than create a symbolic link I modified <code>fcron</code>’s configuration file, <code>/etc/fcron/fcron.conf</code>, to use <code>/usr/bin/msmtp</code>:</p>
+<pre><code>sendmail = /usr/bin/msmtp</code></pre>
+<p>I also made sure to stick <code>MAILTO=my.email@myisp.com</code> in the system <code>crontab</code>, using <code>fcrontab -u systab -e</code>.</p>
+<p>Then I created the file <code>~/.msmtprc</code>:</p>
+<pre><code>defaults
+logfile ~/.msmtp.log
+
+# MyISP
+account mysisp
+host smtp.myisp.com
+from my.email@myisp.com
+
+# google
+account google
+host smtp.gmail.com
+from user@googlemail.com
+tls on
+tls_certcheck off
+auth on
+user user@googlemail.com
+password MySecretPassword
+
+account default : google</code></pre>
+<p>Finally I put <code>MAILTO=user@googlemail.com</code> in my user’s <code>crontab</code>.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/arch.html">arch</a>, <a href="../tags/email.html">email</a>, <a href="../tags/fcron.html">fcron</a>, <a href="../tags/msmtp.html">msmtp</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2009-05-14-629-reply-to-randal-on-dynamic-type-systems.html">⟸ Reply to Randal on dynamic type systems</a>
+
+
+
+<a href="../posts/2009-06-09-651-using-msmtp-with-mercurial.html">Using msmtp with Mercurial ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-180905"></a>
+  <header>
+    <p><b>maltem</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-06-06">2009-06-06</time></p>
+  </header>
+<p>Is there anything to say about msmtp vs. esmtp? I’m an esmtp user, but msmtp <em>looks</em>, at first glance at least, to be more feature-ful.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-181134"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-06-09">2009-06-09</time></p>
+  </header>
+<p><em><span class="citation" data-cites="maltem">@maltem</span></em>, Nope, I’ve never tried <em>esmtp</em>. Sorry.</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2009-06-05-647-using-msmtp-for-a-desktop-system@therning.org?subject=A comment on Using msmtp for a desktop system&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

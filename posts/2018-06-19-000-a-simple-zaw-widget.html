@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">A simple zaw widget for jumping to git projects</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2018-06-19">2018-06-19</time> - Magnus Therning</p>
+</header>
+
+<p>A colleague at work showed me a script he put together to quickly jump to the numerous git projects we work with. It’s based on <code>dmenu</code> and looks rather nice. However, I’d rather have something based on <code>zsh</code>, but when looking around I didn’t find anything that really fit. So, instead I ended up writing a simple widget for <a href="https://github.com/zsh-users/zaw">zaw</a>.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode zsh"><code class="sourceCode zsh"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">function</span><span class="fu"> magus-git-projs()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">    <span class="ot">projs=</span><span class="st">&quot;</span><span class="ot">$(</span><span class="kw">find</span> ~/projs -maxdepth 2 -name .git -exec <span class="kw">dirname</span> <span class="dt">{}</span> <span class="dt">\;</span><span class="ot">)</span><span class="st">&quot;</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">    <span class="ot">candidates=(</span>$<span class="dt">{(f)projs}</span><span class="ot">)</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">    <span class="ot">actions=(</span>magus-git-projs-cd</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">             magus-git-projs-edit-first)</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">}</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">function</span><span class="fu"> magus-git-projs-cd()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9">    zaw-callback-execute <span class="st">&quot;cd </span><span class="ot">${1}</span><span class="st">&quot;</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">}</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">function</span><span class="fu"> magus-git-projs-edit-first()</span> <span class="kw">{</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13">    zaw-callback-replace-buffer <span class="st">&quot;cd </span><span class="ot">${1}</span><span class="st">&quot;</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">}</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16">zaw-register-src -n git-projs magus-git-projs</a></code></pre></div>
+<p>I then attached bound it like this</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode zsh"><code class="sourceCode zsh"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">bindkey</span> -M vicmd <span class="st">'zgp'</span> zaw-git-projs</a></code></pre></div>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/zsh.html">zsh</a>, <a href="../tags/zaw.html">zaw</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2017-01-31-000-on-mocks-and-stubs-in-python--free-monad-or-interpreter-pattern-.html">⟸ On mocks and stubs in python (free monad or interpreter pattern)</a>
+
+
+
+<a href="../posts/2018-07-14-000-quickcheck-on-a-rest-api.html">QuickCheck on a REST API ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2018-06-19-000-a-simple-zaw-widget@therning.org?subject=A comment on A simple zaw widget for jumping to git projects&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

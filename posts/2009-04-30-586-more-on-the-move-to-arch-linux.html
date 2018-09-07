@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">More on the move to Arch Linux</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2009-04-30">2009-04-30</time> - Magnus Therning</p>
+</header>
+
+<p>After installing a basic Arch system and adding X.org it still isn’t very usable. My desktop of choice is Gnome, so that’s what I installed next, with a few extra packages to make it prettier and more useful.</p>
+<p>I found out the hard way a few weeks ago that if you install <code>gnome</code> without <code>gnome-extras</code> then it’s a bad idea to install <code>gdm</code> and configure your system to boot to X. That way you’ll end up in a situation where your desktop doesn’t have an X terminal. I made sure to avoid that situation this time around. After installing <code>gnome</code>,<code>gnome-extras</code> and <code>gdm</code> I noticed that both <code>gdm</code> and <code>policykit</code> created users with uid 120 and 102, respectively. Just like exptected from services they have low uids. What surprised me was that they ended up having gid 1001 and 1002. That looks like <a href="http://bugs.archlinux.org/task/13690">bugs</a> <a href="http://bugs.archlinux.org/task/14507">to me</a> :-) I decided to fix that up manually myself by editing the group file (using <code>vigr</code> of course) and then searching for all file with the offending gids (using <code>find / -gid 1001</code> for the first, with obvious changes to find the second).</p>
+<p>After configuring <code>gdm</code> I realised I also needed <code>gdm-themes</code> :-) And I also added a few pretty fonts, and removed a few of the unpretty ones:</p>
+<pre><code># pacman -S ttf-ms-fonts ttf-cheapskate artwiz-fonts ttf-bitstream-vera
+# pacman -Rns xorg-fonts-75dpi xorg-fonts-100dpi</code></pre>
+<p>Then of course I needed to install <a href="http://www.xmonad.org/">xmonad</a>:</p>
+<pre><code># pacman -S xmonad-contrib</code></pre>
+<p>Co-ercing Gnome to actually use it was interesting though. I followed the instructions for running <a href="http://haskell.org/haskellwiki/Xmonad/Using_xmonad_in_Gnome#Ubuntu_Jaunty">Xmonad in Jaunty</a>, but that wasn’t enough. I also needed to place a file named <code>xmonad.desktop</code> in <code>/usr/share/applications/</code> with the following contents (greatly inspired by the <code>metacity.desktop</code> found in the same location):</p>
+<pre><code>[Desktop Entry]
+Type=Application
+Encoding=UTF-8
+Name=Xmonad
+Exec=xmonad
+NoDisplay=true
+X-GNOME-WMName=Xmonad
+X-GNOME-Autostart-Phase=WindowManager
+X-GNOME-Provides=windowmanager</code></pre>
+<p>After that it was time to install stuff that is useful :-) First off was <a href="http://www.mozillamessaging.com/en-US/thunderbird/">Thunderbird</a>, which I immidiately had to equip with a few plug-ins of course. When setting up my mail account again I noticed that my Gnome session wasn’t quite the way I wanted—there was no gpg-agent running. After a quick check with the people on <a href="http://www.archlinux.org/pipermail/arch-general/2009-April/004804.html">arch-general</a>, without receiving any definitive resolution, I wrote my own little hack to address it. Of course I posted it in the thread I had started, but I might as well include it here too:</p>
+<pre><code>--- /etc/gdm/Xsession_orig	2009-04-27 17:13:50.346834448 +0100
++++ /etc/gdm/Xsession	2009-04-27 17:16:25.310151728 +0100
+@@ -213,6 +213,14 @@
+   fi
+ fi
+ 
++# add seahorse if found
++seahorse=&quot;`gdmwhich seahorse-agent`&quot;
++if [ -n &quot;${seahorse}&quot; ] &amp;&amp; [ -x &quot;${seahorse}&quot; ]; then
++    command=&quot;seahorse-agent --execute $command&quot;
++elif [ -z &quot;${seahorse}&quot; ]; then
++    echo &quot;$0: seahorse not found!&quot;
++fi
++
+ # add ssh-agent if found
+ sshagent=&quot;`gdmwhich ssh-agent`&quot;
+ if [ -n &quot;$sshagent&quot; ] &amp;&amp; [ -x &quot;$sshagent&quot; ] &amp;&amp; [ -z &quot;$SSH_AUTH_SOCK&quot; ]; then</code></pre>
+<p>There’s one more tool I can’t live without, <code>parcellite</code>, which is also available pre-built on Arch.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/arch.html">arch</a>, <a href="../tags/gnome.html">gnome</a>, <a href="../tags/gpg.html">gpg</a>, <a href="../tags/xmonad.html">xmonad</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2009-04-28-577-moving-to-arch-linux.html">⟸ Moving to Arch Linux</a>
+
+
+
+<a href="../posts/2009-05-02-590-arch-gnome-and-shutdownreboot.html">Arch, Gnome, and shutdown/reboot ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2009-04-30-586-more-on-the-move-to-arch-linux@therning.org?subject=A comment on More on the move to Arch Linux&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

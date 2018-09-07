@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">VirtualBox with Linux 2.6.29</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2009-04-01">2009-04-01</time> - Magnus Therning</p>
+</header>
+
+<p>After a recent upgrade which brought in kernel 2.6.29 VirtualBox stopped working for me; the kernel module failed to find the symbol <code>g_SUPGlobalInfoPage</code>. How irritating!</p>
+<p>Here’s a <a href="http://www.virtualbox.org/ticket/3403">solution</a> I found:</p>
+<ol type="1">
+<li><p>Modify <code>/usr/share/virtualbox/src/vboxdrv/Makefile</code>, uncomment the line</p>
+<pre><code> # VBOX_USE_INSERT_PAGE = 1</code></pre></li>
+<li><p>Recompile the kernel modules:</p>
+<pre><code> # /etc/init.d/vboxdrv setup</code></pre></li>
+</ol>
+<p>Now I only have to find a solution for the second problem that upgrade brought in, deskbar-applet failing to load in the Gnome panel.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/linux.html">linux</a>, <a href="../tags/virtualbox.html">virtualbox</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2009-02-27-543-even-more-cabal-fun-visualising-in-3d.html">⟸ Even more Cabal fun, visualising in 3d</a>
+
+
+
+<a href="../posts/2009-04-05-560-my-thoughts-on-debianisation-of-haskell-packages.html">My thoughts on debianisation of haskell packages ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2009-04-01-549-virtualbox-with-linux-2629@therning.org?subject=A comment on VirtualBox with Linux 2.6.29&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

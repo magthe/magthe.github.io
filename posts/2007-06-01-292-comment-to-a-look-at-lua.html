@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Comment to "A Look at Lua"</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2007-06-01">2007-06-01</time> - Magnus Therning</p>
+</header>
+
+<p>In the June issue of Linux Journal (#158) there’s an <a href="http://interactive.linuxjournal.com/article/9605">article</a> on <a href="http://www.lua.org/">Lua</a> in which the author compares it to Python. The article is only available to subscribers at the moment, so I decided to post my comment here as well.</p>
+<ol type="1">
+<li><p><em>“There is no need to worry about different types of integers.”</em> There is no need to do that in Python either nowadays. The conversion between “regular integers” and long ones is done automagically. Take the following function:</p>
+<pre><code> def frac(n):
+     if n == 0: return 1
+     else: return n * frac(n - 1)</code></pre>
+<p>Evaluating <code>frac(10)</code> gives the result <code>3628800</code> while <code>frac(30)</code> returns <code>265252859812191058636308480000000L</code>.</p></li>
+<li><p><em>“You can add a float, long integer or a double to any other type of integer or number without a hitch in Lua. In contrast, doing this can cause programs written in Python 2.4 or older versions to crash.”</em> Really? I’ve never heard of this problem. Do you have any references?</p></li>
+<li><p><em>“In contrast to Python, Lua does not focus on 100% backward compatibility.”</em> That Python would focus on 100% backward compatibility is just plain wrong. Code I’ve written broke when moving from version 2.4 to 2.5 due to changes in generators. This is the only time I’ve personally been bitten by it but every version of Python has broken something from earlier versions. AFAIU Python 3000 will break a whole lot of older Python programs.</p></li>
+<li><p><em>“Unlike Python, global variables do not need to be declared.”</em> They don’t need to be declared at all, not on a global level. If a function wants to access a global variable then <em>it</em> has to declare it as global. Contrast that to the following point.</p></li>
+<li><p><em>“Exactly the opposite of Python, most variables in Lua are global by default, and you must declare the variable”local&quot; to make it a local variable rather than assuming that all variables are local.&quot;</em> Variables in Python are local by default, which in my experience better reflect how variables are used by programmers.</p></li>
+<li><p><em>“The for loop is a little more complex in Python than it is in Lua, because Python needs to know the key to be able to get the key’s value.”</em> It’s possible to iterate over both key and value in Python as well:</p>
+<pre><code> h = {1:'hello', 2:'world'}
+ for k, v in h.iteritems():
+     print k, v</code></pre></li>
+</ol>
+<p>In general it’s a good article, it shows off some interesting points in Lua. In order to make a comparison between two languages it’s necessary to have <code>very</code> good knowledge of both languages, otherwise there’s a real risk that one language is the favourite simply because the author knows that one the best. This piece definitely suffers from that.</p>
+<p>I believe it would have been better without the author’s personal opinions on aesthetics sprinkled across the piece.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/linux%20journal.html">linux journal</a>, <a href="../tags/lua.html">lua</a>, <a href="../tags/python.html">python</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2007-05-29-290-more-adventures-in-parsing.html">⟸ More adventures in parsing</a>
+
+
+
+<a href="../posts/2007-06-02-291-more-sex-is-safer-sex.html">More sex is safer sex... ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-54225"></a>
+  <header>
+    <p><b>Daniel Larsson</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-06-01">2007-06-01</time></p>
+  </header>
+<p>Regarding point #4, in python you only need to declare a variable as global when you want to assign it in a local scope. If all you do is read it, no special declaration is needed.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-54285"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-06-01">2007-06-01</time></p>
+  </header>
+<p>Daniel, yes, you are right. I was slightly confused in my testing on this since I mistakenly thought that <em>accessing</em> the variable <em>before</em> <em>assigning</em> it would be allowed as well. Thanks adding that clarification!</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2007-06-01-292-comment-to-a-look-at-lua@therning.org?subject=A comment on Comment to " A Look at Lua"&body="Write" your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Odds and ends for my Arch desktop</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2009-05-09">2009-05-09</time> - Magnus Therning</p>
+</header>
+
+<p>After the <a href="../posts/2009-04-28-577-moving-to-arch-linux.html">previous</a> <a href="../posts/2009-04-30-586-more-on-the-move-to-arch-linux.html">setup</a> <a href="../posts/2009-05-02-595-setting-up-my-network-services-on-arch.html">steps</a> I found the next task was to add a few odds and ends really were needed before proceeding to other major things, like audio, email, and such. Several of the things I needed are available from <a href="http://aur.archlinux.org/">AUR</a> so to make things easier I started by adding <code>archlinuxfr</code> to my <code>/etc/pacman.conf</code>:</p>
+<pre><code>--- pacman.conf_orig    2009-05-09 18:47:19.825013872 +0100
++++ pacman.conf 2009-04-26 08:22:05.471685249 +0100
+@@ -70,6 +70,9 @@
+ # Add your preferred servers here, they will be used first
+ Include = /etc/pacman.d/mirrorlist
+ 
++[archlinuxfr]
++Server = http://repo.archlinux.fr/x86_64
++
+ # An example of a custom package repository.  See the pacman manpage for
+ # tips on creating your own repositories.
+ #[custom]</code></pre>
+<p>After that I updated the package listings (<code>pacman -Sy</code>) and installed <em>yaourt</em> (<code>pacman -S yaourt</code>).</p>
+<p>After this I could easily install the other packages I need:</p>
+<ol type="1">
+<li><em>nautilus-dropbox</em></li>
+<li><em>encfs</em></li>
+<li><em>pam_mount</em></li>
+<li><em>keysafe</em></li>
+<li><em>hpodder</em></li>
+<li><em>twitux</em></li>
+</ol>
+<p>Only <em>pam_mount</em> needed some extra configuration. First I added two lines each to <code>/etc/pam.d/gdm</code> and <code>/etc/pam.d/login</code>:</p>
+<pre><code>auth		optional	pam_mount.so
+session		optional	pam_mount.so</code></pre>
+<p>Then I modified <code>/etc/security/pam_mount.conf.xml</code> to allow users to have their own configs, that’s done by uncommenting the line</p>
+<pre><code>&lt;luserconf name=&quot;.pam_mount.conf.xml&quot; /&gt;</code></pre>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/arch.html">arch</a>, <a href="../tags/aur.html">aur</a>, <a href="../tags/hpodder.html">hpodder</a>, <a href="../tags/keysafe.html">keysafe</a>, <a href="../tags/yaourt.html">yaourt</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2009-05-09-599-arch-and-haskell-on-little-snag.html">⟸ Arch and Haskell, on little snag</a>
+
+
+
+<a href="../posts/2009-05-09-611-configuring-audio-for-my-arch-desktop.html">Configuring audio for my Arch desktop ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2009-05-09-603-odds-and-ends-for-my-arch-desktop@therning.org?subject=A comment on Odds and ends for my Arch desktop&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

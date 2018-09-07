@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Shelltestrunner to the rescue</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2012-02-28">2012-02-28</time> - Magnus Therning</p>
+</header>
+
+<p>A little while ago <a href="http://hackage.haskell.org/package/shelltestrunner">shelltestrunner</a> was <a href="http://www.haskell.org/pipermail/haskell-cafe/2011-August/094894.html">announced</a> on <code>haskell-cafe</code>. At the time I was slowly losing hope on ever getting decent test coverage in <a href="http://hackage.haskell.org/package/cblrepo">cblrepo</a> using <code>HUnit</code>. Using something like <code>shelltestrunner</code> could be an easier and more workable solution, especially since what <code>cblrepo</code> needed most in the short term is a bit of integration testing.</p>
+<p><code>shelltestrunner</code> is basically just a tool that runs shell commands and compares output (both <code>stdout</code> and <code>stderr</code>) and the exit code. It’s also possible to provide data to be passed to the command on <code>stdin</code>. The documentation on the <a href="http://joyful.com/shelltestrunner/"><code>shelltestrunner</code> home page</a> is very good and accessible. There are only a few things that I’d like to add to it:</p>
+<ul>
+<li>Use the <code>--with</code> (`-w´) flag, it’s very handy to avoid littering the tests with long paths to the output of your build environment.</li>
+<li>There is no support for set-up and tear-down steps in the tests (in my opinion this would be a very nice addition to the tool) so anything needed to be set up for the actual tests, will itself have to be tests.</li>
+<li>There is no way to name tests (would be another good addition) so I found it crucial to organise tests into several files.</li>
+</ul>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/shelltestrunner.html">shelltestrunner</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2012-01-12-999-compiling-u-boot-for-use-in-qemu-versatilepb.html">⟸ Compiling U-Boot for use in QEMU (VersatilePB)</a>
+
+
+
+<a href="../posts/2012-03-06-1009-0mq-and-haskell.html">0MQ and Haskell ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2012-02-28-1003-shelltestrunner-to-the-rescue@therning.org?subject=A comment on Shelltestrunner to the rescue&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

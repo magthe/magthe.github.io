@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Epilicious losing support for del.icio.us</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2007-11-22">2007-11-22</time> - Magnus Therning</p>
+</header>
+
+<p>I was getting too many reports of problems on using epilicious together with del.icio.us. What finally did it was <a href="http://bugzilla.gnome.org/show_bug.cgi?id=491977">Gnome bug #491977</a>. The patch provided was applied in the 2.20 tree. In the current development tree I simply removed support for del.icio.us alltogether. It’s just not worth the hassle!</p>
+<p>It’s just somewhat unfortunate that the name of the plugin doesn’t fit that well anymore.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/delicious.html">delicious</a>, <a href="../tags/epilicious.html">epilicious</a>, <a href="../tags/gnome.html">gnome</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2007-10-27-325-computer-security-and-liability-my-thoughts.html">⟸ Computer security and liability---my thoughts</a>
+
+
+
+<a href="../posts/2007-11-22-327-some-hope-on-identity-fraud.html">Some hope on identity fraud ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-94969"></a>
+  <header>
+    <p><b>Romain LE DISEZ</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-12-30">2007-12-30</time></p>
+  </header>
+<p>Please, don’t “just” drop the code. Maybe you can convert it to Scuttle ? It will not be complex. I currently use it with my installation of Scuttle (0.7.2). The only modification I did is to change the two constants that define the base URL :</p>
+<pre><code>_DWS_BASE_URI = 'https://my.personal.domain.tld/scuttle/'
+_DWS_API_URI = 'https://my.personal.domain.tld/scuttle/api/'</code></pre>
+<p>I don’t use Scuttle from a long time but it seems to work very well.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-95426"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-01-02">2008-01-02</time></p>
+  </header>
+<p>Romain,</p>
+<p>Epilicious uses ma.gnolia’s delicious-like API to communicate so you can always use that as a base to add support for your Scuttle installation.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-101581"></a>
+  <header>
+    <p><b>jetxee</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-02-04">2008-02-04</time></p>
+  </header>
+<p>I have discovered epilicious recently, and after a look at GNOME SVN I have seen that support for del.icio.us is dropped. Well, in fact I am looking for a solution to synchronize Epiphany bookmarks preserving their labels. Ma.Gnolia is probably suitable as well. Or Google Bookmarks even better (do they have a public API?).</p>
+<p>In fact, thank you for doing this work. I hope to see epilicious in future versions of Epiphany.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-101784"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-02-05">2008-02-05</time></p>
+  </header>
+<p><span class="citation" data-cites="jetxee">@jetxee</span>, I’ve understood there’s no official open API for Google Bookmarks. However, there is some unofficial documentation that could be used. Adding support for Google Bookmarks is on my list of things to do, I just have to find the time…</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-179299"></a>
+  <header>
+    <p><b>lnthomp</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-05-20">2009-05-20</time></p>
+  </header>
+<p>So, now ma.gnolia has disappeared from the internet, so does epilicious have any value at all at this point?</p>
+<p>I’ve been using del.icio.us bookmarks with Firefox for awhile. Is there any chance of del.icio.us coverage coming back?</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-179301"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-05-20">2009-05-20</time></p>
+  </header>
+<p><em><span class="citation" data-cites="Inthomp">@Inthomp</span></em>, the version in Gnome is, at the moment, rather useless indeed. I’ve added support for <a href="http://www.diigo.com/">diigo</a> though, but haven’t pushed it to Gnome yet.</p>
+<p>De.licio.us can be brought back if there’s indication that they stop with their unpredictable throttling.</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2007-11-22-326-epilicious-losing-support-for-delicious@therning.org?subject=A comment on Epilicious losing support for del.icio.us&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

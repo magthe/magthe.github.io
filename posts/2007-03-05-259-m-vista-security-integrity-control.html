@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">M$ Vista security, "integrity control"</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2007-03-05">2007-03-05</time> - Magnus Therning</p>
+</header>
+
+<p>Lately I’ve spent some time looking at Windows Vista security. Basically just trying to catch up with some of the changes introduced and mostly done through reading whatever I come across. I’ve spent only a little time actually playing with Vista though, and I’ve not gotten to the nitty-gritty since I haven’t written any code at all.</p>
+<p>So, what is my impression so far?</p>
+<p>Well, they’ve done a reasonable job given where they started. Already on a very high level it’s clear that Microsoft still prefers to offer convenience over security in their UI. I was shocked to see that the dialogue for creating a new user didn’t promote entering a password. No, to do that you have to press the mouse a few extra times. Since local escalation often is a walk in the park I had expected Microsoft to <em>strongly</em> encourage users of Vista to create accounts with passwords. Then on to details. First integrity levels, or MIC (mandatory integrity control). <a href="http://blogs.technet.com/steriley/archive/2006/07/21/442870.aspx">Steve Riley says</a> they’ve based it on the Biba-model. I think “based” in this context really only entails using some of the terminology. A model of <em>read-any</em>, <em>write-down</em> already suggests a bastardisation of Biba and once you add the rules for process-execution integrity you really do take a huge step away from Biba. This is what I’ve found so far:</p>
+<table border="1">
+<tr>
+<th>
+User lvl
+</th>
+<th colspan="3">
+Exe lvl
+</th>
+</tr>
+<tr>
+<td>
+</td>
+<td>
+<i>Low</i>
+</td>
+<td>
+<i>Medium</i>
+</td>
+<td>
+<i>High</i>
+</td>
+</tr>
+<tr>
+<td>
+<i>Medium</i>
+</td>
+<td>
+Low
+</td>
+<td>
+Medium
+</td>
+<td>
+Medium
+</td>
+</tr>
+<tr>
+<td>
+<i>High</i>
+</td>
+<td>
+High
+</td>
+<td>
+High
+</td>
+<td>
+High
+</td>
+</tr>
+</table>
+<p>(I haven’t found a way to create a user on the low level so that line is missing.)</p>
+<p>Spot the strange things in the bottom line? Yes, they seem to have mixed up <em>min</em> and <em>max</em> :-) I do see the point though, usability and convenience. However, to still call this model “based on Biba” requires quite a lot of hallucinogens.</p>
+<p>I also noticed that the integrity level of an executable doesn’t seem to be passed on to the files it’s creating. At least not at all times. I was running a high-level notepad and created medium-level files. I should note that a low-level notepad creates low-level files though. Not really insecure or anything, just a little unexpected.</p>
+<p>So far my impression of MIC in Vista is that the people commenting on Steve Riley’s blog post are onto something. Microsoft has taken MIC and in the implementation somehow got it mixed up with MAC. I almost suspect they really wanted MAC but decided it was too intrusive and picked the closest thing, acronym-wise. The conspiratorist in me finds evidence of that in the API <a href="http://msdn2.microsoft.com/en-us/library/aa965464.aspx">AddMandatoryAce</a> where ACE stands for Access Control Entity.</p>
+<p>Based on what I’ve found so far, and also inspired by <a href="http://theinvisiblethings.blogspot.com/2007/02/running-vista-every-day.html">Rutkowska’s recent rant on UAC</a> I think Vista security is a classical case of <a href="http://www.schneier.com/blog/archives/2007/02/cya_security_1.html">CYA</a>. Microsoft is blamed for all Windows problems and the security added in Vista makes it possible for Microsoft to deflect some of that blame and put it on applications, where it often belongs.</p>
+<p>So, am I impressed? Only mildly impressed so. Five years and this is it? As so often I get the feeling Microsoft is controlled by people who just don’t get it. Recently I saw a presentation on <a href="http://video.google.com/videoplay?docid=-7398680103951126462&amp;q=zeroconf">ZeroConf</a> and the presenter had a quote (I paraphrase):</p>
+<blockquote>
+<p>You are done, not when you can’t think of anything more to add but when you can’t think of anything more to remove.</p>
+</blockquote>
+<p>There are many companies in the software field who’d benefit from applying that. Microsoft more than most!</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/integrity%20control.html">integrity control</a>, <a href="../tags/security.html">security</a>, <a href="../tags/windows%20vista.html">windows vista</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2007-03-05-258-finally-broadband-again.html">⟸ Finally broadband, again...</a>
+
+
+
+<a href="../posts/2007-03-06-261-more-on-vistas-integrity-control.html">More on Vista's "integrity control" ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2007-03-05-259-m-vista-security-integrity-control@therning.org?subject=A comment on M$ Vista security, " integrity control"&body="Write" your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

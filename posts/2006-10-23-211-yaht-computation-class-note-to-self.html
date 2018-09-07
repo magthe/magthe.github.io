@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">YAHT: Computation class (note to self)</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2006-10-23">2006-10-23</time> - Magnus Therning</p>
+</header>
+
+<ul>
+<li><code>Computation</code> wraps a result of a function in a type.</li>
+<li><code>augment</code> strips the type, applies a function to the result. The function must wrap the end result in the type again.</li>
+<li><code>combine</code> “joins” two results together.</li>
+</ul>
+<p>Making <code>[]</code> and instance of <code>Computation</code> illustrates it the best. <code>Maybe</code> and <code>Failable</code> are a bit “funny” because the <code>combine</code> works like <code>or</code>, i.e. they take the first <code>success x</code> and run with it.</p>
+<p>Getting <code>searchAll</code> to work requires a type definition.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">searchAll ::</span> <span class="dt">Graph</span>  v e <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> [<span class="dt">Int</span>]</a></code></pre></div>
+<p>or</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">searchAll ::</span> <span class="dt">Graph</span>  v e <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Failable</span> [<span class="dt">Int</span>]</a></code></pre></div>
+<p>or</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">searchAll ::</span> <span class="dt">Graph</span>  v e <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [[<span class="dt">Int</span>]]</a></code></pre></div>
+<p>How I think about <code>searchAll</code>:</p>
+<ol type="1">
+<li><code>src == dst</code> is a successful end state. The result is <code>[src]</code> wrapped in <code>success</code>.</li>
+<li>Running out of edges in the inner function (<code>search'</code>) is an unsuccessful end state. The result is a string wrapped in <code>failure</code>.</li>
+<li>The first recursive step for <code>search'</code> (<code>src == u</code>) walks us one step on the way (<code>u</code> -&gt; <code>v</code>).
+<ol type="1">
+<li>The call to <code>searchAll</code> returns a wrapped result (i.e. path(s) from <code>v</code> to <code>dst</code>),</li>
+<li>we <code>augment</code> this result by sticking <code>u</code> in front of it (for the list-based <code>Computation</code> that means <code>map</code>ping <code>u:</code> on each path, for the others it means dropping the “wrapper type” and calling <code>(u:)</code> on the actual result), then</li>
+<li>we wrap it all up again.</li>
+<li>Finally we <code>combine</code> it with the result of a <code>search'</code> on the other edges. The <code>combine</code> in the case of lists is concatenation, i.e. we add our list of current results to all other results. For the other two <code>combine</code> is a “pick first” operation.</li>
+</ol></li>
+<li>The other recursive step for <code>search'</code> simply looks for results in all remaining edges since the current edge isn’t part of our path.</li>
+</ol>
+<p>Now I can go on to read about monads.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/yaht.html">yaht</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2006-10-23-210-microsoft-ad.html">⟸ Microsoft ad</a>
+
+
+
+<a href="../posts/2006-10-23-212-yaht-things-i-havent-seen-in-the-text.html">YAHT: Things I haven't seen in the text ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2006-10-23-211-yaht-computation-class-note-to-self@therning.org?subject=A comment on YAHT: Computation class (note to self)&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

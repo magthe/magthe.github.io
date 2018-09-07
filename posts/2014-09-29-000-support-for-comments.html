@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Adding support for comments</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2014-09-29">2014-09-29</time> - Magnus Therning</p>
+</header>
+
+<p>It seems most people using <a href="http://jaspervdj.be/hakyll/">Hakyll</a> or other static site generators rely on services like <a href="https://disqus.com/">Disqus</a>, but I really don’t like the idea of putting a bunch of JavaScript on each page and dynamically loading all comments off some cloud storage. It sorts of fly in the face of the idea of having a static site to begin with. Searching online resulted in a few <a href="http://www.hezmatt.org/~mpalmer/blog/2011/07/19/static-comments-in-jekyll.html">posts</a> related to a <a href="https://github.com/mpalmer/jekyll-static-comments">plugin for static comments in</a> <a href="https://github.com/mojombo/jekyll">Jekyll</a>.</p>
+<p>This post only covers dealing with the comments, and not how the reader actually submits a comment. I’ll save that for the next post.</p>
+<h2 id="code-changes">Code changes</h2>
+<p>I settled on the following naming scheme for comments. The comments for a post <em>P</em>, which is found at <code>posts/&lt;P&gt;.mkd</code> will be put into files named <code>comments/&lt;P&gt;-c000.mkd</code>, <code>comments/&lt;P&gt;-c001.mkd</code>, and so on. The crucial bits are that, first the post’s name is a prefix of all its comments’ names, and two the identifiers (basically the filenames) of the comments are, just like identifiers for posts, easy to sort in date order.</p>
+<p>Adding a rule for the comments is easy:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">match <span class="st">&quot;comments/*&quot;</span> <span class="fu">$</span> compile pandocCompiler</a></code></pre></div>
+<p>Then it got a little more tricky. The comments for each post needs to be put into the context used to build the posts. Previously I’ve used <code>field</code>, which takes a function turning an <code>Item String</code> into <code>String</code>. I’ve also used <code>listField</code> which is used to tie a key to a list of <code>Item a</code>. What I needed here though doesn’t seem to exist, i.e. a context function that takes an <code>Item a</code> and returns a list of <code>Item s</code>. So after a bit of studying the source of <code>field</code> and <code>listField</code> I came up with <code>listFieldFunc</code>:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">listFieldFunc ::</span> <span class="dt">Show</span> a <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Context</span> a <span class="ot">-&gt;</span> (<span class="dt">Item</span> a <span class="ot">-&gt;</span> <span class="dt">Compiler</span> [<span class="dt">Item</span> a]) <span class="ot">-&gt;</span> <span class="dt">Context</span> a</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">listFieldFunc key ctx func <span class="fu">=</span> <span class="dt">Context</span> <span class="fu">$</span> \ k i <span class="ot">-&gt;</span> <span class="kw">if</span> k <span class="fu">==</span> key <span class="kw">then</span> value i <span class="kw">else</span> empty</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">    <span class="kw">where</span></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">        value i <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">            is <span class="ot">&lt;-</span> func i</a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">            return <span class="fu">$</span> <span class="dt">ListField</span> ctx is</a></code></pre></div>
+<p>The function for extracting a post’s comments can then be written as</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">getComments ::</span> (<span class="dt">Binary</span> a, <span class="dt">Typeable</span> a) <span class="ot">=&gt;</span> <span class="dt">Pattern</span> <span class="ot">-&gt;</span> <span class="dt">Item</span> a <span class="ot">-&gt;</span> <span class="dt">Compiler</span> [<span class="dt">Item</span> a]</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">getComments pattern item <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">    idents <span class="ot">&lt;-</span> getMatches pattern <span class="fu">&gt;&gt;=</span> sortChronological</a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">    <span class="kw">let</span> iId <span class="fu">=</span> itemIdentifier item</a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">        comments <span class="fu">=</span> filter (isCommentForPost iId) idents</a>
+<a class="sourceLine" id="cb3-6" data-line-number="6">    mapM load comments</a>
+<a class="sourceLine" id="cb3-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb3-8" data-line-number="8"><span class="ot">isCommentForPost ::</span> <span class="dt">Identifier</span> <span class="ot">-&gt;</span> <span class="dt">Identifier</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb3-9" data-line-number="9">isCommentForPost post comment <span class="fu">=</span> <span class="kw">let</span></a>
+<a class="sourceLine" id="cb3-10" data-line-number="10">        postBase <span class="fu">=</span> takeBaseName <span class="fu">$</span> toFilePath post</a>
+<a class="sourceLine" id="cb3-11" data-line-number="11">        cmtBase <span class="fu">=</span> takeBaseName <span class="fu">$</span> toFilePath comment</a>
+<a class="sourceLine" id="cb3-12" data-line-number="12">    <span class="kw">in</span> isPrefixOf postBase cmtBase</a></code></pre></div>
+<p>Adding the key to the context used for the posts results in</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="kw">let</span> postCtx <span class="fu">=</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">        field <span class="st">&quot;previousPostUrl&quot;</span> (previousPostUrl <span class="st">&quot;posts/*&quot;</span>) <span class="fu">&lt;&gt;</span></a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">        field <span class="st">&quot;previousPostTitle&quot;</span> (previousPostTitle <span class="st">&quot;posts/*&quot;</span>) <span class="fu">&lt;&gt;</span></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">        field <span class="st">&quot;nextPostUrl&quot;</span> (nextPostUrl <span class="st">&quot;posts/*&quot;</span>) <span class="fu">&lt;&gt;</span></a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">        field <span class="st">&quot;nextPostTitle&quot;</span> (nextPostTitle <span class="st">&quot;posts/*&quot;</span>) <span class="fu">&lt;&gt;</span></a>
+<a class="sourceLine" id="cb4-6" data-line-number="6">        field <span class="st">&quot;postId&quot;</span> getPostId <span class="fu">&lt;&gt;</span></a>
+<a class="sourceLine" id="cb4-7" data-line-number="7">        listFieldFunc <span class="st">&quot;comments&quot;</span> defaultContext (getComments <span class="st">&quot;comments/*&quot;</span>) <span class="fu">&lt;&gt;</span></a>
+<a class="sourceLine" id="cb4-8" data-line-number="8">        baseCtx</a></code></pre></div>
+<h2 id="template-changes">Template changes</h2>
+<p>The template changes are trivial of course</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb5-1" data-line-number="1">$for(comments)$</a>
+<a class="sourceLine" id="cb5-2" data-line-number="2"><span class="kw">&lt;div&gt;</span></a>
+<a class="sourceLine" id="cb5-3" data-line-number="3"><span class="kw">&lt;p&gt;</span>$author$<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">$body$</a>
+<a class="sourceLine" id="cb5-5" data-line-number="5"><span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb5-6" data-line-number="6">$endfor$</a></code></pre></div>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/hakyll.html">hakyll</a>, <a href="../tags/haskell.html">haskell</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2014-09-27-000-previous-next-links.html">⟸ Links to previous and next post</a>
+
+
+
+<a href="../posts/2014-09-30-000-adding-tags.html">Adding tags ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2014-09-29-000-support-for-comments@therning.org?subject=A comment on Adding support for comments&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

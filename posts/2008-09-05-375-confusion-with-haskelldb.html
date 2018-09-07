@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Confusion with HaskellDB</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2008-09-05">2008-09-05</time> - Magnus Therning</p>
+</header>
+
+<p>Dear LazyWeb,</p>
+<p>I’ve recently made some comparisons between <a href="http://hackage.haskell.org/cgi-bin/hackage-scripts/package/haskelldb">HaskellDB</a> and <a href="http://hackage.haskell.org/cgi-bin/hackage-scripts/package/HDBC">HDBC</a>. My gut feeling is that I’d <em>like</em> to use HaskellDB due to its type safety and that it allows me to abstract away from SQL—something in me twitches every time I see strings containing SQL mixed in with other code, no matter what language it is. However there are some things that confuse me with HaskellDB. After overcoming the initial puzzlement that I seem to hit whenever I look at a Haskell API I stumbled on the apparent lack of support for primary keys. This surprised me and to check if I overlooked something I wrote the following code:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw">import</span> <span class="dt">System.Environment</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="kw">import</span> <span class="dt">System.IO</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Database.HaskellDB.HSQL.SQLite3</span></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Database.HaskellDB.DBSpec</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8">testDBOpts <span class="fu">=</span> <span class="dt">DBOptions</span> { useBString<span class="fu">=</span><span class="dt">False</span> }</a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10">sqliteOptions<span class="fu">=</span> <span class="dt">SQLiteOptions</span> { filepath<span class="fu">=</span><span class="st">&quot;replace me&quot;</span>, mode<span class="fu">=</span><span class="dt">ReadMode</span> }</a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb1-13" data-line-number="13">main <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14">    dbfn <span class="ot">&lt;-</span> fmap (<span class="fu">!!</span> <span class="dv">0</span>) getArgs</a>
+<a class="sourceLine" id="cb1-15" data-line-number="15">    <span class="kw">let</span> options <span class="fu">=</span> sqliteOptions { filepath<span class="fu">=</span>dbfn }</a>
+<a class="sourceLine" id="cb1-16" data-line-number="16">    sqliteConnect options (dbToDBSpec <span class="dt">False</span> <span class="st">&quot;extracted.db&quot;</span>) <span class="fu">&gt;&gt;=</span> print</a></code></pre></div>
+<p>This is the surprising output when I point this to two different databases. The first database has no primary key:</p>
+<pre><code>% sqlite3 test1.db .dump
+BEGIN TRANSACTION;
+CREATE TABLE person (name text  not null,
+                     age int);
+COMMIT;</code></pre>
+<p>and the <code>DBInfo</code> looks the way I expected:</p>
+<pre><code>% ./extract test1.db 
+DBInfo {dbname = &quot;extracted.db&quot;, opts = DBOptions {useBString = False},
+tbls = [TInfo {tname = &quot;person&quot;, cols = [CInfo {cname = &quot;name&quot;,
+descr = (StringT,False)},CInfo {cname = &quot;age&quot;, descr = (StringT,True)}]}]}</code></pre>
+<p>The second database does have a primary key:</p>
+<pre><code>% sqlite3 test2.db .dump
+BEGIN TRANSACTION;
+CREATE TABLE person (name text primary key not null, age int);
+COMMIT;</code></pre>
+<p>but not only does the <code>DBInfo</code> lack any mention of it, it also contains the table info twice:</p>
+<pre><code>% ./extract test2.db 
+DBInfo {dbname = &quot;extracted.db&quot;, opts = DBOptions {useBString = False},
+tbls = [TInfo {tname = &quot;person&quot;, cols = [CInfo {cname = &quot;name&quot;,
+descr = (StringT,False)},CInfo {cname = &quot;age&quot;, descr = (StringT,True)}]},
+TInfo {tname = &quot;person&quot;, cols = [CInfo {cname = &quot;name&quot;,
+descr = (StringT,False)},CInfo {cname = &quot;age&quot;, descr = (StringT,True)}]}]}</code></pre>
+<p>Am I doing something fundamentally wrong or does HaskellDB not support the notion of a primary key?</p>
+<p>Is it a bug in HaskellDB that the second extracted <code>DBInfo</code> contains two instances of <code>TInfo</code> when the database clearly only has one table?</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/haskelldb.html">haskelldb</a>, <a href="../tags/hdbc.html">hdbc</a>, <a href="../tags/sqlite3.html">sqlite3</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2008-08-21-372-fixing-fonts-in-debian.html">⟸ Fixing fonts in Debian</a>
+
+
+
+<a href="../posts/2008-09-08-381-on-twitter.html">On twitter... ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2008-09-05-375-confusion-with-haskelldb@therning.org?subject=A comment on Confusion with HaskellDB&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

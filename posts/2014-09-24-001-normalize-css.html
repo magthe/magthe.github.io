@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Dipping toes into CSS, normalizing</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2014-09-24">2014-09-24</time> - Magnus Therning</p>
+</header>
+
+<p>The site doesn’t look that good. Actually it is pathetically simple. I’m however not that good at CSS, I also don’t really have a good sense of design, so making it look good is going to be an up-hill battle. The first step is easy though, add a standard CSS file to normalize the look.</p>
+<h2 id="the-css">The CSS</h2>
+<p>I grabbed <code>normalize.css</code> from <a href="https://necolas.github.io/normalize.css/">the web site</a>.</p>
+<h2 id="template-changes">Template changes</h2>
+<p>Well, obviously the CSS has to be pulled into the web pages. The full webpages are provided by <code>templates/default.html</code> and the line that needs adding is</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">&lt;link</span><span class="ot"> rel=</span><span class="st">&quot;stylesheet&quot;</span><span class="ot"> type=</span><span class="st">&quot;text/css&quot;</span><span class="ot"> href=</span><span class="st">&quot;/css/normalize.css&quot;</span> <span class="kw">/&gt;</span></a></code></pre></div>
+<p>Of course it goes into the <code>&lt;head&gt;</code> section of the file.</p>
+<h2 id="code-changes">Code changes</h2>
+<p>The changes to the build script are equally straight forward.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">    match <span class="st">&quot;css/*&quot;</span> <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">        route idRoute</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">        compile copyFileCompiler</a></code></pre></div>
+<p>I opted to just copy the file rather than compress it usign <code>compressCssCompiler</code>. I don’t think the speedup is really worth it, and I personally find it very handy to be able to read the CSS files on sites that I think look nice. Of course I need to enable others to do the same.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/hakyll.html">hakyll</a>, <a href="../tags/css.html">css</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2014-09-24-000-adding-feed.html">⟸ Adding a feed</a>
+
+
+
+<a href="../posts/2014-09-25-000-converting-posts-from-wp.html">Converting posts from WordPress ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2014-09-24-001-normalize-css@therning.org?subject=A comment on Dipping toes into CSS, normalizing&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

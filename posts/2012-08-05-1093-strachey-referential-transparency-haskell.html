@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Strachey, referential transparency, Haskell</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2012-08-05">2012-08-05</time> - Magnus Therning</p>
+</header>
+
+<p>This is my input into the recent discussion on referential transparency (RT). I’m nowhere near as well versed in the subject as others, but how am I ever to learn anything unless I put my thoughts out there for them to be laughed at and ridiculed? ;)</p>
+<p>It all started with a [post on stackoverflow.com](http://stackoverflow.com/questions/210835/what-is-referential-transparency, which received several very long and detailed responses, in particular from Uday Reddy (<a href="http://stackoverflow.com/a/9859966">here</a> and <a href="http://stackoverflow.com/a/11740176">here</a>. His answers were also linked to from <a href="http://www.reddit.com/r/haskell/comments/xgq27/uday_reddy_sharpens_up_referential_transparency/">Reddit</a>. His second response contains a link to an excellent paper by Strachey, <a href="http://www.itu.dk/courses/BPRD/E2009/fundamental-1967.pdf">Fundamental concepts in programming languages</a>. I’d go as far as saying that, despite it being lecture notes rather than a fully worked paper, it ought to be required reading for all software developers.</p>
+<p>The rest of what I write here hinges on me actually understanding what Strachey writes in his paper. Of course I’m looking forward to comments/corrections/etc that help me correct my understanding.</p>
+<h3 id="what-strachey-says-about-rt">What Strachey says about RT</h3>
+<p>In section 3.2.1 he introduces RT like this:</p>
+<blockquote>
+<p>One of the most useful properties of expressions is that called by Quine <em>referential transparency</em>. In essence this means that if we wish to find the value of an expression which contains a sub-expression, the only thing we need to know about the sub-expression is its value. Any other features of the sub-expression, such as its internal structure, the number and nature of its components, the order in which they are evaluated or the colour of the ink in which they are written, are irrelevant to the value of the main expression.</p>
+</blockquote>
+<p>There is however a crucial bit just before that:</p>
+<blockquote>
+<p>Like the rest of mathematics, we shall be concerned only with <em>R-values</em>.</p>
+</blockquote>
+<p>That is, he starts out with a very limited subset of what most people would consider a usable imperative programming language.</p>
+<p>He then dives into some more details in section 3.2.2 by adding the concept of environment, which is handled through the use of a <em>where-clause</em>, or alternatively using <em>let-statements</em> (this ought to be making any Haskell developer feel right at home). After a few interesting sections on stuff like applicative structure, evaluation, and conditional expressions he finally tackles the issue of variables in section 3.3.1. There are two pieces to the trick, the first is to take advantage of his earlier insight that lead to a split of <em>values</em> into <em>L-values</em> and <em>R-values</em>:</p>
+<blockquote>
+<p>If we consider <em>L-values</em> as well as <em>R-values</em>, however, we can preserve referential transparency as far as <em>L-values</em> are concerned. This is because <em>L-values</em>, being generalised addresses, are not altered by assignment commands. Thus the command <code>x := x+1</code> leaves the address of the cell representing <code>x</code> (<em>L-value</em> of <code>x</code>) unchanged although it does alter the contents of this cell (<em>R-value</em> of <code>x</code>). So if we agree that the values concerned are all <em>L-values</em>, we can continue to use <em>where-clauses</em> and lambda-expressions for describing parts of a program which include assignments.</p>
+</blockquote>
+<p>The cost of this is that the entire theory constructed earlier for operations taking <em>R-values</em> now has to be revised to incorporate <em>L-values</em>. The outline for this is in the rest of section 3.3 and it basically comes down to <em>include an abstract store in the environment</em>. However, before doing that he mentions that:</p>
+<blockquote>
+<p>I think these problems are inevitable and although much of the work remains to be done, I feel hopeful that when completed it will not seem so formidable as it does at present, and that it will bring clarification to many areas of programming language study which are very obscure today. In particular the problems of side effects will, I hope, become more amenable.</p>
+</blockquote>
+<p>He does reach his goal, but it’s a bit unfortunate that he stops short of considering the wider of problem of side effects. My assumption is that this would have to be dealt with in a similar way to assignment, but that would mean that rather than just adding an store to the environment the world, or a subset of it, would need to be added.</p>
+<p>An open question (to me) is if anyone has built on Strachey’s work in this area and thought of the details of RT and general side effects?</p>
+<h3 id="rt-in-haskell">RT in Haskell</h3>
+<p>The <a href="http://stackoverflow.com/questions/210835/what-is-referential-transparency">original question</a> described RT as</p>
+<blockquote>
+<p>it means you can replace equals with equals</p>
+</blockquote>
+<p>which I actually think is a rather good, and very short, description of it. It’s not the full story, there are further important details, but it’s a good first intuition. Also, it’s a description usable in Haskell. Well, to be slightly more nuanced, it good for <em>Haskell without IO</em> (Haskell-IO). However, this is where the strict type system of Haskell really starts to shine because (here I’m probably a bit imprecise) we only have <em>R-values</em> in Haskell-IO. If we want to use assignment we add the use of a state monad, and <em>we do that explicitly</em>.</p>
+<p>A former colleague of mine said that in Haskell we need to build up our own computational models ourselves. For instance, if we need assigment we use <em>State</em>, if we need to record progress we use <em>Writer</em>, etc. In other languages the language designer has already made all those choices for us, we don’t get to make them ourselves. For RT it means that Haskell is <em>more explicit</em> in what the environment of a function is.</p>
+<p>Moving on to general side effects those are also more explicit in Haskell since they have to happen inside the <em>IO</em> monad. That alone is a great boon for RT in Haskell since it becomes explicit where RT as worked out by Strachey applies directly, and where there are (hopefully amenable) problems of side effects left. Even further, in Haskell it’s possible to make <em>subsets of IO</em> (by wrapping IO, see e.g. my own posts on <a href="../posts/2009-09-07-738-wrapping-io-part-1.html">wrapping IO, part 1</a> and <a href="../posts/2009-09-07-742-wrapping-io-part-2.html">wrappint IO, part 2</a>. I’m sure that <em>if</em> including the world in the environment is the way to achieve RT with general side effects, then it’s highly beneficial to be able to create subsets of the world.</p>
+<h3 id="rt-in-haskell-vs.rt-in-common-imperative-languages">RT in Haskell vs. RT in (common) imperative languages</h3>
+<p>Uday writes in <a href="http://stackoverflow.com/a/9859966">his first answer</a> that:</p>
+<blockquote>
+<p>But, today, functional programmers claim that imperative programming languages are not referentially transparent. Strachey would be turning in his grave.</p>
+</blockquote>
+<p>This may well be true, but I think that when a Haskell programmer says it, he’s only twitching slightly. The reason? Strachey writes:</p>
+<blockquote>
+<p>Any departure of <em>R-value</em> referential transparency in a <em>R-value</em> context should either be eliminated by decomposing the expression into several commands and simpler expressions, or, if this turns out to be difficult, the subject of a comment.</p>
+</blockquote>
+<p>Which is something that Haskell programmers do naturally by use of <em>IO</em>. That is, in Haskell you either have an <em>R-value</em>, and you clearly see that you do, or you put in a comment, which is encoded in the type of the function.</p>
+<p>This rather lengthy post basically arrives at the following, which is what I suspect the user <a href="https://www.reddit.com/r/haskell/comments/xgq27/uday_reddy_sharpens_up_referential_transparency/c5mdrpq"><em>pacala</em> is saying about RT on Reddit</a>:</p>
+<blockquote>
+<p>Imperative languages may well be RT, but when trying to understand a code base the environment of each function is so large that understanding is an intractable problem. I don’t have this problem in Haskell.</p>
+</blockquote>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/referential%20transparency.html">referential transparency</a>, <a href="../tags/strachey.html">strachey</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2012-07-25-1078-compiling-boost-for-windows-with-mingw-on-linux.html">⟸ Compiling boost for Windows, with MinGW on Linux</a>
+
+
+
+<a href="../posts/2012-08-09-1099-eclipse-and-greyed-out-ifdef-sections.html">Eclipse and greyed out ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-251414"></a>
+  <header>
+    <p><b>TuukkaH</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2012-08-05">2012-08-05</time></p>
+  </header>
+<p>I think we have to carefully consider the language level whose RT we’re talking about: do we include statements, function calls, embedded languages, and the language runtime?</p>
+<p>Monadic expressions (of Haskell) are a RT way of encoding an imperative language that isn’t necessarily RT. The potential side effects lie in the semantics of the encoded language (which isn’t Haskell, although you could consider it a part of Haskell). Similarily, the underlying implementation of a monad might or might not rely on unsafe/non-RT constructions.</p>
+<p>From that point of view, Haskell with the IO monad is RT, but the execution of Haskell with IO is not RT.</p>
+<p>In a similar manner, you might claim that C is RT and the side effects lie on a different level. But as a programmer, you don’t have separate access to the RT level so its existence is theoretical. In C, you just can’t replace the expression random() + random() with 2 * random() but in (non-unsafe) Haskell you can. In the end, you can twist the terms in various ways but you shouldn’t hide the clear differences between C and Haskell.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-251439"></a>
+  <header>
+    <p><b>AntC</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2012-08-05">2012-08-05</time></p>
+  </header>
+<p>Hi Magnus, Re: “An open question (to me) is if anyone has built on Strachey’s work in this area …”</p>
+<p>At the time of his writing, Strachey was heavily involved with the team developing the language CPL.</p>
+<p>The most rigorous use of L-values and R-values was (is) BCPL (Martin Richards) – which some claims stands for “Basically Christopher’s Programming Language”. BCPL inspired C, and the rest is history.</p>
+<p>Regarding IO and side effects, CPL, and BCPL were conventional for their day (and followed ALGOL 60) in leaving IO as being ‘implementation dependent’. These were all in the von Neumann/Turing/procedural model of computing. They all used destructive assignment.</p>
+<p>BCPL supports assignment to L-values. In particular, the R-values of functions/procedures are just static cells holding pointers to the code body. Function application is just entering that code point using the current stack frame. So you can put an arbitrary expression to yield the code point:</p>
+<pre><code>(x &amp;gt; y -&amp;gt; SIN, COS) (z)                        // ... -&amp;gt; ... , ... is conditional expression, apply to z</code></pre>
+<p>Or put function calls on the LHS of assignments:</p>
+<pre><code>Array (x, y) := z                              // array update (note that arrays are not native)</code></pre>
+<p>Or change a function to point to a different code point:</p>
+<pre><code>TRIG := (x &amp;gt; y -&amp;gt; SIN, COS)                    // excellent way to perplex any reader
+                                               // but can achieve something like anonymous funs</code></pre>
+<p>Strachey died tragically young. Oh, that he could have continued, and collaborated with the wealth of PL research going on at the time.</p>
+<p>AntC</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-251642"></a>
+  <header>
+    <p><b>Thiago Negri</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2012-08-08">2012-08-08</time></p>
+  </header>
+<p>IMO</p>
+<p>All that buzz about RT is going nowhere.</p>
+<p>Maybe, I’ve learned it wrong. But I’ve never heard of RT when I was absorbed in an imperative world. RT is a common term in functional programming. I’ve read the term and it’s “definition” just after a couple of Haskell’s tutorials.</p>
+<p>To me, it’s simple as that: RT is the ability to switch sentences that refer to the same thing without changing the result.</p>
+<p>In Haskell, you can do that freely. Even inside IO monad! If you do anything wrong, the compiler won’t let you continue. In Java, you can do that too, but you need to be aware of all the environment and sequencing in order to preserve the result.</p>
+<p>Sequencing in the IO monad is enforced by the types, an IO String will not fit as a valid argument for a function that needs a String, so you will not be able to inline an IO String value, you are enforced to use the bind operator.</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2012-08-05-1093-strachey-referential-transparency-haskell@therning.org?subject=A comment on Strachey, referential transparency, Haskell&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

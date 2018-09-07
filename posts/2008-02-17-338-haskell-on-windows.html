@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Haskell on Windows</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2008-02-17">2008-02-17</time> - Magnus Therning</p>
+</header>
+
+<p>Recently I’ve had reason to write a few tools for Windows. Nothing complicated, and since there was nothing “mission critical” (there hardly ever is for me :-) ) I decided to try to write them in Haskell rather than Python or C/C++. This post contains some sort of recollection of my experience so far.</p>
+<p>First off I should probably disclose that I don’t particularly like Windows. Besides feeling more at home on a Unix (Linux) system I find that Windows also upsets me on a very basic level. If I spend a whole day at work in Windows I tend to go home more stressed and irritated than after a day in Linux. Part of this is probably due to my familiarity with Linux. My hope was that the combination of the immense joy of programming Haskell and my loath of the Windows platform I would end up with something that at least was bearable. It turns out I did.</p>
+<p>###My setup</p>
+<p>Besides installing the <a href="http://www.haskell.org/ghc/download.html">pre-built GHC</a> I also installed <a href="http://www.microsoft.com/express/">Visual Studio Express</a> more later to explain the need for it. I don’t like the Visual Studio environment so I installed <a href="http://www.cmake.org/">CMake</a> and <a href="http://www.jedit.org/">jEdit</a> ((ordinarily I would install <a href="http://www.vim.org/">Vim</a> but I thought I’d try out another editor. Vim on Windows is somewhat “leaky”, i.e. it sometimes shows behaviour that betrays its Unix roots.)). Last but not least I installed <a href="http://sourceforge.net/projects/console">Console</a>, it addresses the fact that Windows’ “DOS-box” is an amazing piece of crap.</p>
+<p>###FFI on Windows</p>
+<p>First, GHC comes with a number of Windows-specific modules and they cover an impressive number of the Win32 API functions. The Win32 API is simply huge and one will sooner or later come find the need to add to what those modules offer. Second, GHC is able to compile C code by delegation to <a href="http://www.mingw.org/">MinGW</a>, however MinGW doesn’t completely cover the Win32 API either and if one is unlucky MinGW isn’t enough for the task at hand. Of course that’s exactly what happened to me. So, I installed Visual Studio Express, but since I don’t like VS that much and I didn’t want VS solutions in my darcs repository I decided to use CMake to build a library that I then instruct GHC, through a Cabal file, to link with my Haskell code. The end result is that building requires a few extra steps before the familiar <code>configure</code>/<code>build</code> sequence. It works remarkably well really, and I’ll definately use that strategy again if I need to.</p>
+<p>There is a benign warning thrown when linking the final executable though:</p>
+<pre><code>Warning: .drectve `/manifestdependency:&quot;type='win32' name='Microsoft.VC90.CRT'
+version='9.0.21022.8' processorArchitecture='x86' publicKeyToken='1fc8b3b9a1e18e3b'&quot;
+/DEFAULTLIB:&quot;uuid.lib&quot; /DEFAULTLIB:&quot;uuid.lib&quot; /DEFAULTLIB:&quot;MSVCRT&quot; /DEFAULTLIB:&quot;OLDNAMES&quot; '
+unrecognized</code></pre>
+<p>It seems that it might be possible to skip the extra steps in the future if <a href="http://hackage.haskell.org/trac/hackage/ticket/229">Cabal ticket #229</a> is addressed.</p>
+<p>###Windows System modules</p>
+<p>Admittedly I haven’t been using much of the functionality in these modules, but it happens that the only function I needed had a bug that results in a segmentation fault, sometimes. See <a href="http://hackage.haskell.org/trac/ghc/ticket/2097">GHC ticket #2097</a> for some details. I guess this confirms my impression of most Haskell hackers being Linux/BSD/Unix users.</p>
+<p>###Conclusions</p>
+<p>I won’t drop Haskell on Linux anytime soon, but I’ve found Haskell on Windows to be possible. As I suspected when I started out, Haskell does make Windows somewhat easier to bear.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/cmake.html">cmake</a>, <a href="../tags/haskell.html">haskell</a>, <a href="../tags/visual%20studio%20express.html">visual studio express</a>, <a href="../tags/windows.html">windows</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2008-01-23-337-rotonyms-in-haskell.html">⟸ Rotonyms in Haskell</a>
+
+
+
+<a href="../posts/2008-03-19-339-omnicodec-released.html">Omnicodec released ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-104025"></a>
+  <header>
+    <p><b>claudio</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-02-17">2008-02-17</time></p>
+  </header>
+<p>Have you heard about OMake (http://omake.metaprl.org/index.html)? It is another portable build system. It seems popular with OCaml users..</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2008-02-17-338-haskell-on-windows@therning.org?subject=A comment on Haskell on Windows&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

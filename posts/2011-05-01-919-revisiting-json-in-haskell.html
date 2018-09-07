@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Revisiting JSON in Haskell</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2011-05-01">2011-05-01</time> - Magnus Therning</p>
+</header>
+
+<p>I just received an email with some praise for <a href="../posts/2009-08-16-719-json-in-haskell.html">my earlier post on JSON in Haskell</a>–it’s always nice to receive some praise ;-) However, the sender also mentioned that the <code>mLookup</code> function as coded there would blow up on incomplete JSON objects. That was by design, as a simplification, but the sender needed to deal with just that and asked if I had some more elegant solution than making every field in the data type a <code>Maybe</code>.</p>
+<p>As I said, it’s always nice to receive praise, so here’s one solution that came to mind as I was reading the email.</p>
+<p>I should mention that it relies on there being a reasonable default value for each type of the fields, and that the default is the same for all fields sharing a type.</p>
+<p>First off, define a type class for types with default values:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">class</span> <span class="dt">Defaultable</span> d <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="ot">    def ::</span> d</a></code></pre></div>
+<p>Then modify <code>mLookup</code> so that it uses <code>Defaultable</code>. I renamed it to <code>mLookupAndReadJSON</code>:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">mLookupAndReadJSON a as <span class="fu">=</span> maybe def readJSON (lookup a as)</a></code></pre></div>
+<p>Now we need to provide some instances of <code>Defaultable</code> too. I limit this example to cover only <code>GlossDef</code>, so only the following instances are required:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Defaultable</span> [a] <span class="kw">where</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">    def <span class="fu">=</span> []</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4"><span class="kw">instance</span> <span class="dt">Defaultable</span> a <span class="ot">=&gt;</span> <span class="dt">Defaultable</span> (<span class="dt">Result</span> a) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">    def <span class="fu">=</span> <span class="dt">Ok</span> def</a></code></pre></div>
+<p>Now it’s possible to decode incomplete JSON objects:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">ghci<span class="fu">&gt;</span> decode <span class="st">&quot;{ \&quot;GlossSeeAlso\&quot;: [\&quot;GML\&quot;, \&quot;XML\&quot;] }&quot;</span><span class="ot"> ::</span> <span class="dt">Result</span> <span class="dt">GlossDef</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2"><span class="dt">Ok</span> (<span class="dt">GlossDef</span> {glossDefPara <span class="fu">=</span> <span class="st">&quot;&quot;</span>, glossDefSeeAlso <span class="fu">=</span> [<span class="st">&quot;GML&quot;</span>,<span class="st">&quot;XML&quot;</span>]})</a></code></pre></div>
+<p>I’m sure there are other ways of achieving what the author of the email asked for. Please let me know of them in comments.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: 
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2011-04-27-914-maintaining-haskell-packages-for-a-linux-distribution-cblrepo.html">⟸ Maintaining Haskell packages for a Linux distribution---cblrepo</a>
+
+
+
+<a href="../posts/2011-05-04-928-archhaskell-habs-with-cblrepo.html">ArchHaskell HABS with cblrepo ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-216351"></a>
+  <header>
+    <p><b>Neil Mitchell</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2011-05-01">2011-05-01</time></p>
+  </header>
+<p>You may be interested to see that the default class already exists in cmdargs: <a href="http://hackage.haskell.org/packages/archive/cmdargs/0.6.9/doc/html/System-Console-CmdArgs-Default.html" class="uri">http://hackage.haskell.org/packages/archive/cmdargs/0.6.9/doc/html/System-Console-CmdArgs-Default.html</a></p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-216353"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2011-05-01">2011-05-01</time></p>
+  </header>
+<p>Neil, <code>cmdargs</code> is where I first came across this little trick :-) It’s also coded up in <code>Data.Default</code>, which can be found on Hackage.</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2011-05-01-919-revisiting-json-in-haskell@therning.org?subject=A comment on Revisiting JSON in Haskell&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

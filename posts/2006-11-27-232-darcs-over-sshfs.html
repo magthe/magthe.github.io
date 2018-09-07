@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Darcs over sshfs</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2006-11-27">2006-11-27</time> - Magnus Therning</p>
+</header>
+
+<p>A while ago I found out that <a href="http://abridgegame.org/darcs/"><code>darcs</code></a> doesn’t work over <a href="http://fuse.sourceforge.net/sshfs.html"><code>sshfs</code></a> out of the box. Of course there was a <a href="http://www.abridgegame.org/pipermail/darcs-users/2006-September/010367.html">workaround</a>. Yesterday I was at it again, and this time it was <code>sshfs</code> that gave me grief. After another <a href="http://www.abridgegame.org/pipermail/darcs-users/2006-November/010668.html">exchange of emails</a> I found a solution.</p>
+<p>At the moment this is what’s necessary:</p>
+<pre><code>% sshfs -oworkaround=rename &lt;remote path&gt; &lt;local path&gt;
+% export DARCS_SLOPPY_LOCKS=1
+% darcs put &lt;local path&gt;/&lt;repo name&gt;</code></pre>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/darcs.html">darcs</a>, <a href="../tags/sshfs.html">sshfs</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2006-11-24-230-my-google-reader-share-2.html">⟸ My Google Reader share</a>
+
+
+
+<a href="../posts/2006-12-01-233-thought-on-ubuntus-openweek.html">Thought on Ubuntu's OpenWeek ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2006-11-27-232-darcs-over-sshfs@therning.org?subject=A comment on Darcs over sshfs&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

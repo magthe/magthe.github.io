@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">XML character dereferencer</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2010-08-13">2010-08-13</time> - Magnus Therning</p>
+</header>
+
+<p>Just in case you ever need one:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">xmlCharDeref ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">xmlCharDeref [] <span class="fu">=</span> []</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">xmlCharDeref (<span class="ch">'&amp;'</span><span class="fu">:</span><span class="ch">'#'</span><span class="fu">:</span><span class="ch">'x'</span><span class="fu">:</span>r) <span class="fu">=</span> <span class="kw">let</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">        (digits, remainder) <span class="fu">=</span> span (<span class="fu">/=</span> <span class="ch">';'</span>) r</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">        c <span class="fu">=</span> chr (read (<span class="st">&quot;0x&quot;</span> <span class="fu">++</span> digits))</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">    <span class="kw">in</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7">        c <span class="fu">:</span> xmlCharDeref (tail remainder)</a>
+<a class="sourceLine" id="cb1-8" data-line-number="8">xmlCharDeref (<span class="ch">'&amp;'</span><span class="fu">:</span><span class="ch">'#'</span><span class="fu">:</span>r) <span class="fu">=</span> <span class="kw">let</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9">        (digits, remainder) <span class="fu">=</span> span (<span class="fu">/=</span> <span class="ch">';'</span>) r</a>
+<a class="sourceLine" id="cb1-10" data-line-number="10">        c <span class="fu">=</span> chr (read digits)</a>
+<a class="sourceLine" id="cb1-11" data-line-number="11">    <span class="kw">in</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12">        c <span class="fu">:</span> xmlCharDeref (tail remainder)</a>
+<a class="sourceLine" id="cb1-13" data-line-number="13">xmlCharDeref (c<span class="fu">:</span>r) <span class="fu">=</span> c <span class="fu">:</span> xmlCharDeref r</a></code></pre></div>
+<p>In ghci:</p>
+<pre><code>*Foo&gt; xmlCharDeref &quot;hello there&quot;
+&quot;hello there&quot;
+*Foo&gt; xmlCharDeref &quot;hello&amp;#32;there&quot;
+&quot;hello there&quot;
+*Foo&gt; xmlCharDeref &quot;hello&amp;#x32;there&quot;
+&quot;hello2there&quot;</code></pre>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/xml.html">xml</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2010-08-01-835-any-haskell-puzzlers.html">⟸ Any Haskell puzzlers?</a>
+
+
+
+<a href="../posts/2010-09-03-874-dear-google-code.html">Dear Google Code, ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-201898"></a>
+  <header>
+    <p><b>Chris Done</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2010-08-14">2010-08-14</time></p>
+  </header>
+<p>How about:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">newtype</span> <span class="dt">XMLString</span> <span class="fu">=</span> <span class="dt">XMLString</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="ot">xmlCharDeref ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">XMLString</span></a></code></pre></div>
+<p>Now there’s no way you can accidentally encode twice. :-)</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-202198"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2010-08-24">2010-08-24</time></p>
+  </header>
+<p><em><span class="citation" data-cites="Chris">@Chris</span>:</em> Except of course that the type would be</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">xmlCharDeref ::</span> <span class="dt">XMLString</span> <span class="ot">-&gt;</span> <span class="dt">String</span></a></code></pre></div>
+<p>In any case it’s hardly worth doing for the particular case where I had use for this function.</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2010-08-13-828-xml-character-dereferencer@therning.org?subject=A comment on XML character dereferencer&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

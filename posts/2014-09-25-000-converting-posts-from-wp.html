@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Converting posts from WordPress</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2014-09-25">2014-09-25</time> - Magnus Therning</p>
+</header>
+
+<p>I’ve found two tools for converting posts from a <a href="http://wordpress.org/">WordPress</a> site to <a href="http://jaspervdj.be/hakyll/">Hakyll</a>[ (or to <a href="http://jekyllrb.com/">Jekyll</a> too I suppose):</p>
+<ul>
+<li><a href="https://github.com/kowey/hakyll-convert">hakyll-convert</a> supports converting from <a href="http://blogger.com/">Blogger</a> or WordPress to Hakyll</li>
+<li><a href="https://github.com/thomasf/exitwp">exitwp</a> supports converting from WordPress to Jekyll</li>
+</ul>
+<p>I ran both tools on an export of my posts (a tool included in WordPress), and both tools spat out one file per post. So far it looked good. Then I put all the posts into my Hakyll blog project and tried to build the site.</p>
+<p><strong>hakyll-convert</strong></p>
+<ul>
+<li>The conversion finished without any reported errors.</li>
+<li>The individual files were rather badly named, the name of each was based on the post ID rather than on the post date (but there’s a <a href="https://github.com/kowey/hakyll-convert/issues/6">bug report</a> for that).</li>
+<li>That posts were consumed by the build script without problems.</li>
+<li>The resulting HTML was not satisfactory, but that’s not due to the tool, instead it’s my choice of using <a href="http://qbnz.com/highlighter/">GeSHi</a> (via <a href="https://wordpress.org/plugins/wp-syntax/">WP-Syntax</a>).</li>
+</ul>
+<p><strong>exitwp</strong></p>
+<ul>
+<li>The conversion finished with a few reported errors, which I didn’t investigate further.</li>
+<li>The posts were not consumed by the build script due to <code>categories</code> and <code>tags</code> not being comma separated, but rather a Yaml list.</li>
+</ul>
+<p>The conclusion is that <code>hakyll-convert</code> will be what I use, but it’ll take a little while before I get around to importing my old posts since it’ll require manual edits to ensure they look all right.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/hakyll.html">hakyll</a>, <a href="../tags/jekyll.html">jekyll</a>, <a href="../tags/wordpress.html">wordpress</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2014-09-24-001-normalize-css.html">⟸ Dipping toes into CSS, normalizing</a>
+
+
+
+<a href="../posts/2014-09-27-000-previous-next-links.html">Links to previous and next post ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2014-09-25-000-converting-posts-from-wp@therning.org?subject=A comment on Converting posts from WordPress&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">JSON in Haskell</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2009-08-16">2009-08-16</time> - Magnus Therning</p>
+</header>
+
+<p>The other day I wanted to experiment a bit with the <a href="http://aur.archlinux.org/rpc.php">JSON interface to AUR</a>. Of course my first stop was at <a href="http://hackage.haskell.org/packages/hackage.html">HackageDB</a> to look for a Haskell package for parsing JSON. There are several of them, but only <a href="http://hackage.haskell.org/package/json">one</a> that seemed suitable for some quick experimentation, especially I wanted to avoid pre-defining data types for the objects in the JSON interface. That failed however and I ended up switching to Python. It did bother me though, and later on, when I had some more time I decided to have another look at <a href="http://hackage.haskell.org/package/json">json</a>. I was also helped by Don’s recent work on wrapping up the <a href="http://hackage.haskell.org/package/archlinux">AUR JSON interface in Haskell</a>.</p>
+<p>After some searching online I found a reasonably good example<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>:</p>
+<pre><code>{ &quot;ID&quot;: &quot;SGML&quot;
+, &quot;SortAs&quot;: &quot;SGML&quot;
+, &quot;GlossDef&quot;:
+    { &quot;para&quot;: &quot;A meta-markup language, used to create markup languages such as DocBook.&quot;
+    , &quot;GlossSeeAlso&quot;: [&quot;GML&quot;, &quot;XML&quot;]
+    }
+}</code></pre>
+<p>As a slight aside, the absolutely easiest way to add JSON to your program is to derive <code>Data</code> (and by implication <code>Typeable</code> too). This is the way I might have represented the data above in Haskell<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a>:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">data</span> <span class="dt">GlossDef</span> <span class="fu">=</span> <span class="dt">GlossDef</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">    {<span class="ot"> glossDefPara ::</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">    ,<span class="ot"> glossDefSeeAlso ::</span> [<span class="dt">String</span>]</a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">    } <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>, <span class="dt">Typeable</span>, <span class="dt">Data</span>) </a>
+<a class="sourceLine" id="cb2-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb2-6" data-line-number="6"><span class="kw">data</span> <span class="dt">GlossEntry</span> <span class="fu">=</span> <span class="dt">GlossEntry</span></a>
+<a class="sourceLine" id="cb2-7" data-line-number="7">    {<span class="ot"> glossEntryId ::</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb2-8" data-line-number="8">    ,<span class="ot"> glossEntrySortAs ::</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb2-9" data-line-number="9">    ,<span class="ot"> glossEntryGlossDef ::</span> <span class="dt">GlossDef</span></a>
+<a class="sourceLine" id="cb2-10" data-line-number="10">    } <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>, <span class="dt">Typeable</span>, <span class="dt">Data</span>)</a></code></pre></div>
+<p>After that it’s as easy as using <code>Text.JSON.Generic.toJSON</code> followed by <code>Text.JSON.encode</code>:</p>
+<pre><code>&gt; let gd = GlossDef &quot;foo&quot; [&quot;bar&quot;, &quot;baz&quot;]
+&gt; let ge = GlossEntry &quot;aa&quot; &quot;bb&quot; gd
+&gt; putStrLn $ encode $ toJSON ge
+{&quot;glossEntryId&quot;:&quot;aa&quot;,&quot;glossEntrySortAs&quot;:&quot;bb&quot;,&quot;glossEntryGlossDef&quot;:{&quot;glossDefPara&quot;:&quot;foo&quot;,&quot;glossDefSeeAlso&quot;:[&quot;bar&quot;,&quot;baz&quot;]}}</code></pre>
+<p>As can be seen the “names” of the members are derived from the field names in the datatypes. Great for when you are designing new JSON objects, not when you are writing code to parse an already existing object. For that there is another, more verbose way to do it.</p>
+<p>Start with the same data types, but without deriving <code>Typeable</code> and <code>Data</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="kw">data</span> <span class="dt">GlossDef</span> <span class="fu">=</span> <span class="dt">GlossDef</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">    {<span class="ot"> glossDefPara ::</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">    ,<span class="ot"> glossDefSeeAlso ::</span> [<span class="dt">String</span>]</a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">    } <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</a>
+<a class="sourceLine" id="cb4-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb4-6" data-line-number="6"><span class="kw">data</span> <span class="dt">GlossEntry</span> <span class="fu">=</span> <span class="dt">GlossEntry</span></a>
+<a class="sourceLine" id="cb4-7" data-line-number="7">    {<span class="ot"> glossEntryId ::</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb4-8" data-line-number="8">    ,<span class="ot"> glossEntrySortAs ::</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb4-9" data-line-number="9">    ,<span class="ot"> glossEntryGlossDef ::</span> <span class="dt">GlossDef</span></a>
+<a class="sourceLine" id="cb4-10" data-line-number="10">    } <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</a></code></pre></div>
+<p>Then you have to implement <code>Text.JSON.JSON</code>. Only two of the four functions must be implemented, <code>showJSON</code> and <code>readJSON</code>. Starting with <code>GlossDef</code>:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">JSON</span> <span class="dt">GlossDef</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">    showJSON gd <span class="fu">=</span> makeObj</a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">        [ (<span class="st">&quot;para&quot;</span>, showJSON <span class="fu">$</span> glossDefPara gd)</a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">        , (<span class="st">&quot;GlossSeeAlso&quot;</span>, showJSON <span class="fu">$</span> glossDefSeeAlso gd)</a>
+<a class="sourceLine" id="cb5-5" data-line-number="5">        ]</a></code></pre></div>
+<p>Basically this part defers to the already supplied implementations for the fields’ types. The same approach works for <code>readJSON</code> too:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1">    readJSON (<span class="dt">JSObject</span> obj) <span class="fu">=</span> <span class="kw">let</span></a>
+<a class="sourceLine" id="cb6-2" data-line-number="2">            jsonObjAssoc <span class="fu">=</span> fromJSObject obj</a>
+<a class="sourceLine" id="cb6-3" data-line-number="3">        <span class="kw">in</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb6-4" data-line-number="4">            para <span class="ot">&lt;-</span> mLookup <span class="st">&quot;para&quot;</span> jsonObjAssoc <span class="fu">&gt;&gt;=</span> readJSON</a>
+<a class="sourceLine" id="cb6-5" data-line-number="5">            seeAlso <span class="ot">&lt;-</span> mLookup <span class="st">&quot;GlossSeeAlso&quot;</span> jsonObjAssoc <span class="fu">&gt;&gt;=</span> readJSON</a>
+<a class="sourceLine" id="cb6-6" data-line-number="6">            return <span class="fu">$</span> <span class="dt">GlossDef</span></a>
+<a class="sourceLine" id="cb6-7" data-line-number="7">                { glossDefPara <span class="fu">=</span> para</a>
+<a class="sourceLine" id="cb6-8" data-line-number="8">                , glossDefSeeAlso <span class="fu">=</span> seeAlso</a>
+<a class="sourceLine" id="cb6-9" data-line-number="9">                }</a>
+<a class="sourceLine" id="cb6-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb6-11" data-line-number="11">    readJSON _ <span class="fu">=</span> fail <span class="st">&quot;&quot;</span></a></code></pre></div>
+<p>The function <code>mLookup</code> is a wrapper around <code>lookup</code> that makes it a bit nicer to work with in monads other than <code>Maybe</code>:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1">mLookup a as <span class="fu">=</span> maybe (fail <span class="fu">$</span> <span class="st">&quot;No such element: &quot;</span> <span class="fu">++</span> a) return (lookup a as)</a></code></pre></div>
+<p>(The choice to include the key in the string passed to <code>fail</code> limits the usefulness somewhat in the general case, but for this example it doesn’t make any difference.)</p>
+<p>Implementing the interface for <code>GlossEntry</code> is analogous:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">JSON</span> <span class="dt">GlossEntry</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">    showJSON ge <span class="fu">=</span> makeObj</a>
+<a class="sourceLine" id="cb8-3" data-line-number="3">        [ (<span class="st">&quot;ID&quot;</span>, showJSON <span class="fu">$</span> glossEntryId ge)</a>
+<a class="sourceLine" id="cb8-4" data-line-number="4">        , (<span class="st">&quot;SortAs&quot;</span>, showJSON <span class="fu">$</span> glossEntrySortAs ge)</a>
+<a class="sourceLine" id="cb8-5" data-line-number="5">        , (<span class="st">&quot;GlossDef&quot;</span>, showJSON <span class="fu">$</span> glossEntryGlossDef ge)</a>
+<a class="sourceLine" id="cb8-6" data-line-number="6">        ]</a>
+<a class="sourceLine" id="cb8-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb8-8" data-line-number="8">    readJSON (<span class="dt">JSObject</span> obj) <span class="fu">=</span> <span class="kw">let</span></a>
+<a class="sourceLine" id="cb8-9" data-line-number="9">            jsonObjAssoc <span class="fu">=</span> fromJSObject obj</a>
+<a class="sourceLine" id="cb8-10" data-line-number="10">        <span class="kw">in</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb8-11" data-line-number="11">            id <span class="ot">&lt;-</span> mLookup <span class="st">&quot;ID&quot;</span> jsonObjAssoc <span class="fu">&gt;&gt;=</span> readJSON</a>
+<a class="sourceLine" id="cb8-12" data-line-number="12">            sortAs <span class="ot">&lt;-</span> mLookup <span class="st">&quot;SortAs&quot;</span> jsonObjAssoc <span class="fu">&gt;&gt;=</span> readJSON</a>
+<a class="sourceLine" id="cb8-13" data-line-number="13">            gd <span class="ot">&lt;-</span> mLookup <span class="st">&quot;GlossDef&quot;</span> jsonObjAssoc <span class="fu">&gt;&gt;=</span> readJSON</a>
+<a class="sourceLine" id="cb8-14" data-line-number="14">            return <span class="fu">$</span> <span class="dt">GlossEntry</span></a>
+<a class="sourceLine" id="cb8-15" data-line-number="15">                { glossEntryId <span class="fu">=</span> id</a>
+<a class="sourceLine" id="cb8-16" data-line-number="16">                , glossEntrySortAs <span class="fu">=</span> sortAs</a>
+<a class="sourceLine" id="cb8-17" data-line-number="17">                , glossEntryGlossDef <span class="fu">=</span> gd</a>
+<a class="sourceLine" id="cb8-18" data-line-number="18">                }</a></code></pre></div>
+<p>With the JSON object mentioned at the top in the file <code>test.json</code> the following is possible:</p>
+<pre><code>&gt; f &lt;- readFile &quot;test.json&quot;
+&gt; let (Ok j) = decode f :: Result GlossEntry
+&gt; putStrLn $ encode j
+{&quot;ID&quot;:&quot;SGML&quot;,&quot;SortAs&quot;:&quot;SGML&quot;,&quot;GlossDef&quot;:{&quot;para&quot;:&quot;A meta-markup language, used to create markup languages such as DocBook.&quot;,&quot;GlossSeeAlso&quot;:[&quot;GML&quot;,&quot;XML&quot;]}}</code></pre>
+<p>I have a feeling the implemention of <code>readJSON</code> could be simplified by using an applicative style, but I leave that as an excercise for the reader :-)</p>
+<section class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>It’s a modified version of what I found <a href="http://www.json.org/example.html">here</a>.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+<li id="fn2"><p>The file should include <code>{-# LANGUAGE DeriveDataTypeable #-}</code> and both <code>Data.Typeable</code> and <code>Data.Data</code> must be imported.<a href="#fnref2" class="footnote-back">↩</a></p></li>
+</ol>
+</section>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/json.html">json</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2009-08-04-713-updating-ghc-on-arch.html">⟸ Updating GHC on Arch</a>
+
+
+
+<a href="../posts/2009-08-21-727-forkexec-in-haskell.html">Fork/exec in Haskell ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-186526"></a>
+  <header>
+    <p><b>Max Desyatov</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-08-16">2009-08-16</time></p>
+  </header>
+<pre><code>readJSON (JSObject obj) = GlossEntry &lt;$&gt; f &quot;ID&quot; &lt;*&gt; f &quot;SortAs&quot; &lt;*&gt; f &quot;GlossDef&quot;
+      where f x = mLookup x jsonObjAssoc &gt;&gt;= readJSON</code></pre>
+</article>
+
+<article class="comment-body">
+  <a name="comment-186529"></a>
+  <header>
+    <p><b>solrize</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-08-17">2009-08-17</time></p>
+  </header>
+<p>Haskell could really use a fast Json parser like Python’s json module (which wraps a C library that does the actual parsing). But that SYB-based module does look pretty easy to use.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-186554"></a>
+  <header>
+    <p><b>Liyang HU</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-08-17">2009-08-17</time></p>
+  </header>
+<p>Since when did anyone use JSON for speed-critical data-intensive applications?</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2009-08-16-719-json-in-haskell@therning.org?subject=A comment on JSON in Haskell&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

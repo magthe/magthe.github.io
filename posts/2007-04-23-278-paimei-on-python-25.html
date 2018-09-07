@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">PaiMei on Python 2.5</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2007-04-23">2007-04-23</time> - Magnus Therning</p>
+</header>
+
+<p>The <a href="http://www.openrce.org/downloads/details/208/PaiMei">PaiMei</a> page says that you need Python 2.4, which turns out to be true due to it shipping with a compiled for Python 2.4 version of <code>pydasm</code>. Of course it’s possible to compile <code>pydasm</code> yourself, it’s even fairly easy just as long as you have the correct version of Visual Studio installed. You could also use the utterly unofficial build I’ve made available <a href="http://therning.org/magnus_files/pydasm-1.2.win32-py2.5.exe">here</a>. Not even I know if I’m to be trusted though ;-). Use at own risk, and all that.</p>
+<p>So, the steps are:</p>
+<ol type="1">
+<li>Install Python 2.5 off <a href="http://www.python.org">python.org</a></li>
+<li>Install <code>pydasm</code></li>
+<li>Install PaiMei</li>
+<li>Remove PaiMei’s version of pydasm (<code>c:\python25\site-packages\paimei\pydasm.pyd</code>) to be sure the correct one is used.</li>
+</ol>
+<p>Oh, I probably should say that I’ve only been using the core functionality of PaiMei (<code>pydbg</code> and <code>pydbg_core</code>). There may be other dependencies on Python 2.4 in PaiMei that I haven’t stumbled upon!</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/paimei.html">paimei</a>, <a href="../tags/programming.html">programming</a>, <a href="../tags/python.html">python</a>, <a href="../tags/windows.html">windows</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2007-04-22-280-haskell-and-c-functions-returning-more-than-one-value.html">⟸ Haskell and C---functions returning more than one value</a>
+
+
+
+<a href="../posts/2007-04-27-281-bye-salmon-hope-to-see-you-again-soon.html">Bye Salmon, hope to see you again, soon! ⟹</a>
+
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-57982"></a>
+  <header>
+    <p><b>Paolo Palumbo</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-06-05">2007-06-05</time></p>
+  </header>
+<p>Well, the easier way to make the prebuilt version of pydasm to work with python 2.5 is simply to take any binary editor and change the name of the loaded dll in the binary code. Using HIEW, for example, just load the file, search for the string “python24.dll” and patch one single byte to have “python25.dll” - then save the file. It will work as a charm (even if on startup it will display a warning, but who cares :P).</p>
+<p>I hope this helps ;)</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2007-04-23-278-paimei-on-python-25@therning.org?subject=A comment on PaiMei on Python 2.5&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

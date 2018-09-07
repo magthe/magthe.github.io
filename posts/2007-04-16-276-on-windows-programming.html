@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">On Windows programming</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2007-04-16">2007-04-16</time> - Magnus Therning</p>
+</header>
+
+<p>I always find myself going through the same motions when trying to programming on Windows: excitement, bewilderedness, frustration, relief. It’s exciting to find new libraries and frameworks that seem to deliver exactly the functionality I require. I feel bewildered because I don’t think I’ve ever come across a Windows C/C++ API that immediately makes sense to me. Then follows a time of frustration, often a rather long period too, when I try to use the library/framework to solve the problem I have. At some point I hit that stage where my little project is debugged into behaving properly ((Through experience I’ve come to the conclusion that it isn’t worth the time and effort to try to fit Microsoft solutions into some logical framework. I’d argue that’s true for most closed-source solutions.)) and a sense of relief comes over me.</p>
+<p>One thing that never ceases to amaze me is how many small surprising things there are lurking just under the hood in Windows:</p>
+<ol type="1">
+<li><p>Want to print an error message? <a href="http://msdn2.microsoft.com/en-us/library/ms679360.aspx">GetLastError</a> gives you an error value and <a href="http://msdn2.microsoft.com/en-us/library/ms679351.aspx">FormatMessage</a> whips it into a nice printable string. Take a good long look at <code>FormatMessage</code>. Where is the convenience function a lÃ¡ <code>strerror</code>?</p></li>
+<li><p>Another thing is the surprising <a href="http://msdn2.microsoft.com/en-us/library/ms682586.aspx">order of paths that is searched for DLLs</a>. By putting <code>PATH</code> so far down the list and completely leaving out an equivalent of <code>LD_LIBRARY_PATH</code> they actively encourage developers to copy DLLs into the home dirs of executables. I suspect this is inevitable given the DLL-hell phenomenon on Windows. It’s nonetheless extremely irritating when developing against a non-standard DLL (i.e. one that isn’t installed in <code>\windows\system32</code>).</p></li>
+<li><p>The utter confusion I experience when trying to figure out just where to find the correct framework to use. There is considerable overlap between Visual Studio and the Windows Platform SDK. To add more confusion there are sometimes other frameworks that overlap the both of them, e.g. Debugging Tools for Windows provides <code>dbghelp.{dll,h}</code>, both of which are provided in slightly different versions in the other places ((A tip, make sure to use the ones that comes from Debugging Tools for Windows!)).</p></li>
+<li><p>The lack of fixes for known issues, e.g. the version of <code>dbghelp.h</code> included in Debugging Tools for Windows can’t be included as is because it lacks the definition of a macro. The webpage announcing version 6.6.7.5 was updated 18 July, 2006. One would think that gives Microsoft ample time to address the issue, but no such luck.</p></li>
+</ol>
+<p>Well, that’s enough of ranting for one night…</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/frustration.html">frustration</a>, <a href="../tags/microsoft.html">microsoft</a>, <a href="../tags/programming.html">programming</a>, <a href="../tags/windows.html">windows</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2007-04-15-275-it-is-fair-at-least-for-now.html">⟸ It is fair, at least for now...</a>
+
+
+
+<a href="../posts/2007-04-16-277-using-dbghelp.html">Using dbghelp ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2007-04-16-276-on-windows-programming@therning.org?subject=A comment on On Windows programming&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>
