@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Jendela to save Metacity</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2006-05-31">2006-05-31</time> - Magnus Therning</p>
+</header>
+
+<p>Well, the last few days I’ve been filing bugs and trying to write patches. They are all related to my intention of getting rid of Openbox and using Metacity in its place. This is the current list:</p>
+<ul>
+<li><a href="http://bugzilla.gnome.org/show_bug.cgi?id=342899">Bug 342899</a> adds a function to <code>libwnck</code> to set a window’s geometry. Done and approved :)</li>
+<li><a href="http://bugzilla.gnome.org/show_bug.cgi?id=343332">Bug 343332</a> fixes a bug in the Python bindings for <code>libwnck</code>. With it in place it’s possible to get the geometry of a window. Done, but not approved.</li>
+<li><a href="http://bugzilla.gnome.org/show_bug.cgi?id=342900">Bug 342900</a> is related to 342899, it adds Python bindings to the function in that bug. Still in progress, having some problems with the enum/flags that currently prevents me from testing my patch.</li>
+</ul>
+<p>I guess this makes it pretty clear what I’m intending to do. I call it <em>Jendela</em>. It’ll be a command-line tool for window manipulation, written in Python. Ideally this tool will make it possible for me to implement the window manipulation functions that I think are missing in Metacity (see below for an explanation why I think this is a good thing). Combine it with something like <a href="http://www.nongnu.org/xhotkeys/">xhotkeys</a> or <a href="http://hocwp.free.fr/xbindkeys/xbindkeys.html">xbindkeys</a> and Metacity will become a lot more usable indeed.</p>
+<p>So, why do I think Metacity missing features is a good thing? Well, it’s simple, it’s the Unix way! Metacity should be kept lean and mean, small in size and number of features, but good at what it does. Then there should be ways of connecting other programs to influence Metacity’s behaviour. That is where <code>libwnck</code> comes into the picture. I’m hoping that one day Metacity will start removing features relating to keyboard shortcuts for window manipulations due to tools like Jendela. Well, that’ll probably remain a dream for a long time to come though.</p>
+<p>Jendela is not ready for consumption yet but I’m trying to push my <a href="http://bazaar-vcs.org/">bzr</a> repo as regularly as possible. You can find it at <a href="http://therning.org/magnus_bzr/jendela.dev/" class="uri">http://therning.org/magnus_bzr/jendela.dev/</a>.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/gnome.html">gnome</a>, <a href="../tags/jendela.html">jendela</a>, <a href="../tags/metacity.html">metacity</a>, <a href="../tags/openbox.html">openbox</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2006-05-23-137-abandoning-openbox-for-metacity.html">⟸ Abandoning OpenBox for MetaCity</a>
+
+
+
+<a href="../posts/2006-06-02-139-jendela-change-of-implementation-language.html">Jendela - change of implementation language ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2006-05-31-138-jendela-to-save-metacity@therning.org?subject=A comment on Jendela to save Metacity&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

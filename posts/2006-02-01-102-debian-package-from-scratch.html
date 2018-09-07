@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Debian package from scratch</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2006-02-01">2006-02-01</time> - Magnus Therning</p>
+</header>
+
+<p>Since I’ve re-joined the mothership (I recently moved back to Debian (Sid) after about a year using Ubuntu and a couple of months using ArchLinux) I thought it’d be a good time to do that one thing that’s been on my todo-list for years now–grok Debian package building.</p>
+<p>I’ve built a few packages over the years but I’ve never really understood the magic of <code>debian/rules</code>. For my first package I used <code>debhelper</code>, then I discovered <a href="http://build-common.alioth.debian.org/">CDBS</a>. Both of these systems (especially CDBS) are great, but I never really understood what was going on. I came across a <a href="http://women.alioth.debian.org/wiki/index.php/English/BuildingWithoutHelper">tutorial on building a Debian package without debhelper</a> a while ago and ever since I’ve been planning to reading it. It turns out Miriam Ruiz has made an excellent job in explaining how to package. This post reflects my current understanding of Debian packaging.</p>
+<p>###The basics</p>
+<p>Only for files are really needed</p>
+<ol type="1">
+<li><code>debian/control</code> contains source and package information such as dependencies and a description of the package. It’s handy to use that package names defined in this file as install directories for the actual packages when building, e.g. build the package <em>foo</em> in <code>debian/foo/</code>.</li>
+<li><code>debian/copyright</code> contains information about upstream.</li>
+<li><code>debian/changelog</code> contains the changelog for the package (not upstream). The format must be strictly followed, the easiest way of doing that is to use <code>dch</code>. <code>dch --create</code> will create the file with the first entry.</li>
+<li><code>debian/rules</code> is at the heart of packaging.</li>
+</ol>
+<p>All of them are well described in Miriam’s document, but I have some thoughts on the last one.</p>
+<p>###The <code>rules</code></p>
+<p>This file is a makefile with three required targets:</p>
+<ul>
+<li><code>clean</code> - Cleans up the build area, both for the source and the stuff generated in <code>debian/</code>.</li>
+<li><code>build</code> - Build the software</li>
+<li><code>binary-arch</code> - Create packages for architecture specific parts, e.g. binary executables and libraries.</li>
+<li><code>binary-indep</code> - Create packages for architecture independent parts, e.g. documentation.</li>
+<li><code>binary</code> - This is often an empty target that depends on the two previous ones.</li>
+</ul>
+<p><code>*-stamp</code> targets are used to make sure things happen in the right order. Everything else is convenience, really.</p>
+<p>###Where to put things</p>
+<p>The upstream source is installed, by convention in <code>debian/&lt;package name&gt;</code> (or <code>debian/tmp</code>). Package control files go in <code>debian/&lt;package name&gt;/DEBIAN</code>. The very last step of packaging is to create the package itself by calling <code>dpkg --build</code> (or <code>dpkg-deb -b</code>).</p>
+<p>###Debhelper</p>
+<p>Miriam has made a conscious choice to leave Debhelper out of her document. I think this is wise. However, I think any packager would benefit from getting familiar with the <code>d_*</code> commands. They aren’t very easy to use, and though their manpages are well written they don’t contain any expamples. Luckily there’s a load of examples in Debian’s source repos. Debhelper’s <code>dh_make</code> is also an excellent way of learning-by-example.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/debian.html">debian</a>, <a href="../tags/packaging.html">packaging</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2006-01-31-101-cleaning-up-in-sshknown_hosts.html">⟸ Cleaning up in ~/.ssh/known_hosts</a>
+
+
+
+<a href="../posts/2006-02-01-103-keeping-windows-up-to-date.html">Keeping windows up-to-date ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2006-02-01-102-debian-package-from-scratch@therning.org?subject=A comment on Debian package from scratch&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

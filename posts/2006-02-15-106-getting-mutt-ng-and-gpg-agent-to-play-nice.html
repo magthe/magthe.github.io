@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Getting Mutt-NG and gpg-agent to play nice</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2006-02-15">2006-02-15</time> - Magnus Therning</p>
+</header>
+
+<p>The last time I tried getting gpg-agent to work I gave up. That was on Ubuntu, and I only spent about 5 minutes on it. This time around I spent 10 minutes on it, and it’s working like a charm.</p>
+<p>After installing <code>gnupg-agent</code> and <code>pinentry-gtk2</code> I fired up the following line to <code>~/.gnupg/gpg.conf</code></p>
+<pre><code>use-agent</code></pre>
+<p>I then ran <code>gpg-agent --daemon --sh</code> from the command line. It printed a shell command line for setting <code>$GPG_AGENT_INFO</code>. I copy pasted it in the shell and executed it. Then I signed two files, the first time I got a pretty dialogue (GTK2) and the second time nothing.</p>
+<p>The <code>gnupg-agent</code> package comes with a script in <code>/etc/X11/Xsession.d/</code> that will execute the agent on X login. Logging out and then back in, firing up an xterm and <code>echo $GPGP_AGENT_INFO</code> verified that it worked properly.</p>
+<p>Next step was to get Mutt-NG to play nice. Adding <code>set pgp_use_gpg_agent = yes</code> didn’t quite do it. A few searches on Google revealed that I needed to remove <code>--passphrase-fd 0</code> from my <code>pgp_*_command</code>s.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/gnupg.html">gnupg</a>, <a href="../tags/muttng.html">muttng</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2006-02-09-105-epilicious-ready-to-be-localised.html">⟸ Epilicious ready to be localised</a>
+
+
+
+<a href="../posts/2006-02-15-107-hitler-and-anti-hitler-cartoons.html">Hitler and anti-hitler cartoons ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2006-02-15-106-getting-mutt-ng-and-gpg-agent-to-play-nice@therning.org?subject=A comment on Getting Mutt-NG and gpg-agent to play nice&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

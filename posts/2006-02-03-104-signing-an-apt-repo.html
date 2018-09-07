@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Signing an APT repo</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2006-02-03">2006-02-03</time> - Magnus Therning</p>
+</header>
+
+<p>The document on <a href="http://wiki.debian.org/SecureApt">secure APT</a> contains an excellent explanation of what secure APT actually is. One section is empty though–the one about setting up your own secure APT repo.</p>
+<p>I have some circumstantial evidence that my local APT repo is secure. :-) <code>apt-get update</code> complained about packages being “unsecure” when I installed from it. Then I signed my <code>Release</code> file, and instead I was told that the key was missing. Then I used <code>apt-key</code> to add my GPG key and the complaint went away.</p>
+<p>I use <code>dput</code> and <code>mini-dinstall</code> to manage my local repo. At some point I’m planning on synchronising it to another computer so that it’s available to others as well, but due to bandwidth problem I haven’t started doing this yet.</p>
+<p>My <code>~/.dput.conf</code> looks like this:</p>
+<pre><code>[DEFAULT]
+allow_unsigned_uploads = 0
+
+[local]
+fqdn = localhost
+method = local
+incoming = /usr/local/apt/mini-dinstall/incoming
+post_upload_command = mini-dinstall --batch</code></pre>
+<p>As you can see my local repo lives in <code>/usr/local/apt</code>. Then the <code>~/.mini-dinstall.conf</code> looks like this:</p>
+<pre><code>[DEFAULT]
+architectures = all, i386
+archivedir = /usr/local/apt
+use_dnotify = 0
+verify_sigs = 1
+extra_keyrings = ~/ms_home/secret/gnupg/pubring.gpg
+mail_on_success = 0
+archive_style = flat
+poll_time = 40
+mail_log_level = NONE
+generate_release = 1
+release_description = Magnus' Funky Packages
+release_signscript = ~/bin/release_sign</code></pre>
+<p>Most of this should be obvious to anyone who’s read the manpage. The only interesting bit is the <code>release_signscript</code> at the end. Based on information in the manpage I wrote this little shell script:</p>
+<pre><code>#! /bin/sh
+
+gpg --detach-sign --armor --output Release.gpg $1</code></pre>
+<p>Pretty straight forward really!</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/apt.html">apt</a>, <a href="../tags/debian.html">debian</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2006-02-01-103-keeping-windows-up-to-date.html">⟸ Keeping windows up-to-date</a>
+
+
+
+<a href="../posts/2006-02-09-105-epilicious-ready-to-be-localised.html">Epilicious ready to be localised ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2006-02-03-104-signing-an-apt-repo@therning.org?subject=A comment on Signing an APT repo&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

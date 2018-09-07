@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">aptitude doesn't suck, actually</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2006-05-17">2006-05-17</time> - Magnus Therning</p>
+</header>
+
+<p>I have to say I was a little worried when I saw the installation notice during a recent upgrade of <em>debfoster</em>. It had been deprecated, abandoned by its developers, and instead I was being encouraged to use <em>aptitude</em>. So, I was being forced to give up my favourite package tool for a tool that I’ve started a few times but always found too confusing to invest time in learning.</p>
+<p>My first step was the transition from <em>debfoster</em> to <em>aptitude</em>. I tried out the <em>debfoster2aptitude</em> script that was added to the last upgrade of <em>debfoster</em> but quickly realised that it was asking questions on a level that was way too low. I decided to do it manually instead. First I minimised my list of packages in <em>debfoster</em> and saved a copy of it:</p>
+<pre><code># debfoster
+# debfoster -qmn
+# debfoster -a &gt; ~/debfoster_keepers</code></pre>
+<p>Then I turned to <em>aptitude</em>. First I marked <em>all</em> packages as automatically installed (auto) from the command line:</p>
+<pre><code># aptitude markauto '~i'</code></pre>
+<p>Then I marked each of the packages in <code>/root/debfoster_keepers</code> as not auto. I did this using the UI, which was both boring and time consuming. It should be easy to wip up a shell script for it, but I felt I needed to get used to <em>aptitude</em>’s UI a bit. After this I went on to see what the damage would be–I hit ‘g’ to add/remove packages. As expected there were a few packages in there that I had to tell <em>aptitude</em> to keep installed for me. No big deal.</p>
+<p>One interesting thing about <em>aptitude</em> is that it doesn’t just keep <em>depends</em> of packages, it keeps <em>recommends</em> as well. To see if I could further trim the list of non-auto packages I started looking at the ways to filter the view of packages. I didn’t quite succeed on my own, but after a <a href="http://lists.debian.org/debian-user/2006/05/msg01579.html">few emails to the Debian User List</a> I had a nice filter expression:</p>
+<pre><code>~i!~M(~R~i|~Rrecommends:~i)</code></pre>
+<p>It will show any installed packages that aren’t auto which are dependencies or recommendations of other packages. In short, packages that aren’t marked auto but could (should?) be. Be aware though that circular <em>depends</em>/<em>recommends</em> prevents all packages in that list to be marked auto.</p>
+<p>Another cool thing is the “Audit recommendations” view in <em>aptitude</em>. It’s a great way of finding related packages and improving the functionality of the system. If you want to also see the <em>suggests</em> of installed packages you can change the filter in that view to:</p>
+<pre><code>!~v!~i(~RBrecommends:~i|~RBsuggests:~i)</code></pre>
+<p>By now I’m not too sad that <em>debfoster</em> is being removed, <em>aptitude</em> actually doesn’t suck :-)</p>
+<p><em>[Edited 01-09-2006 17:11 BST]</em> Fixed a few spelling errors.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/aptitude.html">aptitude</a>, <a href="../tags/debian.html">debian</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2006-05-16-131-delicious-backup-and-restore-tool.html">⟸ Del.icio.us backup and restore tool</a>
+
+
+
+<a href="../posts/2006-05-19-133-epilicious-frappr-map.html">Epilicious Frappr Map? ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2006-05-17-132-aptitude-doesnt-suck-actually@therning.org?subject=A comment on aptitude doesn't suck, actually&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

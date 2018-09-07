@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Banging my head against sparse files</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2006-07-11">2006-07-11</time> - Magnus Therning</p>
+</header>
+
+<p>Lately I’ve had use for sparse files to solve a problem. Simple, yes. Use <code>lseek</code> and <code>write</code> (or <code>read</code>). Even better, at least in this case, use <code>pwrite</code> and <code>pread</code>. Should be simple, right? Yes, should be.</p>
+<p>I was banging my head against code equivalent to the following for quite a few hours:</p>
+<pre><code>#define _XOPEN_SOURCE 500
+#define _FILE_OFFSET_BITS 64
+#include &lt;errno.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;sys/stat.h&gt;
+
+char buf[1024];
+
+int
+main(int argc, char **argv)
+{
+    int n;
+    off_t off;
+
+    for(n = 0; n &lt; 1024; n++) {
+        buf[n] = 'a';
+    }
+
+    int fd1;
+
+    if(-1 == (fd1 = open(&quot;file1&quot;, O_WRONLY | O_CREAT, 0666)))
+        error(EXIT_FAILURE, errno, &quot;open (test1)&quot;);
+    off = 0x80000000;
+    printf(&quot;size: %d\n&quot;, sizeof(off));
+    if(pwrite(fd1, buf, 1024, off) != 1024)
+        error(EXIT_FAILURE, errno, &quot;pwrite (%lli)&quot;, off);
+
+    return(0);
+}</code></pre>
+<p>Can you spot the problem?</p>
+<p>Well, I can tell you it doesn’t work. <code>off_t</code> becomes 64-bit due to the <code>#define _FILE_OFFSET_BITS 64</code> so the <code>off</code> variable isn’t negative <em>in my code</em>. Somehow however it becomes negative on the way into <code>pwrite</code>, and without a single compiler or linker error at that!</p>
+<p>Have you spot the problem yet?</p>
+<p>Here’s the correctly working code:</p>
+<pre><code>#define _XOPEN_SOURCE 500
+#define _FILE_OFFSET_BITS 64
+#include &lt;errno.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;unistd.h&gt;
+
+char buf[1024];
+
+int
+main(int argc, char **argv)
+{
+    int n;
+    off_t off;
+
+    for(n = 0; n &lt; 1024; n++) {
+        buf[n] = 'a';
+    }
+
+    int fd1;
+
+    if(-1 == (fd1 = open(&quot;file1&quot;, O_WRONLY | O_CREAT, 0666)))
+        error(EXIT_FAILURE, errno, &quot;open (test1)&quot;);
+    off = 0x80000000;
+    printf(&quot;size: %d\n&quot;, sizeof(off));
+    if(pwrite(fd1, buf, 1024, off) != 1024)
+        error(EXIT_FAILURE, errno, &quot;pwrite (%lli)&quot;, off);
+
+    return(0);
+}</code></pre>
+<p>Don’t see any difference? Look at the list of included files!</p>
+<p>Let me just say the C and I aren’t on speaking terms at the moment!</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/c.html">c</a>, <a href="../tags/linux.html">linux</a>, <a href="../tags/programming.html">programming</a>, <a href="../tags/sparse%20files.html">sparse files</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2006-07-08-155-stuff-worth-reading-08072006.html">⟸ Stuff worth reading (08/07/2006)</a>
+
+
+
+<a href="../posts/2006-07-14-157-from-the-list-of-idiotic-function-signatures.html">From the list of idiotic function signatures... ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2006-07-11-156-banging-my-head-against-files@therning.org?subject=A comment on Banging my head against sparse files&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

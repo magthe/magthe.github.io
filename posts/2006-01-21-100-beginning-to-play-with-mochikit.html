@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Beginning to play with MochiKit</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2006-01-21">2006-01-21</time> - Magnus Therning</p>
+</header>
+
+<p>I haven’t written any JavaScript for years. The only lingering memory was of pain–pain to find information, pain to use the API, pain to debug… There were probably a few more pains, but I’ve managed to successfully repress those memories. So, why return? Well, I want to some day be able to debunk the AJAX hype in any discusion I partake in :-)</p>
+<p><a href="http://mochikit.com/">MochiKit</a> is used in <a href="http://www.turbogears.org/">turbogears</a> to make the life of a “web developer” easier. Given the comments on the turbogears site I tought I’d take a quick look at it… I was surprised. There was a lot less pain this time.</p>
+<p>Of course I started with some silly experiments. First off playing with the DOM tree a little. The HTML part ended up like this:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">&lt;html&gt;</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">  <span class="kw">&lt;head&gt;</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">    <span class="kw">&lt;title&gt;</span>Experiment 1<span class="kw">&lt;/title&gt;</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">    <span class="kw">&lt;script</span><span class="ot"> type=</span><span class="st">&quot;text/javascript&quot;</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="ot">            src=</span><span class="st">&quot;MochiKit-1.1/lib/MochiKit/Base.js&quot;</span><span class="kw">&gt;&lt;/script&gt;</span></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">    <span class="kw">&lt;script</span><span class="ot"> type=</span><span class="st">&quot;text/javascript&quot;</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="ot">            src=</span><span class="st">&quot;MochiKit-1.1/lib/MochiKit/Iter.js&quot;</span><span class="kw">&gt;&lt;/script&gt;</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8">    <span class="kw">&lt;script</span><span class="ot"> type=</span><span class="st">&quot;text/javascript&quot;</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="ot">            src=</span><span class="st">&quot;MochiKit-1.1/lib/MochiKit/DOM.js&quot;</span><span class="kw">&gt;&lt;/script&gt;</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10">    <span class="kw">&lt;script</span><span class="ot"> type=</span><span class="st">&quot;text/javascript&quot;</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="ot">            src=</span><span class="st">&quot;exp01.js&quot;</span><span class="kw">&gt;&lt;/script&gt;</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12">  <span class="kw">&lt;/head&gt;</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14">  <span class="kw">&lt;body&gt;</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15">  <span class="kw">&lt;table</span><span class="ot"> id=</span><span class="st">&quot;theTable&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16">  <span class="kw">&lt;/table&gt;</span></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17">  <span class="kw">&lt;a</span><span class="ot"> href=</span><span class="st">&quot;#&quot;</span><span class="ot"> onclick=</span><span class="st">&quot;addEntry();&quot;</span><span class="kw">&gt;</span>Add entry<span class="kw">&lt;/a&gt;</span></a>
+<a class="sourceLine" id="cb1-18" data-line-number="18"></a>
+<a class="sourceLine" id="cb1-19" data-line-number="19">  <span class="kw">&lt;div</span><span class="ot"> id=</span><span class="st">&quot;theText&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb1-20" data-line-number="20">  <span class="kw">&lt;/div&gt;</span></a>
+<a class="sourceLine" id="cb1-21" data-line-number="21">  <span class="kw">&lt;a</span><span class="ot"> href=</span><span class="st">&quot;#&quot;</span><span class="ot"> onclick=</span><span class="st">&quot;addText();&quot;</span><span class="kw">&gt;</span>Add text<span class="kw">&lt;/a&gt;</span></a>
+<a class="sourceLine" id="cb1-22" data-line-number="22">  <span class="kw">&lt;/body&gt;</span></a>
+<a class="sourceLine" id="cb1-23" data-line-number="23"><span class="kw">&lt;/html&gt;</span></a></code></pre></div>
+<p>Nothing really exciting there. Here’s the two toy functions:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">var</span> i <span class="op">=</span> <span class="dv">0</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3"><span class="kw">function</span> <span class="at">addEntry</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">    <span class="kw">var</span> row <span class="op">=</span> <span class="at">TR</span>(<span class="kw">null</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">        <span class="at">TD</span>(<span class="kw">null</span><span class="op">,</span> <span class="st">'Hello'</span>)<span class="op">,</span></a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">        <span class="at">TD</span>(<span class="kw">null</span><span class="op">,</span> i))<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-7" data-line-number="7">    <span class="va">row</span>.<span class="at">id</span> <span class="op">=</span> <span class="st">'row'</span> <span class="op">+</span> i</a>
+<a class="sourceLine" id="cb2-8" data-line-number="8">    <span class="at">appendChildNodes</span>(<span class="st">'theTable'</span><span class="op">,</span> row)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-9" data-line-number="9">    i <span class="op">+=</span> <span class="dv">1</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-10" data-line-number="10"><span class="op">}</span></a>
+<a class="sourceLine" id="cb2-11" data-line-number="11"></a>
+<a class="sourceLine" id="cb2-12" data-line-number="12"><span class="kw">function</span> <span class="at">addText</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-13" data-line-number="13">    <span class="kw">var</span> txt <span class="op">=</span> <span class="at">getElement</span>(<span class="st">'theText'</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-14" data-line-number="14">    <span class="cf">if</span> (<span class="va">txt</span>.<span class="at">text</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-15" data-line-number="15">        <span class="va">txt</span>.<span class="at">text</span> <span class="op">+=</span> <span class="st">' Hello'</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-16" data-line-number="16">    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb2-17" data-line-number="17">        <span class="va">txt</span>.<span class="at">text</span> <span class="op">=</span> <span class="st">'Hello'</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb2-18" data-line-number="18">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb2-19" data-line-number="19">    <span class="at">replaceChildNodes</span>(txt<span class="op">,</span> <span class="at">P</span>(<span class="kw">null</span><span class="op">,</span> <span class="va">txt</span>.<span class="at">text</span>))<span class="op">;</span></a>
+<a class="sourceLine" id="cb2-20" data-line-number="20"><span class="op">}</span></a></code></pre></div>
+<p>Wonderfully easy to navigate and modify the DOM tree.</p>
+<p>Well, this was somewhat silly. Hopefully there’ll be something more interesting to write about soon enough.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/javascript.html">javascript</a>, <a href="../tags/mochikit.html">mochikit</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2006-01-16-99-epilicious-07.html">⟸ Epilicious 0.7</a>
+
+
+
+<a href="../posts/2006-01-31-101-cleaning-up-in-sshknown_hosts.html">Cleaning up in ~/.ssh/known_hosts ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2006-01-21-100-beginning-to-play-with-mochikit@therning.org?subject=A comment on Beginning to play with MochiKit&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

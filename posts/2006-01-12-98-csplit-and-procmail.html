@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">csplit and procmail</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2006-01-12">2006-01-12</time> - Magnus Therning</p>
+</header>
+
+<p>I had misconfigured my <code>procmail</code> slightly, which resulted in 223 mails ending up in an <a href="http://en.wikipedia.org/wiki/Mbox"><code>mbox</code></a> rather than sorted into my <a href="http://en.wikipedia.org/wiki/Maildir"><code>maildirs</code></a>. At least they weren’t lost!</p>
+<p>After correcting my <code>procmail</code> setup came the next problem–how to get them all sorted out of the <code>mbox</code>? The easiest way seemed to be to re-deliver them. The <code>procmail</code> man-page says nothing about it being able to handle several emails at once. I didn’t feel adventurous, mails are too important! Instead I went looking and found a new command <code>csplit</code>. The following split my <code>mbox</code> into files containing one email each:</p>
+<pre><code>csplit mbox '/From /' '{*}'</code></pre>
+<p>The first file it creates, <code>xx00</code>, is of zero length, so I deleted that. Then I passed all files to <code>procmail</code> one at a time:</p>
+<pre><code>for f in *; do echo $f; procmail &lt; $f; done</code></pre>
+<p>(It took so much time that I interrupted it once and added the “progress reporting”.)</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/csplit.html">csplit</a>, <a href="../tags/procmail.html">procmail</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2006-01-10-96-cherrypy-sessions.html">⟸ CherryPy sessions</a>
+
+
+
+<a href="../posts/2006-01-16-99-epilicious-07.html">Epilicious 0.7 ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2006-01-12-98-csplit-and-procmail@therning.org?subject=A comment on csplit and procmail&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

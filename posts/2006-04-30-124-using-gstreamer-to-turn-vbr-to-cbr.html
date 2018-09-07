@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Using GStreamer to turn VBR to CBR</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2006-04-30">2006-04-30</time> - Magnus Therning</p>
+</header>
+
+<p>I’ve been listening to a few episodes of <a href="http://www.lugradio.org/">LugRadio</a> and I’ve found them very enjoying so far. What I haven’t enjoyed so much though is my silly MP3 player. The episodes are recorded in variable bit rate (VBR) and my player is utterly pants with handling that–I can’t rely on the timer, I can’t see the total length of a track and I can’t fast forward. Add to this that the bloody thing doesn’t remember its position within a track and it’s obvious just how much pain it’s bringing me at the moment. In a relatively recent episode someone mentioned <a href="http://gnormalize.sourceforge.net/">gnormalize</a> to turn it into a constant bit rate (CBR) MP3. Just too bad that gnormalize isn’t available as a Debian package.</p>
+<p>“Why have an entire program written for something that should be simple to do on the commandline using <a href="http://gstreamer.org/">GStreamer</a>?”</p>
+<p>Well, here’s the command line that recodes an MP3 (no matter what bit rate it has) to an MP3 with a CBR of 96:</p>
+<pre><code>gst-launch-0.8 filesrc location=lugradio.mp3 ! mad \
+! lame bitrate=96 ! filesink location=lugradio_cbr.mp3</code></pre>
+<p>Now using my player is slightly less painful :-)</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/audio%20webcasts.html">audio webcasts</a>, <a href="../tags/bitrate.html">bitrate</a>, <a href="../tags/gstreamer.html">gstreamer</a>, <a href="../tags/mp3.html">mp3</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2006-04-20-123-epilicious-08-released.html">⟸ Epilicious 0.8 released</a>
+
+
+
+<a href="../posts/2006-05-03-125-un-an-enemy-of-internet.html">UN an enemy of internet? ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2006-04-30-124-using-gstreamer-to-turn-vbr-to-cbr@therning.org?subject=A comment on Using GStreamer to turn VBR to CBR&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

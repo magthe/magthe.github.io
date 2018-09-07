@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Compiling GNOME 2.15.4 using jhbuild</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2006-07-22">2006-07-22</time> - Magnus Therning</p>
+</header>
+
+<p>The other day I had some problems early on when trying to compile from GNOME CVS using jhbuild. From a sudden surge in brain activity I got the idea to build a release of the development version of GNOME—the 1.15.x series—the lates one is 2.15.4.</p>
+<p>I got some help from Elijah Newren’s <a href="http://blogs.gnome.org/view/newren/2005/10/04/0">post on compiling GNOME with jhbuild</a>. Using the links from the <a href="http://gnomedesktop.org/node/2724">release notice on FootNotes</a> I got as far as</p>
+<pre><code>% jhbuild bootstrap</code></pre>
+<p>without problems. Then I got stuck:</p>
+<pre><code>% jhbuild -m \
+&gt; http://ftp.gnome.org/pub/GNOME/teams/releng/2.15.4/gnome-2.15.4.modules  \
+&gt; build
+jhbuild build: dependent module &quot;libdaemon&quot; not found
+usage: jhbuild [ -f config ] command [ options ... ]</code></pre>
+<p>My first thought was that installing the Debian package <code>libdaemon0</code> might solve it. Of course it didn’t. Then I remembered that during bootstrap Python 2.4.3 was downloaded and installed, despite being installed on my system already. Not too much of a surprise then that <code>libdaemon0</code> didn’t do any good.</p>
+<p>After looking at jhbuild modulesets for previous releases as well as the bleeding CVS moduleset I got an idea. I saved the <a href="http://ftp.gnome.org/pub/GNOME/teams/releng/2.15.4/">2.15.4 moduleset</a> locally and modified <code>freedesktop-2.15.4.modules</code> to include the following lines:</p>
+<pre><code>&lt;tarball id=&quot;libdaemon&quot; version=&quot;0.10&quot;&gt;
+  &lt;source href=&quot;http://0pointer.de/lennart/projects/libdaemon/libdaemon-0.10.tar.gz&quot; /&gt;
+  &lt;branch checkoutdir=&quot;libdaemon&quot; module=&quot;trunk&quot; repo=&quot;libdaemon.0pointer.de&quot;/&gt;
+&lt;/tarball&gt;</code></pre>
+<p>It’s compiling rather happily at the moment so I’m optimistic… I’ll add a note if things go pear-shaped…</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/gnome.html">gnome</a>, <a href="../tags/jhbuild.html">jhbuild</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2006-07-21-158-tags-tags-tags.html">⟸ Tags, tags, tags...</a>
+
+
+
+<a href="../posts/2006-07-24-160-damn-it-i-lost-a-translation.html">Damn it! I lost a translation... ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2006-07-22-159-compiling-gnome-2154-using-jhbuild@therning.org?subject=A comment on Compiling GNOME 2.15.4 using jhbuild&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

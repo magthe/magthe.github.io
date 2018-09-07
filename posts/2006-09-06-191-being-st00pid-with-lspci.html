@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Being st00pid with lspci</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2006-09-06">2006-09-06</time> - Magnus Therning</p>
+</header>
+
+<p>This wasn’t a serious mistake and the only reason it took a while to sort out was my amazing thickness.</p>
+<p>I had removed <code>pciutils</code> (and thereby <code>lspci</code>) from the system thinking that “now everything works, so I won’t ever need it again”. Just to show me the error of my ways the benevolent Debian decided to punish me by not giving me network. It turned out that Linux’ excellent support for a multitude of network cards worked against me on this one—which one to insert? After several uninspired thoughts I had an inspired one. Brute force! Insert them all!</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb1-1" data-line-number="1">    <span class="bu">cd</span> /lib/modules/2.6.17-2-686/kernel/drivers/net</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">    <span class="kw">for</span> <span class="ex">f</span> in *.ko<span class="kw">;</span> <span class="kw">do</span> <span class="ex">insmod</span> <span class="va">$f</span><span class="kw">;</span> <span class="kw">done</span></a></code></pre></div>
+<p>A few error messages later I tried <code>ifup eth0</code>, and it worked :-) Quick download of <code>pciutils</code>. Now I know the machine in question requires <code>eepro100</code> to get network. I recorded that in <code>/etc/modules</code>.</p>
+<p>At the moment I’m having a hard time resisting removing <code>pciutils</code>. I mean, now everything works, I won’t ever need it again, right?</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/debian.html">debian</a>, <a href="../tags/st00pid.html">st00pid</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2006-09-05-190-ogg-podcasts-no-ogg-feeds.html">⟸ OGG podcasts, no OGG feeds</a>
+
+
+
+<a href="../posts/2006-09-08-192-my-new-music-player-is-going-back.html">My new music player is going back :( ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2006-09-06-191-being-st00pid-with-lspci@therning.org?subject=A comment on Being st00pid with lspci&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Rolling your own authentication in Django</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2006-08-28">2006-08-28</time> - Magnus Therning</p>
+</header>
+
+<p>For various reasons I wanted to see just what was required to <a href="http://groups.google.com/group/django-users/browse_thread/thread/008e47e32e6715cc">roll my own</a> <a href="http://groups.google.com/group/django-users/browse_thread/thread/da44d004f3f3ba93">basic authentication</a> using Django. I am aware there’s a built-in authentication module, <code>django.contrib.auth</code>, but it’s overkill for my ultimate goal and it depends on the session module in ways that only further study can reveal. I heard rumours that the authentication module would be pluggable. The only pluggable aspect of it that I found was the backend (i.e. the data model).</p>
+<p>In the end the most relevant reason for doing this was that I wanted to :-)</p>
+<p>So, what’s involved in it? It turns out, not much!</p>
+<p>First I created a middleware class that extracts the authentication credentials (read username and password) and sticks a ‘user object’ in the <code>request</code> depending on just how successfully it does this:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="im">from</span> base64 <span class="im">import</span> b64decode</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="im">from</span> models <span class="im">import</span> User, AnonUser, BadUser</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="kw">class</span> MiniAuthMiddleWare(<span class="bu">object</span>):</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">    <span class="kw">def</span> process_request(<span class="va">self</span>, request):</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">        auth <span class="op">=</span> request.META.get(<span class="st">'Authorization'</span>, <span class="st">''</span>) <span class="kw">or</span> <span class="op">\</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7">                request.META.get(<span class="st">'HTTP_AUTHORIZATION'</span>, <span class="st">''</span>)</a>
+<a class="sourceLine" id="cb1-8" data-line-number="8">        <span class="cf">if</span> <span class="kw">not</span> auth:</a>
+<a class="sourceLine" id="cb1-9" data-line-number="9">            request.user <span class="op">=</span> AnonUser()</a>
+<a class="sourceLine" id="cb1-10" data-line-number="10">            <span class="cf">return</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12">        name, pwd <span class="op">=</span> b64decode(auth[<span class="dv">6</span>:]).split(<span class="st">':'</span>)</a>
+<a class="sourceLine" id="cb1-13" data-line-number="13">        <span class="cf">try</span>:</a>
+<a class="sourceLine" id="cb1-14" data-line-number="14">            u <span class="op">=</span> User.objects.get(name<span class="op">=</span>name)</a>
+<a class="sourceLine" id="cb1-15" data-line-number="15">            <span class="cf">if</span> pwd <span class="op">!=</span> u.passwd:</a>
+<a class="sourceLine" id="cb1-16" data-line-number="16">                request.user <span class="op">=</span> BadUser()</a>
+<a class="sourceLine" id="cb1-17" data-line-number="17">                <span class="cf">return</span></a>
+<a class="sourceLine" id="cb1-18" data-line-number="18">            request.user <span class="op">=</span> u</a>
+<a class="sourceLine" id="cb1-19" data-line-number="19">            <span class="cf">return</span></a>
+<a class="sourceLine" id="cb1-20" data-line-number="20">        <span class="cf">except</span> User.DoesNotExist, e:</a>
+<a class="sourceLine" id="cb1-21" data-line-number="21">            request.user <span class="op">=</span> BadUser()</a>
+<a class="sourceLine" id="cb1-22" data-line-number="22">        <span class="cf">except</span> <span class="pp">AssertionError</span>, e:</a>
+<a class="sourceLine" id="cb1-23" data-line-number="23">            request.user <span class="op">=</span> BadUser()</a>
+<a class="sourceLine" id="cb1-24" data-line-number="24"></a>
+<a class="sourceLine" id="cb1-25" data-line-number="25">        <span class="cf">return</span></a></code></pre></div>
+<p>The model related to this is rather minimal:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="im">from</span> django.db <span class="im">import</span> models</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3"><span class="kw">class</span> User(models.Model):</a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">    name <span class="op">=</span> models.CharField(maxlength<span class="op">=</span><span class="dv">50</span>, primary_key<span class="op">=</span><span class="va">True</span>)</a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">    passwd <span class="op">=</span> models.CharField(maxlength<span class="op">=</span><span class="dv">50</span>)</a>
+<a class="sourceLine" id="cb2-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb2-7" data-line-number="7">    <span class="kw">def</span> is_authenticated(<span class="va">self</span>):</a>
+<a class="sourceLine" id="cb2-8" data-line-number="8">        <span class="cf">return</span> <span class="va">True</span></a>
+<a class="sourceLine" id="cb2-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb2-10" data-line-number="10"><span class="kw">class</span> AnonUser:</a>
+<a class="sourceLine" id="cb2-11" data-line-number="11">    name <span class="op">=</span> <span class="st">'Anonymous'</span></a>
+<a class="sourceLine" id="cb2-12" data-line-number="12">    passwd <span class="op">=</span> <span class="st">'NoPass'</span></a>
+<a class="sourceLine" id="cb2-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb2-14" data-line-number="14">    <span class="kw">def</span> is_authenticated(<span class="va">self</span>):</a>
+<a class="sourceLine" id="cb2-15" data-line-number="15">        <span class="cf">return</span> <span class="va">False</span></a>
+<a class="sourceLine" id="cb2-16" data-line-number="16"></a>
+<a class="sourceLine" id="cb2-17" data-line-number="17"><span class="kw">class</span> BadUser:</a>
+<a class="sourceLine" id="cb2-18" data-line-number="18">    name <span class="op">=</span> <span class="st">'BadUser'</span></a>
+<a class="sourceLine" id="cb2-19" data-line-number="19">    passwd <span class="op">=</span> <span class="st">'NoPass'</span></a>
+<a class="sourceLine" id="cb2-20" data-line-number="20"></a>
+<a class="sourceLine" id="cb2-21" data-line-number="21">    <span class="kw">def</span> is_authenticated(<span class="va">self</span>):</a>
+<a class="sourceLine" id="cb2-22" data-line-number="22">        <span class="cf">return</span> <span class="va">False</span></a></code></pre></div>
+<p>Then I decorated the functions/urls that required authentication with the following:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">def</span> _RequireAuthorization(func):</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">    <span class="kw">def</span> _wrapper(request):</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">        <span class="cf">if</span> <span class="kw">not</span> request.user.is_authenticated():</a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">            response <span class="op">=</span> HttpResponse()</a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">            response.status_code <span class="op">=</span> <span class="dv">401</span></a>
+<a class="sourceLine" id="cb3-6" data-line-number="6">            response[<span class="st">'WWW-Authenticate'</span>] <span class="op">=</span> <span class="st">'Basic Realm=&quot;Silly Realm&quot;'</span></a>
+<a class="sourceLine" id="cb3-7" data-line-number="7">            <span class="cf">return</span> response</a>
+<a class="sourceLine" id="cb3-8" data-line-number="8">        <span class="cf">else</span>:</a>
+<a class="sourceLine" id="cb3-9" data-line-number="9">            <span class="cf">return</span> func(request)</a>
+<a class="sourceLine" id="cb3-10" data-line-number="10">    <span class="cf">return</span> _wrapper</a></code></pre></div>
+<p>That all seems to work just fine :-)</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/authentication.html">authentication</a>, <a href="../tags/django.html">django</a>, <a href="../tags/python.html">python</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2006-08-24-180-politicians-are-funny.html">⟸ Politicians are funny</a>
+
+
+
+<a href="../posts/2006-08-30-182-some-stuff-30082006.html">Some stuff (30/08/2006) ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2006-08-28-181-rolling-your-own-authorization-in-django@therning.org?subject=A comment on Rolling your own authentication in Django&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

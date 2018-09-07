@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Compiling GNOME 2.15.90 (failed attempt)</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2006-08-06">2006-08-06</time> - Magnus Therning</p>
+</header>
+
+<p>I started trying to <a href="http://therning.org/magnus/archives/159">compile GNOME 2.15.4</a>, but as you can read from the comments things didn’t quite work out. After a few emails on the <em>gnome-love</em> mailing list I switched to release 2.15.90.</p>
+<p>###freetype2 I quickly ran into problems with <code>freetype2</code>. It seems Sid’s version is too new. I added a new moduleset to the regular ones I got off the GNOME site:</p>
+<pre><code>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;moduleset&gt;
+  &lt;tarball id=&quot;freetype2&quot; version=&quot;2.1.9&quot;&gt;
+    &lt;source
+      href=&quot;http://switch.dl.sourceforge.net/sourceforge/freetype/freetype-2.1.9.tar.bz2&quot;
+      md5sum=&quot;ec1b903e4be5f073caa72458ea58c29c&quot; size=&quot;992394&quot; /&gt;
+  &lt;/tarball&gt;
+&lt;/moduleset&gt;</code></pre>
+<p>I saved it as <code>freetype2-2.15.90.modules</code>. You need to add an <code>include</code> tag in <code>gnome-2.15.90.modules</code> and a <code>dep</code> tag on <code>gontconfig</code> in <code>freedesktop-2.15.90.modules</code>.</p>
+<p>###gtk+ The next thing that failed was <code>gtk+</code>. It said Pango wasn’t built with support for Cairo. A look at <code>config.log</code> for Pango showed that Cairo wasn’t built with the Xrender backend and a look at Cairo’s <code>config.log</code> and output of <code>./configure --help</code> showed that it inspected the system during configuration to see what backends it could build. (I have to say I <em>really</em> don’t like that sort of behaviour, I prefer it if all configuration options are explicit. Currently it’s trying to be smart but only ends up screwing the user.) I made sure <code>libxrender-dev</code> was installed and I put a link to <code>/usr/lib/pkgconfig/xrender.pc</code> in <code>${prefix}/lib/pkgconfig</code> (not strictly necessary for Cairo but it seems the resulting <code>cairo-xlib-xrender.pc</code> depends on <code>xrender.pc</code> so I suspect compiling Pango might need it, no harm in having it there anyway, right?).</p>
+<p>###dbus-glib Next <code>dbus-glib</code> failed. It’s a well-known problem and the patch is <a href="http://ftp.gnome.org/pub/GNOME/teams/releng/2.15.90/dbus-glib-build.patch">available</a>. However, it seems it wasn’t applied properly by <code>jhbuild</code> and I still got an error saying that <code>${prefix}/var/run/system_bus_socket - file doesn't exist</code>. Apply the patch manually, re-run <code>jhbuild</code>, answer <em>no</em> to all questions asked by patch (reversing, apply anyway), then skip the patch stage. That should do it for that package.</p>
+<p>###firefox Well, that failed as well and I really can’t figure out why. It seems it doesn’t find my installed X libraries during linking. Very weird indeed. I learnt on IRC (#epiphany) that it probably is easier to use Debian’s <code>libxul-dev</code> package. After installing that, and setting <code>PKG_CONFIG_PATH</code> to include both <code>$prefix/lib/pkgconfig</code> and <code>/usr/lib/pkgconfig</code> (it’s better than linking files like I did earlier).</p>
+<p>###epiphany This was the package I really wanted all this time. Here things are failing in new and interesting ways. It seems Debian uses a sligtly non-standard split of <code>xulrunner</code> packages for <code>pkg-config</code>. I needed to stick the following line in <code>m4/gecko.m4</code>:</p>
+<pre><code>gecko_cv_extra_pkg_dependencies=&quot;${gecko_cv_extra_pkg_dependencies} xulrunner-js&quot;</code></pre>
+<p>It goes after the if-statement in the <code>pkg-config</code> area of the file.</p>
+<p>Still, that doesn’t make it compile successfully. It seems that my two conflicting <code>freetype2</code> versions are confusing the build… For now I’m giving up, but I’ll be back with a more targeted build story… <em>I will build epiphany from CVS and live to tell about it!!!</em> :-)</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/gnome.html">gnome</a>, <a href="../tags/jhbuild.html">jhbuild</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2006-08-04-167-ssl-in-wordpress.html">⟸ SSL in WordPress?</a>
+
+
+
+<a href="../posts/2006-08-07-169-finally-some-success-with-building-gnome.html">Finally some success with building GNOME ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2006-08-06-168-compiling-gnome-21590@therning.org?subject=A comment on Compiling GNOME 2.15.90 (failed attempt)&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

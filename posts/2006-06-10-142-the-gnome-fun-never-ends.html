@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">The GNOME fun never ends ;-)</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2006-06-10">2006-06-10</time> - Magnus Therning</p>
+</header>
+
+<p>After an attempt at hacking “window packing” into Jendela I ran into a bit of a showstopper: Metacity doesn’t support <a href="http://standards.freedesktop.org/wm-spec/wm-spec-1.3.html#id2506756">_NET_MOVERESIZE_WINDOW</a>. Now this is a bit of a problem, because “window packing” is all about moving windows around on the screen.</p>
+<p>Confusingly Metacity does register the relevant XAtom, meaning that <a href="http://sweb.cz/tripie/utils/wmctrl/">wmctrl</a> doesn’t work (it’ll first try the XAtom, if it exists it uses the EWMH way, otherwise it reverts back to calling XMoveResizeWindow). Bad, bad Metacity!</p>
+<p>Well, it turns out the code is already in Metacity, just commented out. The changelog says it’s pending “feature thaw”, whatever that means. Apparently something’s frozen solid because it’s been pending since July 2004 :-)</p>
+<p>I decided I need to take a stab at this and raised <a href="http://bugzilla.gnome.org/show_bug.cgi?id=344521">bug 344521</a>.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/gnome.html">gnome</a>, <a href="../tags/jendela.html">jendela</a>, <a href="../tags/metacity.html">metacity</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2006-06-08-141-spam-is-hijacking-the-language.html">⟸ Spam is hijacking the language</a>
+
+
+
+<a href="../posts/2006-06-12-144-first-version-of-jendela-is-out.html">First version of Jendela is out ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2006-06-10-142-the-gnome-fun-never-ends@therning.org?subject=A comment on The GNOME fun never ends ;-)&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

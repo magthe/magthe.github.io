@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Being st00pid with LVM</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2006-04-20">2006-04-20</time> - Magnus Therning</p>
+</header>
+
+<p>Well, this is the first entry in my st00pid category. I make quite a few mistakes when using Linux, mistakes that take time and effort to fix. From now on I’ll swallow my pride and write down, in a public place like this, about what st00pid things I do. Most importantly I’ll also write down what I did to get my Linux system back to the state it was before my brain temporarily popped out for a coffee.</p>
+<p>I like keeping my Debian systems minimal. When running Sid there ends up being quite a few upgrades to download and when dependencies change your system ends up having “orphaned” packages, i.e. packages that were pulled in to satisfy a dependency but by now the dependent package has since moved on (or been deleted). This is of course a worrying thought, packages are installed that don’t actually need to be present on the system. My stomach’s turning. Some people use aptitude to handle this, personally I’ve never really like <code>aptitude</code> and I use <code>debfoster</code>.</p>
+<p>Yesterday, after a sizable upgrade of my system at work I ran <code>debfoster</code> to prune orphaned packages. This was in fact the first time I ran it after setting up the system which resulted in quite a few questions regarding whether to keep specific packages or not. <strong>This is about the time when my brain popped out for a coffee.</strong> When asked if I wanted to keep <code>lvm2</code> or not there was no brain to consult and I answered <em>no</em>. Had the brain been around it would have reminded me that I opted to use logical volumes on that particular machine (for two reasons, 1) I had never done it before and it’s damn cool, and 2) it makes the system a bit more flexible and future proof).</p>
+<p>After a reboot I was sitting there with a system that was fairly useless since the root partition couldn’t be mounted. A quick calculation of just how long it’d take me to re-install later, I popped in the only live CD I had available at work–Ubuntu 5.04, Hoary Hedgehog. Using that I found a page on the Knoppix Wiki on <a href="http://www.knoppix.net/wiki/LVM2">how to use LVM2 with Knoppix</a>. Now armed with something that looked like a workable plan I did the following in a terminal</p>
+<pre><code>$ sudo su -
+# modprobe dm-mod
+# vgscan
+# vgchange -a y
+# cd /mnt; mkdir debsys</code></pre>
+<p>Then I went ahead and mounted the root partition on <code>/mnt/debsys</code>. I also mounted the other partitions I have on my installed system, <code>/var</code>, etc. Then to get into it and fix it I</p>
+<pre><code># chroot /debsys
+# apt-get install lvm2 lvm-common</code></pre>
+<p>Except <code>lvm2</code> refused to install, it complained about the kernel being too old. Not surprising since Hoary is getting really old by now. to get around that I downloaded the source for <code>lvm2</code>, modified <code>debian/preinst</code> so that the kernel version check was skipped, re-built the package, and installed it. Worked like a charm.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/debian.html">debian</a>, <a href="../tags/linux.html">linux</a>, <a href="../tags/lvm.html">lvm</a>, <a href="../tags/st00pid.html">st00pid</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2006-04-18-121-vmware-server-to-the-rescue.html">⟸ VMWare server to the rescue</a>
+
+
+
+<a href="../posts/2006-04-20-123-epilicious-08-released.html">Epilicious 0.8 released ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2006-04-20-122-wednesday-april-19@therning.org?subject=A comment on Being st00pid with LVM&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

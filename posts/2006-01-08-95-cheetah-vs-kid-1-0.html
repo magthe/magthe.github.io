@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Cheetah vs. kid: 1 - 0</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2006-01-08">2006-01-08</time> - Magnus Therning</p>
+</header>
+
+<p>I should have spent my Sunday doing a million other things, e.g. trying to clean up <a href="http://muttprint.sourceforge.net/">muttprint</a>’s build system. Instead I decided to take a quick look at <a href="http://turbogears.org/">TurboGears</a> and its parts. The Arch packages for it didn’t quite build so I ended up spending some time with <a href="http://www.cherrypy.org/">CherryPy</a>, <a href="http://www.cheetahtemplate.org/">Cheetah</a> and <a href="http://kid.lesscode.org/">Kid</a>. I’m an utter beginner when it comes to “programming the web”, I’ve just never been very interested in it. It might be changing now though :)</p>
+<p>CherryPy is truly impressive. A simple Hello World web service hints at just how easy it is to use. It’s written in Python, and it’s very pythonic indeed. However CherryPy isn’t what I wanted to write about. Another area I’ve not looked at is templating systems, I haven’t found a need for it yet. That’s possibly because I’ve never really understood what they are and what they do. That’s changing too.</p>
+<p>TurboGears uses Kid so that’s were I started. I downloaded a simple example consisting of two files. The template:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">&lt;html&gt;</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">  <span class="kw">&lt;head&gt;</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">    <span class="kw">&lt;title</span><span class="ot"> py:content=</span><span class="st">&quot;title&quot;</span><span class="kw">&gt;</span>Title<span class="kw">&lt;/title&gt;</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  <span class="kw">&lt;/head&gt;</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">  <span class="kw">&lt;body&gt;</span></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7">    <span class="kw">&lt;h1</span><span class="ot"> py:content=</span><span class="st">&quot;title&quot;</span><span class="kw">&gt;</span>There should be content<span class="kw">&lt;/h1&gt;</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9">    <span class="kw">&lt;ol</span><span class="ot"> py:if=</span><span class="st">&quot;title&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10">      <span class="kw">&lt;li</span><span class="ot"> py:for=</span><span class="st">&quot;line in lines&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11">      <span class="kw">&lt;span</span><span class="ot"> py:replace=</span><span class="st">&quot;line&quot;</span><span class="kw">&gt;&lt;/span&gt;</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12">      <span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13">    <span class="kw">&lt;/ol&gt;</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15">    <span class="kw">&lt;dl&gt;</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16">      <span class="kw">&lt;span</span><span class="ot"> py:for=</span><span class="st">&quot;n, line in enumerate(lines)&quot;</span><span class="ot"> py:omit=</span><span class="st">&quot;&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17">        <span class="kw">&lt;dt</span><span class="ot"> py:content=</span><span class="st">&quot;'Line %s' % n&quot;</span><span class="kw">&gt;&lt;/dt&gt;</span></a>
+<a class="sourceLine" id="cb1-18" data-line-number="18">        <span class="kw">&lt;dd</span><span class="ot"> py:content=</span><span class="st">&quot;line&quot;</span><span class="kw">&gt;&lt;/dd&gt;</span></a>
+<a class="sourceLine" id="cb1-19" data-line-number="19">      <span class="kw">&lt;/span&gt;</span></a>
+<a class="sourceLine" id="cb1-20" data-line-number="20">    <span class="kw">&lt;/dl&gt;</span></a>
+<a class="sourceLine" id="cb1-21" data-line-number="21"></a>
+<a class="sourceLine" id="cb1-22" data-line-number="22">    <span class="kw">&lt;p</span><span class="ot"> py:replace=</span><span class="st">&quot;'End of page'+title&quot;</span><span class="kw">&gt;&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb1-23" data-line-number="23"></a>
+<a class="sourceLine" id="cb1-24" data-line-number="24">  <span class="kw">&lt;/body&gt;</span></a>
+<a class="sourceLine" id="cb1-25" data-line-number="25"><span class="kw">&lt;/html&gt;</span></a></code></pre></div>
+<p>The second file is the CherryPy modules that combines the template with values:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="im">import</span> cherrypy</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2"><span class="im">import</span> kid</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4"><span class="kw">class</span> HomePage:</a>
+<a class="sourceLine" id="cb2-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">    <span class="at">@cherrypy.expose</span></a>
+<a class="sourceLine" id="cb2-7" data-line-number="7">    <span class="kw">def</span> index(<span class="va">self</span>):</a>
+<a class="sourceLine" id="cb2-8" data-line-number="8">        test <span class="op">=</span> kid.Template(<span class="bu">file</span><span class="op">=</span><span class="st">'kid_test.kid'</span>)</a>
+<a class="sourceLine" id="cb2-9" data-line-number="9">        test.title <span class="op">=</span> <span class="st">&quot;Test Kid Page&quot;</span></a>
+<a class="sourceLine" id="cb2-10" data-line-number="10">        test.lines <span class="op">=</span> [<span class="st">'qwe'</span>,<span class="st">'asd'</span>,<span class="st">'zxc'</span>]</a>
+<a class="sourceLine" id="cb2-11" data-line-number="11">        <span class="cf">return</span> test.serialize(output<span class="op">=</span><span class="st">'xhtml'</span>)</a>
+<a class="sourceLine" id="cb2-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb2-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb2-14" data-line-number="14"><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">&quot;__main__&quot;</span>:</a>
+<a class="sourceLine" id="cb2-15" data-line-number="15">    cherrypy.root <span class="op">=</span> HomePage()</a>
+<a class="sourceLine" id="cb2-16" data-line-number="16">    cherrypy.server.start()</a></code></pre></div>
+<p>This, I think, is rather cool. Very clean, very nice. Still I thought it’d be interesting to take a look at Cheetah (one main reason was that their homepage mentioned that <a href="http://reddit.com/">reddit.com</a>, which is funded by <a href="http://www.paulgraham.com/">Paul Graham</a>, uses it). It was a good decision, I think.</p>
+<p>I wrote a Cheetah template producing the same output as the Kid template I downloaded.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">&lt;html&gt;</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="kw">&lt;head&gt;</span></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">    <span class="kw">&lt;title&gt;</span>$title<span class="kw">&lt;/title&gt;</span></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">  <span class="kw">&lt;/head&gt;</span></a>
+<a class="sourceLine" id="cb3-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb3-6" data-line-number="6">  <span class="kw">&lt;body&gt;</span></a>
+<a class="sourceLine" id="cb3-7" data-line-number="7">    <span class="kw">&lt;h1&gt;</span>$title<span class="kw">&lt;/h1&gt;</span></a>
+<a class="sourceLine" id="cb3-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb3-9" data-line-number="9">    <span class="kw">&lt;ol&gt;</span></a>
+<a class="sourceLine" id="cb3-10" data-line-number="10">      #for $l in $lines:</a>
+<a class="sourceLine" id="cb3-11" data-line-number="11">      <span class="kw">&lt;li&gt;</span>$l<span class="kw">&lt;/li&gt;</span></a>
+<a class="sourceLine" id="cb3-12" data-line-number="12">      #end for</a>
+<a class="sourceLine" id="cb3-13" data-line-number="13">    <span class="kw">&lt;/ol&gt;</span></a>
+<a class="sourceLine" id="cb3-14" data-line-number="14"></a>
+<a class="sourceLine" id="cb3-15" data-line-number="15">    <span class="kw">&lt;dl&gt;</span></a>
+<a class="sourceLine" id="cb3-16" data-line-number="16">      <span class="kw">&lt;span&gt;</span></a>
+<a class="sourceLine" id="cb3-17" data-line-number="17">        #for $n, $l in $enumerate($lines):</a>
+<a class="sourceLine" id="cb3-18" data-line-number="18">        <span class="kw">&lt;dt&gt;</span>Line $n<span class="kw">&lt;/dt&gt;</span></a>
+<a class="sourceLine" id="cb3-19" data-line-number="19">        <span class="kw">&lt;dd&gt;</span>$l<span class="kw">&lt;/dd&gt;</span></a>
+<a class="sourceLine" id="cb3-20" data-line-number="20">        #end for</a>
+<a class="sourceLine" id="cb3-21" data-line-number="21">      <span class="kw">&lt;/span&gt;</span></a>
+<a class="sourceLine" id="cb3-22" data-line-number="22">    <span class="kw">&lt;/dl&gt;</span></a>
+<a class="sourceLine" id="cb3-23" data-line-number="23"></a>
+<a class="sourceLine" id="cb3-24" data-line-number="24">    <span class="kw">&lt;p&gt;</span>End of page $title<span class="kw">&lt;/p&gt;</span></a>
+<a class="sourceLine" id="cb3-25" data-line-number="25">  <span class="kw">&lt;/body&gt;</span></a>
+<a class="sourceLine" id="cb3-26" data-line-number="26"><span class="kw">&lt;/html&gt;</span></a></code></pre></div>
+<p>The matching CherryPy module is very similar to the one above.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="im">import</span> cherrypy</a>
+<a class="sourceLine" id="cb4-2" data-line-number="2"><span class="im">from</span> Cheetah.Template <span class="im">import</span> Template</a>
+<a class="sourceLine" id="cb4-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4"><span class="kw">class</span> HomePage:</a>
+<a class="sourceLine" id="cb4-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb4-6" data-line-number="6">    <span class="at">@cherrypy.expose</span></a>
+<a class="sourceLine" id="cb4-7" data-line-number="7">    <span class="kw">def</span> index(<span class="va">self</span>):</a>
+<a class="sourceLine" id="cb4-8" data-line-number="8">        tmpl <span class="op">=</span> Template(<span class="bu">file</span><span class="op">=</span><span class="st">'cheetah_test.html'</span>, <span class="op">\</span></a>
+<a class="sourceLine" id="cb4-9" data-line-number="9">                searchList<span class="op">=</span>[{<span class="st">'title'</span>: <span class="st">'Test Cheetah Page'</span>, <span class="op">\</span></a>
+<a class="sourceLine" id="cb4-10" data-line-number="10">                    <span class="st">'lines'</span>: [<span class="st">'qwe'</span>, <span class="st">'asd'</span>, <span class="st">'zxc'</span>],</a>
+<a class="sourceLine" id="cb4-11" data-line-number="11">                    }])</a>
+<a class="sourceLine" id="cb4-12" data-line-number="12">        <span class="cf">return</span> <span class="bu">str</span>(tmpl)</a>
+<a class="sourceLine" id="cb4-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb4-14" data-line-number="14"><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">'__main__'</span>:</a>
+<a class="sourceLine" id="cb4-15" data-line-number="15">    cherrypy.root <span class="op">=</span> HomePage()</a>
+<a class="sourceLine" id="cb4-16" data-line-number="16">    cherrypy.server.start()</a></code></pre></div>
+<p>Now, what do I think? I guess the title of the post betrays my preference ;-)</p>
+<p>I spent very little time reading documentation to do this. I needed some help to write the Cheetah template since I had to do it myself. However, I think that if I’d had a Cheetah example and tried to create a matching template using Kid, I wouldn’t be writing this right now. The Kid syntax just seems more confusing to me. I think I’d have to read more documentation as well as spend more time with Kid to reach the same level of confidence I have with Cheetah already after 30 minutes with it.</p>
+<p>Now I just need to find some nice little project to verify that my first impressions are correct, both relating to Cheetah and to CherryPy. Any ideas?</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/cheeta.html">cheeta</a>, <a href="../tags/cherrypy.html">cherrypy</a>, <a href="../tags/kid.html">kid</a>, <a href="../tags/python.html">python</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2006-01-07-94-upgrade-to-wordpress-20.html">⟸ Upgrade to WordPress 2.0</a>
+
+
+
+<a href="../posts/2006-01-10-96-cherrypy-sessions.html">CherryPy sessions ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2006-01-08-95-cheetah-vs-kid-1-0@therning.org?subject=A comment on Cheetah vs. kid: 1 - 0&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

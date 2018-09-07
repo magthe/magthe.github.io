@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">CherryPy sessions</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2006-01-10">2006-01-10</time> - Magnus Therning</p>
+</header>
+
+<p>I almost started pulling my hair over this. The <a href="http://www.cherrypy.org/trunk/docs/book/chunk/ch03.html#id3486864">part of the CherryPy book on sessions</a> said that the following code would turn on sessions in CherryPy 2.1:</p>
+<pre><code>cherrypy.config.update({'session_filter.on' : True})</code></pre>
+<p>However trying to access session data after that resulted in a “500 Internal Error” page telling me that sessions weren’t enabled. Huh?</p>
+<p>Luckliy I found <a href="http://turbogears.blogspot.com/2005/10/enabling-sessions.html">this post</a> on the topic. There’s apparently a typo in the book, the line should read:</p>
+<pre><code>cherrypy.config.update({'sessionFilter.on' : True})</code></pre>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/cherrypy.html">cherrypy</a>, <a href="../tags/python.html">python</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2006-01-08-95-cheetah-vs-kid-1-0.html">⟸ Cheetah vs. kid: 1 - 0</a>
+
+
+
+<a href="../posts/2006-01-12-98-csplit-and-procmail.html">csplit and procmail ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2006-01-10-96-cherrypy-sessions@therning.org?subject=A comment on CherryPy sessions&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

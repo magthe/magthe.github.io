@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Ubuntu Dapper in qemu (or rather no Ubuntu Dapper in qemu)</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2006-02-26">2006-02-26</time> - Magnus Therning</p>
+</header>
+
+<p>I received an email saying that epilicious didn’t work very well in epiphany 1.9.x. Since Debian isn’t packaging pre-releases of GNOME 2.14 I decided to try to get Ubuntu Dapper installed in a qemu image. I tried using the age-tested method of installing a stable version first (Breezy), and then upgrading to the unstable, not-yet-released version (Dapper).</p>
+<p>It literally took hours to get Breezy installed. A small change of <code>/etc/apt/sources.list</code> later I was ready to move on to Dapper. More than 500 packages were needed to be downloaded for the upgrade. During the upgrade there was a conflict due to a file that had been moved from one package to another. There seemed to be no easy way out of the situation as the proposed solution (<code>apt-get -f install</code>) would remove the kernel itself. I gave up and I’ll be looking elsewhere to find a way to check out the GNOME pre-releases.</p>
+<p>I’ve never had any problems at all taking a Debian system from stable to unstable. It has required a few steps sometimes, but I’ve always been able to rely on the packaging tools to take me from point A to point B. This really goes to show that Ubuntu, despite it’s origins, isn’t Debian.</p>
+<p>I’m gaining more and more confidence that my decision to move back to Debian was the correct decision.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/qemu.html">qemu</a>, <a href="../tags/ubuntu.html">ubuntu</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2006-02-26-111-google-talk-and-federation.html">⟸ Google talk and federation</a>
+
+
+
+<a href="../posts/2006-03-13-115-unlocking-my-mobile.html">Unlocking my mobile ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2006-02-26-114-ubuntu-dapper-in-qemu-or-rather-no-ubuntu-dapper-in-qemu@therning.org?subject=A comment on Ubuntu Dapper in qemu (or rather no Ubuntu Dapper in qemu)&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

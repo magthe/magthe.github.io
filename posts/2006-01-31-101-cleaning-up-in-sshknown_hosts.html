@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Cleaning up in ~/.ssh/known_hosts</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2006-01-31">2006-01-31</time> - Magnus Therning</p>
+</header>
+
+<p>I just noticed that Debian’s <code>ssh</code> does the right thing and uses hashes rather than IP addresses in <code>~/.ssh/known_hosts</code>. So, how do you keep the list of known hosts minimal if you can’t delete entries manually any longer? <code>ssh-keygen</code> has two commandline options that help</p>
+<pre><code>% ssh-keygen -F &lt;hostname&gt;
+% ssh-keygen -R &lt;hostname&gt;</code></pre>
+<p>The first will list the entry for the host, the second will delete it (a backup of <code>known_hosts</code> is made first).</p>
+<p>I also noticed that ZSH’s command line completion doesn’t know about these options yet.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/ssh.html">ssh</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2006-01-21-100-beginning-to-play-with-mochikit.html">⟸ Beginning to play with MochiKit</a>
+
+
+
+<a href="../posts/2006-02-01-102-debian-package-from-scratch.html">Debian package from scratch ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2006-01-31-101-cleaning-up-in-sshknown_hosts@therning.org?subject=A comment on Cleaning up in ~/.ssh/known_hosts&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

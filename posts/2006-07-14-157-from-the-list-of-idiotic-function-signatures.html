@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">From the list of idiotic function signatures...</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2006-07-14">2006-07-14</time> - Magnus Therning</p>
+</header>
+
+<p>I stumbled on the function <code>QueryWorkingSet</code> today. It seems to be usable for solving a problem I have… What’s really amazing about this function is its totally braindead signature:</p>
+<pre><code>BOOL QueryWorkingSet(
+  HANDLE hProcess,
+  PVOID pv,
+  DWORD cb
+);</code></pre>
+<p>Please look beyond the weird Microsoft-isms with type names and the idiotic Hungarian notation. What does it do? Basically it takes a buffer (<code>pv</code>) of a certain length (<code>cb</code>) and tries to stuff some information in it. So, how big do we have to make the buffer? Who knows?</p>
+<p>Microsoft seems to have a desire to force programmers to make 2 calls to each function that returns data in a buffer. Functions don’t take an <code>int</code> as the bufffer’s length, instead they take <code>int *</code>. The first call would pass in 0 as length (or rather a pointer to a variable that’s set to 0). The call would fail, but the value of the variable would be set to the required size of the buffer for a successful call.</p>
+<p>So, back to <code>QueryWorkingSet</code>. How does one find out the required size of the buffer <code>pv</code>? The only way seems to be repeated calls with progressively larger buffers. Brilliant API Microsoft!</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/programming.html">programming</a>, <a href="../tags/windows.html">windows</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2006-07-11-156-banging-my-head-against-files.html">⟸ Banging my head against sparse files</a>
+
+
+
+<a href="../posts/2006-07-21-158-tags-tags-tags.html">Tags, tags, tags... ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2006-07-14-157-from-the-list-of-idiotic-function-signatures@therning.org?subject=A comment on From the list of idiotic function signatures...&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

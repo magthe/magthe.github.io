@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">CUPS and foomatic</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2006-08-16">2006-08-16</time> - Magnus Therning</p>
+</header>
+
+<p>Recently I’ve had some problems with the printers at work. I had it all working just fine a few weeks ago, then I must have upgraded CUPS or something because without me changing the configuration I first lost duplex and then the ability to print black-and-white (it’s a colour printer).</p>
+<p>After fiddling with it for a few days finally remembered that <a href="http://www.linuxprinting.org/foomatic.html">foomatic</a> can configure printers. After a few searches I found out how to use it:</p>
+<ol type="1">
+<li><p>Find the ID of the printer and what driver to use:</p>
+<pre><code> foomatic-configure -O|less</code></pre></li>
+<li><p>Do the configuration:</p>
+<pre><code> foomatic-configure -s cups -n &lt;printer name&gt; -c &lt;printer location&gt; \
+ -p &lt;id&gt; -d &lt;driver&gt;</code></pre>
+<p>Printer name is anything you want to call the printer. The location is the URI where the printer is found (e.g. <code>ipp://10.70.3.4</code>). The ID and driver comes from step one.</p></li>
+</ol>
+<p>It worked like a charm! :)</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/cups.html">cups</a>, <a href="../tags/foomatic.html">foomatic</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2006-08-16-171-homecall-pipex-and-call-charges-on-premium-numbers.html">⟸ Homecall (Pipex) and call charges on premium numbers</a>
+
+
+
+<a href="../posts/2006-08-17-173-airport-security-getting-crazy.html">Airport security getting crazy! ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2006-08-16-172-cups-and-foomatic@therning.org?subject=A comment on CUPS and foomatic&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>
