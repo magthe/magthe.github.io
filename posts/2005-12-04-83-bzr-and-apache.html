@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://therning.org/magnus">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Bzr and Apache</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2005-12-04">2005-12-04</time> - Magnus Therning</p>
+</header>
+
+<p>I had some problems hosting <a href="http://www.bazaar-ng.org/"><code>bzr</code></a> on <code>therning.org</code>. I gave up on getting the development version to push via FTP and settled for missoring using <a href="http://lftp.yar.ru/desc.html"><code>lftp</code></a> instead. However, branching from the published mirror failed. I got the following from <code>bar</code> (version 0.6.2):</p>
+<pre><code>% bzr branch http://therning.org/magnus_bzr/epilicious
+bzr: ERROR: HTTP Error 406: Not Acceptable
+  command: '/home/magnus/bin/bzr' 'branch' 'http://therning.org/magnus_bzr/epilicious'
+      pwd: u'/home/magnus/prog/tmp'
+    error: urllib2.HTTPError
+  at /usr/lib/python2.4/urllib2.py line 480, in http_error_default()
+  see ~/.bzr.log for debug information</code></pre>
+<p>The file wouldn’t even be handed out to a web browser. I managed to track down the problem, a percent sign ‘%’, in the file name. It turned out the Apache server is using <a href="http://www.modsecurity.org/"><code>mod_security</code></a>. A <code>.htaccess</code> file with the following contents in the a directory turns it off for the directory and all sub-directories:</p>
+<pre><code>&lt;ifmodule mod_security.c&gt;
+  SecFilterEngine Off
+  SecFilterScanPOST Off
+&lt;/ifmodule&gt;</code></pre>
+<p>The made my <code>bzr</code> mirrors work just fine.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/apache.html">apache</a>, <a href="../tags/bazaar.html">bazaar</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2005-12-01-82-experiencing-arch-linux.html">⟸ Experiencing Arch Linux</a>
+
+
+
+<a href="../posts/2005-12-04-84-pcspecialis-delivered-perfectly.html">PCSpecialist delivered perfectly! ⟹</a>
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2005-12-04-83-bzr-and-apache@therning.org?subject=A comment on Bzr and Apache&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>
