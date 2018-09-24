@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
     <title>Magnus web site</title>
-    <link href="http://therning.org/magnus/atom.xml" rel="self" />
-    <link href="http://therning.org/magnus" />
-    <id>http://therning.org/magnus/atom.xml</id>
+    <link href="http://magnus.therning.org/atom.xml" rel="self" />
+    <link href="http://magnus.therning.org" />
+    <id>http://magnus.therning.org/atom.xml</id>
     <author>
         <name>Magnus Therning</name>
         <email>magnus@therning.org</email>
@@ -11,8 +11,8 @@
     <updated>2018-07-14T00:00:00Z</updated>
     <entry>
     <title>QuickCheck on a REST API</title>
-    <link href="http://therning.org/magnus/posts/2018-07-14-000-quickcheck-on-a-rest-api.html" />
-    <id>http://therning.org/magnus/posts/2018-07-14-000-quickcheck-on-a-rest-api.html</id>
+    <link href="http://magnus.therning.org/posts/2018-07-14-000-quickcheck-on-a-rest-api.html" />
+    <id>http://magnus.therning.org/posts/2018-07-14-000-quickcheck-on-a-rest-api.html</id>
     <published>2018-07-14T00:00:00Z</published>
     <updated>2018-07-14T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>Since I’m working with web stuff nowadays I thought I’d play a little with translating my old post on <a href="/posts/2015-06-15-000-using-quickcheck-to-test-c-apis.html">using QuickCheck to test C APIs</a> to the web.</p>
@@ -200,8 +200,8 @@
 </entry>
 <entry>
     <title>A simple zaw widget for jumping to git projects</title>
-    <link href="http://therning.org/magnus/posts/2018-06-19-000-a-simple-zaw-widget.html" />
-    <id>http://therning.org/magnus/posts/2018-06-19-000-a-simple-zaw-widget.html</id>
+    <link href="http://magnus.therning.org/posts/2018-06-19-000-a-simple-zaw-widget.html" />
+    <id>http://magnus.therning.org/posts/2018-06-19-000-a-simple-zaw-widget.html</id>
     <published>2018-06-19T00:00:00Z</published>
     <updated>2018-06-19T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>A colleague at work showed me a script he put together to quickly jump to the numerous git projects we work with. It’s based on <code>dmenu</code> and looks rather nice. However, I’d rather have something based on <code>zsh</code>, but when looking around I didn’t find anything that really fit. So, instead I ended up writing a simple widget for <a href="https://github.com/zsh-users/zaw">zaw</a>.</p>
@@ -226,8 +226,8 @@
 </entry>
 <entry>
     <title>On mocks and stubs in python (free monad or interpreter pattern)</title>
-    <link href="http://therning.org/magnus/posts/2017-01-31-000-on-mocks-and-stubs-in-python--free-monad-or-interpreter-pattern-.html" />
-    <id>http://therning.org/magnus/posts/2017-01-31-000-on-mocks-and-stubs-in-python--free-monad-or-interpreter-pattern-.html</id>
+    <link href="http://magnus.therning.org/posts/2017-01-31-000-on-mocks-and-stubs-in-python--free-monad-or-interpreter-pattern-.html" />
+    <id>http://magnus.therning.org/posts/2017-01-31-000-on-mocks-and-stubs-in-python--free-monad-or-interpreter-pattern-.html</id>
     <published>2017-01-31T00:00:00Z</published>
     <updated>2017-01-31T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>A few weeks ago I watched a video where <a href="https://youtu.be/EaxDl5NPuCA">Ken Scambler talks about mocks and stubs</a>. In particular he talks about how to get rid of them.</p>
@@ -388,8 +388,8 @@
 </entry>
 <entry>
     <title>That's a large project</title>
-    <link href="http://therning.org/magnus/posts/2016-10-21-000-large-project.html" />
-    <id>http://therning.org/magnus/posts/2016-10-21-000-large-project.html</id>
+    <link href="http://magnus.therning.org/posts/2016-10-21-000-large-project.html" />
+    <id>http://magnus.therning.org/posts/2016-10-21-000-large-project.html</id>
     <published>2016-10-21T00:00:00Z</published>
     <updated>2016-10-21T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>From <a href="http://lwn.net/Articles/702177/">LWN October 6, 2016</a>:</p>
@@ -399,8 +399,8 @@
 </entry>
 <entry>
     <title>Free, take 2</title>
-    <link href="http://therning.org/magnus/posts/2016-06-18-free--take-2.html" />
-    <id>http://therning.org/magnus/posts/2016-06-18-free--take-2.html</id>
+    <link href="http://magnus.therning.org/posts/2016-06-18-free--take-2.html" />
+    <id>http://magnus.therning.org/posts/2016-06-18-free--take-2.html</id>
     <published>2016-06-18T00:00:00Z</published>
     <updated>2016-06-18T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>The other day I read <a href="https://ocharles.org.uk/blog/posts/2016-01-26-transformers-free-monads-mtl-laws.html">a blog post on monads and stuff</a> after which I felt rather silly about my <a href="/posts/2016-01-13-000-free-play--part-one.html">earlier</a> <a href="/posts/2016-01-15-000-free-play--part-two.html">posts</a> on <a href="/posts/2016-01-17-000-free-play--part-three.html">Free</a>.</p>
@@ -573,8 +573,8 @@
 </entry>
 <entry>
     <title>CMake, ExternalData, and custom fetch script</title>
-    <link href="http://therning.org/magnus/posts/2016-05-17-000-cmake--externaldata--and-custom-fetch-script.html" />
-    <id>http://therning.org/magnus/posts/2016-05-17-000-cmake--externaldata--and-custom-fetch-script.html</id>
+    <link href="http://magnus.therning.org/posts/2016-05-17-000-cmake--externaldata--and-custom-fetch-script.html" />
+    <id>http://magnus.therning.org/posts/2016-05-17-000-cmake--externaldata--and-custom-fetch-script.html</id>
     <published>2016-05-17T00:00:00Z</published>
     <updated>2016-05-17T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>I failed to find a concrete example on how to use the <a href="https://cmake.org/documentation/">CMake</a> module <a href="https://cmake.org/cmake/help/v3.5/module/ExternalData.html">ExternalData</a> with a custom fetch script. Since I finally manage to work out how to use it I thought I’d try to help out the next person who needs to go down this route.</p>
@@ -639,16 +639,16 @@
 </entry>
 <entry>
     <title>Qt5+D-Bus+CMake, a complete example</title>
-    <link href="http://therning.org/magnus/posts/2016-04-07-000-qt5%2Bdbus%2Bcmake--a-complete-example.html" />
-    <id>http://therning.org/magnus/posts/2016-04-07-000-qt5%2Bdbus%2Bcmake--a-complete-example.html</id>
+    <link href="http://magnus.therning.org/posts/2016-04-07-000-qt5%2Bdbus%2Bcmake--a-complete-example.html" />
+    <id>http://magnus.therning.org/posts/2016-04-07-000-qt5%2Bdbus%2Bcmake--a-complete-example.html</id>
     <published>2016-04-07T00:00:00Z</published>
     <updated>2016-04-07T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>Yesterday I started digging into Qt5 and D-Bus. I never found a complete example, so I put one together myself: <a href="https://gist.github.com/magthe/2cf7220655bd8bf431259cc7dee99f64" class="uri">https://gist.github.com/magthe/2cf7220655bd8bf431259cc7dee99f64</a>.</p>]]></summary>
 </entry>
 <entry>
     <title>Final version of JSON to sum type</title>
-    <link href="http://therning.org/magnus/posts/2016-03-08-000-final-version-of-json-to-sum-type.html" />
-    <id>http://therning.org/magnus/posts/2016-03-08-000-final-version-of-json-to-sum-type.html</id>
+    <link href="http://magnus.therning.org/posts/2016-03-08-000-final-version-of-json-to-sum-type.html" />
+    <id>http://magnus.therning.org/posts/2016-03-08-000-final-version-of-json-to-sum-type.html</id>
     <published>2016-03-08T00:00:00Z</published>
     <updated>2016-03-08T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>After some feedback on my <a href="/posts/2016-03-06-000-from-json-to-sum-type.html">previous post</a> I ended up with the following implementation.</p>
@@ -673,8 +673,8 @@
 </entry>
 <entry>
     <title>From JSON to sum type</title>
-    <link href="http://therning.org/magnus/posts/2016-03-06-000-from-json-to-sum-type.html" />
-    <id>http://therning.org/magnus/posts/2016-03-06-000-from-json-to-sum-type.html</id>
+    <link href="http://magnus.therning.org/posts/2016-03-06-000-from-json-to-sum-type.html" />
+    <id>http://magnus.therning.org/posts/2016-03-06-000-from-json-to-sum-type.html</id>
     <published>2016-03-06T00:00:00Z</published>
     <updated>2016-03-06T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>For a while I’ve been planning to take full ownership of the JSON serialisation and parsing in <a href="https://github.com/magthe/cblrepo/">cblrepo</a>. The recent inclusion of instances of <code>ToJSON</code> and <code>FromJSON</code> for <a href="http://hackage.haskell.org/package/base-4.8.2.0/docs/Data-Version.html#t:Version"><code>Version</code></a> pushed me to take the first step by writing my own instances for all external types.</p>
@@ -706,8 +706,8 @@
 </entry>
 <entry>
     <title>Freer play with effects</title>
-    <link href="http://therning.org/magnus/posts/2016-01-24-000-freer-play-with-effects.html" />
-    <id>http://therning.org/magnus/posts/2016-01-24-000-freer-play-with-effects.html</id>
+    <link href="http://magnus.therning.org/posts/2016-01-24-000-freer-play-with-effects.html" />
+    <id>http://magnus.therning.org/posts/2016-01-24-000-freer-play-with-effects.html</id>
     <published>2016-01-24T00:00:00Z</published>
     <updated>2016-01-24T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>In the previous posts on my <a href="/posts/2016-01-13-000-free-play--part-one.html">playing</a> <a href="/posts/2016-01-15-000-free-play--part-two.html">with</a> <a href="/posts/2016-01-17-000-free-play--part-three.html">free</a> I got stuck at combining APIs. I recalled reading a <a href="http://okmij.org/ftp/Haskell/extensible/exteff.pdf">paper on extensible effects</a> as an alternatve to monad transformers. I have to admit to not having finished the paper, and not quite understanding the part I did read. When looking it up again I found that the work had continued and that there is a <a href="http://okmij.org/ftp/Haskell/extensible/more.pdf">paper on more extensible effects</a>. (I got to it via <a href="http://okmij.org/ftp/Haskell/extensible/" class="uri">http://okmij.org/ftp/Haskell/extensible/</a>.)</p>
@@ -831,8 +831,8 @@ CONSECTETUR ANTE HENDRERIT.</code></pre>
 </entry>
 <entry>
     <title>Free play, part three</title>
-    <link href="http://therning.org/magnus/posts/2016-01-17-000-free-play--part-three.html" />
-    <id>http://therning.org/magnus/posts/2016-01-17-000-free-play--part-three.html</id>
+    <link href="http://magnus.therning.org/posts/2016-01-17-000-free-play--part-three.html" />
+    <id>http://magnus.therning.org/posts/2016-01-17-000-free-play--part-three.html</id>
     <published>2016-01-17T00:00:00Z</published>
     <updated>2016-01-17T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>The code in the <a href="/posts/2016-01-15-000-free-play--part-two.html">previous post</a> can do with a bit of cleaning up. I start with introducing a type class for an API that can be run</p>
@@ -879,8 +879,8 @@ consectetur ante hendrerit.</code></pre>
 </entry>
 <entry>
     <title>Free play, part two</title>
-    <link href="http://therning.org/magnus/posts/2016-01-15-000-free-play--part-two.html" />
-    <id>http://therning.org/magnus/posts/2016-01-15-000-free-play--part-two.html</id>
+    <link href="http://magnus.therning.org/posts/2016-01-15-000-free-play--part-two.html" />
+    <id>http://magnus.therning.org/posts/2016-01-15-000-free-play--part-two.html</id>
     <published>2016-01-15T00:00:00Z</published>
     <updated>2016-01-15T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>This post on <code>Free</code> play builds on my <a href="/posts/2016-01-13-000-free-play--part-one.html">previous one</a>. It was <a href="http://degoes.net/articles/modern-fp">John A De Goes’ post</a> that finally got me started on playing with <code>Free</code> and his post contian the following:</p>
@@ -931,8 +931,8 @@ consectetur ante hendrerit.</code></pre>
 </entry>
 <entry>
     <title>Free play, part one</title>
-    <link href="http://therning.org/magnus/posts/2016-01-13-000-free-play--part-one.html" />
-    <id>http://therning.org/magnus/posts/2016-01-13-000-free-play--part-one.html</id>
+    <link href="http://magnus.therning.org/posts/2016-01-13-000-free-play--part-one.html" />
+    <id>http://magnus.therning.org/posts/2016-01-13-000-free-play--part-one.html</id>
     <published>2016-01-13T00:00:00Z</published>
     <updated>2016-01-13T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>When I read John A De Goes post <a href="http://degoes.net/articles/modern-fp">A Modern Architecture for FP</a> I found it to be a bit too vague for me, but the topic was just interesting enough to finally push me to play a little with <em>free monads</em>. It’s not the first post I’ve read on the topic, there have <a href="http://www.haskellforall.com/2012/06/you-could-have-invented-free-monads.html">been</a> <a href="https://www.schoolofhaskell.com/user/dolio/many-roads-to-free-monads">many</a> <a href="http://okmij.org/ftp/Computation/free-monad.html">before</a>. None have quite managed to push me into actually doing something though!</p>
@@ -973,8 +973,8 @@ consectetur ante hendrerit.</code></pre>
 </entry>
 <entry>
     <title>Trick for pre-processing source in CMake</title>
-    <link href="http://therning.org/magnus/posts/2015-11-26-001-trick-for-pre-processing-source-in-cmake.html" />
-    <id>http://therning.org/magnus/posts/2015-11-26-001-trick-for-pre-processing-source-in-cmake.html</id>
+    <link href="http://magnus.therning.org/posts/2015-11-26-001-trick-for-pre-processing-source-in-cmake.html" />
+    <id>http://magnus.therning.org/posts/2015-11-26-001-trick-for-pre-processing-source-in-cmake.html</id>
     <published>2015-11-26T00:00:00Z</published>
     <updated>2015-11-26T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>When using <a href="https://cmake.org/cmake/help/v3.4/prop_tgt/LANG_COMPILER_LAUNCHER.html"><code>&lt;LANG&gt;_COMPILER_LAUCHER</code></a> or <a href="https://cmake.org/cmake/help/v3.3/prop_gbl/RULE_LAUNCH_COMPILE.html"><code>RULE_LAUNCH_COMPILER</code></a> the following is a nice little pattern to deal with the arguments.</p>
@@ -1014,8 +1014,8 @@ consectetur ante hendrerit.</code></pre>
 </entry>
 <entry>
     <title>Elm 0.16 with stack</title>
-    <link href="http://therning.org/magnus/posts/2015-11-23-000-elm-0-16-with-stack.html" />
-    <id>http://therning.org/magnus/posts/2015-11-23-000-elm-0-16-with-stack.html</id>
+    <link href="http://magnus.therning.org/posts/2015-11-23-000-elm-0-16-with-stack.html" />
+    <id>http://magnus.therning.org/posts/2015-11-23-000-elm-0-16-with-stack.html</id>
     <published>2015-11-23T00:00:00Z</published>
     <updated>2015-11-23T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>I just noticed that there’s been a new release of the <a href="http://elm-lang.org">elm tools</a>. The previous release was fairly easy to <a href="/posts/2015-10-13-000-building-elm-with-stack.html">build using stack</a>, but this release made it a little bit easier still.</p>
@@ -1043,8 +1043,8 @@ consectetur ante hendrerit.</code></pre>
 </entry>
 <entry>
     <title>How can I unit test failure cases?</title>
-    <link href="http://therning.org/magnus/posts/2015-11-13-000-unit-testing-failure-cases.html" />
-    <id>http://therning.org/magnus/posts/2015-11-13-000-unit-testing-failure-cases.html</id>
+    <link href="http://magnus.therning.org/posts/2015-11-13-000-unit-testing-failure-cases.html" />
+    <id>http://magnus.therning.org/posts/2015-11-13-000-unit-testing-failure-cases.html</id>
     <published>2015-11-13T00:00:00Z</published>
     <updated>2015-11-13T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>When writing unit tests, especially when using mock objects, there’s always a risk of falling into the trap of writing tests for the implementation rather than for the API. In my experience the most obvious indication of that is that any refactoring of the code requires major rework of the tests.</p>
@@ -1056,8 +1056,8 @@ consectetur ante hendrerit.</code></pre>
 </entry>
 <entry>
     <title>Docker container with ip address on local network, p2</title>
-    <link href="http://therning.org/magnus/posts/2015-11-01-000-docker-container-with-ip-address-on-local-network--p2.html" />
-    <id>http://therning.org/magnus/posts/2015-11-01-000-docker-container-with-ip-address-on-local-network--p2.html</id>
+    <link href="http://magnus.therning.org/posts/2015-11-01-000-docker-container-with-ip-address-on-local-network--p2.html" />
+    <id>http://magnus.therning.org/posts/2015-11-01-000-docker-container-with-ip-address-on-local-network--p2.html</id>
     <published>2015-11-01T00:00:00Z</published>
     <updated>2015-11-01T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>In my <a href="/posts/2015-10-22-000-docker-container-with-ip-address-on-local-network.html">latest post</a> I described described a way to give a docker container an address on the local network. That’s a general way of achieving it, but it’s also rather complicated. If you know exactly what ports need to be exposed there is a simpler way.</p>
@@ -1084,8 +1084,8 @@ Gateway=192.168.1.1</code></pre>
 </entry>
 <entry>
     <title>Docker container with ip address on local network</title>
-    <link href="http://therning.org/magnus/posts/2015-10-22-000-docker-container-with-ip-address-on-local-network.html" />
-    <id>http://therning.org/magnus/posts/2015-10-22-000-docker-container-with-ip-address-on-local-network.html</id>
+    <link href="http://magnus.therning.org/posts/2015-10-22-000-docker-container-with-ip-address-on-local-network.html" />
+    <id>http://magnus.therning.org/posts/2015-10-22-000-docker-container-with-ip-address-on-local-network.html</id>
     <published>2015-10-22T00:00:00Z</published>
     <updated>2015-10-22T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>Shortly after I started my new job in August I put an instance of gitlab on a server and started promoting using it over the git-repos-on-an-NFS-share that had been used thus far. Thanks to the <a href="https://hub.docker.com/r/gitlab/gitlab-ce/">Docker image of Gitlab CE</a> it only took about 5 minutes to have a running instance – setting up authentication via LDAP only took slightly longer. So far I’ve been running it on non-standard ports, just like the <a href="http://doc.gitlab.com/omnibus/docker/">guide</a> suggests, but I’ve gotten to the point where I’d like to make it a bit more official. That means I’d like to get it off non-standard ports, but I do really like running it in Docker. In short, I need to give the Docker image an ip address on the local network.</p>
@@ -1167,8 +1167,8 @@ CMD bash --login</code></pre>
 </entry>
 <entry>
     <title>Building elm with stack</title>
-    <link href="http://therning.org/magnus/posts/2015-10-13-000-building-elm-with-stack.html" />
-    <id>http://therning.org/magnus/posts/2015-10-13-000-building-elm-with-stack.html</id>
+    <link href="http://magnus.therning.org/posts/2015-10-13-000-building-elm-with-stack.html" />
+    <id>http://magnus.therning.org/posts/2015-10-13-000-building-elm-with-stack.html</id>
     <published>2015-10-13T00:00:00Z</published>
     <updated>2015-10-13T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>Building <a href="http://elm-lang.org/">elm</a> is a slightly invasive procedure if your distro doesn’t have any pre-built packages for it and has a non-ancient version of <em>ghc</em>. Removing all haskell packages and installing <a href="https://www.haskell.org/platform/">HaskellPlatform</a> didn’t really appeal to me. Then it occured to me that <a href="http://www.stackage.org/">stack</a> ought to be perfectly suited for this task. It took me a while to sort it out, but here’s how I got a working build of the elm tools installed on Archlinux.</p>
@@ -1229,8 +1229,8 @@ index b80a98f..69fe488 100644
 </entry>
 <entry>
     <title>Extracting titles and links from atom feed</title>
-    <link href="http://therning.org/magnus/posts/2015-09-29-000-extracting-titles-and-links-from-atom-feed.html" />
-    <id>http://therning.org/magnus/posts/2015-09-29-000-extracting-titles-and-links-from-atom-feed.html</id>
+    <link href="http://magnus.therning.org/posts/2015-09-29-000-extracting-titles-and-links-from-atom-feed.html" />
+    <id>http://magnus.therning.org/posts/2015-09-29-000-extracting-titles-and-links-from-atom-feed.html</id>
     <published>2015-09-29T00:00:00Z</published>
     <updated>2015-09-29T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>The code I used to extract the titles and links for the <a href="/posts/2015-09-28-000-systemd-watchdog.html">previous post</a>:</p>
@@ -1279,8 +1279,8 @@ index b80a98f..69fe488 100644
 </entry>
 <entry>
     <title>Systemd watchdog</title>
-    <link href="http://therning.org/magnus/posts/2015-09-28-000-systemd-watchdog.html" />
-    <id>http://therning.org/magnus/posts/2015-09-28-000-systemd-watchdog.html</id>
+    <link href="http://magnus.therning.org/posts/2015-09-28-000-systemd-watchdog.html" />
+    <id>http://magnus.therning.org/posts/2015-09-28-000-systemd-watchdog.html</id>
     <published>2015-09-28T00:00:00Z</published>
     <updated>2015-09-28T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>I haven’t been posting much lately, since last time I’ve switched jobs. My silence is partly because this new job is more fun than the previous one – hence less need to escape into the sanity offered by Linux, FP (Haskell, OCaml, …), and the other stuff I like to fill my free time with. Now I’ve started to get into the job, and I hope I’ll find stuff to write about and time to do it.</p>
@@ -1376,8 +1376,8 @@ StartLimitAction=reboot</code></pre>
 </entry>
 <entry>
     <title>Using QuickCheck to test C APIs</title>
-    <link href="http://therning.org/magnus/posts/2015-06-15-000-using-quickcheck-to-test-c-apis.html" />
-    <id>http://therning.org/magnus/posts/2015-06-15-000-using-quickcheck-to-test-c-apis.html</id>
+    <link href="http://magnus.therning.org/posts/2015-06-15-000-using-quickcheck-to-test-c-apis.html" />
+    <id>http://magnus.therning.org/posts/2015-06-15-000-using-quickcheck-to-test-c-apis.html</id>
     <published>2015-06-15T00:00:00Z</published>
     <updated>2015-06-15T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>Last year at ICFP I attended the <a href="http://cufp.org/2014/t12-john-hughes-introduction-to-testing-with-quickcheck.html">tutorial on QuickCheck</a> with John Hughes. We got to use the Erlang implementation of QuickCheck to test a C API. Ever since I’ve been planning to do the same thing using Haskell. I’ve put it off for the better part of a year now, but then Francesco Mazzoli wrote about <a href="http://hackage.haskell.org/package/inline-c">inline-c</a> (<a href="https://www.fpcomplete.com/blog/2015/05/inline-c">Call C functions from Haskell without bindings</a> and I found the motivation to actually start writing some code.</p>
@@ -1538,8 +1538,8 @@ StartLimitAction=reboot</code></pre>
 </entry>
 <entry>
     <title>mapAccum in monad</title>
-    <link href="http://therning.org/magnus/posts/2015-06-09-000-mapaccum-in-monad.html" />
-    <id>http://therning.org/magnus/posts/2015-06-09-000-mapaccum-in-monad.html</id>
+    <link href="http://magnus.therning.org/posts/2015-06-09-000-mapaccum-in-monad.html" />
+    <id>http://magnus.therning.org/posts/2015-06-09-000-mapaccum-in-monad.html</id>
     <published>2015-06-09T00:00:00Z</published>
     <updated>2015-06-09T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>I recently had two functions of very similar shape, only difference was that one was pure and the other need some I/O. The former was easily written using <code>mapAccumL</code>. I failed to find a function like <code>mapAccumL</code> that runs in a monad, so I wrote up the following:</p>
@@ -1555,8 +1555,8 @@ StartLimitAction=reboot</code></pre>
 </entry>
 <entry>
     <title>Oh no!  Success</title>
-    <link href="http://therning.org/magnus/posts/2015-06-04-000-oh-no---success.html" />
-    <id>http://therning.org/magnus/posts/2015-06-04-000-oh-no---success.html</id>
+    <link href="http://magnus.therning.org/posts/2015-06-04-000-oh-no---success.html" />
+    <id>http://magnus.therning.org/posts/2015-06-04-000-oh-no---success.html</id>
     <published>2015-06-04T00:00:00Z</published>
     <updated>2015-06-04T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p><a href="http://www.automatedtrader.net/news/at/153887/otas-launches-otas-lingo">This</a> can’t possibly be good for Haskell…</p>
@@ -1566,8 +1566,8 @@ StartLimitAction=reboot</code></pre>
 </entry>
 <entry>
     <title>Re. cryptonite</title>
-    <link href="http://therning.org/magnus/posts/2015-06-03-000-re.-cryptonite.html" />
-    <id>http://therning.org/magnus/posts/2015-06-03-000-re.-cryptonite.html</id>
+    <link href="http://magnus.therning.org/posts/2015-06-03-000-re.-cryptonite.html" />
+    <id>http://magnus.therning.org/posts/2015-06-03-000-re.-cryptonite.html</id>
     <published>2015-06-03T00:00:00Z</published>
     <updated>2015-06-03T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p><a href="http://tab.snarc.org/posts/haskell/2015-06-02-announcing_cryptonite.html">Excellent work</a> Vincent, but then you’ve never done anything but! I’m looking forward to purging all the old crypto packages from ArchHaskell in the near future.</p>
@@ -1575,16 +1575,16 @@ StartLimitAction=reboot</code></pre>
 </entry>
 <entry>
     <title>Facebook and PGP</title>
-    <link href="http://therning.org/magnus/posts/2015-06-02-000-facebook-and-pgp.html" />
-    <id>http://therning.org/magnus/posts/2015-06-02-000-facebook-and-pgp.html</id>
+    <link href="http://magnus.therning.org/posts/2015-06-02-000-facebook-and-pgp.html" />
+    <id>http://magnus.therning.org/posts/2015-06-02-000-facebook-and-pgp.html</id>
     <published>2015-06-02T00:00:00Z</published>
     <updated>2015-06-02T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>I wonder if <a href="http://boingboing.net/2015/06/01/facebook-users-can-now-use-pgp.html">this</a> will have any impact at all on PGP usage… I doubt it, but it’s still nice to see it done. The Register also <a href="http://www.theregister.co.uk/2015/06/01/facebook_pgp_support/">writes about it</a>.</p>]]></summary>
 </entry>
 <entry>
     <title>Timing out in conduit</title>
-    <link href="http://therning.org/magnus/posts/2015-03-01-000-timing-out-in-conduit.html" />
-    <id>http://therning.org/magnus/posts/2015-03-01-000-timing-out-in-conduit.html</id>
+    <link href="http://magnus.therning.org/posts/2015-03-01-000-timing-out-in-conduit.html" />
+    <id>http://magnus.therning.org/posts/2015-03-01-000-timing-out-in-conduit.html</id>
     <published>2015-03-01T00:00:00Z</published>
     <updated>2015-03-01T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>The previous post in my play-with-state-machines-and-conduit series was a bit of a detour into <a href="/posts/2015-01-22-000-combining-inputs-in-conduit.html">how to combine inputs in <code>conduit</code></a>. In this post I’ll try to wrap it up by making a <code>conduit</code> pipeline with a timeout.</p>
@@ -1656,8 +1656,8 @@ StartLimitAction=reboot</code></pre>
 </entry>
 <entry>
     <title>Combining inputs in conduit</title>
-    <link href="http://therning.org/magnus/posts/2015-01-22-000-combining-inputs-in-conduit.html" />
-    <id>http://therning.org/magnus/posts/2015-01-22-000-combining-inputs-in-conduit.html</id>
+    <link href="http://magnus.therning.org/posts/2015-01-22-000-combining-inputs-in-conduit.html" />
+    <id>http://magnus.therning.org/posts/2015-01-22-000-combining-inputs-in-conduit.html</id>
     <published>2015-01-22T00:00:00Z</published>
     <updated>2015-01-22T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>The code the post on using my <a href="/posts/2015-01-13-000-state-machine-with-conduit.html">simplistic state machine together with conduit</a> will happily wait forever for input, and the only way to terminate it is pressing Ctrl-C. In this series I’m writing a simple adder machine, but my actual use case for these ideas are protocols for communication (see the <a href="/posts/2015-01-03-000-simple-state-machines-in-haskell.html">first post</a>), and waiting forever isn’t such a good thing; I want my machine to time out if input doesn’t arrive in a timely fashion.</p>
@@ -1708,16 +1708,16 @@ StartLimitAction=reboot</code></pre>
 </entry>
 <entry>
     <title>Thought on JavaScript</title>
-    <link href="http://therning.org/magnus/posts/2015-01-14-000-thought-on-javascript.html" />
-    <id>http://therning.org/magnus/posts/2015-01-14-000-thought-on-javascript.html</id>
+    <link href="http://magnus.therning.org/posts/2015-01-14-000-thought-on-javascript.html" />
+    <id>http://magnus.therning.org/posts/2015-01-14-000-thought-on-javascript.html</id>
     <published>2015-01-14T00:00:00Z</published>
     <updated>2015-01-14T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>Over the holidays I’ve been reading Douglas Crockford’s excellent book <a href="http://goo.gl/ed3nUz">JavaScript: The Good Parts</a>. About halfway through I came to the conclusion that JavaScript is an “anti-LISP”. There are <a href="http://www.paulgraham.com/avg.html">many</a> <a href="http://nickmudge.info/?post=27">reasons</a> <a href="https://groovyguts.wordpress.com/2010/01/08/10-reasons-to-learn-clojure-or-any-other-lisp/">to</a> <a href="https://acm.wustl.edu/functional/whyfp.php">learn</a> LISP, but none of them is “LISP is widely used in industry.” As Eric Raymond is famous words claim, knowing LISP will make you a better programmer. On the other hand there seems to be almost no reasons to learn JavaScript. It sure doesn’t seem to teach anything that’ll make you a better programmer. The <em>only</em> reason I can come up with is “JavaScript is widely used in industry.”</p>]]></summary>
 </entry>
 <entry>
     <title>State machine with conduit</title>
-    <link href="http://therning.org/magnus/posts/2015-01-13-000-state-machine-with-conduit.html" />
-    <id>http://therning.org/magnus/posts/2015-01-13-000-state-machine-with-conduit.html</id>
+    <link href="http://magnus.therning.org/posts/2015-01-13-000-state-machine-with-conduit.html" />
+    <id>http://magnus.therning.org/posts/2015-01-13-000-state-machine-with-conduit.html</id>
     <published>2015-01-13T00:00:00Z</published>
     <updated>2015-01-13T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>Previously I wrote about a <a href="/posts/2015-01-03-000-simple-state-machines-in-haskell.html">simple state machine in Haskell</a> and then offered a simple example, an <a href="/posts/2015-01-06-000-adder-as-a-state-machine.html">adder</a>. As I wrote in the initial post I’ve been using this to implement communication protocols. That means IO, and for that I’ve been using <a href="http://hackage.haskell.org/package/conduit">conduit</a>. In this post I thought I’d show how easy it is to wrap up the adder in <em>conduit</em>, read input from <em>stdin</em> and produce the result on <em>stdout</em>.</p>
@@ -1765,8 +1765,8 @@ StartLimitAction=reboot</code></pre>
 </entry>
 <entry>
     <title>Adder as a state machine</title>
-    <link href="http://therning.org/magnus/posts/2015-01-06-000-adder-as-a-state-machine.html" />
-    <id>http://therning.org/magnus/posts/2015-01-06-000-adder-as-a-state-machine.html</id>
+    <link href="http://magnus.therning.org/posts/2015-01-06-000-adder-as-a-state-machine.html" />
+    <id>http://magnus.therning.org/posts/2015-01-06-000-adder-as-a-state-machine.html</id>
     <published>2015-01-06T00:00:00Z</published>
     <updated>2015-01-06T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>In my <a href="/posts/2015-01-03-000-simple-state-machines-in-haskell.html">previous post</a> I wrote about a, probably rather naïve, approach to constructing state machines in Haskell. I ended it with a saying that the pattern matching of Haskell makes it rather simple to manually write the step function required to create a working state machines. Hopefully this post can convince you I’m right.</p>
@@ -1839,8 +1839,8 @@ CalcResult 73</code></pre>
 </entry>
 <entry>
     <title>Simple state machines in Haskell</title>
-    <link href="http://therning.org/magnus/posts/2015-01-03-000-simple-state-machines-in-haskell.html" />
-    <id>http://therning.org/magnus/posts/2015-01-03-000-simple-state-machines-in-haskell.html</id>
+    <link href="http://magnus.therning.org/posts/2015-01-03-000-simple-state-machines-in-haskell.html" />
+    <id>http://magnus.therning.org/posts/2015-01-03-000-simple-state-machines-in-haskell.html</id>
     <published>2015-01-03T00:00:00Z</published>
     <updated>2015-01-03T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>During this past autumn I’ve had to work with products implementing two small and simple protocols, one was USB based, the other completely proprietary. In both cases I found it very helpful to write clients where the central behaviour was modelled as a state machine. In the case of the proprietary protocol I’ve ended up writing a couple of servers implementing a subset of the behaviour of the real product, also here I found using a state machine as the central piece to be very useful.</p>
@@ -1873,8 +1873,8 @@ CalcResult 73</code></pre>
 </entry>
 <entry>
     <title>Adding some strictness</title>
-    <link href="http://therning.org/magnus/posts/2014-12-26-000-adding-some-strictness.html" />
-    <id>http://therning.org/magnus/posts/2014-12-26-000-adding-some-strictness.html</id>
+    <link href="http://magnus.therning.org/posts/2014-12-26-000-adding-some-strictness.html" />
+    <id>http://magnus.therning.org/posts/2014-12-26-000-adding-some-strictness.html</id>
     <published>2014-12-26T00:00:00Z</published>
     <updated>2014-12-26T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>I’ve finally found some time to solve a few more exercises on <a href="http://exercism.io/">exercim.io</a>. One exercise, called <em>Robot Simulation</em>, I solved in a straight forward way and promptly got the feedback that my choice of data type could lead to space leaks. Since it’s a dimension of Haskell programming that I rarely (read “never”) have had to think about I thought I’d take the chance to play a bit.</p>
@@ -2099,8 +2099,8 @@ CalcResult 73</code></pre>
 </entry>
 <entry>
     <title>FP101x completed</title>
-    <link href="http://therning.org/magnus/posts/2014-12-07-000-fp101-completed.html" />
-    <id>http://therning.org/magnus/posts/2014-12-07-000-fp101-completed.html</id>
+    <link href="http://magnus.therning.org/posts/2014-12-07-000-fp101-completed.html" />
+    <id>http://magnus.therning.org/posts/2014-12-07-000-fp101-completed.html</id>
     <published>2014-12-07T00:00:00Z</published>
     <updated>2014-12-07T00:00:00Z</updated>
     <summary type="html"><![CDATA[<h3 id="tldr">TL;DR</h3>
@@ -2125,8 +2125,8 @@ CalcResult 73</code></pre>
 </entry>
 <entry>
     <title>Regular Haskelling.  How?</title>
-    <link href="http://therning.org/magnus/posts/2014-11-16-000-regular-haskelling.html" />
-    <id>http://therning.org/magnus/posts/2014-11-16-000-regular-haskelling.html</id>
+    <link href="http://magnus.therning.org/posts/2014-11-16-000-regular-haskelling.html" />
+    <id>http://magnus.therning.org/posts/2014-11-16-000-regular-haskelling.html</id>
     <published>2014-11-16T00:00:00Z</published>
     <updated>2014-11-16T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>Ever since <a href="http://icfpconference.org/icfp2014/">ICFP 2014</a> I’ve had as a goal to get into the habit of coding in Haskell. It’s been the language I enjoy most for a few years now, but being surrounded by and talking to so many brilliant developers as I did during that week really drove home that I will only have more fun the more code I write. My goal was not very ambitious; just write something in Haskell most days every week. So far I’ve managed to keep it up.</p>
@@ -2155,8 +2155,8 @@ CalcResult 73</code></pre>
 </entry>
 <entry>
     <title>Dijkstra quotes from EWD1284</title>
-    <link href="http://therning.org/magnus/posts/2014-10-20-000-dijkstra-ewd1284.html" />
-    <id>http://therning.org/magnus/posts/2014-10-20-000-dijkstra-ewd1284.html</id>
+    <link href="http://magnus.therning.org/posts/2014-10-20-000-dijkstra-ewd1284.html" />
+    <id>http://magnus.therning.org/posts/2014-10-20-000-dijkstra-ewd1284.html</id>
     <published>2014-10-20T00:00:00Z</published>
     <updated>2014-10-20T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>I recently read through this <em>long</em> post entitles <a href="http://www.smashcompany.com/technology/object-oriented-programming-is-an-expensive-disaster-which-must-end">Object Oriented Programming is an expensive disaster which must end</a>. I have to agree I largely agree with what he writes, but I don’t think I ever could have written such a well-researched article, and absolutely never one of equal length ;)</p>
@@ -2173,8 +2173,8 @@ CalcResult 73</code></pre>
 </entry>
 <entry>
     <title>Optparse-applicative and custom argument parsers</title>
-    <link href="http://therning.org/magnus/posts/2014-10-13-000-optparse-applicative.html" />
-    <id>http://therning.org/magnus/posts/2014-10-13-000-optparse-applicative.html</id>
+    <link href="http://magnus.therning.org/posts/2014-10-13-000-optparse-applicative.html" />
+    <id>http://magnus.therning.org/posts/2014-10-13-000-optparse-applicative.html</id>
     <published>2014-10-13T00:00:00Z</published>
     <updated>2014-10-13T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>The latest update of <a href="http://hackage.haskell.org/package/optparse-applicative">optparse-applicative</a> triggered me to look over the functions in <a href="http://hackage.haskell.org/package/cblrepo">cblrepo</a> for parsing a few custom command line options. I used to do the parsing in a rather ad-hoc way with lots of use of list functions to split on specific characters. For instance, some option values are pairs of package name and version separated by a comma: <code>PKG-NAME,VERSION</code>. This worked fine and was easy to plug into version 0.10 of <em>optparse-applicative</em>. It was also easily extended to triples, <code>PKG-NAME,VERSION,RELEASE</code>, but it started feeling a bit brittle when some tuples got extended with an optional list of flag assignments, <code>PKG-NAME,VERSION[:FLAG,FLAG,FLAG,...]</code>. The recent release of version 0.11 of <em>optparse-applicative</em> changed the API for custom option value parsers radically; instead of passing a string to the parser, the parser has to use <code>readerAsk</code> to get the string. In short, <code>ReaderM</code> turned into a state monad.</p>
@@ -2228,8 +2228,8 @@ CalcResult 73</code></pre>
 </entry>
 <entry>
     <title>Script for migrating from WordPress to Hakyll</title>
-    <link href="http://therning.org/magnus/posts/2014-10-04-000-bbwp.html" />
-    <id>http://therning.org/magnus/posts/2014-10-04-000-bbwp.html</id>
+    <link href="http://magnus.therning.org/posts/2014-10-04-000-bbwp.html" />
+    <id>http://magnus.therning.org/posts/2014-10-04-000-bbwp.html</id>
     <published>2014-10-04T00:00:00Z</published>
     <updated>2014-10-04T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>As I wrote about in a previous post on <a href="/posts/2014-09-25-000-converting-posts-from-wp.html">converting post from WordPress to Hakyll</a> I couldn’t quite find a tool that met my needs out of the box. I had a look at the source of <a href="https://github.com/kowey/hakyll-convert">hakyll-convert</a> but it uses a library for RSS parsing, which sounds good. However, the export of posts from WordPress is in an extended RSS format, among other things it contains the comments of posts. Unfortunately it doesn’t look like the RSS library supports the WordPress extensions, so modifying hakyll-convert to also extract comments seems like a bit more work than I’d like to put into it. Especially since I had a feeling that hacking up something using <a href="http://hackage.haskell.org/package/tagsoup">tagsoup</a> would be quite a bit faster.</p>
@@ -2237,8 +2237,8 @@ CalcResult 73</code></pre>
 </entry>
 <entry>
     <title>Adding tags</title>
-    <link href="http://therning.org/magnus/posts/2014-09-30-000-adding-tags.html" />
-    <id>http://therning.org/magnus/posts/2014-09-30-000-adding-tags.html</id>
+    <link href="http://magnus.therning.org/posts/2014-09-30-000-adding-tags.html" />
+    <id>http://magnus.therning.org/posts/2014-09-30-000-adding-tags.html</id>
     <published>2014-09-30T00:00:00Z</published>
     <updated>2014-09-30T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>Adding tags to a <a href="http://jaspervdj.be/hakyll/">Hakyll</a> site brought some surprises. In retrospect it all makes sense, but it took some thinking on my part to work out the why of it all. The resulting code was heavily influenced by <a href="https://variadic.me/">Erik Kronberg’s site</a>.</p>
@@ -2282,8 +2282,8 @@ CalcResult 73</code></pre>
 </entry>
 <entry>
     <title>Adding support for comments</title>
-    <link href="http://therning.org/magnus/posts/2014-09-29-000-support-for-comments.html" />
-    <id>http://therning.org/magnus/posts/2014-09-29-000-support-for-comments.html</id>
+    <link href="http://magnus.therning.org/posts/2014-09-29-000-support-for-comments.html" />
+    <id>http://magnus.therning.org/posts/2014-09-29-000-support-for-comments.html</id>
     <published>2014-09-29T00:00:00Z</published>
     <updated>2014-09-29T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>It seems most people using <a href="http://jaspervdj.be/hakyll/">Hakyll</a> or other static site generators rely on services like <a href="https://disqus.com/">Disqus</a>, but I really don’t like the idea of putting a bunch of JavaScript on each page and dynamically loading all comments off some cloud storage. It sorts of fly in the face of the idea of having a static site to begin with. Searching online resulted in a few <a href="http://www.hezmatt.org/~mpalmer/blog/2011/07/19/static-comments-in-jekyll.html">posts</a> related to a <a href="https://github.com/mpalmer/jekyll-static-comments">plugin for static comments in</a> <a href="https://github.com/mojombo/jekyll">Jekyll</a>.</p>
@@ -2332,8 +2332,8 @@ CalcResult 73</code></pre>
 </entry>
 <entry>
     <title>Links to previous and next post</title>
-    <link href="http://therning.org/magnus/posts/2014-09-27-000-previous-next-links.html" />
-    <id>http://therning.org/magnus/posts/2014-09-27-000-previous-next-links.html</id>
+    <link href="http://magnus.therning.org/posts/2014-09-27-000-previous-next-links.html" />
+    <id>http://magnus.therning.org/posts/2014-09-27-000-previous-next-links.html</id>
     <published>2014-09-27T00:00:00Z</published>
     <updated>2014-09-27T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>Currently the landing page contains all the posts I’ve written so far. That works for now, but it won’t for very long if I keep on writing posts. It certainly won’t work when I get around to importing all the posts from <a href="http://therning.org/magnus">my old blog</a>. Clearly I need to limit the posts that appear in <code>index.html</code> at some point, but before that two things need to be in place:</p>
@@ -2405,8 +2405,8 @@ CalcResult 73</code></pre>
 </entry>
 <entry>
     <title>Converting posts from WordPress</title>
-    <link href="http://therning.org/magnus/posts/2014-09-25-000-converting-posts-from-wp.html" />
-    <id>http://therning.org/magnus/posts/2014-09-25-000-converting-posts-from-wp.html</id>
+    <link href="http://magnus.therning.org/posts/2014-09-25-000-converting-posts-from-wp.html" />
+    <id>http://magnus.therning.org/posts/2014-09-25-000-converting-posts-from-wp.html</id>
     <published>2014-09-25T00:00:00Z</published>
     <updated>2014-09-25T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>I’ve found two tools for converting posts from a <a href="http://wordpress.org/">WordPress</a> site to <a href="http://jaspervdj.be/hakyll/">Hakyll</a>[ (or to <a href="http://jekyllrb.com/">Jekyll</a> too I suppose):</p>
@@ -2431,8 +2431,8 @@ CalcResult 73</code></pre>
 </entry>
 <entry>
     <title>Dipping toes into CSS, normalizing</title>
-    <link href="http://therning.org/magnus/posts/2014-09-24-001-normalize-css.html" />
-    <id>http://therning.org/magnus/posts/2014-09-24-001-normalize-css.html</id>
+    <link href="http://magnus.therning.org/posts/2014-09-24-001-normalize-css.html" />
+    <id>http://magnus.therning.org/posts/2014-09-24-001-normalize-css.html</id>
     <published>2014-09-24T00:00:00Z</published>
     <updated>2014-09-24T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>The site doesn’t look that good. Actually it is pathetically simple. I’m however not that good at CSS, I also don’t really have a good sense of design, so making it look good is going to be an up-hill battle. The first step is easy though, add a standard CSS file to normalize the look.</p>
@@ -2451,8 +2451,8 @@ CalcResult 73</code></pre>
 </entry>
 <entry>
     <title>Adding a feed</title>
-    <link href="http://therning.org/magnus/posts/2014-09-24-000-adding-feed.html" />
-    <id>http://therning.org/magnus/posts/2014-09-24-000-adding-feed.html</id>
+    <link href="http://magnus.therning.org/posts/2014-09-24-000-adding-feed.html" />
+    <id>http://magnus.therning.org/posts/2014-09-24-000-adding-feed.html</id>
     <published>2014-09-24T00:00:00Z</published>
     <updated>2014-09-24T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>A blog isn’t complete without a feed, so that was the first thing to add. Luckily there’s a good <a href="http://jaspervdj.be/hakyll/tutorials/05-snapshots-feeds.html">tutorial on adding a feed in Hakyll</a>. The following code snippets are basically just copied from that tutorial.</p>
@@ -2481,8 +2481,8 @@ CalcResult 73</code></pre>
 </entry>
 <entry>
     <title>The current Hakyll build script</title>
-    <link href="http://therning.org/magnus/posts/2014-09-23-001-hakyll-build-script.html" />
-    <id>http://therning.org/magnus/posts/2014-09-23-001-hakyll-build-script.html</id>
+    <link href="http://magnus.therning.org/posts/2014-09-23-001-hakyll-build-script.html" />
+    <id>http://magnus.therning.org/posts/2014-09-23-001-hakyll-build-script.html</id>
     <published>2014-09-23T00:00:00Z</published>
     <updated>2014-09-23T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>I’m fairly sure I understand the current build script, and it seems to be rather minimal. Hopefully it can serve as an introductory for someone who, just like me, is new to <a href="http://jaspervdj.be/hakyll/index.html">Hakyll</a>.</p>
@@ -2551,8 +2551,8 @@ CalcResult 73</code></pre>
 </entry>
 <entry>
     <title>Moving to Hakyll</title>
-    <link href="http://therning.org/magnus/posts/2014-09-23-000-moving-to-hakyll.html" />
-    <id>http://therning.org/magnus/posts/2014-09-23-000-moving-to-hakyll.html</id>
+    <link href="http://magnus.therning.org/posts/2014-09-23-000-moving-to-hakyll.html" />
+    <id>http://magnus.therning.org/posts/2014-09-23-000-moving-to-hakyll.html</id>
     <published>2014-09-23T00:00:00Z</published>
     <updated>2014-09-23T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>I’ve decided to ditch WordPress and switch to Hakyll. I’ll keep the <a href="http://therning.org/magnus/">old site</a> intact until I’ve gotten around to import all the posts. That’ll probably take quite a while.</p>
@@ -2560,8 +2560,8 @@ CalcResult 73</code></pre>
 </entry>
 <entry>
     <title>More Visitor (in Python)</title>
-    <link href="http://therning.org/magnus/posts/2014-06-11-1184-more-visitor-in-python.html" />
-    <id>http://therning.org/magnus/posts/2014-06-11-1184-more-visitor-in-python.html</id>
+    <link href="http://magnus.therning.org/posts/2014-06-11-1184-more-visitor-in-python.html" />
+    <id>http://magnus.therning.org/posts/2014-06-11-1184-more-visitor-in-python.html</id>
     <published>2014-06-11T00:00:00Z</published>
     <updated>2014-06-11T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>Right after writing the previous post on the <a href="/posts/2014-05-24-1159-visitor-and-walkabout-in-python.html">Visitor pattern in Python</a> I picked up another paper on the same topic, <a href="http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.18.5999">Visitor Combination and Traversal Control</a>. Of course this one also used Java for its examples, so once again I decided to use Python to explore the ideas presented.</p>
@@ -2672,8 +2672,8 @@ CalcResult 73</code></pre>
 </entry>
 <entry>
     <title>Dealing with Microsoft Products, or Battling Loss of Gumption</title>
-    <link href="http://therning.org/magnus/posts/2014-06-03-1180-dealing-with-microsoft-products-or-battling-loss-of-gumption.html" />
-    <id>http://therning.org/magnus/posts/2014-06-03-1180-dealing-with-microsoft-products-or-battling-loss-of-gumption.html</id>
+    <link href="http://magnus.therning.org/posts/2014-06-03-1180-dealing-with-microsoft-products-or-battling-loss-of-gumption.html" />
+    <id>http://magnus.therning.org/posts/2014-06-03-1180-dealing-with-microsoft-products-or-battling-loss-of-gumption.html</id>
     <published>2014-06-03T00:00:00Z</published>
     <updated>2014-06-03T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>I was slightly frustrated and irritated with a situation at work today, which caused me to think about the word “gumption” as it’s used in Pirsig’s <a href="https://en.wikipedia.org/wiki/Zen_and_the_Art_of_Motorcycle_Maintenance">Zen and the Art of Motorcycle Maintenance</a>. That led me to Wikipedia’s article on <a href="https://en.wikipedia.org/wiki/Gumption_trap">gumption trap</a> which in turn led me to learn about the concept of <a href="https://en.wikipedia.org/wiki/Learned_helplessness">learned helplessness</a>.</p>
@@ -2707,8 +2707,8 @@ CalcResult 73</code></pre>
 </entry>
 <entry>
     <title>Visitor and Walkabout (in Python)</title>
-    <link href="http://therning.org/magnus/posts/2014-05-24-1159-visitor-and-walkabout-in-python.html" />
-    <id>http://therning.org/magnus/posts/2014-05-24-1159-visitor-and-walkabout-in-python.html</id>
+    <link href="http://magnus.therning.org/posts/2014-05-24-1159-visitor-and-walkabout-in-python.html" />
+    <id>http://magnus.therning.org/posts/2014-05-24-1159-visitor-and-walkabout-in-python.html</id>
     <published>2014-05-24T00:00:00Z</published>
     <updated>2014-05-24T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>A couple of weeks ago I found a link to a <a href="http://goo.gl/if48lQ">stackoverflow question</a> I’d saved away a long time ago. I’d saved it due to having asked myself the exact same question and being curious about the papers when I found that answer. Over the last few weeks I’ve made my way through those papers and as so often I found a couple of references to other papers that sound interesting. One such paper was <a href="http://www.cs.ucla.edu/~palsberg/paper/compsac98.pdf">The Essence of the Visitor Pattern</a> by Jens Palsberg and C. Barry Jay. There was however one little thing that bugged me with the <em>Walkabout</em> pattern and I thought I’d try to work that out for myself. Of course I’m using Python rather than Java ;)</p>
@@ -2795,8 +2795,8 @@ CalcResult 73</code></pre>
 </entry>
 <entry>
     <title>Localised configuration in Vim: localcfg</title>
-    <link href="http://therning.org/magnus/posts/2014-02-07-1150-localised-configuration-in-vim-localcfg.html" />
-    <id>http://therning.org/magnus/posts/2014-02-07-1150-localised-configuration-in-vim-localcfg.html</id>
+    <link href="http://magnus.therning.org/posts/2014-02-07-1150-localised-configuration-in-vim-localcfg.html" />
+    <id>http://magnus.therning.org/posts/2014-02-07-1150-localised-configuration-in-vim-localcfg.html</id>
     <published>2014-02-07T00:00:00Z</published>
     <updated>2014-02-07T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>For quite a while I’ve been using a small Vim plugin that lets me write configuration that is specific to a system, it loaded a config file based on the system’s host name. Unfortunately I can’t seem to find that plugin anywhere now, so I’ve put it in a <a href="https://gitlab.com/magus/localcfg/snippets/661">snippet</a>. This allowed me to easily create a single clean Vim configuration and check it into version control, while still allowing for settings that are unique to a system.</p>
