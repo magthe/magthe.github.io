@@ -26,6 +26,68 @@
 
   <div class="post-body">
     <header>
+      <h1 class="post-title"><a href="./posts/2018-10-01-000-using-a-configuration-in-scotty.html">Using a configuration in Scotty</a></h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2018-10-01">2018-10-01</time> - Magnus Therning</p>
+</header>
+
+<p>At work we’re only now getting around to put <a href="https://hilton.org.uk/blog/microservices-correlation-id">correlation IDs</a> into use. We write most our code in Clojure but since I’d really like to use more Haskell at work I thought I’d dive into <a href="https://hackage.haskell.org/package/scotty">Scotty</a> and see how to deal with logging and then especially how to get correlation IDs into the logs.</p>
+<h2 id="the-types">The types</h2>
+<p>For configuration it decided to use the reader monad inside <code>ActionT</code> from Scotty. Enter Chell:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">type</span> <span class="dt">ChellM</span> c <span class="fu">=</span> <span class="dt">ScottyT</span> <span class="dt">Text</span> (<span class="dt">ReaderT</span> c <span class="dt">IO</span>)</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">type</span> <span class="dt">ChellActionM</span> c <span class="fu">=</span> <span class="dt">ActionT</span> <span class="dt">Text</span> (<span class="dt">ReaderT</span> c <span class="dt">IO</span>)</a></code></pre></div>
+<p>In order to run it I wrote a function corresponding to <code>scotty</code>:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">chell ::</span> c <span class="ot">-&gt;</span> <span class="dt">Port</span> <span class="ot">-&gt;</span> <span class="dt">ChellM</span> () <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">chell cfg port a <span class="fu">=</span> scottyOptsT opts (flip runReaderT cfg) a</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">    opts <span class="fu">=</span> def { verbose <span class="fu">=</span> <span class="dv">0</span></a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">               , settings <span class="fu">=</span> (settings def) { settingsPort <span class="fu">=</span> port }</a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">               }</a></code></pre></div>
+<h2 id="correlation-id">Correlation ID</h2>
+<p>To deal with the correlation ID each incoming request should be checked for the HTTP header <code>X-Correlation-Id</code> and if present it should be used during logging. If no such header is present then a new correlation ID should be created. Since it’s per request it feels natural to create a WAI middleware for this.</p>
+<p>The easiest way I could come up with was to push the correlation ID into the request’s headers before it’s passed on:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">requestHeaderCorrelationId ::</span> <span class="dt">Request</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">ByteString</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">requestHeaderCorrelationId <span class="fu">=</span> lookup <span class="st">&quot;X-Correlation-Id&quot;</span> <span class="fu">.</span> requestHeaders</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4"><span class="ot">correlationId ::</span>  <span class="dt">Middleware</span></a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">correlationId app req sendResponse <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb3-6" data-line-number="6">  u <span class="ot">&lt;-</span> (<span class="ot">randomIO ::</span> <span class="dt">IO</span> <span class="dt">UUID</span>)</a>
+<a class="sourceLine" id="cb3-7" data-line-number="7">  <span class="kw">let</span> corrId <span class="fu">=</span> maybe (toASCIIBytes u) id (requestHeaderCorrelationId req)</a>
+<a class="sourceLine" id="cb3-8" data-line-number="8">      newHeaders <span class="fu">=</span> (<span class="st">&quot;X-Correlation-Id&quot;</span>, corrId) <span class="fu">:</span> (requestHeaders req)</a>
+<a class="sourceLine" id="cb3-9" data-line-number="9">  app (req { requestHeaders <span class="fu">=</span> newHeaders }) <span class="fu">$</span> \ res <span class="ot">-&gt;</span> sendResponse res</a></code></pre></div>
+<p>It also turns out to be useful to have both a default correlation ID and a function for pulling it out of the headers:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">defaultCorrelationString ::</span> <span class="dt">ByteString</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">defaultCorrelationString <span class="fu">=</span> <span class="st">&quot;no-correlation-id&quot;</span></a>
+<a class="sourceLine" id="cb4-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4"><span class="ot">getCorrelationId ::</span> <span class="dt">Request</span> <span class="ot">-&gt;</span> <span class="dt">ByteString</span></a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">getCorrelationId r <span class="fu">=</span> maybe defaultCorrelationString id (requestHeaderCorrelationId r)</a></code></pre></div>
+<h2 id="getting-the-correlation-id-into-the-configuration">Getting the correlation ID into the configuration</h2>
+<p>Since the correlation ID should be picked out of the request on handling of every request it’s useful to have it the configuration when running the <code>ChellActionM</code> actions. However, since the correlation ID isn’t available when running the reader (the call to <code>runReaderT</code> in <code>chell</code>) something else is called for. When looking around I found <code>local</code> (and later I was pointed to the more general <code>withReaderT</code>) but it doesn’t have a suitable type. After some <a href="https://twitter.com/EyalL/status/1046696148218580993">help on Twitter</a> I arrived at <code>withConfig</code> which allows me to run an action in a modified configuration:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">withConfig ::</span> (c <span class="ot">-&gt;</span> c') <span class="ot">-&gt;</span> <span class="dt">ChellActionM</span> c' () <span class="ot">-&gt;</span> <span class="dt">ChellActionM</span> c ()</a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">withConfig <span class="fu">=</span> mapActionT <span class="fu">.</span> withReaderT</a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">    mapActionT f (<span class="dt">ActionT</span> a) <span class="fu">=</span> <span class="dt">ActionT</span> <span class="fu">$</span> (mapExceptT <span class="fu">.</span> mapReaderT <span class="fu">.</span> mapStateT) f a</a></code></pre></div>
+<h2 id="making-it-handy-to-use">Making it handy to use</h2>
+<p>Armed with this I can put together some functions to replace Scotty’s <code>get</code>, <code>post</code>, etc. With a configuration type like this:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Config</span> <span class="fu">=</span> <span class="dt">Cfg</span> <span class="dt">LoggerSet</span> <span class="dt">ByteString</span></a></code></pre></div>
+<p>The modified <code>get</code> looks like this (Scotty’s original is <code>S.get</code>)</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">get ::</span> <span class="dt">RoutePattern</span> <span class="ot">-&gt;</span> <span class="dt">ChellActionM</span> <span class="dt">Config</span> () <span class="ot">-&gt;</span> <span class="dt">ChellM</span> <span class="dt">Config</span> ()</a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">get p a <span class="fu">=</span> S.get p <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-3" data-line-number="3">  r <span class="ot">&lt;-</span> request</a>
+<a class="sourceLine" id="cb7-4" data-line-number="4">  <span class="kw">let</span> corrId <span class="fu">=</span> getCorrelationId r</a>
+<a class="sourceLine" id="cb7-5" data-line-number="5">  withConfig (\ (<span class="dt">Cfg</span> l _) <span class="ot">-&gt;</span> <span class="dt">Cfg</span> l corrId) a</a></code></pre></div>
+<p>With this in place I can use the simpler <code>ReaderT Config IO</code> for inner functions that need to log.</p>
+
+
+  </div>
+
+</article>
+
+
+<article>
+
+  <div class="post-body">
+    <header>
       <h1 class="post-title"><a href="./posts/2018-07-14-000-quickcheck-on-a-rest-api.html">QuickCheck on a REST API</a></h1>
 
 <p class="post-date"><time pubdate="pubdate" datetime="2018-07-14">2018-07-14</time> - Magnus Therning</p>
@@ -791,140 +853,6 @@
 <a class="sourceLine" id="cb2-17" data-line-number="17">      toUvr [v0, v1] <span class="fu">=</span> V.unionVersionRanges v0 v1</a>
 <a class="sourceLine" id="cb2-18" data-line-number="18">      toIvr [v0, v1] <span class="fu">=</span> V.intersectVersionRanges v0 v1</a></code></pre></div>
 <p>Any and all comments and suggestions are more than welcome!</p>
-
-
-  </div>
-
-</article>
-
-
-<article>
-
-  <div class="post-body">
-    <header>
-      <h1 class="post-title"><a href="./posts/2016-01-24-000-freer-play-with-effects.html">Freer play with effects</a></h1>
-
-<p class="post-date"><time pubdate="pubdate" datetime="2016-01-24">2016-01-24</time> - Magnus Therning</p>
-</header>
-
-<p>In the previous posts on my <a href="./posts/2016-01-13-000-free-play--part-one.html">playing</a> <a href="./posts/2016-01-15-000-free-play--part-two.html">with</a> <a href="./posts/2016-01-17-000-free-play--part-three.html">free</a> I got stuck at combining APIs. I recalled reading a <a href="http://okmij.org/ftp/Haskell/extensible/exteff.pdf">paper on extensible effects</a> as an alternatve to monad transformers. I have to admit to not having finished the paper, and not quite understanding the part I did read. When looking it up again I found that the work had continued and that there is a <a href="http://okmij.org/ftp/Haskell/extensible/more.pdf">paper on more extensible effects</a>. (I got to it via <a href="http://okmij.org/ftp/Haskell/extensible/" class="uri">http://okmij.org/ftp/Haskell/extensible/</a>.)</p>
-<p>A quick search of <a href="http://hackage.haskell.org/">Hackage</a> revealed the package <a href="http://hackage.haskell.org/package/extensible-effects">extensible-effects</a> with an implementation of the ideas, including the stuff in the latter paper. So, what would the examples from my previous posts look like using extensible effects?</p>
-<h3 id="opening">Opening</h3>
-<p>The examples require a few extensions and modules:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE FlexibleContexts #-}</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="ot">{-# LANGUAGE GADTs #-}</span></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="ot">{-# LANGUAGE TypeOperators #-}</span></a></code></pre></div>
-<p>and</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">import</span> <span class="dt">Control.Eff</span></a>
-<a class="sourceLine" id="cb2-2" data-line-number="2"><span class="kw">import</span> <span class="dt">Control.Eff.Lift</span></a>
-<a class="sourceLine" id="cb2-3" data-line-number="3"><span class="kw">import</span> <span class="dt">Control.Eff.Operational</span></a>
-<a class="sourceLine" id="cb2-4" data-line-number="4"><span class="kw">import</span> <span class="dt">Data.Typeable</span></a></code></pre></div>
-<h3 id="just-an-api">Just an API</h3>
-<p>This part was greatly helped by the fact that there is a <a href="http://hackage.haskell.org/package/extensible-effects-1.11.0.1/docs/Control-Eff-Operational-Example.html">example in extensible-effects</a>.</p>
-<p>I start with defining the <code>SimpleFile</code> API using GADTs</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">data</span> <span class="dt">SimpleFileAPI</span> a <span class="kw">where</span></a>
-<a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="dt">LoadFile</span><span class="ot"> ::</span> FilePath <span class="ot">-&gt;</span> <span class="dt">SimpleFileAPI</span> <span class="dt">String</span></a>
-<a class="sourceLine" id="cb3-3" data-line-number="3">  <span class="dt">SaveFile</span><span class="ot"> ::</span> FilePath <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">SimpleFileAPI</span> ()</a></code></pre></div>
-<p>The usage of the constructors need to be wrapped up in <code>singleton</code>. To remember that I create two convenience functions</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">loadFile ::</span> <span class="dt">Member</span> (<span class="dt">Program</span> <span class="dt">SimpleFileAPI</span>) r <span class="ot">=&gt;</span> FilePath <span class="ot">-&gt;</span> <span class="dt">Eff</span> r <span class="dt">String</span></a>
-<a class="sourceLine" id="cb4-2" data-line-number="2">loadFile <span class="fu">=</span> singleton <span class="fu">.</span> <span class="dt">LoadFile</span></a>
-<a class="sourceLine" id="cb4-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb4-4" data-line-number="4"><span class="ot">saveFile ::</span> <span class="dt">Member</span> (<span class="dt">Program</span> <span class="dt">SimpleFileAPI</span>) r <span class="ot">=&gt;</span> FilePath <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Eff</span> r ()</a>
-<a class="sourceLine" id="cb4-5" data-line-number="5">saveFile fp <span class="fu">=</span> singleton <span class="fu">.</span> <span class="dt">SaveFile</span> fp</a></code></pre></div>
-<p>For <code>withSimpleFile</code> I only have to modify the type</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">withSimpleFile ::</span> <span class="dt">Member</span> (<span class="dt">Program</span> <span class="dt">SimpleFileAPI</span>) r <span class="ot">=&gt;</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>) <span class="ot">-&gt;</span> FilePath <span class="ot">-&gt;</span> <span class="dt">Eff</span> r ()</a>
-<a class="sourceLine" id="cb5-2" data-line-number="2">withSimpleFile f fp <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb5-3" data-line-number="3">  d <span class="ot">&lt;-</span> loadFile fp</a>
-<a class="sourceLine" id="cb5-4" data-line-number="4">  <span class="kw">let</span> result <span class="fu">=</span> f d</a>
-<a class="sourceLine" id="cb5-5" data-line-number="5">  saveFile (fp <span class="fu">++</span> <span class="st">&quot;_new&quot;</span>) result</a></code></pre></div>
-<p>Now for the gut of it, the interpreter.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">runSimpleFile ::</span> (<span class="dt">Member</span> (<span class="dt">Lift</span> <span class="dt">IO</span>) r, <span class="dt">SetMember</span> <span class="dt">Lift</span> (<span class="dt">Lift</span> <span class="dt">IO</span>) r) <span class="ot">=&gt;</span> <span class="dt">Eff</span> (<span class="dt">Program</span> <span class="dt">SimpleFileAPI</span> <span class="fu">:&gt;</span> r) a <span class="ot">-&gt;</span> <span class="dt">Eff</span> r a</a>
-<a class="sourceLine" id="cb6-2" data-line-number="2">runSimpleFile <span class="fu">=</span> runProgram f</a>
-<a class="sourceLine" id="cb6-3" data-line-number="3">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb6-4" data-line-number="4"><span class="ot">    f ::</span> (<span class="dt">Member</span> (<span class="dt">Lift</span> <span class="dt">IO</span>) r, <span class="dt">SetMember</span> <span class="dt">Lift</span> (<span class="dt">Lift</span> <span class="dt">IO</span>) r) <span class="ot">=&gt;</span> <span class="dt">SimpleFileAPI</span> a <span class="ot">-&gt;</span> <span class="dt">Eff</span> r a</a>
-<a class="sourceLine" id="cb6-5" data-line-number="5">    f (<span class="dt">LoadFile</span> fp) <span class="fu">=</span> lift <span class="fu">$</span> readFile fp</a>
-<a class="sourceLine" id="cb6-6" data-line-number="6">    f (<span class="dt">SaveFile</span> fp s) <span class="fu">=</span> lift <span class="fu">$</span> writeFile fp s</a></code></pre></div>
-<p>Runnnig it is fairly simple after this</p>
-<pre><code>&gt; :! cat test.txt 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec a diam lectus.
-Sed sit amet ipsum mauris. Maecenas congue ligula ac quam viverra nec
-consectetur ante hendrerit.
-&gt; runLift $ runSimpleFile $ withSimpleFile (map toUpper) &quot;test.txt&quot;
-&gt; :! cat test.txt_new 
-LOREM IPSUM DOLOR SIT AMET, CONSECTETUR ADIPISCING ELIT. DONEC A DIAM LECTUS.
-SED SIT AMET IPSUM MAURIS. MAECENAS CONGUE LIGULA AC QUAM VIVERRA NEC
-CONSECTETUR ANTE HENDRERIT.</code></pre>
-<p>Now, that was pretty easy. It looks almost exactly like when using <code>Free</code>, only without the <code>Functor</code> instance and rather more complicated types.</p>
-<h3 id="combining-two-apis">Combining two APIs</h3>
-<p>Now I get to the stuff that I didn’t manage to do using <code>Free</code>; combining two different APIs.</p>
-<p>I start with defining another API. This one is truly a play example, sorry for that, but it doesn’t really matter. The type with convenience function looks like this</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="kw">data</span> <span class="dt">StdIoAPI</span> a <span class="kw">where</span></a>
-<a class="sourceLine" id="cb8-2" data-line-number="2">  <span class="dt">WriteStrLn</span><span class="ot"> ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">StdIoAPI</span> ()</a>
-<a class="sourceLine" id="cb8-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb8-4" data-line-number="4"><span class="ot">writeStrLn ::</span> <span class="dt">Member</span> (<span class="dt">Program</span> <span class="dt">StdIoAPI</span>) r <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Eff</span> r ()</a>
-<a class="sourceLine" id="cb8-5" data-line-number="5">writeStrLn <span class="fu">=</span> singleton <span class="fu">.</span> <span class="dt">WriteStrLn</span></a></code></pre></div>
-<p>The interpreter then is straight forward</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">runStdIo ::</span> (<span class="dt">Member</span> (<span class="dt">Lift</span> <span class="dt">IO</span>) r, <span class="dt">SetMember</span> <span class="dt">Lift</span> (<span class="dt">Lift</span> <span class="dt">IO</span>) r) <span class="ot">=&gt;</span> <span class="dt">Eff</span> (<span class="dt">Program</span> <span class="dt">StdIoAPI</span> <span class="fu">:&gt;</span> r) a <span class="ot">-&gt;</span> <span class="dt">Eff</span> r a</a>
-<a class="sourceLine" id="cb9-2" data-line-number="2">runStdIo <span class="fu">=</span> runProgram f</a>
-<a class="sourceLine" id="cb9-3" data-line-number="3">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb9-4" data-line-number="4"><span class="ot">    f ::</span> (<span class="dt">Member</span> (<span class="dt">Lift</span> <span class="dt">IO</span>) r, <span class="dt">SetMember</span> <span class="dt">Lift</span> (<span class="dt">Lift</span> <span class="dt">IO</span>) r) <span class="ot">=&gt;</span> <span class="dt">StdIoAPI</span> a <span class="ot">-&gt;</span> <span class="dt">Eff</span> r a</a>
-<a class="sourceLine" id="cb9-5" data-line-number="5">    f (<span class="dt">WriteStrLn</span> s) <span class="fu">=</span> lift <span class="fu">$</span> putStrLn s</a></code></pre></div>
-<p>Now I just need a program that combines the two APIs</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">verboseWithSimpleFile ::</span> (<span class="dt">Member</span> (<span class="dt">Program</span> <span class="dt">StdIoAPI</span>) r, <span class="dt">Member</span> (<span class="dt">Program</span> <span class="dt">SimpleFileAPI</span>) r) <span class="ot">=&gt;</span></a>
-<a class="sourceLine" id="cb10-2" data-line-number="2">                         (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>) <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Eff</span> r ()</a>
-<a class="sourceLine" id="cb10-3" data-line-number="3">verboseWithSimpleFile f fp <span class="fu">=</span> writeStrLn (<span class="st">&quot;verboseWithSimpleFile on &quot;</span> <span class="fu">++</span> fp) <span class="fu">&gt;&gt;</span> withSimpleFile f fp</a></code></pre></div>
-<p>That type is surprisingly clear I find, albeit a bit on the long side. Running it is just a matter of combining <code>runStdIo</code> and <code>runSimpleFile</code>.</p>
-<pre><code>&gt; :! cat test.txt 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec a diam lectus.
-Sed sit amet ipsum mauris. Maecenas congue ligula ac quam viverra nec
-consectetur ante hendrerit.
-&gt; runLift $ runSimpleFile $ runStdIo $ verboseWithSimpleFile (map toUpper) &quot;test.txt&quot;
-verboseWithSimpleFile on test.txt
-&gt; :! cat test.txt_new 
-LOREM IPSUM DOLOR SIT AMET, CONSECTETUR ADIPISCING ELIT. DONEC A DIAM LECTUS.
-SED SIT AMET IPSUM MAURIS. MAECENAS CONGUE LIGULA AC QUAM VIVERRA NEC
-CONSECTETUR ANTE HENDRERIT.</code></pre>
-<p>Oh, and it doesn’t matter in what order the interpreters are run!</p>
-<p>At this point I got really excited about <code>Eff</code> because now it’s obvious that I’ll be able to write the logging “decorator”, in fact it’s clear that it’ll be rather simple too.</p>
-<h3 id="the-logging">The logging</h3>
-<p>As before I start with a data type and a convenience function</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="kw">data</span> <span class="dt">LoggerAPI</span> a <span class="kw">where</span></a>
-<a class="sourceLine" id="cb12-2" data-line-number="2">  <span class="dt">Log</span><span class="ot"> ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">LoggerAPI</span> ()</a>
-<a class="sourceLine" id="cb12-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb12-4" data-line-number="4"><span class="ot">logStr ::</span> <span class="dt">Member</span> (<span class="dt">Program</span> <span class="dt">LoggerAPI</span>) r <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Eff</span> r ()</a>
-<a class="sourceLine" id="cb12-5" data-line-number="5">logStr <span class="fu">=</span> singleton <span class="fu">.</span> <span class="dt">Log</span></a></code></pre></div>
-<p>For the decorating I can make use of the fact that APIs can be combined like I did above. That is, I don’t need to bother with any <em>coproduct</em> (<code>Sum</code>) or anything like that, I can simply just push in a call to <code>logStr</code> before each use of <code>SimpleFileAPI</code></p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="ot">logSimpleFileOp ::</span> (<span class="dt">Member</span> (<span class="dt">Program</span> <span class="dt">SimpleFileAPI</span>) r, <span class="dt">Member</span> (<span class="dt">Program</span> <span class="dt">LoggerAPI</span>) r) <span class="ot">=&gt;</span> <span class="dt">SimpleFileAPI</span> a <span class="ot">-&gt;</span> <span class="dt">Eff</span> r a</a>
-<a class="sourceLine" id="cb13-2" data-line-number="2">logSimpleFileOp op<span class="fu">@</span>(<span class="dt">LoadFile</span> fp) <span class="fu">=</span> logStr (<span class="st">&quot;LoadFile &quot;</span> <span class="fu">++</span> fp) <span class="fu">*&gt;</span> singleton op</a>
-<a class="sourceLine" id="cb13-3" data-line-number="3">logSimpleFileOp op<span class="fu">@</span>(<span class="dt">SaveFile</span> fp _) <span class="fu">=</span> logStr (<span class="st">&quot;SaveFile &quot;</span> <span class="fu">++</span> fp) <span class="fu">*&gt;</span> singleton op</a></code></pre></div>
-<p>Of course an interpreter is needed as well</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="ot">runLogger ::</span> (<span class="dt">Member</span> (<span class="dt">Lift</span> <span class="dt">IO</span>) r, <span class="dt">SetMember</span> <span class="dt">Lift</span> (<span class="dt">Lift</span> <span class="dt">IO</span>) r) <span class="ot">=&gt;</span> <span class="dt">Eff</span> (<span class="dt">Program</span> <span class="dt">LoggerAPI</span> <span class="fu">:&gt;</span> r) a <span class="ot">-&gt;</span> <span class="dt">Eff</span> r a</a>
-<a class="sourceLine" id="cb14-2" data-line-number="2">runLogger <span class="fu">=</span> runProgram f</a>
-<a class="sourceLine" id="cb14-3" data-line-number="3">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb14-4" data-line-number="4"><span class="ot">    f ::</span> (<span class="dt">Member</span> (<span class="dt">Lift</span> <span class="dt">IO</span>) r, <span class="dt">SetMember</span> <span class="dt">Lift</span> (<span class="dt">Lift</span> <span class="dt">IO</span>) r) <span class="ot">=&gt;</span> <span class="dt">LoggerAPI</span> a <span class="ot">-&gt;</span> <span class="dt">Eff</span> r a</a>
-<a class="sourceLine" id="cb14-5" data-line-number="5">    f (<span class="dt">Log</span> s) <span class="fu">=</span> lift <span class="fu">$</span> putStrLn s</a></code></pre></div>
-<p>Running is, once again, a matter of stacking interpreters</p>
-<pre><code>&gt; :! cat test.txt
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec a diam lectus.
-Sed sit amet ipsum mauris. Maecenas congue ligula ac quam viverra nec
-consectetur ante hendrerit.
-&gt; runLift $ runLogger $ runSimpleFile $ runProgram logSimpleFileOp $ withSimpleFile (map toUpper) &quot;test.txt&quot;
-LoadFile test.txt
-SaveFile test.txt_new
-&gt; :! cat test.txt_new 
-LOREM IPSUM DOLOR SIT AMET, CONSECTETUR ADIPISCING ELIT. DONEC A DIAM LECTUS.
-SED SIT AMET IPSUM MAURIS. MAECENAS CONGUE LIGULA AC QUAM VIVERRA NEC
-CONSECTETUR ANTE HENDRERIT.</code></pre>
-<h3 id="closing-thoughts">Closing thoughts</h3>
-<p>With <code>Eff</code> I’ve pretty much arrived where I wanted, I can</p>
-<ul>
-<li>define APIs of operations in a simple way (simpler than when using <code>Free</code> even).</li>
-<li>write a definitional interpreter for the operations.</li>
-<li>combine two different APIs in the same function.</li>
-<li>translate from one API to another (or even to a set of other APIs).</li>
-</ul>
-<p>On top, I can do this without having to write a ridiculous amount of code.</p>
-<p>I’m sure there are drawbacks as well. There’s a mention of some of them in the paper. However, for my typical uses of Haskell I haven’t read anything that would be a deal breaker.</p>
 
 
   </div>
