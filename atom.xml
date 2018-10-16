@@ -8,8 +8,23 @@
         <name>Magnus Therning</name>
         <email>magnus@therning.org</email>
     </author>
-    <updated>2018-10-14T00:00:00Z</updated>
+    <updated>2018-10-16T00:00:00Z</updated>
     <entry>
+    <title>Zipping streams</title>
+    <link href="http://magnus.therning.org/posts/2018-10-16-000-zipping-streams.html" />
+    <id>http://magnus.therning.org/posts/2018-10-16-000-zipping-streams.html</id>
+    <published>2018-10-16T00:00:00Z</published>
+    <updated>2018-10-16T00:00:00Z</updated>
+    <summary type="html"><![CDATA[<p>Writing the following is easy after glancing through the documentation for <a href="https://hackage.haskell.org/package/conduit">conduit</a>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">foo <span class="fu">=</span> <span class="kw">let</span> src <span class="fu">=</span> mapM_ C.yield [<span class="dv">0</span><span class="fu">..</span><span class="dv">9</span><span class="ot"> ::</span> <span class="dt">Int</span>]</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">          p0 <span class="fu">=</span> CC.map (\ i <span class="ot">-&gt;</span> (<span class="st">&quot;p0&quot;</span>, succ i))</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">          p1 <span class="fu">=</span> CC.filter odd <span class="fu">.|</span> CC.map (\ i <span class="ot">-&gt;</span> (<span class="st">&quot;p1&quot;</span>, i))</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">          p <span class="fu">=</span> C.getZipConduit <span class="fu">$</span> <span class="dt">C.ZipConduit</span> p0 <span class="fu">&lt;*</span> <span class="dt">C.ZipConduit</span> p1</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">          sink <span class="fu">=</span> CC.mapM_ print</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">      <span class="kw">in</span> C.runConduit <span class="fu">$</span> src <span class="fu">.|</span> p <span class="fu">.|</span> sink</a></code></pre></div>
+<p>Neither <a href="https://hackage.haskell.org/package/pipes">pipes</a> nor <a href="https://hackage.haskell.org/package/streaming">streaming</a> make it as easy to figure out. I must be missing something! What functions should I be looking at?</p>]]></summary>
+</entry>
+<entry>
     <title>Picking up new rows in a DB</title>
     <link href="http://magnus.therning.org/posts/2018-10-14-000-picking-up-new-rows-in-a-db.html" />
     <id>http://magnus.therning.org/posts/2018-10-14-000-picking-up-new-rows-in-a-db.html</id>
@@ -2746,41 +2761,6 @@ CalcResult 73</code></pre>
 <a class="sourceLine" id="cb10-9" data-line-number="9">Tree (<span class="bn">0x7f16806a1198</span>)</a>
 <a class="sourceLine" id="cb10-10" data-line-number="10">Tree (<span class="bn">0x7f16806a1390</span>)</a></code></pre></div>
 <p>That’s all rather cute I think.</p>]]></summary>
-</entry>
-<entry>
-    <title>Dealing with Microsoft Products, or Battling Loss of Gumption</title>
-    <link href="http://magnus.therning.org/posts/2014-06-03-1180-dealing-with-microsoft-products-or-battling-loss-of-gumption.html" />
-    <id>http://magnus.therning.org/posts/2014-06-03-1180-dealing-with-microsoft-products-or-battling-loss-of-gumption.html</id>
-    <published>2014-06-03T00:00:00Z</published>
-    <updated>2014-06-03T00:00:00Z</updated>
-    <summary type="html"><![CDATA[<p>I was slightly frustrated and irritated with a situation at work today, which caused me to think about the word “gumption” as it’s used in Pirsig’s <a href="https://en.wikipedia.org/wiki/Zen_and_the_Art_of_Motorcycle_Maintenance">Zen and the Art of Motorcycle Maintenance</a>. That led me to Wikipedia’s article on <a href="https://en.wikipedia.org/wiki/Gumption_trap">gumption trap</a> which in turn led me to learn about the concept of <a href="https://en.wikipedia.org/wiki/Learned_helplessness">learned helplessness</a>.</p>
-<p>So, what was the situation and how is it connected to learned helplessness?</p>
-<p>The rest is just slightly tongue-in-cheek ;)</p>
-<h2 id="what-to-standardise-on">What to standardise on</h2>
-<p>I’m in situation where the powers-that-be have standardised on applications. Not on open formats or open protocols, but on specific applications that use proprietary formats and proprietary protocols. Of course these applications suck. That’s what a lack of competition does, it removes any will for a company to actually make improvements to their applications! Some of these applications have captured such a large market share that reverse engineering of the formats was inevitable. Yay! That means I can use a sane OS and vastly better applications. However, one protocol is not reverse engineered yet and I’m forced to use the standard application. This application is painful to use and only runs on a crap OS.</p>
-<p>How bad can it be? you ask. The application is Outlook, the OS is Windows! Yes! It’s that bad. Hence the thoughts of gumption, or rather the loss of it. Which is exactly what starting Outlook causes. Every time!</p>
-<h2 id="connection-to-learned-helplessness">Connection to learned helplessness</h2>
-<p>It continues to amaze me that companies standardise on Windows and applications that only run on Windows. There are better alternatives, especially in this day and age with fast networks and powerful and fast execution environments that completely sidestep the whole question of which OS to run. Still there seems to be very little will to upgrade to Linux, or to standardise on web-based applications. Why is that? In the past I’ve thought it might be the <a href="https://en.wikipedia.org/wiki/Network_effect">network effect</a>. Most often I’ve come to the conclusion that it most likely is simple inertia. What’s the explanation for the inertia though?</p>
-<p>This is where learned helplessness can offer an explanation. People have been conditioned and have grown so used to Windows and other Microsoft products that they simply don’t recognise that there now is a way out. No matter how many escape routes that become avilable people simply won’t see them.</p>
-<h2 id="what-to-do-about-it">What to do about it</h2>
-<p>As the experiments on dogs showed there is hope (from the wikipedia page):</p>
-<blockquote>
-<p>To change their expectation and to recover the dogs from helplessness, experimenters had to physically pick up the dogs and move the legs in a close replication of the physical actions the dogs needed to take to remove themselves from the electrified grid. This had to be replicated at least 2 times before the dogs would exhibit the functional response of jumping over the barrier to get away from the electrified grid. Threats, rewards, and observed demonstrations had no observed effect in helping the dogs to independently move away from the shocks.</p>
-</blockquote>
-<p>Oh how I whish I could pull off the direct translation to my work place: re-install my co-workers computers and replace servers and services. Too bad that’s not a realistic plan. What I can do though is <a href="https://en.wikipedia.org/wiki/Civil_disobedience"><em>civil disobedience</em></a> (or maybe it should be called something like <em>civil disobedience in the workplace</em> instead). By simply not conforming and at the same time showing that there are better ways of getting the job done others will hopefully notice and either adopt my way, or come up with something that suits them better (which I then can learn from). Even if that doesn’t happen at least I’ll keep my gumption at healthy levels :)</p>
-<h2 id="what-im-doing-at-the-moment">What I’m doing at the moment</h2>
-<p>This is what I’m doing at work right now to avoid loss of gumption:</p>
-<ul>
-<li>Use Linux as my main OS.</li>
-<li>Run Windows in a VM.</li>
-<li>Use <a href="http://johnmacfarlane.net/pandoc/">pandoc</a> to generate MSWord docs.</li>
-<li>Use <a href="https://www.libreoffice.org/">LibreOffice</a>.</li>
-</ul>
-<p>Finally, for Outlook. The decision of the powers-that-be to disable IMAP forces me to:</p>
-<ul>
-<li>Limit my mail reading to twice per day.</li>
-<li>Be logged into Skype to make up for not reading mail more often.</li>
-</ul>]]></summary>
 </entry>
 
 </feed>

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://magnus.therning.org/">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Zipping streams</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2018-10-16">2018-10-16</time> - Magnus Therning</p>
+</header>
+
+<p>Writing the following is easy after glancing through the documentation for <a href="https://hackage.haskell.org/package/conduit">conduit</a>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">foo <span class="fu">=</span> <span class="kw">let</span> src <span class="fu">=</span> mapM_ C.yield [<span class="dv">0</span><span class="fu">..</span><span class="dv">9</span><span class="ot"> ::</span> <span class="dt">Int</span>]</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">          p0 <span class="fu">=</span> CC.map (\ i <span class="ot">-&gt;</span> (<span class="st">&quot;p0&quot;</span>, succ i))</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">          p1 <span class="fu">=</span> CC.filter odd <span class="fu">.|</span> CC.map (\ i <span class="ot">-&gt;</span> (<span class="st">&quot;p1&quot;</span>, i))</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">          p <span class="fu">=</span> C.getZipConduit <span class="fu">$</span> <span class="dt">C.ZipConduit</span> p0 <span class="fu">&lt;*</span> <span class="dt">C.ZipConduit</span> p1</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">          sink <span class="fu">=</span> CC.mapM_ print</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">      <span class="kw">in</span> C.runConduit <span class="fu">$</span> src <span class="fu">.|</span> p <span class="fu">.|</span> sink</a></code></pre></div>
+<p>Neither <a href="https://hackage.haskell.org/package/pipes">pipes</a> nor <a href="https://hackage.haskell.org/package/streaming">streaming</a> make it as easy to figure out. I must be missing something! What functions should I be looking at?</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/conduit.html">conduit</a>, <a href="../tags/pipes.html">pipes</a>, <a href="../tags/streaming.html">streaming</a>
+</div>
+
+<div class="post-prevnext">
+
+<a href="../posts/2018-10-14-000-picking-up-new-rows-in-a-db.html">⟸ Picking up new rows in a DB</a>
+
+
+
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2018-10-16-000-zipping-streams@therning.org?subject=A comment on Zipping streams&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

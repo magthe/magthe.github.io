@@ -26,6 +26,30 @@
 
   <div class="post-body">
     <header>
+      <h1 class="post-title"><a href="./posts/2018-10-16-000-zipping-streams.html">Zipping streams</a></h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2018-10-16">2018-10-16</time> - Magnus Therning</p>
+</header>
+
+<p>Writing the following is easy after glancing through the documentation for <a href="https://hackage.haskell.org/package/conduit">conduit</a>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">foo <span class="fu">=</span> <span class="kw">let</span> src <span class="fu">=</span> mapM_ C.yield [<span class="dv">0</span><span class="fu">..</span><span class="dv">9</span><span class="ot"> ::</span> <span class="dt">Int</span>]</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">          p0 <span class="fu">=</span> CC.map (\ i <span class="ot">-&gt;</span> (<span class="st">&quot;p0&quot;</span>, succ i))</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">          p1 <span class="fu">=</span> CC.filter odd <span class="fu">.|</span> CC.map (\ i <span class="ot">-&gt;</span> (<span class="st">&quot;p1&quot;</span>, i))</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">          p <span class="fu">=</span> C.getZipConduit <span class="fu">$</span> <span class="dt">C.ZipConduit</span> p0 <span class="fu">&lt;*</span> <span class="dt">C.ZipConduit</span> p1</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">          sink <span class="fu">=</span> CC.mapM_ print</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">      <span class="kw">in</span> C.runConduit <span class="fu">$</span> src <span class="fu">.|</span> p <span class="fu">.|</span> sink</a></code></pre></div>
+<p>Neither <a href="https://hackage.haskell.org/package/pipes">pipes</a> nor <a href="https://hackage.haskell.org/package/streaming">streaming</a> make it as easy to figure out. I must be missing something! What functions should I be looking at?</p>
+
+
+  </div>
+
+</article>
+
+
+<article>
+
+  <div class="post-body">
+    <header>
       <h1 class="post-title"><a href="./posts/2018-10-14-000-picking-up-new-rows-in-a-db.html">Picking up new rows in a DB</a></h1>
 
 <p class="post-date"><time pubdate="pubdate" datetime="2018-10-14">2018-10-14</time> - Magnus Therning</p>
@@ -809,41 +833,6 @@
 </header>
 
 <p>Yesterday I started digging into Qt5 and D-Bus. I never found a complete example, so I put one together myself: <a href="https://gist.github.com/magthe/2cf7220655bd8bf431259cc7dee99f64" class="uri">https://gist.github.com/magthe/2cf7220655bd8bf431259cc7dee99f64</a>.</p>
-
-
-  </div>
-
-</article>
-
-
-<article>
-
-  <div class="post-body">
-    <header>
-      <h1 class="post-title"><a href="./posts/2016-03-08-000-final-version-of-json-to-sum-type.html">Final version of JSON to sum type</a></h1>
-
-<p class="post-date"><time pubdate="pubdate" datetime="2016-03-08">2016-03-08</time> - Magnus Therning</p>
-</header>
-
-<p>After some feedback on my <a href="./posts/2016-03-06-000-from-json-to-sum-type.html">previous post</a> I ended up with the following implementation.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">V.VersionRange</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  parseJSON <span class="fu">=</span> withObject <span class="st">&quot;VersionRange&quot;</span> go</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">    <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">      go o <span class="fu">=</span></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">        V.thisVersion <span class="fu">&lt;$&gt;</span> o <span class="fu">.:</span> <span class="st">&quot;ThisVersion&quot;</span> <span class="fu">&lt;|&gt;</span></a>
-<a class="sourceLine" id="cb1-6" data-line-number="6">        V.laterVersion <span class="fu">&lt;$&gt;</span> o <span class="fu">.:</span> <span class="st">&quot;LaterVersion&quot;</span> <span class="fu">&lt;|&gt;</span></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7">        V.earlierVersion <span class="fu">&lt;$&gt;</span> o <span class="fu">.:</span> <span class="st">&quot;EarlierVersion&quot;</span> <span class="fu">&lt;|&gt;</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8">        <span class="dt">V.WildcardVersion</span> <span class="fu">&lt;$&gt;</span> o <span class="fu">.:</span> <span class="st">&quot;WildcardVersion&quot;</span> <span class="fu">&lt;|&gt;</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9">        nullaryOp V.anyVersion <span class="fu">&lt;$&gt;</span> o <span class="fu">.:</span> <span class="st">&quot;AnyVersion&quot;</span> <span class="fu">&lt;|&gt;</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10">        binaryOp V.unionVersionRanges <span class="fu">&lt;$&gt;</span> o <span class="fu">.:</span> <span class="st">&quot;UnionVersionRanges&quot;</span> <span class="fu">&lt;|&gt;</span></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11">        binaryOp V.intersectVersionRanges <span class="fu">&lt;$&gt;</span> o <span class="fu">.:</span> <span class="st">&quot;IntersectVersionRanges&quot;</span> <span class="fu">&lt;|&gt;</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12">        <span class="dt">V.VersionRangeParens</span> <span class="fu">&lt;$&gt;</span> o <span class="fu">.:</span> <span class="st">&quot;VersionRangeParens&quot;</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"></a>
-<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="ot">      nullaryOp ::</span> a <span class="ot">-&gt;</span> <span class="dt">Value</span> <span class="ot">-&gt;</span> a</a>
-<a class="sourceLine" id="cb1-15" data-line-number="15">      nullaryOp <span class="fu">=</span> const</a>
-<a class="sourceLine" id="cb1-16" data-line-number="16"></a>
-<a class="sourceLine" id="cb1-17" data-line-number="17">      binaryOp f [a, b] <span class="fu">=</span> f a b</a></code></pre></div>
-<p>Thanks David for your suggestions.</p>
 
 
   </div>
