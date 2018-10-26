@@ -54,6 +54,44 @@ Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/conduit.html"
 </div>
 
 
+<article class="comment-body">
+  <a name="comment-0"></a>
+  <header>
+    <p><b>Jack Kelly</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2018-10-17">2018-10-17</time></p>
+  </header>
+<p>You can use <code>Streaming.Prelude.copy</code> to process and interleave streams:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Streaming.Prelude</span> <span class="kw">as</span> <span class="dt">S</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="ot">fooStreaming ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">fooStreaming <span class="fu">=</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">  <span class="kw">let</span></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">    src <span class="fu">=</span> S.each [<span class="dv">0</span><span class="fu">..</span><span class="dv">9</span>]</a>
+<a class="sourceLine" id="cb1-7" data-line-number="7">    p0 <span class="fu">=</span> S.map (\i <span class="ot">-&gt;</span> (<span class="st">&quot;p0&quot;</span>, succ i))</a>
+<a class="sourceLine" id="cb1-8" data-line-number="8">    p1 <span class="fu">=</span> S.map (<span class="st">&quot;p1&quot;</span>,) <span class="fu">.</span> S.filter odd</a>
+<a class="sourceLine" id="cb1-9" data-line-number="9">  <span class="kw">in</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10">    S.print <span class="fu">.</span> p1 <span class="fu">$</span> S.print <span class="fu">.</span> p0 <span class="fu">$</span> S.copy src</a></code></pre></div>
+<p>It comes out in a slightly different order compared to your conduit code.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-2"></a>
+  <header>
+    <p><b>Neil Mitchell</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2018-10-19">2018-10-19</time></p>
+  </header>
+<p>I define <code>|$|</code> in Hoogle to make it easier as I find the ZipConduit a bit unwieldy. See <a href="https://github.com/ndmitchell/hoogle/blob/master/src/General/Conduit.hs" class="uri">https://github.com/ndmitchell/hoogle/blob/master/src/General/Conduit.hs</a></p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-1"></a>
+  <header>
+    <p><b>Magnus Therning</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2018-10-27">2018-10-27</time></p>
+  </header>
+<p><em><span class="citation" data-cites="Jack">@Jack</span> Kelly</em>: I might be wrong, but as far as I understand your code using <code>Streaming.Prelude.copy</code> is <em>not</em> equivalent because you end up with <em>two sinks</em>. It’s the re-combining of the streams that I’m after because that lets me organise my code and set up the whole stream processing in a very nice way, e.g. for testing I just switch out the source, <code>src</code>, and the sink, <code>sink</code>, for pure variants.</p>
+</article>
+
 
 <div class="post-leave-comment">
   <a href="mailto:magnus+blog.comment.2018-10-16-000-zipping-streams@therning.org?subject=A comment on Zipping streams&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
