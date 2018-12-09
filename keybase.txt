@@ -1,0 +1,53 @@
+https://keybase.io/magthe
+--------------------------------------------------------------------
+
+I hereby claim:
+
+  * I am an admin of https://magnus.therning.org
+  * I am magthe (https://keybase.io/magthe) on keybase.
+  * I have a public key ASCl2bUQUhcLpeaEWD9f1vcEQ454VRophzqLQINg_3iYEAo
+
+To do so, I am signing this object:
+
+{
+  "body": {
+    "key": {
+      "eldest_kid": "0120e5cdc55b936b0426c05c3c8c972e77c0c2252ca4879bbfc1cbf2948d00b507d20a",
+      "host": "keybase.io",
+      "kid": "0120a5d9b51052170ba5e684583f5fd6f704438e78551a29873a8b408360ff7898100a",
+      "uid": "fe763534e8b141545e18bb10d1e8d319",
+      "username": "magthe"
+    },
+    "merkle_root": {
+      "ctime": 1544354743,
+      "hash": "5f508ca6aa9c065c6aa4a55c5368c97c19ae6ed50ec601ef64f55f44f8c74d820ee73cda0a5a8e6bd179ca0ba47603e0c52b769a41cbd7cbf163fb0f6eba12d7",
+      "hash_meta": "1eb020226ad7a489b2abb67a15bd676c8d9a9582ff093b72630714ede41c5c06",
+      "seqno": 4080441
+    },
+    "service": {
+      "entropy": "pvelCU5SNlLGGitju0unaqL8",
+      "hostname": "magnus.therning.org",
+      "protocol": "https:"
+    },
+    "type": "web_service_binding",
+    "version": 2
+  },
+  "client": {
+    "name": "keybase.io go client",
+    "version": "2.11.0"
+  },
+  "ctime": 1544354788,
+  "expire_in": 504576000,
+  "prev": "10bd023b3fdde8107da351d1d83ba927011f9785a019122303341bd85b143bb9",
+  "seqno": 50,
+  "tag": "signature"
+}
+
+which yields the signature:
+
+hKRib2R5hqhkZXRhY2hlZMOpaGFzaF90eXBlCqNrZXnEIwEgpdm1EFIXC6XmhFg/X9b3BEOOeFUaKYc6i0CDYP94mBAKp3BheWxvYWTESpcCMsQgEL0COz/d6BB9o1HR2DupJwEfl4WgGRIjAzQb2FsUO7nEIPYhwe2CnIhgNg2ZuLxhr+mTvLOTVYuk1XwcfPKCEyXvAgHCo3NpZ8RAL/JwvZBI3EasBDE1NFrSMymmL0RwxurRNioH+P6ojhSZMlmVUM6NJV4EcWfepSzrILQp4U9E/W08aO7A+WCiCqhzaWdfdHlwZSCkaGFzaIKkdHlwZQildmFsdWXEIBsgg6FQNgPIt1gNJqqveQmOyLNa1k/Y3UxjYseycB9to3RhZ80CAqd2ZXJzaW9uAQ==
+
+And finally, I am proving ownership of this host by posting or
+appending to this document.
+
+View my publicly-auditable identity here: https://keybase.io/magthe
