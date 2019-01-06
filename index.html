@@ -26,6 +26,37 @@
 
   <div class="post-body">
     <header>
+      <h1 class="post-title"><a href="./posts/2019-01-05-000-components-feel-so-not-fp.html">Components feel so not FP</a></h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2019-01-05">2019-01-05</time> - Magnus Therning</p>
+</header>
+
+<p>At work we’re writing most of the new stuff using Clojure. That’s been going on since before I started working there, and from the beginning there’s been exploration of style and libraries, yes, even of frameworks (ugh!). Now there’s discussion of standardising. The discussion is still in its infancy, but it prompted me to start thinking about what I’m come across in the code base we have now, what I like and what I dislike. The first thing that came to mind was how our different services are set up. I mean set up internally. Like, what’s actually in the <code>main</code> function (or in <code>-main</code>, since we’re talking Clojure). In many services we use <a href="https://clojars.org/com.stuartsierra/component">Stuart Sierra’s <code>component</code></a>, in a growing number of services we use <a href="https://clojars.org/integrant"><code>integrant</code></a>, and in one we use <a href="https://clojars.org/mount"><code>mount</code></a>.</p>
+<p>The current discussion is going in the direction of <code>integrant</code>, and I don’t like it!</p>
+<p>AFAICS <code>integrant</code> suffers from all the same things as <code>component</code> (the author of <code>mount</code> has put it into words better than I ever could in his text on <code>mount</code>‘s <a href="https://github.com/tolitius/mount/blob/master/doc/differences-from-component.md#differences-from-component">differences from component</a>’) plus one more thing to boot: systems are “configured into being”. It’s touted as “data-driven architecture”, I tend to see it as <em>architecture defined in a language separate from my functions</em>. The <code>integrant</code> README says that one of its strengths over <code>component</code> is that</p>
+<blockquote>
+<p>In Integrant, systems are created from a configuration data structure, typically loaded from an edn resource. The architecture of the application is defined through data, rather than code.</p>
+</blockquote>
+<p>Somehow that statement makes me think of OO and DI frameworks. I suspect the above paragraph is just as true with the two replacements <code>s/Integrant/Spring/</code> and <code>s/edn/XML/</code>. I’m not convinced this is a strength at all! My experience with DI frameworks in OO is limited (I’ve never used external configuration), but the enduring impression is that it’s unwieldy. In particular it was very far between cause and effect of errors. So far this is true for <code>integrant</code> as well.</p>
+<p>Also, it makes me think of “functional in the small, OO in the large”<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>, which is a comment coming out of the f-sharp world. Maybe there’s a connection here. Maybe “OO in the large” is something that resonates with OO-turned-FP developers. Maybe that means it’s only a quesiton of time (and exposure to FP) before they embrace “functional all the way”? Or, maybe I’m simply missing something crucial.</p>
+<p>In any case I’m going to have to take a closer look at <code>mount</code> in the near future. I’ll also have to take a look at its brother <a href="https://github.com/tolitius/yurt"><code>yurt</code></a>, and at its distant cousin <a href="https://github.com/aroemers/mount-lite"><code>mount-lite</code></a>.</p>
+<section class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p><a href="https://www.johndcook.com/blog/2009/03/23/functional-in-the-small-oo-in-the-large/" class="uri">https://www.johndcook.com/blog/2009/03/23/functional-in-the-small-oo-in-the-large/</a><a href="#fnref1" class="footnote-back">↩</a></p></li>
+</ol>
+</section>
+
+
+  </div>
+
+</article>
+
+
+<article>
+
+  <div class="post-body">
+    <header>
       <h1 class="post-title"><a href="./posts/2018-12-09-000-is-this-a-good-way-to-do-json-validation-.html">Is this a good way to do JSON validation?</a></h1>
 
 <p class="post-date"><time pubdate="pubdate" datetime="2018-12-09">2018-12-09</time> - Magnus Therning</p>
@@ -875,81 +906,6 @@ Left (BadSchema [] (KeyMissing &quot;name&quot;))</code></pre>
 <div class="sourceCode" id="cb23"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb23-1" data-line-number="1">runSum undefined stepSimpleFile stepStdIo <span class="fu">$</span> prog <span class="st">&quot;foo&quot;</span></a></code></pre></div>
 <p>and one with logging</p>
 <div class="sourceCode" id="cb24"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb24-1" data-line-number="1">runSum stepLog stepSimpleFile stepStdIo (logT <span class="fu">$</span> prog <span class="st">&quot;foo&quot;</span>)</a></code></pre></div>
-
-
-  </div>
-
-</article>
-
-
-<article>
-
-  <div class="post-body">
-    <header>
-      <h1 class="post-title"><a href="./posts/2016-05-17-000-cmake--externaldata--and-custom-fetch-script.html">CMake, ExternalData, and custom fetch script</a></h1>
-
-<p class="post-date"><time pubdate="pubdate" datetime="2016-05-17">2016-05-17</time> - Magnus Therning</p>
-</header>
-
-<p>I failed to find a concrete example on how to use the <a href="https://cmake.org/documentation/">CMake</a> module <a href="https://cmake.org/cmake/help/v3.5/module/ExternalData.html">ExternalData</a> with a custom fetch script. Since I finally manage to work out how to use it I thought I’d try to help out the next person who needs to go down this route.</p>
-<h3 id="why-externaldata">Why ExternalData?</h3>
-<p>I thought I’d start with a short justification of why I was looking at the module at all.</p>
-<p>At work I work with a product that processes images and video. When writing tests we often need some rather large files (from MiB to GiB) as input. The two obvious options are:</p>
-<ol type="1">
-<li>Check the files into our Git repo, or</li>
-<li>Put them on shared storage</li>
-</ol>
-<p>Neither of these are very appealing. The former just doesn’t feel quite right, these are large binary files that rarely, if ever, change, why place them under version control at all? And if they do change the Git repo is likely to balloon in size and impact cloning times negatively. The latter makes it difficult to run our tests on a machine that isn’t on the office network and any changes to the files will break older tests, unless we always only add files, never modify any in place. On the other hand, the former guarantees that the files needed for testing are always available and it is possible to modify the files without breaking older tests. The pro of the latter is that we only download the files needed for the current tests.</p>
-<p>ExternalData is <em>one</em> option to address this. On some level it feels like it offers a combination of both options above:</p>
-<ul>
-<li>It’s possible to use the shared storage</li>
-<li>When the shared storage isn’t available it’s possible to fall back on downloading the files via other means</li>
-<li>The layout of the storage is such that modifying in place is much less likely</li>
-<li>Only the files needed for the currest tests will be downloaded when building off-site</li>
-</ul>
-<h3 id="the-object-store">The object store</h3>
-<p>We do our building in <a href="https://www.docker.com/">docker</a> images that do have our shared storage mapped in, so I’d like them to take advantage of that. At the same time I want the builds performed off-site to download the files. To get this behaviour I defined two object stores:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode cmake"><code class="sourceCode cmake"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">set</span>(<span class="dv">ExternalData_OBJECT_STORES</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  <span class="dv">${CMAKE_BINARY_DIR}</span>/ExternalData/Objects</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">  /mnt/shared/over/nfs/Objects</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">  )</a></code></pre></div>
-<p>The module will search each of these for the required files and download only if they aren’t found. Downloaded files will be put into the first of the stores. Oh, and it’s <em>very</em> important that the first store is given with an absolute path!</p>
-<p>The store on the shared storage looks something like this:</p>
-<pre><code>/mnt/share/over/nfs/Objects
-└── MD5
-    ├── 94ed17f9b6c74a732fba7b243ab945ff
-    └── a2036177b190fbee6e9e038b718f1c20</code></pre>
-<p>I can then drop a file <code>MyInput.avi.md5</code> in my source tree with the md5 of the real file (e.g. <code>a2036177b190fbee6e9e038b718f1c20</code>) as the content. Once that is done I can follow the example found in the <a href="https://cmake.org/cmake/help/v3.5/module/ExternalData.html#introduction">introduction</a> of the reference documentation.</p>
-<h3 id="curl-vs-sftp">curl vs sftp</h3>
-<p>So far so good. This now works on-site, but for off-site use I need to fetch the needed files. The last section of the reference documentation is called <a href="https://cmake.org/cmake/help/v3.5/module/ExternalData.html#custom-fetch-scripts">Custom Fetch Scripts</a>. It mentions that files are normally downloaded using <code>file(DOWNLOAD)</code>. Neither there, nor in the <a href="https://cmake.org/cmake/help/v3.5/command/file.html#command:file">documentation for file</a> is there a mention of what is used under the hood to fetch the files. After asking on in <code>#cmake</code> I found out that it’s <a href="https://curl.haxx.se/">curl</a>. While <code>curl</code> does handle SFTP I didn’t get it to work with my <code>known_hosts</code> file, nor with my SSH agent (both from <a href="http://www.openssh.com/">OpenSSH</a>). On the other hand it was rather easy to configure <code>sftp</code> to fetch a file from the internet-facing SSH server we have. Now I just had to hook it into CMake somehow.</p>
-<h3 id="custom-fetch-script">Custom fetch script</h3>
-<p>As the section on “Custom Fetch Scripts” mention three things are needed:</p>
-<ol type="1">
-<li>Specify the script via the <code>ExternalDataCustomScript://</code> protocol.</li>
-<li>Tell CMake where it can find the fetch script.</li>
-<li>The fetch script itself.</li>
-</ol>
-<p>The first two steps are done by providing a URL template and pointing to the script via a special variable:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode cmake"><code class="sourceCode cmake"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">set</span>(<span class="dv">ExternalData_URL_TEMPLATES</span> <span class="st">&quot;ExternalDataCustomScript://sftp/mnt/shared/over/nfs/Objects/%(algo)/%(hash)&quot;</span>)</a>
-<a class="sourceLine" id="cb3-2" data-line-number="2"><span class="kw">set</span>(<span class="dv">ExternalData_CUSTOM_SCRIPT_sftp</span> <span class="dv">${CMAKE_SOURCE_DIR}</span>/cmake/FetchFromSftp.cmake)</a></code></pre></div>
-<p>It took me a ridiculous amount of time to work out how to write a script that turns out to be rather short. This is an experience that seems to repeat itself when using CMake; it could say something about me, or something about CMake.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode cmake"><code class="sourceCode cmake"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="kw">get_filename_component</span>(FFS_ObjStoreDir <span class="dv">${ExternalData_CUSTOM_FILE}</span> <span class="ot">DIRECTORY</span>)</a>
-<a class="sourceLine" id="cb4-2" data-line-number="2"><span class="kw">get_filename_component</span>(FFS_InputFilename <span class="dv">${ExternalData_CUSTOM_LOCATION}</span> <span class="ot">NAME</span>)</a>
-<a class="sourceLine" id="cb4-3" data-line-number="3"><span class="kw">get_filename_component</span>(FFS_OutputFilename <span class="dv">${ExternalData_CUSTOM_FILE}</span> <span class="ot">NAME</span>)</a>
-<a class="sourceLine" id="cb4-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb4-5" data-line-number="5"><span class="kw">execute_process</span>(<span class="ot">COMMAND</span> sftp sftp.company.com:/<span class="dv">${ExternalData_CUSTOM_LOCATION}</span></a>
-<a class="sourceLine" id="cb4-6" data-line-number="6">  <span class="ot">RESULT_VARIABLE</span> FFS_SftpResult</a>
-<a class="sourceLine" id="cb4-7" data-line-number="7">  <span class="ot">OUTPUT_QUIET</span></a>
-<a class="sourceLine" id="cb4-8" data-line-number="8">  <span class="ot">ERROR_VARIABLE</span> FFS_SftpErr</a>
-<a class="sourceLine" id="cb4-9" data-line-number="9">  )</a>
-<a class="sourceLine" id="cb4-10" data-line-number="10"></a>
-<a class="sourceLine" id="cb4-11" data-line-number="11"><span class="kw">if</span>(FFS_SftpResult)</a>
-<a class="sourceLine" id="cb4-12" data-line-number="12">  <span class="kw">set</span>(<span class="dv">ExternalData_CUSTOM_ERROR</span> <span class="st">&quot;Failed to fetch from SFTP - </span><span class="dv">${</span>FFS_SftpErr<span class="dv">}</span><span class="st">&quot;</span>)</a>
-<a class="sourceLine" id="cb4-13" data-line-number="13"><span class="kw">else</span>(FFS_SftpResult)</a>
-<a class="sourceLine" id="cb4-14" data-line-number="14">  <span class="kw">file</span>(<span class="ot">MAKE_DIRECTORY</span> <span class="dv">${</span>FFS_ObjStoreDir<span class="dv">}</span>)</a>
-<a class="sourceLine" id="cb4-15" data-line-number="15">  <span class="kw">file</span>(<span class="ot">RENAME</span> <span class="dv">${</span>FFS_InputFilename<span class="dv">}</span> <span class="dv">${</span>FFS_ObjStoreDir<span class="dv">}</span>/<span class="dv">${</span>FFS_OutputFilename<span class="dv">}</span>)</a>
-<a class="sourceLine" id="cb4-16" data-line-number="16"><span class="kw">endif</span>(FFS_SftpResult)</a></code></pre></div>
-<p>This script is run with <code>cmake -P</code> in the binary dir of the <code>CMakeLists.txt</code> where the test is defined, which means it’s oblivious about the project it’s part of. <code>PROJECT_BINARY_DIR</code> is empty and <code>CMAKE_BINARY_DIR</code> is the same as <code>CMAKE_CURRENT_BINARY_DIR</code>. This is the reason why the first store in <code>ExternalData_OBJECT_STORES</code> has to be an absolute path – it’s very difficult, if not impossible, to find the correct placement of the object store otherwise.</p>
 
 
   </div>

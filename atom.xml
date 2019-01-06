@@ -8,8 +8,30 @@
         <name>Magnus Therning</name>
         <email>magnus@therning.org</email>
     </author>
-    <updated>2018-12-09T00:00:00Z</updated>
+    <updated>2019-01-05T00:00:00Z</updated>
     <entry>
+    <title>Components feel so not FP</title>
+    <link href="http://magnus.therning.org/posts/2019-01-05-000-components-feel-so-not-fp.html" />
+    <id>http://magnus.therning.org/posts/2019-01-05-000-components-feel-so-not-fp.html</id>
+    <published>2019-01-05T00:00:00Z</published>
+    <updated>2019-01-05T00:00:00Z</updated>
+    <summary type="html"><![CDATA[<p>At work we’re writing most of the new stuff using Clojure. That’s been going on since before I started working there, and from the beginning there’s been exploration of style and libraries, yes, even of frameworks (ugh!). Now there’s discussion of standardising. The discussion is still in its infancy, but it prompted me to start thinking about what I’m come across in the code base we have now, what I like and what I dislike. The first thing that came to mind was how our different services are set up. I mean set up internally. Like, what’s actually in the <code>main</code> function (or in <code>-main</code>, since we’re talking Clojure). In many services we use <a href="https://clojars.org/com.stuartsierra/component">Stuart Sierra’s <code>component</code></a>, in a growing number of services we use <a href="https://clojars.org/integrant"><code>integrant</code></a>, and in one we use <a href="https://clojars.org/mount"><code>mount</code></a>.</p>
+<p>The current discussion is going in the direction of <code>integrant</code>, and I don’t like it!</p>
+<p>AFAICS <code>integrant</code> suffers from all the same things as <code>component</code> (the author of <code>mount</code> has put it into words better than I ever could in his text on <code>mount</code>‘s <a href="https://github.com/tolitius/mount/blob/master/doc/differences-from-component.md#differences-from-component">differences from component</a>’) plus one more thing to boot: systems are “configured into being”. It’s touted as “data-driven architecture”, I tend to see it as <em>architecture defined in a language separate from my functions</em>. The <code>integrant</code> README says that one of its strengths over <code>component</code> is that</p>
+<blockquote>
+<p>In Integrant, systems are created from a configuration data structure, typically loaded from an edn resource. The architecture of the application is defined through data, rather than code.</p>
+</blockquote>
+<p>Somehow that statement makes me think of OO and DI frameworks. I suspect the above paragraph is just as true with the two replacements <code>s/Integrant/Spring/</code> and <code>s/edn/XML/</code>. I’m not convinced this is a strength at all! My experience with DI frameworks in OO is limited (I’ve never used external configuration), but the enduring impression is that it’s unwieldy. In particular it was very far between cause and effect of errors. So far this is true for <code>integrant</code> as well.</p>
+<p>Also, it makes me think of “functional in the small, OO in the large”<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>, which is a comment coming out of the f-sharp world. Maybe there’s a connection here. Maybe “OO in the large” is something that resonates with OO-turned-FP developers. Maybe that means it’s only a quesiton of time (and exposure to FP) before they embrace “functional all the way”? Or, maybe I’m simply missing something crucial.</p>
+<p>In any case I’m going to have to take a closer look at <code>mount</code> in the near future. I’ll also have to take a look at its brother <a href="https://github.com/tolitius/yurt"><code>yurt</code></a>, and at its distant cousin <a href="https://github.com/aroemers/mount-lite"><code>mount-lite</code></a>.</p>
+<section class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p><a href="https://www.johndcook.com/blog/2009/03/23/functional-in-the-small-oo-in-the-large/" class="uri">https://www.johndcook.com/blog/2009/03/23/functional-in-the-small-oo-in-the-large/</a><a href="#fnref1" class="footnote-back">↩</a></p></li>
+</ol>
+</section>]]></summary>
+</entry>
+<entry>
     <title>Is this a good way to do JSON validation?</title>
     <link href="http://magnus.therning.org/posts/2018-12-09-000-is-this-a-good-way-to-do-json-validation-.html" />
     <id>http://magnus.therning.org/posts/2018-12-09-000-is-this-a-good-way-to-do-json-validation-.html</id>
@@ -2765,15 +2787,6 @@ CalcResult 73</code></pre>
 <a class="sourceLine" id="cb2-37" data-line-number="37">    defaultContext</a></code></pre></div>
 <p>The only slightly unnecessary thing is that all posts are turned into complete web pages (line 14), but none of those files is actually reachable from the generated landing page. My plan is to limit the number of posts on the landing page so they will be used later on.</p>
 <p>For the moment some site constants are put into the base context. I’m not completely convinced that’s the wise thing to do, but I have a vague feeling that it’s better putting stuff like that into the context than hard code them into the template. I guess the better solution would be to have a configuration file for them though. That’s for the future though, for now I’m keeping it simple.</p>]]></summary>
-</entry>
-<entry>
-    <title>Moving to Hakyll</title>
-    <link href="http://magnus.therning.org/posts/2014-09-23-000-moving-to-hakyll.html" />
-    <id>http://magnus.therning.org/posts/2014-09-23-000-moving-to-hakyll.html</id>
-    <published>2014-09-23T00:00:00Z</published>
-    <updated>2014-09-23T00:00:00Z</updated>
-    <summary type="html"><![CDATA[<p>I’ve decided to ditch WordPress and switch to Hakyll. I’ll keep the <a href="http://therning.org/magnus/">old site</a> intact until I’ve gotten around to import all the posts. That’ll probably take quite a while.</p>
-<p>As you can see the site is terribly bare bones at the moment. It’ll stay like this until I work out enough of <a href="http://jaspervdj.be/hakyll/index.html">Hakyll</a> to get most of the items into the site. There’s simply no point in getting distracted with the craziness that’s CSS and making it pretty until I’m happy with the content handling.</p>]]></summary>
 </entry>
 
 </feed>
