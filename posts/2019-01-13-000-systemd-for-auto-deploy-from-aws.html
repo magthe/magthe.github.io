@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://magnus.therning.org/">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Systemd for auto deploy from AWS</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2019-01-13">2019-01-13</time> - Magnus Therning</p>
+</header>
+
+<p>Over the last week I’ve completely rebuilt the the only on-premise system we have at work. One of the bits I’m rather happy with is the replacement of <a href="https://mmonit.com/">M/Monit</a> with just plain <a href="https://www.freedesktop.org/wiki/Software/systemd/">systemd</a>. We didn’t use any of the advanced features of M/Monit, we only wanted ordinary process monitoring and restart on a single system. It really was a bit of overkill.</p>
+<p>So, instead of</p>
+<ul>
+<li>using M/Monit to monitor processes</li>
+<li>a monit configuration for the app (both start and stop instructions)</li>
+<li>a script to start the app and capture its PID in a file</li>
+<li>a script to resync the app against the S3 bucket where Travis puts the build artifacts, and if a new version has arrived, remove the PID file thereby triggering M/Monit to restart the app</li>
+<li>a crontab entry to run the sync/restart script every few minutes</li>
+</ul>
+<p>we now have</p>
+<ul>
+<li>a (simplified) script to start the app<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a></li>
+<li>a service unit (<code>app.service</code>) for the app</li>
+<li>a timer unit (<code>app-sync.timer</code>) to trigger the resync of the app against the S3 bucket</li>
+<li>a oneshot service unit (<code>app-sync.service</code>), triggered by the timer, to perform the sync of the app with the latest build, i.e. call <code>aws s3 sync</code></li>
+<li>a path unit (<code>app-restart.path</code>) to monitor one of the build artifacts, i.e. to pick up that a new version has arrived</li>
+<li>a oneshot service unit (<code>app-restart.service</code>), triggered by the path unit, calling <code>systemctl restart app.service</code></li>
+</ul>
+<p>There’s one more piece to the setup, but</p>
+<ul>
+<li>the start script is simplified since it no longer needs to push things to the background and capture the PID</li>
+<li>the sync/restart script is completely gone (arguably the more complicated of the two scripts in the M/Monit setup)</li>
+<li>responsibility is cleanly separated leading to a solution that’s easier to understand (as long as you know a bit about systemd of course)</li>
+</ul>
+<p>so I think it’s a net improvement.</p>
+<section class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>All it does is set a bunch of environment variables and then start the app, so I’m planning on moving the environment variables into a separate file and put the start command the service unit file instead.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+</ol>
+</section>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/systemd.html">systemd</a>
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2019-01-13-000-systemd-for-auto-deploy-from-aws@therning.org?subject=A comment on Systemd for auto deploy from AWS&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

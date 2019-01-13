@@ -8,8 +8,46 @@
         <name>Magnus Therning</name>
         <email>magnus@therning.org</email>
     </author>
-    <updated>2019-01-05T00:00:00Z</updated>
+    <updated>2019-01-13T00:00:00Z</updated>
     <entry>
+    <title>Systemd for auto deploy from AWS</title>
+    <link href="http://magnus.therning.org/posts/2019-01-13-000-systemd-for-auto-deploy-from-aws.html" />
+    <id>http://magnus.therning.org/posts/2019-01-13-000-systemd-for-auto-deploy-from-aws.html</id>
+    <published>2019-01-13T00:00:00Z</published>
+    <updated>2019-01-13T00:00:00Z</updated>
+    <summary type="html"><![CDATA[<p>Over the last week I’ve completely rebuilt the the only on-premise system we have at work. One of the bits I’m rather happy with is the replacement of <a href="https://mmonit.com/">M/Monit</a> with just plain <a href="https://www.freedesktop.org/wiki/Software/systemd/">systemd</a>. We didn’t use any of the advanced features of M/Monit, we only wanted ordinary process monitoring and restart on a single system. It really was a bit of overkill.</p>
+<p>So, instead of</p>
+<ul>
+<li>using M/Monit to monitor processes</li>
+<li>a monit configuration for the app (both start and stop instructions)</li>
+<li>a script to start the app and capture its PID in a file</li>
+<li>a script to resync the app against the S3 bucket where Travis puts the build artifacts, and if a new version has arrived, remove the PID file thereby triggering M/Monit to restart the app</li>
+<li>a crontab entry to run the sync/restart script every few minutes</li>
+</ul>
+<p>we now have</p>
+<ul>
+<li>a (simplified) script to start the app<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a></li>
+<li>a service unit (<code>app.service</code>) for the app</li>
+<li>a timer unit (<code>app-sync.timer</code>) to trigger the resync of the app against the S3 bucket</li>
+<li>a oneshot service unit (<code>app-sync.service</code>), triggered by the timer, to perform the sync of the app with the latest build, i.e. call <code>aws s3 sync</code></li>
+<li>a path unit (<code>app-restart.path</code>) to monitor one of the build artifacts, i.e. to pick up that a new version has arrived</li>
+<li>a oneshot service unit (<code>app-restart.service</code>), triggered by the path unit, calling <code>systemctl restart app.service</code></li>
+</ul>
+<p>There’s one more piece to the setup, but</p>
+<ul>
+<li>the start script is simplified since it no longer needs to push things to the background and capture the PID</li>
+<li>the sync/restart script is completely gone (arguably the more complicated of the two scripts in the M/Monit setup)</li>
+<li>responsibility is cleanly separated leading to a solution that’s easier to understand (as long as you know a bit about systemd of course)</li>
+</ul>
+<p>so I think it’s a net improvement.</p>
+<section class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>All it does is set a bunch of environment variables and then start the app, so I’m planning on moving the environment variables into a separate file and put the start command the service unit file instead.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+</ol>
+</section>]]></summary>
+</entry>
+<entry>
     <title>Components feel so not FP</title>
     <link href="http://magnus.therning.org/posts/2019-01-05-000-components-feel-so-not-fp.html" />
     <id>http://magnus.therning.org/posts/2019-01-05-000-components-feel-so-not-fp.html</id>
@@ -2717,76 +2755,6 @@ CalcResult 73</code></pre>
 <a class="sourceLine" id="cb2-6" data-line-number="6">            renderAtom postFeedConfig feedCtx posts</a></code></pre></div>
 <p>Once again the snapshot of the posts comes in handy. Since the old WordPress site limited the feed to the 50 latest posts I decided to do that in the new one too. Maybe it’s a bit excessive, 10-20 ought to be enough, but I’ll leave it for now. The feed-specific context is a little nice details, also from the tutorial. The feed builder requires the presence of a <code>description</code> for each post, but to avoid having to remember to add one to all posts I just add a <code>description</code> field containing the <code>body</code> of the post.</p>
 <p>The generated feed is available at <a href="/atom.xml">./atom.xml</a></p>]]></summary>
-</entry>
-<entry>
-    <title>The current Hakyll build script</title>
-    <link href="http://magnus.therning.org/posts/2014-09-23-001-hakyll-build-script.html" />
-    <id>http://magnus.therning.org/posts/2014-09-23-001-hakyll-build-script.html</id>
-    <published>2014-09-23T00:00:00Z</published>
-    <updated>2014-09-23T00:00:00Z</updated>
-    <summary type="html"><![CDATA[<p>I’m fairly sure I understand the current build script, and it seems to be rather minimal. Hopefully it can serve as an introductory for someone who, just like me, is new to <a href="http://jaspervdj.be/hakyll/index.html">Hakyll</a>.</p>
-<h2 id="the-site-layout">The site layout</h2>
-<p>Before getting into the build script it’s worth describing the folder layout of the project, it looks like this:</p>
-<pre><code>.
-├── build_site.hs
-├── index.html
-├── posts
-│   ├── 2014-09-23-000-moving-to-hakyll.mkd
-│   └── 2014-09-23-001-hakyll-build-script.mkd
-└── templates
-    ├── default.html
-    └── single-post.html</code></pre>
-<h2 id="the-templates">The templates</h2>
-<dl>
-<dt><code>single-post.html</code></dt>
-<dd>A template for, as the name suggests, a single post. It renders the post into an HTML snippet.
-</dd>
-<dt><code>default.html</code></dt>
-<dd>The main template, i.e. the one that provides the entire structure of a complete HTML page.
-</dd>
-</dl>
-<p>It should also be noted that <code>index.html</code> basically is a template itself. These three files fit together such that each post is turned into an HTML snippet (<code>single-post.html</code>), all the snippets are then pulled into <code>index.html</code>, which finally is wrapped into a proper page by <code>default.html</code>.</p>
-<h2 id="the-script">The script</h2>
-<p>The full script looks like this:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode numberSource haskell numberLines"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">#! /usr/bin/runhaskell</span></a>
-<a class="sourceLine" id="cb2-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb2-3" data-line-number="3"><span class="ot">{-# LANGUAGE OverloadedStrings #-}</span></a>
-<a class="sourceLine" id="cb2-4" data-line-number="4"><span class="kw">import</span> <span class="dt">Data.Monoid</span></a>
-<a class="sourceLine" id="cb2-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Hakyll</span></a>
-<a class="sourceLine" id="cb2-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb2-7" data-line-number="7"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb2-8" data-line-number="8">main <span class="fu">=</span> hakyll <span class="fu">$</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-9" data-line-number="9">    match <span class="st">&quot;posts/*&quot;</span> <span class="fu">$</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-10" data-line-number="10">        route <span class="fu">$</span> setExtension <span class="st">&quot;html&quot;</span></a>
-<a class="sourceLine" id="cb2-11" data-line-number="11">        compile <span class="fu">$</span> pandocCompiler</a>
-<a class="sourceLine" id="cb2-12" data-line-number="12">            <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/single-post.html&quot;</span> baseCtx</a>
-<a class="sourceLine" id="cb2-13" data-line-number="13">            <span class="fu">&gt;&gt;=</span> saveSnapshot <span class="st">&quot;posts-content&quot;</span></a>
-<a class="sourceLine" id="cb2-14" data-line-number="14">            <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/default.html&quot;</span> baseCtx</a>
-<a class="sourceLine" id="cb2-15" data-line-number="15">            <span class="fu">&gt;&gt;=</span> relativizeUrls</a>
-<a class="sourceLine" id="cb2-16" data-line-number="16"></a>
-<a class="sourceLine" id="cb2-17" data-line-number="17">    match <span class="st">&quot;index.html&quot;</span> <span class="fu">$</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-18" data-line-number="18">        route idRoute</a>
-<a class="sourceLine" id="cb2-19" data-line-number="19">        compile <span class="fu">$</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-20" data-line-number="20">            posts <span class="ot">&lt;-</span> recentFirst <span class="fu">=&lt;&lt;</span> loadAllSnapshots <span class="st">&quot;posts/*&quot;</span> <span class="st">&quot;posts-content&quot;</span></a>
-<a class="sourceLine" id="cb2-21" data-line-number="21">            <span class="kw">let</span> indexCtx <span class="fu">=</span></a>
-<a class="sourceLine" id="cb2-22" data-line-number="22">                    listField <span class="st">&quot;posts&quot;</span> baseCtx (return posts) <span class="fu">&lt;&gt;</span></a>
-<a class="sourceLine" id="cb2-23" data-line-number="23">                    baseCtx</a>
-<a class="sourceLine" id="cb2-24" data-line-number="24">            getResourceBody</a>
-<a class="sourceLine" id="cb2-25" data-line-number="25">                <span class="fu">&gt;&gt;=</span> applyAsTemplate indexCtx</a>
-<a class="sourceLine" id="cb2-26" data-line-number="26">                <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/default.html&quot;</span> indexCtx</a>
-<a class="sourceLine" id="cb2-27" data-line-number="27">                <span class="fu">&gt;&gt;=</span> relativizeUrls</a>
-<a class="sourceLine" id="cb2-28" data-line-number="28"></a>
-<a class="sourceLine" id="cb2-29" data-line-number="29">    match <span class="st">&quot;templates/*&quot;</span> <span class="fu">$</span> compile templateCompiler</a>
-<a class="sourceLine" id="cb2-30" data-line-number="30"></a>
-<a class="sourceLine" id="cb2-31" data-line-number="31"><span class="ot">baseCtx ::</span> <span class="dt">Context</span> <span class="dt">String</span></a>
-<a class="sourceLine" id="cb2-32" data-line-number="32">baseCtx <span class="fu">=</span></a>
-<a class="sourceLine" id="cb2-33" data-line-number="33">    dateField <span class="st">&quot;date&quot;</span> <span class="st">&quot;%Y-%m-%d&quot;</span> <span class="fu">&lt;&gt;</span></a>
-<a class="sourceLine" id="cb2-34" data-line-number="34">    constField <span class="st">&quot;site-title&quot;</span> <span class="st">&quot;Magnus web site&quot;</span> <span class="fu">&lt;&gt;</span></a>
-<a class="sourceLine" id="cb2-35" data-line-number="35">    constField <span class="st">&quot;site-subtitle&quot;</span> <span class="st">&quot;Random stuff&quot;</span> <span class="fu">&lt;&gt;</span></a>
-<a class="sourceLine" id="cb2-36" data-line-number="36">    constField <span class="st">&quot;author&quot;</span> <span class="st">&quot;Magnus Therning&quot;</span> <span class="fu">&lt;&gt;</span></a>
-<a class="sourceLine" id="cb2-37" data-line-number="37">    defaultContext</a></code></pre></div>
-<p>The only slightly unnecessary thing is that all posts are turned into complete web pages (line 14), but none of those files is actually reachable from the generated landing page. My plan is to limit the number of posts on the landing page so they will be used later on.</p>
-<p>For the moment some site constants are put into the base context. I’m not completely convinced that’s the wise thing to do, but I have a vague feeling that it’s better putting stuff like that into the context than hard code them into the template. I guess the better solution would be to have a configuration file for them though. That’s for the future though, for now I’m keeping it simple.</p>]]></summary>
 </entry>
 
 </feed>
