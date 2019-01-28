@@ -8,8 +8,19 @@
         <name>Magnus Therning</name>
         <email>magnus@therning.org</email>
     </author>
-    <updated>2019-01-20T00:00:00Z</updated>
+    <updated>2019-01-28T00:00:00Z</updated>
     <entry>
+    <title>A missing piece in my Emacs/Spacemacs setup for Haskell development</title>
+    <link href="http://magnus.therning.org/posts/2019-01-28-000-a-missing-piece-in-my-emacs-spacemacs-setup-for-haskell-development.html" />
+    <id>http://magnus.therning.org/posts/2019-01-28-000-a-missing-piece-in-my-emacs-spacemacs-setup-for-haskell-development.html</id>
+    <published>2019-01-28T00:00:00Z</published>
+    <updated>2019-01-28T00:00:00Z</updated>
+    <summary type="html"><![CDATA[<p>With the help of a work mate I’ve finally found this gem that’s been missing from my Spacemacs setup</p>
+<pre class="elisp"><code>(with-eval-after-load &#39;intero
+  (flycheck-add-next-checker &#39;intero &#39;(warning . haskell-hlint))
+  (flycheck-add-next-checker &#39;intero &#39;(warning . haskell-stack-ghc)))</code></pre>]]></summary>
+</entry>
+<entry>
     <title>Tagless final and Scotty</title>
     <link href="http://magnus.therning.org/posts/2019-01-20-000-tagless-final-and-scotty.html" />
     <id>http://magnus.therning.org/posts/2019-01-20-000-tagless-final-and-scotty.html</id>
@@ -2812,26 +2823,6 @@ CalcResult 73</code></pre>
 <li>The posts were not consumed by the build script due to <code>categories</code> and <code>tags</code> not being comma separated, but rather a Yaml list.</li>
 </ul>
 <p>The conclusion is that <code>hakyll-convert</code> will be what I use, but it’ll take a little while before I get around to importing my old posts since it’ll require manual edits to ensure they look all right.</p>]]></summary>
-</entry>
-<entry>
-    <title>Dipping toes into CSS, normalizing</title>
-    <link href="http://magnus.therning.org/posts/2014-09-24-001-normalize-css.html" />
-    <id>http://magnus.therning.org/posts/2014-09-24-001-normalize-css.html</id>
-    <published>2014-09-24T00:00:00Z</published>
-    <updated>2014-09-24T00:00:00Z</updated>
-    <summary type="html"><![CDATA[<p>The site doesn’t look that good. Actually it is pathetically simple. I’m however not that good at CSS, I also don’t really have a good sense of design, so making it look good is going to be an up-hill battle. The first step is easy though, add a standard CSS file to normalize the look.</p>
-<h2 id="the-css">The CSS</h2>
-<p>I grabbed <code>normalize.css</code> from <a href="https://necolas.github.io/normalize.css/">the web site</a>.</p>
-<h2 id="template-changes">Template changes</h2>
-<p>Well, obviously the CSS has to be pulled into the web pages. The full webpages are provided by <code>templates/default.html</code> and the line that needs adding is</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">&lt;link</span><span class="ot"> rel=</span><span class="st">&quot;stylesheet&quot;</span><span class="ot"> type=</span><span class="st">&quot;text/css&quot;</span><span class="ot"> href=</span><span class="st">&quot;/css/normalize.css&quot;</span> <span class="kw">/&gt;</span></a></code></pre></div>
-<p>Of course it goes into the <code>&lt;head&gt;</code> section of the file.</p>
-<h2 id="code-changes">Code changes</h2>
-<p>The changes to the build script are equally straight forward.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">    match <span class="st">&quot;css/*&quot;</span> <span class="fu">$</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-2" data-line-number="2">        route idRoute</a>
-<a class="sourceLine" id="cb2-3" data-line-number="3">        compile copyFileCompiler</a></code></pre></div>
-<p>I opted to just copy the file rather than compress it usign <code>compressCssCompiler</code>. I don’t think the speedup is really worth it, and I personally find it very handy to be able to read the CSS files on sites that I think look nice. Of course I need to enable others to do the same.</p>]]></summary>
 </entry>
 
 </feed>
