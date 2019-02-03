@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="http://magnus.therning.org/">Top</a> <a href="archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">The ReaderT design pattern or tagless final?</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2019-02-02">2019-02-02</time> - Magnus Therning</p>
+</header>
+
+<p>The other week I read V. Kevroletin’s <a href="https://serokell.io/blog/2018/12/07/tagless-final">Introduction to Tagless Final</a> and realised that a couple of my projects, both at work and at home, would benefit from a refactoring to that approach. All in all I was happy with the changes I made, even though I haven’t made use of all the way. In particular there I could further improve the tests in a few places by adding more typeclasses. For now it’s good enough and I’ve clearly gotten some value out of it.</p>
+<p>I found mr. Kevroletin’s article to be a good introduction so I’ve been passing it on when people on the <a href="https://functionalprogramming.slack.com/">Functional programming slack</a> bring up questions about how to organize their code as applications grow. In particular if they mention that they’re using monad transformers. I did exactly that just the other day _<span class="citation" data-cites="solomon_">@solomon_</span> wrote</p>
+<blockquote>
+<p>so i’ve created a rats nest of IO where almost all the functions in my program are in <code>ReaderT Env IO ()</code> and I’m not sure how to purify everything and move the IO to the edge of the program</p>
+</blockquote>
+<p>I proposed tagless final and passed the URL on, and then I got a pointer to the article <a href="https://www.fpcomplete.com/blog/2017/06/readert-design-pattern">The ReaderT Design Patter</a> which I hadn’t seen before.</p>
+<p>The two approches are similar, at least to me, and I can’t really judge if one’s better than the other. Just to get a feel for it I thought I’d try to rewrite the example in the <code>ReaderT</code> article in a tagless final style.</p>
+<h2 id="a-slightly-changed-example-of-readert-design-pattern">A slightly changed example of <code>ReaderT</code> design pattern</h2>
+<p>I decided to make a few changes to the example in the article:</p>
+<ul>
+<li>I removed the <code>modify</code> function, instead the code uses the typeclass function <code>modifyBalance</code> directly.</li>
+<li>I separated the instances needed for the tests spatially in the code just to make it easier to see what’s “production” code and what’s test code.</li>
+<li>I combined the <code>main</code> functions from the various examples to that both an example (<code>main0</code>) and the test (<code>main1</code>) are run.</li>
+<li>I switched from <code>Control.Concurrent.Async.Lifted.Safe</code> (from <code>monad-control</code>) to <code>UnliftIO.Async</code> (from <code>unliftio</code>)</li>
+</ul>
+<p>After that the code looks like this</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE FlexibleContexts #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="ot">{-# LANGUAGE FlexibleInstances #-}</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="kw">import</span>           <span class="dt">Control.Concurrent.STM</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span>           <span class="dt">Control.Monad.Reader</span></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Control.Monad.State.Strict</span> <span class="kw">as</span> <span class="dt">State</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span>           <span class="dt">Say</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span>           <span class="dt">Test.Hspec</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span>           <span class="dt">UnliftIO.Async</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">data</span> <span class="dt">Env</span> <span class="fu">=</span> <span class="dt">Env</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12">  {<span class="ot"> envLog ::</span> <span class="fu">!</span>(<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ())</a>
+<a class="sourceLine" id="cb1-13" data-line-number="13">  ,<span class="ot"> envBalance ::</span> <span class="fu">!</span>(<span class="dt">TVar</span> <span class="dt">Int</span>)</a>
+<a class="sourceLine" id="cb1-14" data-line-number="14">  }</a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">class</span> <span class="dt">HasLog</span> a <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="ot">  getLog ::</span> a <span class="ot">-&gt;</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ())</a>
+<a class="sourceLine" id="cb1-18" data-line-number="18"></a>
+<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">instance</span> <span class="dt">HasLog</span> <span class="dt">Env</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-20" data-line-number="20">  getLog <span class="fu">=</span> envLog</a>
+<a class="sourceLine" id="cb1-21" data-line-number="21"></a>
+<a class="sourceLine" id="cb1-22" data-line-number="22"><span class="kw">class</span> <span class="dt">HasBalance</span> a <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-23" data-line-number="23"><span class="ot">  getBalance ::</span> a <span class="ot">-&gt;</span> <span class="dt">TVar</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb1-24" data-line-number="24"></a>
+<a class="sourceLine" id="cb1-25" data-line-number="25"><span class="kw">instance</span> <span class="dt">HasBalance</span> <span class="dt">Env</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-26" data-line-number="26">  getBalance <span class="fu">=</span> envBalance</a>
+<a class="sourceLine" id="cb1-27" data-line-number="27"></a>
+<a class="sourceLine" id="cb1-28" data-line-number="28"><span class="kw">class</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">MonadBalance</span> m <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-29" data-line-number="29"><span class="ot">  modifyBalance ::</span> (<span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span>) <span class="ot">-&gt;</span> m ()</a>
+<a class="sourceLine" id="cb1-30" data-line-number="30"></a>
+<a class="sourceLine" id="cb1-31" data-line-number="31"><span class="kw">instance</span> (<span class="dt">HasBalance</span> env, <span class="dt">MonadIO</span> m) <span class="ot">=&gt;</span> <span class="dt">MonadBalance</span> (<span class="dt">ReaderT</span> env m) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-32" data-line-number="32">  modifyBalance f <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-33" data-line-number="33">    env <span class="ot">&lt;-</span> ask</a>
+<a class="sourceLine" id="cb1-34" data-line-number="34">    liftIO <span class="fu">$</span> atomically <span class="fu">$</span> modifyTVar' (getBalance env) f</a>
+<a class="sourceLine" id="cb1-35" data-line-number="35"></a>
+<a class="sourceLine" id="cb1-36" data-line-number="36"><span class="ot">logSomething ::</span> (<span class="dt">MonadReader</span> env m, <span class="dt">HasLog</span> env, <span class="dt">MonadIO</span> m) <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> m ()</a>
+<a class="sourceLine" id="cb1-37" data-line-number="37">logSomething msg <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-38" data-line-number="38">  env <span class="ot">&lt;-</span> ask</a>
+<a class="sourceLine" id="cb1-39" data-line-number="39">  liftIO <span class="fu">$</span> getLog env msg</a>
+<a class="sourceLine" id="cb1-40" data-line-number="40"></a>
+<a class="sourceLine" id="cb1-41" data-line-number="41"><span class="ot">main0 ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb1-42" data-line-number="42">main0 <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-43" data-line-number="43">  ref <span class="ot">&lt;-</span> newTVarIO <span class="dv">4</span></a>
+<a class="sourceLine" id="cb1-44" data-line-number="44">  <span class="kw">let</span> env <span class="fu">=</span> <span class="dt">Env</span> { envLog <span class="fu">=</span> sayString , envBalance <span class="fu">=</span> ref }</a>
+<a class="sourceLine" id="cb1-45" data-line-number="45">  runReaderT</a>
+<a class="sourceLine" id="cb1-46" data-line-number="46">    (concurrently_</a>
+<a class="sourceLine" id="cb1-47" data-line-number="47">      (modifyBalance (<span class="fu">+</span> <span class="dv">1</span>))</a>
+<a class="sourceLine" id="cb1-48" data-line-number="48">      (logSomething <span class="st">&quot;Increasing account balance&quot;</span>))</a>
+<a class="sourceLine" id="cb1-49" data-line-number="49">    env</a>
+<a class="sourceLine" id="cb1-50" data-line-number="50">  balance <span class="ot">&lt;-</span> readTVarIO ref</a>
+<a class="sourceLine" id="cb1-51" data-line-number="51">  sayString <span class="fu">$</span> <span class="st">&quot;Final balance: &quot;</span> <span class="fu">++</span> show balance</a>
+<a class="sourceLine" id="cb1-52" data-line-number="52"></a>
+<a class="sourceLine" id="cb1-53" data-line-number="53"><span class="kw">instance</span> <span class="dt">HasLog</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-54" data-line-number="54">  getLog <span class="fu">=</span> id</a>
+<a class="sourceLine" id="cb1-55" data-line-number="55"></a>
+<a class="sourceLine" id="cb1-56" data-line-number="56"><span class="kw">instance</span> <span class="dt">HasBalance</span> (<span class="dt">TVar</span> <span class="dt">Int</span>) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-57" data-line-number="57">  getBalance <span class="fu">=</span> id</a>
+<a class="sourceLine" id="cb1-58" data-line-number="58"></a>
+<a class="sourceLine" id="cb1-59" data-line-number="59"><span class="kw">instance</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">MonadBalance</span> (<span class="dt">State.StateT</span> <span class="dt">Int</span> m) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-60" data-line-number="60">  modifyBalance <span class="fu">=</span> State.modify</a>
+<a class="sourceLine" id="cb1-61" data-line-number="61"></a>
+<a class="sourceLine" id="cb1-62" data-line-number="62"><span class="ot">main1 ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb1-63" data-line-number="63">main1 <span class="fu">=</span> hspec <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-64" data-line-number="64">  describe <span class="st">&quot;modify&quot;</span> <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-65" data-line-number="65">    it <span class="st">&quot;works, IO&quot;</span> <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-66" data-line-number="66">      var <span class="ot">&lt;-</span> newTVarIO (<span class="dv">1</span><span class="ot"> ::</span> <span class="dt">Int</span>)</a>
+<a class="sourceLine" id="cb1-67" data-line-number="67">      runReaderT (modifyBalance (<span class="fu">+</span> <span class="dv">2</span>)) var</a>
+<a class="sourceLine" id="cb1-68" data-line-number="68">      res <span class="ot">&lt;-</span> readTVarIO var</a>
+<a class="sourceLine" id="cb1-69" data-line-number="69">      res <span class="ot">`shouldBe`</span> <span class="dv">3</span></a>
+<a class="sourceLine" id="cb1-70" data-line-number="70">    it <span class="st">&quot;works, pure&quot;</span> <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-71" data-line-number="71">      <span class="kw">let</span> res <span class="fu">=</span> State.execState (modifyBalance (<span class="fu">+</span> <span class="dv">2</span>)) (<span class="dv">1</span><span class="ot"> ::</span> <span class="dt">Int</span>)</a>
+<a class="sourceLine" id="cb1-72" data-line-number="72">      res <span class="ot">`shouldBe`</span> <span class="dv">3</span></a>
+<a class="sourceLine" id="cb1-73" data-line-number="73">  describe <span class="st">&quot;logSomething&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb1-74" data-line-number="74">    it <span class="st">&quot;works&quot;</span> <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-75" data-line-number="75">      var <span class="ot">&lt;-</span> newTVarIO <span class="st">&quot;&quot;</span></a>
+<a class="sourceLine" id="cb1-76" data-line-number="76">      <span class="kw">let</span> logFunc msg <span class="fu">=</span> atomically <span class="fu">$</span> modifyTVar var (<span class="fu">++</span> msg)</a>
+<a class="sourceLine" id="cb1-77" data-line-number="77">          msg1 <span class="fu">=</span> <span class="st">&quot;Hello &quot;</span></a>
+<a class="sourceLine" id="cb1-78" data-line-number="78">          msg2 <span class="fu">=</span> <span class="st">&quot;World\n&quot;</span></a>
+<a class="sourceLine" id="cb1-79" data-line-number="79">      runReaderT (logSomething msg1 <span class="fu">&gt;&gt;</span> logSomething msg2) logFunc</a>
+<a class="sourceLine" id="cb1-80" data-line-number="80">      res <span class="ot">&lt;-</span> readTVarIO var</a>
+<a class="sourceLine" id="cb1-81" data-line-number="81">      res <span class="ot">`shouldBe`</span> (msg1 <span class="fu">++</span> msg2)</a>
+<a class="sourceLine" id="cb1-82" data-line-number="82"></a>
+<a class="sourceLine" id="cb1-83" data-line-number="83"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb1-84" data-line-number="84">main <span class="fu">=</span> main0 <span class="fu">&gt;&gt;</span> main1</a></code></pre></div>
+<p>I think the distinguising features are</p>
+<ul>
+<li>The application environmant, <code>Env</code> will contain configuraiton values (not in this example), state, <code>envBalance</code>, and functions we might want to vary, <code>envLog</code></li>
+<li>There is no explicit type representing the execution context</li>
+<li>Typeclasses are used to abstract over application environment, <code>HasLog</code> and <code>HasBalance</code></li>
+<li>Typeclasses are used to abstract over operations, <code>MonadBalance</code></li>
+<li>Typeclasses are implemented for both the application environment, <code>HasLog</code> and <code>HasBalance</code>, and the execution context, <code>MonadBalance</code></li>
+</ul>
+<p>In the end this makes for code with very loose couplings; there’s not really any single concrete type that implements all the constraints to work in the “real” main function (<code>main0</code>). I could of course introduce a type synonym for it</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">type</span> <span class="dt">App</span> <span class="fu">=</span> <span class="dt">ReaderT</span> <span class="dt">Env</span> <span class="dt">IO</span></a></code></pre></div>
+<p>but it brings no value – it wouldn’t be used explicitly anywhere.</p>
+<h2 id="a-tagless-final-version">A tagless final version</h2>
+<p>In order to compare the <code>ReaderT</code> design pattern to tagless final (as I understand it) I made an attempt to translate the code above. The code below is the result.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a></p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">{-# LANGUAGE FlexibleContexts #-}</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2"><span class="ot">{-# LANGUAGE FlexibleInstances #-}</span></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3"><span class="ot">{-# LANGUAGE GeneralizedNewtypeDeriving #-}</span></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4"><span class="ot">{-# LANGUAGE MultiParamTypeClasses #-}</span></a>
+<a class="sourceLine" id="cb3-5" data-line-number="5"><span class="ot">{-# LANGUAGE TypeFamilies #-}</span></a>
+<a class="sourceLine" id="cb3-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb3-7" data-line-number="7"><span class="kw">import</span>           <span class="dt">Control.Concurrent.STM</span></a>
+<a class="sourceLine" id="cb3-8" data-line-number="8"><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Control.Monad.Identity</span> <span class="kw">as</span> <span class="dt">Id</span></a>
+<a class="sourceLine" id="cb3-9" data-line-number="9"><span class="kw">import</span>           <span class="dt">Control.Monad.Reader</span></a>
+<a class="sourceLine" id="cb3-10" data-line-number="10"><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Control.Monad.State.Strict</span> <span class="kw">as</span> <span class="dt">State</span></a>
+<a class="sourceLine" id="cb3-11" data-line-number="11"><span class="kw">import</span>           <span class="dt">Say</span></a>
+<a class="sourceLine" id="cb3-12" data-line-number="12"><span class="kw">import</span>           <span class="dt">Test.Hspec</span></a>
+<a class="sourceLine" id="cb3-13" data-line-number="13"><span class="kw">import</span>           <span class="dt">UnliftIO</span> (<span class="dt">MonadUnliftIO</span>)</a>
+<a class="sourceLine" id="cb3-14" data-line-number="14"><span class="kw">import</span>           <span class="dt">UnliftIO.Async</span></a>
+<a class="sourceLine" id="cb3-15" data-line-number="15"></a>
+<a class="sourceLine" id="cb3-16" data-line-number="16"><span class="kw">newtype</span> <span class="dt">Env</span> <span class="fu">=</span> <span class="dt">Env</span> {<span class="ot">envBalance ::</span> <span class="dt">TVar</span> <span class="dt">Int</span>}</a>
+<a class="sourceLine" id="cb3-17" data-line-number="17"></a>
+<a class="sourceLine" id="cb3-18" data-line-number="18"><span class="kw">newtype</span> <span class="dt">AppM</span> a <span class="fu">=</span> <span class="dt">AppM</span> {<span class="ot">unAppM ::</span> <span class="dt">ReaderT</span> <span class="dt">Env</span> <span class="dt">IO</span> a}</a>
+<a class="sourceLine" id="cb3-19" data-line-number="19">  <span class="kw">deriving</span> (<span class="dt">Functor</span>, <span class="dt">Applicative</span>, <span class="dt">Monad</span>, <span class="dt">MonadIO</span>, <span class="dt">MonadReader</span> <span class="dt">Env</span>, <span class="dt">MonadUnliftIO</span>)</a>
+<a class="sourceLine" id="cb3-20" data-line-number="20"></a>
+<a class="sourceLine" id="cb3-21" data-line-number="21"><span class="ot">runAppM ::</span> <span class="dt">Env</span> <span class="ot">-&gt;</span> <span class="dt">AppM</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</a>
+<a class="sourceLine" id="cb3-22" data-line-number="22">runAppM env app <span class="fu">=</span> runReaderT (unAppM app) env</a>
+<a class="sourceLine" id="cb3-23" data-line-number="23"></a>
+<a class="sourceLine" id="cb3-24" data-line-number="24"><span class="kw">class</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">ModifyM</span> m <span class="kw">where</span></a>
+<a class="sourceLine" id="cb3-25" data-line-number="25"><span class="ot">  mModify ::</span> (<span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span>) <span class="ot">-&gt;</span> m ()</a>
+<a class="sourceLine" id="cb3-26" data-line-number="26"></a>
+<a class="sourceLine" id="cb3-27" data-line-number="27"><span class="kw">class</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">LogSomethingM</span> m <span class="kw">where</span></a>
+<a class="sourceLine" id="cb3-28" data-line-number="28"><span class="ot">  mLogSomething ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> m()</a>
+<a class="sourceLine" id="cb3-29" data-line-number="29"></a>
+<a class="sourceLine" id="cb3-30" data-line-number="30"><span class="kw">instance</span> <span class="dt">ModifyM</span> <span class="dt">AppM</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb3-31" data-line-number="31">  mModify f <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb3-32" data-line-number="32">    ref <span class="ot">&lt;-</span> asks envBalance</a>
+<a class="sourceLine" id="cb3-33" data-line-number="33">    liftIO <span class="fu">$</span> atomically <span class="fu">$</span> modifyTVar' ref f</a>
+<a class="sourceLine" id="cb3-34" data-line-number="34"></a>
+<a class="sourceLine" id="cb3-35" data-line-number="35"><span class="kw">instance</span> <span class="dt">LogSomethingM</span> <span class="dt">AppM</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb3-36" data-line-number="36">  mLogSomething <span class="fu">=</span> liftIO <span class="fu">.</span> sayString</a>
+<a class="sourceLine" id="cb3-37" data-line-number="37"></a>
+<a class="sourceLine" id="cb3-38" data-line-number="38"><span class="ot">main0 ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb3-39" data-line-number="39">main0 <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb3-40" data-line-number="40">  ref <span class="ot">&lt;-</span> newTVarIO <span class="dv">4</span></a>
+<a class="sourceLine" id="cb3-41" data-line-number="41">  <span class="kw">let</span> env <span class="fu">=</span> <span class="dt">Env</span> ref</a>
+<a class="sourceLine" id="cb3-42" data-line-number="42">  runAppM env</a>
+<a class="sourceLine" id="cb3-43" data-line-number="43">    (concurrently_</a>
+<a class="sourceLine" id="cb3-44" data-line-number="44">      (mModify (<span class="fu">+</span> <span class="dv">1</span>))</a>
+<a class="sourceLine" id="cb3-45" data-line-number="45">      (mLogSomething <span class="st">&quot;Increasing account balance&quot;</span>))</a>
+<a class="sourceLine" id="cb3-46" data-line-number="46">  balance <span class="ot">&lt;-</span> readTVarIO ref</a>
+<a class="sourceLine" id="cb3-47" data-line-number="47">  sayString <span class="fu">$</span> <span class="st">&quot;Final balance: &quot;</span> <span class="fu">++</span> show balance</a>
+<a class="sourceLine" id="cb3-48" data-line-number="48"></a>
+<a class="sourceLine" id="cb3-49" data-line-number="49"><span class="kw">newtype</span> <span class="dt">ModifyAppM</span> a <span class="fu">=</span> <span class="dt">ModifyAppM</span> {<span class="ot">unModifyAppM ::</span> <span class="dt">State.StateT</span> <span class="dt">Int</span> <span class="dt">Id.Identity</span> a}</a>
+<a class="sourceLine" id="cb3-50" data-line-number="50">  <span class="kw">deriving</span> (<span class="dt">Functor</span>, <span class="dt">Applicative</span>, <span class="dt">Monad</span>, <span class="dt">State.MonadState</span> <span class="dt">Int</span>)</a>
+<a class="sourceLine" id="cb3-51" data-line-number="51"></a>
+<a class="sourceLine" id="cb3-52" data-line-number="52"><span class="ot">runModifyAppM ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">ModifyAppM</span> a <span class="ot">-&gt;</span> (a, <span class="dt">Int</span>)</a>
+<a class="sourceLine" id="cb3-53" data-line-number="53">runModifyAppM s app <span class="fu">=</span> Id.runIdentity <span class="fu">$</span> State.runStateT (unModifyAppM app) s</a>
+<a class="sourceLine" id="cb3-54" data-line-number="54"></a>
+<a class="sourceLine" id="cb3-55" data-line-number="55"><span class="kw">instance</span> <span class="dt">ModifyM</span> <span class="dt">ModifyAppM</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb3-56" data-line-number="56">  mModify <span class="fu">=</span> State.modify'</a>
+<a class="sourceLine" id="cb3-57" data-line-number="57"></a>
+<a class="sourceLine" id="cb3-58" data-line-number="58"><span class="kw">newtype</span> <span class="dt">LogAppM</span> a <span class="fu">=</span> <span class="dt">LogAppM</span> {<span class="ot">unLogAppM ::</span> <span class="dt">ReaderT</span> (<span class="dt">TVar</span> <span class="dt">String</span>) <span class="dt">IO</span> a}</a>
+<a class="sourceLine" id="cb3-59" data-line-number="59">  <span class="kw">deriving</span> (<span class="dt">Functor</span>, <span class="dt">Applicative</span>, <span class="dt">Monad</span>, <span class="dt">MonadIO</span>, <span class="dt">MonadReader</span> (<span class="dt">TVar</span> <span class="dt">String</span>))</a>
+<a class="sourceLine" id="cb3-60" data-line-number="60"></a>
+<a class="sourceLine" id="cb3-61" data-line-number="61"><span class="ot">runLogAppM ::</span> <span class="dt">TVar</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">LogAppM</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</a>
+<a class="sourceLine" id="cb3-62" data-line-number="62">runLogAppM env app <span class="fu">=</span> runReaderT (unLogAppM app) env</a>
+<a class="sourceLine" id="cb3-63" data-line-number="63"></a>
+<a class="sourceLine" id="cb3-64" data-line-number="64"><span class="kw">instance</span> <span class="dt">LogSomethingM</span> <span class="dt">LogAppM</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb3-65" data-line-number="65">  mLogSomething msg <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb3-66" data-line-number="66">    var <span class="ot">&lt;-</span> ask</a>
+<a class="sourceLine" id="cb3-67" data-line-number="67">    liftIO <span class="fu">$</span> atomically <span class="fu">$</span> modifyTVar var (<span class="fu">++</span> msg)</a>
+<a class="sourceLine" id="cb3-68" data-line-number="68"></a>
+<a class="sourceLine" id="cb3-69" data-line-number="69"><span class="ot">main1 ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb3-70" data-line-number="70">main1 <span class="fu">=</span> hspec <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb3-71" data-line-number="71">  describe <span class="st">&quot;mModify&quot;</span> <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb3-72" data-line-number="72">    it <span class="st">&quot;works, IO&quot;</span> <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb3-73" data-line-number="73">      var <span class="ot">&lt;-</span> newTVarIO <span class="dv">1</span></a>
+<a class="sourceLine" id="cb3-74" data-line-number="74">      runAppM (<span class="dt">Env</span> var) (mModify (<span class="fu">+</span> <span class="dv">2</span>))</a>
+<a class="sourceLine" id="cb3-75" data-line-number="75">      res <span class="ot">&lt;-</span> readTVarIO var</a>
+<a class="sourceLine" id="cb3-76" data-line-number="76">      res <span class="ot">`shouldBe`</span> <span class="dv">3</span></a>
+<a class="sourceLine" id="cb3-77" data-line-number="77">    it <span class="st">&quot;works, pure&quot;</span> <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb3-78" data-line-number="78">      <span class="kw">let</span> (_, res) <span class="fu">=</span> runModifyAppM <span class="dv">1</span> (mModify (<span class="fu">+</span> <span class="dv">2</span>))</a>
+<a class="sourceLine" id="cb3-79" data-line-number="79">      res <span class="ot">`shouldBe`</span> <span class="dv">3</span></a>
+<a class="sourceLine" id="cb3-80" data-line-number="80">  describe <span class="st">&quot;mLogSomething&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb3-81" data-line-number="81">    it <span class="st">&quot;works&quot;</span> <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb3-82" data-line-number="82">      var <span class="ot">&lt;-</span> newTVarIO <span class="st">&quot;&quot;</span></a>
+<a class="sourceLine" id="cb3-83" data-line-number="83">      runLogAppM var (mLogSomething <span class="st">&quot;Hello&quot;</span> <span class="fu">&gt;&gt;</span> mLogSomething <span class="st">&quot;World!&quot;</span>)</a>
+<a class="sourceLine" id="cb3-84" data-line-number="84">      res <span class="ot">&lt;-</span> readTVarIO var</a>
+<a class="sourceLine" id="cb3-85" data-line-number="85">      res <span class="ot">`shouldBe`</span> <span class="st">&quot;HelloWorld!&quot;</span></a>
+<a class="sourceLine" id="cb3-86" data-line-number="86"></a>
+<a class="sourceLine" id="cb3-87" data-line-number="87"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb3-88" data-line-number="88">main <span class="fu">=</span> main0 <span class="fu">&gt;&gt;</span> main1</a></code></pre></div>
+<p>The steps for the “real” part of the program were</p>
+<ol type="1">
+<li>Introduce an execution type, <code>AppM</code>, with a convenience function for running it, <code>runAppM</code></li>
+<li>Remove the log function from the environment type, <code>envLog</code> in <code>Env</code></li>
+<li>Remove all the <code>HasX</code> classes</li>
+<li>Create a new operations typeclass for logging, <code>LogSomethingM</code></li>
+<li>Rename the operations typeclass for modifying the balance to match the naming found in the <a href="https://serokell.io/blog/2018/12/07/tagless-final">tagless article</a> a bit better, <code>ModifyM</code></li>
+<li>Implement instances of both operations typeclasses for <code>AppM</code></li>
+</ol>
+<p>For testing the steps were</p>
+<ol type="1">
+<li>Define an execution type for each test, <code>ModifyAppM</code> and <code>LogAppM</code>, with some convenience functions for running them, <code>runModifyAppM</code> and <code>runLogAppM</code></li>
+<li>Write instances for the operations typeclasses, one for each</li>
+</ol>
+<p>So I think the distinguising features are</p>
+<ul>
+<li>There’s both an environment type, <code>Env</code>, and an execution type <code>AppM</code> that wraps it</li>
+<li>The environment holds only configuration values (none in this example), and state (<code>envBalance</code>)</li>
+<li>Typeclasses are used to abstract over operations, <code>LogSomethingM</code> and <code>ModifyM</code></li>
+<li>Typeclasses are only implemented for the execution type</li>
+</ul>
+<p>This version has slightly more coupling, the execution type specifies the environment to use, and the operations are tied directly to the execution type. However, this coupling doesn’t really make a big difference – looking at the pure modify test the amount of code don’t differ by much.</p>
+<h3 id="a-short-note-mostly-to-myself">A short note (mostly to myself)</h3>
+<p>I did write it using <code>monad-control</code> first, and then I needed an instance for <code>MonadBaseControl IO</code>. Deriving it automatically requires <code>UndecidableInstances</code> and I didn’t really dare turn that on, so I ended up writing the instance. After some help on <a href="https://mail.haskell.org/pipermail/haskell-cafe/2019-February/130667.html">haskell-cafe</a> it ended up looking like this</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">MonadBaseControl</span> <span class="dt">IO</span> <span class="dt">AppM</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="kw">type</span> <span class="dt">StM</span> <span class="dt">AppM</span> a <span class="fu">=</span> a</a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">  liftBaseWith f <span class="fu">=</span> <span class="dt">AppM</span> (liftBaseWith <span class="fu">$</span> \ run <span class="ot">-&gt;</span> f (run <span class="fu">.</span> unAppM))</a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">  restoreM <span class="fu">=</span> return</a></code></pre></div>
+<h2 id="conclusion">Conclusion</h2>
+<p>My theoretical knowledge isn’t anywhere near good enough to say anything objectively about the difference in expressiveness of the two design patterns. That means that my conclusion comes down to taste, do you like the <code>readerT</code> patter or tagless final better?</p>
+<p>I like the slightly looser coupling I get with the <code>ReaderT</code> pattern. Loose coupling is (almost) always a desirable goal. However, I can see that tying the typeclass instances directly to a concrete execution type results in the intent being communicated a little more clearly. Clearly communicating intent in code is also a desirable goal. In particular I suspect it’ll result in more actionable error messages when making changes to the code – the error will tell me that my execution type lacks an instance of a specific typeclass, instead of it telling me that a particular transformer stack does. On the other hand, in the <code>ReaderT</code> pattern that stack is very shallow.</p>
+<p>One possibility would be that one pattern is better suited for libraries and the other for applications. I don’t think that’s the case though as in both cases the library code would be written in a style that results in typeclass constraints on the caller and providing instances for those typeclasses is roughly an equal amount of work for both styles.</p>
+<section class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>Please do point out any mistakes I’ve made in this, in particular if they stem from me misunderstanding tagless final completely.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+</ol>
+</section>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/tagless%20final.html">tagless final</a>, <a href="../tags/readert.html">readert</a>, <a href="../tags/monad.html">monad</a>, <a href="../tags/monad-transformers.html">monad-transformers</a>
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2019-02-02-000-the-readert-design-pattern-or-tagless-final-@therning.org?subject=A comment on The ReaderT design pattern or tagless final?&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>
