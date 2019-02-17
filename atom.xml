@@ -8,8 +8,84 @@
         <name>Magnus Therning</name>
         <email>magnus@therning.org</email>
     </author>
-    <updated>2019-02-10T00:00:00Z</updated>
+    <updated>2019-02-17T00:00:00Z</updated>
     <entry>
+    <title>Choosing a conduit randomly</title>
+    <link href="http://magnus.therning.org/posts/2019-02-17-000-choosing-a-conduit-randomly.html" />
+    <id>http://magnus.therning.org/posts/2019-02-17-000-choosing-a-conduit-randomly.html</id>
+    <published>2019-02-17T00:00:00Z</published>
+    <updated>2019-02-17T00:00:00Z</updated>
+    <summary type="html"><![CDATA[<p>Lately I’ve been playing around <a href="https://hackage.haskell.org/package/conduit">conduit</a>. One thing I wanted to try out was to set up processing where one processing step was chosen on random from a number of components, based on weights. In short I guess I wanted a function with a type something like this</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">foo ::</span> [(<span class="dt">Int</span>, <span class="dt">ConduitT</span> i o m r)] <span class="ot">-&gt;</span> <span class="dt">ConduitT</span> i o m r</a></code></pre></div>
+<p>I have to admit I don’t even know where to start writing such a function<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> but after a little bit of thinking I realised I could get the same effect by controlling how chunks of data is routed. That is, instead of choosing a component randomly, I can choose a route randomly. It would look something like when choosing from three components</p>
+<pre><code>                        +---------+   +----------+   +-------------+
+                        | Filter  |   | Drop tag |   | Component A |
+                    +--&gt;| Value-0 |--&gt;|          |--&gt;|             |--+
+                    |   +---------+   +----------+   +-------------+  |
++----------------+  |   +---------+   +----------+   +-------------+  |
+| Choose random  |  |   | Filter  |   | Drop tag |   | Component B |  |
+| value based on +-----&gt;| Value-1 |--&gt;|          |--&gt;|             |-----&gt;
+| weights        |  |   +---------+   +----------+   +-------------+  |
++----------------+  |   +---------+   +----------+   +-------------+  |
+                    |   | Filter  |   | Drop tag |   | Component C |  |
+                    +--&gt;| Value-2 |--&gt;|          |--&gt;|             |--+
+                        +---------+   +----------+   +-------------+
+
+
+</code></pre>
+<p>That is</p>
+<ol type="1">
+<li>For each chunk that comes in, choose a value randomly based on weights and tag the chunk with the choosen value, then</li>
+<li>split the processing into one route for each component,</li>
+<li>in each route filter out chunks tagged with a single value, and</li>
+<li>remove the tag, then</li>
+<li>pass the chunk to the component, and finally</li>
+<li>bring the routes back together again.</li>
+</ol>
+<p>Out of these steps all but the very first one are already available in <a href="https://hackage.haskell.org/package/conduit">conduit</a>:</p>
+<ul>
+<li>for splitting routes combining them again, use <a href="https://hackage.haskell.org/package/conduit-1.3.1/docs/Data-Conduit.html#v:sequenceConduits"><code>sequenceConduits</code></a></li>
+<li>for filtering, use <a href="https://hackage.haskell.org/package/conduit-1.3.1/docs/Data-Conduit-Combinators.html#v:filter"><code>filter</code></a></li>
+<li>for dropping the tag, use <a href="https://hackage.haskell.org/package/conduit-1.3.1/docs/Data-Conduit-Combinators.html#v:map"><code>map</code></a></li>
+</ul>
+<p>What’s left is the beginning. I started with a function to pick a value on random based on weights<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a></p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">pickByWeight ::</span> [(<span class="dt">Int</span>, b)] <span class="ot">-&gt;</span> <span class="dt">IO</span> b</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">pickByWeight xs <span class="fu">=</span> randomRIO (<span class="dv">1</span>, tot) <span class="fu">&gt;&gt;=</span> \ n <span class="ot">-&gt;</span> return (pick n xs)</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">    tot <span class="fu">=</span> sum <span class="fu">$</span> map fst xs</a>
+<a class="sourceLine" id="cb3-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb3-6" data-line-number="6">    pick n ((k, x)<span class="fu">:</span>xs)</a>
+<a class="sourceLine" id="cb3-7" data-line-number="7">      <span class="fu">|</span> n <span class="fu">&lt;=</span> k <span class="fu">=</span> x</a>
+<a class="sourceLine" id="cb3-8" data-line-number="8">      <span class="fu">|</span> otherwise <span class="fu">=</span> pick (n <span class="fu">-</span> k) xs</a>
+<a class="sourceLine" id="cb3-9" data-line-number="9">    pick _ _ <span class="fu">=</span> error <span class="st">&quot;pick error&quot;</span></a></code></pre></div>
+<p>Using that I then made a component that tags chunks</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">picker ws <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">  evt <span class="ot">&lt;-</span> await</a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">  <span class="kw">case</span> evt <span class="kw">of</span></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">    <span class="dt">Nothing</span> <span class="ot">-&gt;</span> return ()</a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">    <span class="dt">Just</span> e <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb4-6" data-line-number="6">      p <span class="ot">&lt;-</span> liftIO <span class="fu">$</span> pickByWeight ws</a>
+<a class="sourceLine" id="cb4-7" data-line-number="7">      yield (p, e)</a>
+<a class="sourceLine" id="cb4-8" data-line-number="8">      picker ws</a></code></pre></div>
+<p>I was rather happy with this…</p>
+<center>
+<blockquote class="twitter-tweet" data-lang="en">
+<p lang="en" dir="ltr">
+<a href="https://twitter.com/snoyberg?ref_src=twsrc%5Etfw"><span class="citation" data-cites="snoyberg">@snoyberg</span></a> just have to let you know, conduit is a joy to use. Thanks for sharing it.
+</p>
+— Magnus Therning (<span class="citation" data-cites="magthe">@magthe</span>) <a href="https://twitter.com/magthe/status/1093175648993140736?ref_src=twsrc%5Etfw">February 6, 2019</a>
+</blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+</center>
+<section class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>Except maybe by using Template Haskell to generate the code I did come up with.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+<li id="fn2"><p>I used <code>Quickcheck</code>’s <a href="https://hackage.haskell.org/package/QuickCheck-2.12.6.1/docs/Test-QuickCheck-Gen.html#v:frequency"><code>frequency</code></a> as inspiration for writing it.<a href="#fnref2" class="footnote-back">↩</a></p></li>
+</ol>
+</section>]]></summary>
+</entry>
+<entry>
     <title>Using stack to get around upstream bugs</title>
     <link href="http://magnus.therning.org/posts/2019-02-10-000-using-stack-to-get-around-upstream-bugs.html" />
     <id>http://magnus.therning.org/posts/2019-02-10-000-using-stack-to-get-around-upstream-bugs.html</id>
@@ -2946,56 +3022,6 @@ CalcResult 73</code></pre>
 <a class="sourceLine" id="cb5-7" data-line-number="7">  $endfor$</a>
 <a class="sourceLine" id="cb5-8" data-line-number="8"><span class="kw">&lt;/ul&gt;</span></a></code></pre></div>
 <p>That’s it. With that in place the <code>$tags$</code> field renders properly in the post pages as well.</p>]]></summary>
-</entry>
-<entry>
-    <title>Adding support for comments</title>
-    <link href="http://magnus.therning.org/posts/2014-09-29-000-support-for-comments.html" />
-    <id>http://magnus.therning.org/posts/2014-09-29-000-support-for-comments.html</id>
-    <published>2014-09-29T00:00:00Z</published>
-    <updated>2014-09-29T00:00:00Z</updated>
-    <summary type="html"><![CDATA[<p>It seems most people using <a href="http://jaspervdj.be/hakyll/">Hakyll</a> or other static site generators rely on services like <a href="https://disqus.com/">Disqus</a>, but I really don’t like the idea of putting a bunch of JavaScript on each page and dynamically loading all comments off some cloud storage. It sorts of fly in the face of the idea of having a static site to begin with. Searching online resulted in a few <a href="http://www.hezmatt.org/~mpalmer/blog/2011/07/19/static-comments-in-jekyll.html">posts</a> related to a <a href="https://github.com/mpalmer/jekyll-static-comments">plugin for static comments in</a> <a href="https://github.com/mojombo/jekyll">Jekyll</a>.</p>
-<p>This post only covers dealing with the comments, and not how the reader actually submits a comment. I’ll save that for the next post.</p>
-<h2 id="code-changes">Code changes</h2>
-<p>I settled on the following naming scheme for comments. The comments for a post <em>P</em>, which is found at <code>posts/&lt;P&gt;.mkd</code> will be put into files named <code>comments/&lt;P&gt;-c000.mkd</code>, <code>comments/&lt;P&gt;-c001.mkd</code>, and so on. The crucial bits are that, first the post’s name is a prefix of all its comments’ names, and two the identifiers (basically the filenames) of the comments are, just like identifiers for posts, easy to sort in date order.</p>
-<p>Adding a rule for the comments is easy:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">match <span class="st">&quot;comments/*&quot;</span> <span class="fu">$</span> compile pandocCompiler</a></code></pre></div>
-<p>Then it got a little more tricky. The comments for each post needs to be put into the context used to build the posts. Previously I’ve used <code>field</code>, which takes a function turning an <code>Item String</code> into <code>String</code>. I’ve also used <code>listField</code> which is used to tie a key to a list of <code>Item a</code>. What I needed here though doesn’t seem to exist, i.e. a context function that takes an <code>Item a</code> and returns a list of <code>Item s</code>. So after a bit of studying the source of <code>field</code> and <code>listField</code> I came up with <code>listFieldFunc</code>:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">listFieldFunc ::</span> <span class="dt">Show</span> a <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Context</span> a <span class="ot">-&gt;</span> (<span class="dt">Item</span> a <span class="ot">-&gt;</span> <span class="dt">Compiler</span> [<span class="dt">Item</span> a]) <span class="ot">-&gt;</span> <span class="dt">Context</span> a</a>
-<a class="sourceLine" id="cb2-2" data-line-number="2">listFieldFunc key ctx func <span class="fu">=</span> <span class="dt">Context</span> <span class="fu">$</span> \ k i <span class="ot">-&gt;</span> <span class="kw">if</span> k <span class="fu">==</span> key <span class="kw">then</span> value i <span class="kw">else</span> empty</a>
-<a class="sourceLine" id="cb2-3" data-line-number="3">    <span class="kw">where</span></a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">        value i <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-5" data-line-number="5">            is <span class="ot">&lt;-</span> func i</a>
-<a class="sourceLine" id="cb2-6" data-line-number="6">            return <span class="fu">$</span> <span class="dt">ListField</span> ctx is</a></code></pre></div>
-<p>The function for extracting a post’s comments can then be written as</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">getComments ::</span> (<span class="dt">Binary</span> a, <span class="dt">Typeable</span> a) <span class="ot">=&gt;</span> <span class="dt">Pattern</span> <span class="ot">-&gt;</span> <span class="dt">Item</span> a <span class="ot">-&gt;</span> <span class="dt">Compiler</span> [<span class="dt">Item</span> a]</a>
-<a class="sourceLine" id="cb3-2" data-line-number="2">getComments pattern item <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb3-3" data-line-number="3">    idents <span class="ot">&lt;-</span> getMatches pattern <span class="fu">&gt;&gt;=</span> sortChronological</a>
-<a class="sourceLine" id="cb3-4" data-line-number="4">    <span class="kw">let</span> iId <span class="fu">=</span> itemIdentifier item</a>
-<a class="sourceLine" id="cb3-5" data-line-number="5">        comments <span class="fu">=</span> filter (isCommentForPost iId) idents</a>
-<a class="sourceLine" id="cb3-6" data-line-number="6">    mapM load comments</a>
-<a class="sourceLine" id="cb3-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb3-8" data-line-number="8"><span class="ot">isCommentForPost ::</span> <span class="dt">Identifier</span> <span class="ot">-&gt;</span> <span class="dt">Identifier</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
-<a class="sourceLine" id="cb3-9" data-line-number="9">isCommentForPost post comment <span class="fu">=</span> <span class="kw">let</span></a>
-<a class="sourceLine" id="cb3-10" data-line-number="10">        postBase <span class="fu">=</span> takeBaseName <span class="fu">$</span> toFilePath post</a>
-<a class="sourceLine" id="cb3-11" data-line-number="11">        cmtBase <span class="fu">=</span> takeBaseName <span class="fu">$</span> toFilePath comment</a>
-<a class="sourceLine" id="cb3-12" data-line-number="12">    <span class="kw">in</span> isPrefixOf postBase cmtBase</a></code></pre></div>
-<p>Adding the key to the context used for the posts results in</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="kw">let</span> postCtx <span class="fu">=</span></a>
-<a class="sourceLine" id="cb4-2" data-line-number="2">        field <span class="st">&quot;previousPostUrl&quot;</span> (previousPostUrl <span class="st">&quot;posts/*&quot;</span>) <span class="fu">&lt;&gt;</span></a>
-<a class="sourceLine" id="cb4-3" data-line-number="3">        field <span class="st">&quot;previousPostTitle&quot;</span> (previousPostTitle <span class="st">&quot;posts/*&quot;</span>) <span class="fu">&lt;&gt;</span></a>
-<a class="sourceLine" id="cb4-4" data-line-number="4">        field <span class="st">&quot;nextPostUrl&quot;</span> (nextPostUrl <span class="st">&quot;posts/*&quot;</span>) <span class="fu">&lt;&gt;</span></a>
-<a class="sourceLine" id="cb4-5" data-line-number="5">        field <span class="st">&quot;nextPostTitle&quot;</span> (nextPostTitle <span class="st">&quot;posts/*&quot;</span>) <span class="fu">&lt;&gt;</span></a>
-<a class="sourceLine" id="cb4-6" data-line-number="6">        field <span class="st">&quot;postId&quot;</span> getPostId <span class="fu">&lt;&gt;</span></a>
-<a class="sourceLine" id="cb4-7" data-line-number="7">        listFieldFunc <span class="st">&quot;comments&quot;</span> defaultContext (getComments <span class="st">&quot;comments/*&quot;</span>) <span class="fu">&lt;&gt;</span></a>
-<a class="sourceLine" id="cb4-8" data-line-number="8">        baseCtx</a></code></pre></div>
-<h2 id="template-changes">Template changes</h2>
-<p>The template changes are trivial of course</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb5-1" data-line-number="1">$for(comments)$</a>
-<a class="sourceLine" id="cb5-2" data-line-number="2"><span class="kw">&lt;div&gt;</span></a>
-<a class="sourceLine" id="cb5-3" data-line-number="3"><span class="kw">&lt;p&gt;</span>$author$<span class="kw">&lt;/p&gt;</span></a>
-<a class="sourceLine" id="cb5-4" data-line-number="4">$body$</a>
-<a class="sourceLine" id="cb5-5" data-line-number="5"><span class="kw">&lt;/div&gt;</span></a>
-<a class="sourceLine" id="cb5-6" data-line-number="6">$endfor$</a></code></pre></div>]]></summary>
 </entry>
 
 </feed>

@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="../index.html">Top</a> <a href="../archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Choosing a conduit randomly</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2019-02-17">2019-02-17</time> - Magnus Therning</p>
+</header>
+
+<p>Lately I’ve been playing around <a href="https://hackage.haskell.org/package/conduit">conduit</a>. One thing I wanted to try out was to set up processing where one processing step was chosen on random from a number of components, based on weights. In short I guess I wanted a function with a type something like this</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">foo ::</span> [(<span class="dt">Int</span>, <span class="dt">ConduitT</span> i o m r)] <span class="ot">-&gt;</span> <span class="dt">ConduitT</span> i o m r</a></code></pre></div>
+<p>I have to admit I don’t even know where to start writing such a function<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> but after a little bit of thinking I realised I could get the same effect by controlling how chunks of data is routed. That is, instead of choosing a component randomly, I can choose a route randomly. It would look something like when choosing from three components</p>
+<pre><code>                        +---------+   +----------+   +-------------+
+                        | Filter  |   | Drop tag |   | Component A |
+                    +--&gt;| Value-0 |--&gt;|          |--&gt;|             |--+
+                    |   +---------+   +----------+   +-------------+  |
++----------------+  |   +---------+   +----------+   +-------------+  |
+| Choose random  |  |   | Filter  |   | Drop tag |   | Component B |  |
+| value based on +-----&gt;| Value-1 |--&gt;|          |--&gt;|             |-----&gt;
+| weights        |  |   +---------+   +----------+   +-------------+  |
++----------------+  |   +---------+   +----------+   +-------------+  |
+                    |   | Filter  |   | Drop tag |   | Component C |  |
+                    +--&gt;| Value-2 |--&gt;|          |--&gt;|             |--+
+                        +---------+   +----------+   +-------------+
+
+
+</code></pre>
+<p>That is</p>
+<ol type="1">
+<li>For each chunk that comes in, choose a value randomly based on weights and tag the chunk with the choosen value, then</li>
+<li>split the processing into one route for each component,</li>
+<li>in each route filter out chunks tagged with a single value, and</li>
+<li>remove the tag, then</li>
+<li>pass the chunk to the component, and finally</li>
+<li>bring the routes back together again.</li>
+</ol>
+<p>Out of these steps all but the very first one are already available in <a href="https://hackage.haskell.org/package/conduit">conduit</a>:</p>
+<ul>
+<li>for splitting routes combining them again, use <a href="https://hackage.haskell.org/package/conduit-1.3.1/docs/Data-Conduit.html#v:sequenceConduits"><code>sequenceConduits</code></a></li>
+<li>for filtering, use <a href="https://hackage.haskell.org/package/conduit-1.3.1/docs/Data-Conduit-Combinators.html#v:filter"><code>filter</code></a></li>
+<li>for dropping the tag, use <a href="https://hackage.haskell.org/package/conduit-1.3.1/docs/Data-Conduit-Combinators.html#v:map"><code>map</code></a></li>
+</ul>
+<p>What’s left is the beginning. I started with a function to pick a value on random based on weights<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a></p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">pickByWeight ::</span> [(<span class="dt">Int</span>, b)] <span class="ot">-&gt;</span> <span class="dt">IO</span> b</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">pickByWeight xs <span class="fu">=</span> randomRIO (<span class="dv">1</span>, tot) <span class="fu">&gt;&gt;=</span> \ n <span class="ot">-&gt;</span> return (pick n xs)</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">    tot <span class="fu">=</span> sum <span class="fu">$</span> map fst xs</a>
+<a class="sourceLine" id="cb3-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb3-6" data-line-number="6">    pick n ((k, x)<span class="fu">:</span>xs)</a>
+<a class="sourceLine" id="cb3-7" data-line-number="7">      <span class="fu">|</span> n <span class="fu">&lt;=</span> k <span class="fu">=</span> x</a>
+<a class="sourceLine" id="cb3-8" data-line-number="8">      <span class="fu">|</span> otherwise <span class="fu">=</span> pick (n <span class="fu">-</span> k) xs</a>
+<a class="sourceLine" id="cb3-9" data-line-number="9">    pick _ _ <span class="fu">=</span> error <span class="st">&quot;pick error&quot;</span></a></code></pre></div>
+<p>Using that I then made a component that tags chunks</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">picker ws <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">  evt <span class="ot">&lt;-</span> await</a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">  <span class="kw">case</span> evt <span class="kw">of</span></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">    <span class="dt">Nothing</span> <span class="ot">-&gt;</span> return ()</a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">    <span class="dt">Just</span> e <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb4-6" data-line-number="6">      p <span class="ot">&lt;-</span> liftIO <span class="fu">$</span> pickByWeight ws</a>
+<a class="sourceLine" id="cb4-7" data-line-number="7">      yield (p, e)</a>
+<a class="sourceLine" id="cb4-8" data-line-number="8">      picker ws</a></code></pre></div>
+<p>I was rather happy with this…</p>
+<center>
+<blockquote class="twitter-tweet" data-lang="en">
+<p lang="en" dir="ltr">
+<a href="https://twitter.com/snoyberg?ref_src=twsrc%5Etfw"><span class="citation" data-cites="snoyberg">@snoyberg</span></a> just have to let you know, conduit is a joy to use. Thanks for sharing it.
+</p>
+— Magnus Therning (<span class="citation" data-cites="magthe">@magthe</span>) <a href="https://twitter.com/magthe/status/1093175648993140736?ref_src=twsrc%5Etfw">February 6, 2019</a>
+</blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+</center>
+<section class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>Except maybe by using Template Haskell to generate the code I did come up with.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+<li id="fn2"><p>I used <code>Quickcheck</code>’s <a href="https://hackage.haskell.org/package/QuickCheck-2.12.6.1/docs/Test-QuickCheck-Gen.html#v:frequency"><code>frequency</code></a> as inspiration for writing it.<a href="#fnref2" class="footnote-back">↩</a></p></li>
+</ol>
+</section>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/conduit.html">conduit</a>
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2019-02-17-000-choosing-a-conduit-randomly@therning.org?subject=A comment on Choosing a conduit randomly&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>
