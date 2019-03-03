@@ -8,8 +8,74 @@
         <name>Magnus Therning</name>
         <email>magnus@therning.org</email>
     </author>
-    <updated>2019-02-17T00:00:00Z</updated>
+    <updated>2019-03-03T00:00:00Z</updated>
     <entry>
+    <title>Conduit and PostgreSQL</title>
+    <link href="http://magnus.therning.org/posts/2019-03-03-000-conduit-and-postgresql.html" />
+    <id>http://magnus.therning.org/posts/2019-03-03-000-conduit-and-postgresql.html</id>
+    <published>2019-03-03T00:00:00Z</published>
+    <updated>2019-03-03T00:00:00Z</updated>
+    <summary type="html"><![CDATA[<p>For a while now I’ve been playing around with an event-drive software design (<a href="https://en.wikipedia.org/wiki/Event-driven_architecture">EDA</a>) using <a href="https://hackage.haskell.org/package/conduit"><code>conduit</code></a> for processing of events. For this post the processing can basically be viewed as the following diagram</p>
+<pre><code>+-----------+   +------------+   +---------+
+|           |   |            |   |         |
+| PG source |--&gt;| Processing |--&gt;| PG sink |
+|           |   |            |   |         |
++-----------+   +------------+   +---------+
+     ^                                |
+     |            +------+            |
+     |            |      |            |
+     |            |  PG  |            |
+     +------------|  DB  |&lt;-----------+
+                  |      |
+                  +------+</code></pre>
+<p>I started out looking for Conduit components for PostgreSQL on <a href="https://hackage.haskell.org/">Hackage</a> but failed to find something fitting so I started looking into writing them myself using <a href="https://hackage.haskell.org/package/postgresql-simple"><code>postgresql-simple</code></a>.</p>
+<p>The sink wasn’t much of a problem, use <code>await</code> to get an event (a tuple) and write it to the database. My almost complete ignorance of using databases resulted in a first version of the source was rather naive and used busy-waiting. Then I stumbled on PostgreSQL’s support for notifications through the <code>LISTEN</code> and <code>NOTIFY</code> commands. I rather like the result and it seems to work well.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>[]</p>
+<p>It looks like this</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">import</span>           <span class="dt">Control.Monad.IO.Class</span> (<span class="dt">MonadIO</span>, liftIO)</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2"><span class="kw">import</span>           <span class="dt">Data.Aeson</span> (<span class="dt">Value</span>)</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3"><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Data.Conduit</span> <span class="kw">as</span> <span class="dt">C</span></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4"><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Data.Conduit.Combinators</span> <span class="kw">as</span> <span class="dt">CC</span></a>
+<a class="sourceLine" id="cb2-5" data-line-number="5"><span class="kw">import</span>           <span class="dt">Data.Text</span> (<span class="dt">Text</span>)</a>
+<a class="sourceLine" id="cb2-6" data-line-number="6"><span class="kw">import</span>           <span class="dt">Data.Time.Clock</span> (<span class="dt">UTCTime</span>)</a>
+<a class="sourceLine" id="cb2-7" data-line-number="7"><span class="kw">import</span>           <span class="dt">Data.UUID</span> (<span class="dt">UUID</span>)</a>
+<a class="sourceLine" id="cb2-8" data-line-number="8"><span class="kw">import</span>           <span class="dt">Database.PostgreSQL.Simple</span> (<span class="dt">Connection</span>, <span class="dt">Only</span>(..), execute, execute_, query)</a>
+<a class="sourceLine" id="cb2-9" data-line-number="9"><span class="kw">import</span>           <span class="dt">Database.PostgreSQL.Simple.Notification</span> (getNotification)</a>
+<a class="sourceLine" id="cb2-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb2-11" data-line-number="11"><span class="ot">fst8 ::</span> (a, b, c, d, e, f, g, h) <span class="ot">-&gt;</span> a</a>
+<a class="sourceLine" id="cb2-12" data-line-number="12">fst8 (a, _, _, _, _, _, _, _) <span class="fu">=</span> a</a>
+<a class="sourceLine" id="cb2-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb2-14" data-line-number="14"><span class="ot">dbSource ::</span> <span class="dt">MonadIO</span> m <span class="ot">=&gt;</span> <span class="dt">Connection</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">C.ConduitT</span> () (<span class="dt">Int</span>, <span class="dt">UTCTime</span>, <span class="dt">Int</span>, <span class="dt">Int</span>, <span class="dt">Bool</span>, <span class="dt">UUID</span>, <span class="dt">Text</span>, <span class="dt">Value</span>) m ()</a>
+<a class="sourceLine" id="cb2-15" data-line-number="15">dbSource conn ver <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-16" data-line-number="16">  res <span class="ot">&lt;-</span> liftIO <span class="fu">$</span> query conn <span class="st">&quot;SELECT * from events where id &gt; (?) ORDER BY id&quot;</span> (<span class="dt">Only</span> ver)</a>
+<a class="sourceLine" id="cb2-17" data-line-number="17">  <span class="kw">case</span> res <span class="kw">of</span></a>
+<a class="sourceLine" id="cb2-18" data-line-number="18">    [] <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-19" data-line-number="19">      liftIO <span class="fu">$</span> execute_ conn <span class="st">&quot;LISTEN MyEvent&quot;</span></a>
+<a class="sourceLine" id="cb2-20" data-line-number="20">      liftIO <span class="fu">$</span> getNotification conn</a>
+<a class="sourceLine" id="cb2-21" data-line-number="21">      dbSource conn ver</a>
+<a class="sourceLine" id="cb2-22" data-line-number="22">    _ <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-23" data-line-number="23">      <span class="kw">let</span> ver&#39; <span class="fu">=</span> maximum <span class="fu">$</span> map fst8 res</a>
+<a class="sourceLine" id="cb2-24" data-line-number="24">      CC.yieldMany res</a>
+<a class="sourceLine" id="cb2-25" data-line-number="25">      dbSource conn ver&#39;</a>
+<a class="sourceLine" id="cb2-26" data-line-number="26"></a>
+<a class="sourceLine" id="cb2-27" data-line-number="27"><span class="ot">dbSink ::</span> <span class="dt">MonadIO</span> m <span class="ot">=&gt;</span> <span class="dt">Connection</span> <span class="ot">-&gt;</span> <span class="dt">C.ConduitT</span> (<span class="dt">Int</span>, <span class="dt">Int</span>, <span class="dt">Bool</span>, <span class="dt">UUID</span>, <span class="dt">Text</span>, <span class="dt">Value</span>) <span class="dt">C.Void</span> m ()</a>
+<a class="sourceLine" id="cb2-28" data-line-number="28">dbSink conn <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-29" data-line-number="29">  evt <span class="ot">&lt;-</span> C.await</a>
+<a class="sourceLine" id="cb2-30" data-line-number="30">  <span class="kw">case</span> evt <span class="kw">of</span></a>
+<a class="sourceLine" id="cb2-31" data-line-number="31">    <span class="dt">Nothing</span> <span class="ot">-&gt;</span> return ()</a>
+<a class="sourceLine" id="cb2-32" data-line-number="32">    <span class="dt">Just</span> event <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-33" data-line-number="33">      liftIO <span class="fu">$</span> execute conn <span class="st">&quot;INSERT INTO events \</span></a>
+<a class="sourceLine" id="cb2-34" data-line-number="34"><span class="st">                            \(srv_id, stream_id, cmd, cmd_id, correlation_id, event_data) \</span></a>
+<a class="sourceLine" id="cb2-35" data-line-number="35"><span class="st">                            \VALUES (?, ?, ?, ?, ?, ?)&quot;</span> event</a>
+<a class="sourceLine" id="cb2-36" data-line-number="36">      liftIO <span class="fu">$</span> execute_ conn <span class="st">&quot;NOTIFY MyEvent&quot;</span></a>
+<a class="sourceLine" id="cb2-37" data-line-number="37">      dbSink conn</a></code></pre></div>
+<section class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>If I’ve missed something crucial I would of course love to hear about it.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+</ol>
+</section>]]></summary>
+</entry>
+<entry>
     <title>Choosing a conduit randomly</title>
     <link href="http://magnus.therning.org/posts/2019-02-17-000-choosing-a-conduit-randomly.html" />
     <id>http://magnus.therning.org/posts/2019-02-17-000-choosing-a-conduit-randomly.html</id>
@@ -2977,51 +3043,6 @@ CalcResult 73</code></pre>
     <updated>2014-10-04T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>As I wrote about in a previous post on <a href="/posts/2014-09-25-000-converting-posts-from-wp.html">converting post from WordPress to Hakyll</a> I couldn’t quite find a tool that met my needs out of the box. I had a look at the source of <a href="https://github.com/kowey/hakyll-convert">hakyll-convert</a> but it uses a library for RSS parsing, which sounds good. However, the export of posts from WordPress is in an extended RSS format, among other things it contains the comments of posts. Unfortunately it doesn’t look like the RSS library supports the WordPress extensions, so modifying hakyll-convert to also extract comments seems like a bit more work than I’d like to put into it. Especially since I had a feeling that hacking up something using <a href="http://hackage.haskell.org/package/tagsoup">tagsoup</a> would be quite a bit faster.</p>
 <p>I put the resulting script in gist on github. I call it <em>bbwp</em>, which is short for <a href="https://gist.github.com/magthe/744cdda3b59dc9abaa06">Bye, bye, WordPress</a>.</p>]]></summary>
-</entry>
-<entry>
-    <title>Adding tags</title>
-    <link href="http://magnus.therning.org/posts/2014-09-30-000-adding-tags.html" />
-    <id>http://magnus.therning.org/posts/2014-09-30-000-adding-tags.html</id>
-    <published>2014-09-30T00:00:00Z</published>
-    <updated>2014-09-30T00:00:00Z</updated>
-    <summary type="html"><![CDATA[<p>Adding tags to a <a href="http://jaspervdj.be/hakyll/">Hakyll</a> site brought some surprises. In retrospect it all makes sense, but it took some thinking on my part to work out the why of it all. The resulting code was heavily influenced by <a href="https://variadic.me/">Erik Kronberg’s site</a>.</p>
-<p>First I thought I’d just add tags to each rendered post, by building the tags</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">tags <span class="ot">&lt;-</span> buildTags <span class="st">&quot;posts/*&quot;</span> (fromCapture <span class="st">&quot;tags/*.html&quot;</span>)</a></code></pre></div>
-<p>then adding them to the post context</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">let</span> postCtx <span class="fu">=</span></a>
-<a class="sourceLine" id="cb2-2" data-line-number="2">        field <span class="st">&quot;previousPostUrl&quot;</span> (previousPostUrl <span class="st">&quot;posts/*&quot;</span>) <span class="fu">&lt;&gt;</span></a>
-<a class="sourceLine" id="cb2-3" data-line-number="3">        field <span class="st">&quot;previousPostTitle&quot;</span> (previousPostTitle <span class="st">&quot;posts/*&quot;</span>) <span class="fu">&lt;&gt;</span></a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">        field <span class="st">&quot;nextPostUrl&quot;</span> (nextPostUrl <span class="st">&quot;posts/*&quot;</span>) <span class="fu">&lt;&gt;</span></a>
-<a class="sourceLine" id="cb2-5" data-line-number="5">        field <span class="st">&quot;nextPostTitle&quot;</span> (nextPostTitle <span class="st">&quot;posts/*&quot;</span>) <span class="fu">&lt;&gt;</span></a>
-<a class="sourceLine" id="cb2-6" data-line-number="6">        field <span class="st">&quot;postId&quot;</span> getPostId <span class="fu">&lt;&gt;</span></a>
-<a class="sourceLine" id="cb2-7" data-line-number="7">        tagsField <span class="st">&quot;tags&quot;</span> tags <span class="fu">&lt;&gt;</span></a>
-<a class="sourceLine" id="cb2-8" data-line-number="8">        listFieldFunc <span class="st">&quot;comments&quot;</span> defaultContext (getComments <span class="st">&quot;comments/*&quot;</span>) <span class="fu">&lt;&gt;</span></a>
-<a class="sourceLine" id="cb2-9" data-line-number="9">        baseCtx</a></code></pre></div>
-<p>and last modify the template</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">&lt;p&gt;</span>Tags: $tags$<span class="kw">&lt;/p&gt;</span></a></code></pre></div>
-<p>Easy! Except it doesn’t work that way. The <code>$tags$</code> is always empty. To actually get the <code>tagsField</code> to work as intended it’s necessary to build the tag pages, which can be accomplished using <code>tagsRules</code></p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">tagsRules tags <span class="fu">$</span> \ tagStr pattern <span class="ot">-&gt;</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb4-2" data-line-number="2">    route idRoute</a>
-<a class="sourceLine" id="cb4-3" data-line-number="3">    compile <span class="fu">$</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb4-4" data-line-number="4">        posts <span class="ot">&lt;-</span> loadAll pattern <span class="fu">&gt;&gt;=</span> recentFirst</a>
-<a class="sourceLine" id="cb4-5" data-line-number="5">        <span class="kw">let</span> tagsCtx <span class="fu">=</span></a>
-<a class="sourceLine" id="cb4-6" data-line-number="6">                constField <span class="st">&quot;thetag&quot;</span> tagStr <span class="fu">&lt;&gt;</span></a>
-<a class="sourceLine" id="cb4-7" data-line-number="7">                listField <span class="st">&quot;posts&quot;</span> baseCtx (return posts) <span class="fu">&lt;&gt;</span></a>
-<a class="sourceLine" id="cb4-8" data-line-number="8">                baseCtx</a>
-<a class="sourceLine" id="cb4-9" data-line-number="9">        makeItem <span class="st">&quot;&quot;</span></a>
-<a class="sourceLine" id="cb4-10" data-line-number="10">            <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/tag-post-list.html&quot;</span> tagsCtx</a>
-<a class="sourceLine" id="cb4-11" data-line-number="11">            <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/default.html&quot;</span> tagsCtx</a>
-<a class="sourceLine" id="cb4-12" data-line-number="12">            <span class="fu">&gt;&gt;=</span> relativizeUrls</a></code></pre></div>
-<p>The template for the tags pages is very simple at the moment</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="kw">&lt;h1&gt;</span>Posts tagged $thetag$<span class="kw">&lt;/h1&gt;</span></a>
-<a class="sourceLine" id="cb5-2" data-line-number="2"><span class="kw">&lt;ul&gt;</span></a>
-<a class="sourceLine" id="cb5-3" data-line-number="3">  $for(posts)$</a>
-<a class="sourceLine" id="cb5-4" data-line-number="4">  <span class="kw">&lt;li&gt;</span></a>
-<a class="sourceLine" id="cb5-5" data-line-number="5">    <span class="kw">&lt;a</span><span class="ot"> href=</span><span class="st">&quot;$url$&quot;</span><span class="kw">&gt;</span>$title$<span class="kw">&lt;/a&gt;</span> - $date$</a>
-<a class="sourceLine" id="cb5-6" data-line-number="6">  <span class="kw">&lt;/li&gt;</span></a>
-<a class="sourceLine" id="cb5-7" data-line-number="7">  $endfor$</a>
-<a class="sourceLine" id="cb5-8" data-line-number="8"><span class="kw">&lt;/ul&gt;</span></a></code></pre></div>
-<p>That’s it. With that in place the <code>$tags$</code> field renders properly in the post pages as well.</p>]]></summary>
 </entry>
 
 </feed>
