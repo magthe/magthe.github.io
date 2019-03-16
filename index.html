@@ -26,30 +26,6 @@
 
   <div class="post-body">
     <header>
-      <h1 class="post-title"><a href="./posts/2019-03-16-000-til--prompt-matters-to-org-mode.html">TIL: prompt matters to org-mode</a></h1>
-
-<p class="post-date"><time pubdate="pubdate" datetime="2019-03-16">2019-03-16</time> - Magnus Therning</p>
-</header>
-
-<p>A workmate just embellished some shell code blocks I’d put in a shared <a href="https://orgmode.org/">org-mode</a> file with <code>:session s</code>. When I tried to run the blocks with sessions my emacs just froze up though. I found a <a href="https://emacs.stackexchange.com/questions/19735/emacs-freezes-with-any-org-babel-snippet-using-session">post on the emacs StackExchange</a> that offered a possible cause for it: the prompt.</p>
-<p>I’m using <a href="https://github.com/Bash-it/bash-it">bash-it</a> so my prompt is rather far from the default.</p>
-<p>After inspecting the session buffer simply added the following to the top of my <code>~/.bashrc</code></p>
-<pre class="shell"><code># Check for org-mode
-if [[ ${TERM} == &quot;dumb&quot; ]]; then
-    exit 0
-fi</code></pre>
-<p>and now I can finally run shell code blocks in sessions.</p>
-
-
-  </div>
-
-</article>
-
-
-<article>
-
-  <div class="post-body">
-    <header>
       <h1 class="post-title"><a href="./posts/2019-03-03-000-conduit-and-postgresql.html">Conduit and PostgreSQL</a></h1>
 
 <p class="post-date"><time pubdate="pubdate" datetime="2019-03-03">2019-03-03</time> - Magnus Therning</p>
@@ -837,6 +813,30 @@ Left (BadSchema [] (KeyMissing &quot;age&quot;))
 *&gt; parse asPerson &quot;{\&quot;nam\&quot;: \&quot;Alice\&quot;}&quot;
 Left (BadSchema [] (KeyMissing &quot;name&quot;))</code></pre>
 <p>Clearly <code>aeson-better-errors</code> isn’t fulfilling the bit about reporting as many errors as possible. Something that I would have realised right away if I had bothered reading its API reference on Hackage a bit more carefully, the parser type <code>ParseT</code> is an instance of <code>Monad</code>!</p>
+
+
+  </div>
+
+</article>
+
+
+<article>
+
+  <div class="post-body">
+    <header>
+      <h1 class="post-title"><a href="./posts/2018-10-16-000-zipping-streams.html">Zipping streams</a></h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2018-10-16">2018-10-16</time> - Magnus Therning</p>
+</header>
+
+<p>Writing the following is easy after glancing through the documentation for <a href="https://hackage.haskell.org/package/conduit">conduit</a>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">foo <span class="fu">=</span> <span class="kw">let</span> src <span class="fu">=</span> mapM_ C.yield [<span class="dv">0</span><span class="fu">..</span><span class="dv">9</span><span class="ot"> ::</span> <span class="dt">Int</span>]</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">          p0 <span class="fu">=</span> CC.map (\ i <span class="ot">-&gt;</span> (<span class="st">&quot;p0&quot;</span>, succ i))</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">          p1 <span class="fu">=</span> CC.filter odd <span class="fu">.|</span> CC.map (\ i <span class="ot">-&gt;</span> (<span class="st">&quot;p1&quot;</span>, i))</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">          p <span class="fu">=</span> C.getZipConduit <span class="fu">$</span> <span class="dt">C.ZipConduit</span> p0 <span class="fu">&lt;*</span> <span class="dt">C.ZipConduit</span> p1</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">          sink <span class="fu">=</span> CC.mapM_ print</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">      <span class="kw">in</span> C.runConduit <span class="fu">$</span> src <span class="fu">.|</span> p <span class="fu">.|</span> sink</a></code></pre></div>
+<p>Neither <a href="https://hackage.haskell.org/package/pipes">pipes</a> nor <a href="https://hackage.haskell.org/package/streaming">streaming</a> make it as easy to figure out. I must be missing something! What functions should I be looking at?</p>
 
 
   </div>
