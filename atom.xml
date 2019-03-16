@@ -8,8 +8,23 @@
         <name>Magnus Therning</name>
         <email>magnus@therning.org</email>
     </author>
-    <updated>2019-03-03T00:00:00Z</updated>
+    <updated>2019-03-16T00:00:00Z</updated>
     <entry>
+    <title>TIL: prompt matters to org-mode</title>
+    <link href="http://magnus.therning.org/posts/2019-03-16-000-til--prompt-matters-to-org-mode.html" />
+    <id>http://magnus.therning.org/posts/2019-03-16-000-til--prompt-matters-to-org-mode.html</id>
+    <published>2019-03-16T00:00:00Z</published>
+    <updated>2019-03-16T00:00:00Z</updated>
+    <summary type="html"><![CDATA[<p>A workmate just embellished some shell code blocks I’d put in a shared <a href="https://orgmode.org/">org-mode</a> file with <code>:session s</code>. When I tried to run the blocks with sessions my emacs just froze up though. I found a <a href="https://emacs.stackexchange.com/questions/19735/emacs-freezes-with-any-org-babel-snippet-using-session">post on the emacs StackExchange</a> that offered a possible cause for it: the prompt.</p>
+<p>I’m using <a href="https://github.com/Bash-it/bash-it">bash-it</a> so my prompt is rather far from the default.</p>
+<p>After inspecting the session buffer simply added the following to the top of my <code>~/.bashrc</code></p>
+<pre class="shell"><code># Check for org-mode
+if [[ ${TERM} == &quot;dumb&quot; ]]; then
+    exit 0
+fi</code></pre>
+<p>and now I can finally run shell code blocks in sessions.</p>]]></summary>
+</entry>
+<entry>
     <title>Conduit and PostgreSQL</title>
     <link href="http://magnus.therning.org/posts/2019-03-03-000-conduit-and-postgresql.html" />
     <id>http://magnus.therning.org/posts/2019-03-03-000-conduit-and-postgresql.html</id>
@@ -3034,15 +3049,6 @@ CalcResult 73</code></pre>
 <a class="sourceLine" id="cb2-36" data-line-number="36">            <span class="dt">Just</span> (r, <span class="st">&quot;&quot;</span>) <span class="ot">-&gt;</span> return r</a>
 <a class="sourceLine" id="cb2-37" data-line-number="37">            _ <span class="ot">-&gt;</span> fail <span class="fu">$</span> <span class="st">&quot;Cannot parse: &quot;</span> <span class="fu">++</span> s</a></code></pre></div>
 <p>It is slightly longer, but it’s rather a lot easier to read what’s happening after this rewrite. <code>ReadP</code> feels like a lighter option than pulling in <a href="http://hackage.haskell.org/package/parsec">parsec</a> as a dependency, but I’d love to hear any comments or suggestions, as well as pointers to how other people deal with parsing of non-trivial types of arguments in combination with <em>optparse-applicative</em>.</p>]]></summary>
-</entry>
-<entry>
-    <title>Script for migrating from WordPress to Hakyll</title>
-    <link href="http://magnus.therning.org/posts/2014-10-04-000-bbwp.html" />
-    <id>http://magnus.therning.org/posts/2014-10-04-000-bbwp.html</id>
-    <published>2014-10-04T00:00:00Z</published>
-    <updated>2014-10-04T00:00:00Z</updated>
-    <summary type="html"><![CDATA[<p>As I wrote about in a previous post on <a href="/posts/2014-09-25-000-converting-posts-from-wp.html">converting post from WordPress to Hakyll</a> I couldn’t quite find a tool that met my needs out of the box. I had a look at the source of <a href="https://github.com/kowey/hakyll-convert">hakyll-convert</a> but it uses a library for RSS parsing, which sounds good. However, the export of posts from WordPress is in an extended RSS format, among other things it contains the comments of posts. Unfortunately it doesn’t look like the RSS library supports the WordPress extensions, so modifying hakyll-convert to also extract comments seems like a bit more work than I’d like to put into it. Especially since I had a feeling that hacking up something using <a href="http://hackage.haskell.org/package/tagsoup">tagsoup</a> would be quite a bit faster.</p>
-<p>I put the resulting script in gist on github. I call it <em>bbwp</em>, which is short for <a href="https://gist.github.com/magthe/744cdda3b59dc9abaa06">Bye, bye, WordPress</a>.</p>]]></summary>
 </entry>
 
 </feed>
