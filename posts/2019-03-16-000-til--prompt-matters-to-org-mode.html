@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="../index.html">Top</a> <a href="../archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">TIL: prompt matters to org-mode</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2019-03-16">2019-03-16</time> - Magnus Therning</p>
+</header>
+
+<p>A workmate just embellished some shell code blocks I’d put in a shared <a href="https://orgmode.org/">org-mode</a> file with <code>:session s</code>. When I tried to run the blocks with sessions my emacs just froze up though. I found a <a href="https://emacs.stackexchange.com/questions/19735/emacs-freezes-with-any-org-babel-snippet-using-session">post on the emacs StackExchange</a> that offered a possible cause for it: the prompt.</p>
+<p>I’m using <a href="https://github.com/Bash-it/bash-it">bash-it</a> so my prompt is rather far from the default.</p>
+<p>After inspecting the session buffer simply added the following to my <code>~/.bashrc</code></p>
+<pre class="shell"><code>if [[ ${TERM} == &quot;dumb&quot; ]]; then
+    export BASH_IT_THEME='standard'
+else
+    export BASH_IT_THEME='simple'
+fi</code></pre>
+<p>and now I can finally run shell code blocks in sessions.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/emacs.html">emacs</a>, <a href="../tags/org-mode.html">org-mode</a>, <a href="../tags/org-babel.html">org-babel</a>
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2019-03-16-000-til--prompt-matters-to-org-mode@therning.org?subject=A comment on TIL: prompt matters to org-mode&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>
