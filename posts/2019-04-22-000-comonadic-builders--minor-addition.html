@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="../index.html">Top</a> <a href="../archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Comonadic builders, minor addition</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2019-04-22">2019-04-22</time> - Magnus Therning</p>
+</header>
+
+<p>When reading about <a href="https://chshersh.github.io/posts/2019-03-25-comonadic-builders">Comonadic builders</a> the other day I reacted to this comment:</p>
+<blockquote>
+<p>The <code>comonad</code> package has the <a href="https://hackage.haskell.org/package/comonad-5.0.4/docs/Control-Comonad-Trans-Traced.html#t:TracedT">Traced</a> <code>newtype</code> wrapper around the function <code>(-&gt;)</code>. The <code>Comonad</code> instance for this <code>newtype</code> gives us the desired behaviour. However, dealing with the <code>newtype</code> wrapping and unwrapping makes our code noisy and truly harder to understand, so let’s use the <code>Comonad</code> instance for the arrow <code>(-&gt;)</code> itself</p>
+</blockquote>
+<p>So, just for fun I thought I work out the “noisy and truly harder” bits.</p>
+<p>To begin with I needed two language extensions and two imports</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE OverloadedStrings#-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="ot">{-# LANGUAGE RecordWildCards #-}</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="kw">import</span> <span class="dt">Control.Comonad.Traced</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Data.Text</span></a></code></pre></div>
+<p>After that I could copy quite a bit of stuff directly from the other post</p>
+<ul>
+<li><code>Settings</code> definition</li>
+<li>The <code>Semigroup</code> instance for <code>Settings</code></li>
+<li>The <code>Monoid</code> instance for <code>Settings</code></li>
+<li><code>Project</code> definition</li>
+</ul>
+<p>After this everything had only minor changes. First off the <code>ProjectBuilder</code> type had to be changed to</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">type</span> <span class="dt">ProjectBuilder</span> <span class="fu">=</span> <span class="dt">Traced</span> <span class="dt">Settings</span> <span class="dt">Project</span></a></code></pre></div>
+<p>With that done the types of all the functions can actually be left as they are, but of course the definitions have to modified. However, it turned out that the necessary modifications were rather smaller than I had expected. First out <code>buildProject</code> which I decided to call <code>buildProjectW</code> to make it possible to keep the original code and the new code in the same file without causing name clashes:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">buildProjectW ::</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> <span class="dt">ProjectBuilder</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">buildProjectW <span class="fu">=</span> traced <span class="fu">.</span> buildProject</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">    buildProject projectName <span class="dt">Settings</span>{<span class="fu">..</span>} <span class="fu">=</span> <span class="dt">Project</span></a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">      { projectHasLibrary <span class="fu">=</span> getAny settingsHasLibrary</a>
+<a class="sourceLine" id="cb3-6" data-line-number="6">      , projectGitHub     <span class="fu">=</span> getAny settingsGitHub</a>
+<a class="sourceLine" id="cb3-7" data-line-number="7">      , projectTravis     <span class="fu">=</span> getAny settingsTravis</a>
+<a class="sourceLine" id="cb3-8" data-line-number="8">      , <span class="fu">..</span></a>
+<a class="sourceLine" id="cb3-9" data-line-number="9">      }</a></code></pre></div>
+<p>The only difference is the addition of <code>traced .</code> to wrap it up in the <code>newtype</code>, the rest is copied straight from the original article.</p>
+<p>The two simple project combinator functions, which I call <code>hasLibraryBW</code> and <code>gitHubBW</code>, needed a bit of tweaking. In the original version combinators take a <code>builder</code> which is an ordinary function, so it can just be called. Now however, the function is wrapped in a <code>newtype</code> so a bit of unwrapping is necessary:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">hasLibraryBW ::</span> <span class="dt">ProjectBuilder</span> <span class="ot">-&gt;</span> <span class="dt">Project</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">hasLibraryBW builder <span class="fu">=</span> runTraced builder <span class="fu">$</span> mempty { settingsHasLibrary <span class="fu">=</span> <span class="dt">Any</span> <span class="dt">True</span> }</a>
+<a class="sourceLine" id="cb4-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4"><span class="ot">gitHubBW ::</span> <span class="dt">ProjectBuilder</span> <span class="ot">-&gt;</span> <span class="dt">Project</span></a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">gitHubBW builder <span class="fu">=</span> runTraced builder <span class="fu">$</span> mempty { settingsGitHub <span class="fu">=</span> <span class="dt">Any</span> <span class="dt">True</span> }</a></code></pre></div>
+<p>Once again it’s rather small differences from the code in the article.</p>
+<p>As for the final combinator, which I call <code>travisBW</code>, actually needed no changes at all. I only rewrote it using a <code>when</code> clause, because I prefer that style over <code>let</code>:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">travisBW ::</span> <span class="dt">ProjectBuilder</span> <span class="ot">-&gt;</span> <span class="dt">Project</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">travisBW builder <span class="fu">=</span> project { projectTravis <span class="fu">=</span> projectGitHub project }</a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">    project <span class="fu">=</span> extract builder</a></code></pre></div>
+<p>Finally, to show that this implementation hasn’t really changed the behaviour</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1">λ extract <span class="fu">$</span> buildProjectW <span class="st">&quot;travis&quot;</span> <span class="ot">=&gt;</span><span class="fu">&gt;</span> travisBW</a>
+<a class="sourceLine" id="cb6-2" data-line-number="2"><span class="dt">Project</span> { projectName <span class="fu">=</span> <span class="st">&quot;travis&quot;</span></a>
+<a class="sourceLine" id="cb6-3" data-line-number="3">        , projectHasLibrary <span class="fu">=</span> <span class="dt">False</span></a>
+<a class="sourceLine" id="cb6-4" data-line-number="4">        , projectGitHub <span class="fu">=</span> <span class="dt">False</span> </a>
+<a class="sourceLine" id="cb6-5" data-line-number="5">        , projectTravis <span class="fu">=</span> <span class="dt">False</span></a>
+<a class="sourceLine" id="cb6-6" data-line-number="6">        }</a>
+<a class="sourceLine" id="cb6-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb6-8" data-line-number="8">λ extract <span class="fu">$</span> buildProjectW <span class="st">&quot;github-travis&quot;</span> <span class="ot">=&gt;</span><span class="fu">&gt;</span> gitHubBW <span class="ot">=&gt;</span><span class="fu">&gt;</span> travisBW</a>
+<a class="sourceLine" id="cb6-9" data-line-number="9"><span class="dt">Project</span> { projectName <span class="fu">=</span> <span class="st">&quot;github-travis&quot;</span></a>
+<a class="sourceLine" id="cb6-10" data-line-number="10">        , projectHasLibrary <span class="fu">=</span> <span class="dt">False</span></a>
+<a class="sourceLine" id="cb6-11" data-line-number="11">        , projectGitHub <span class="fu">=</span> <span class="dt">True</span></a>
+<a class="sourceLine" id="cb6-12" data-line-number="12">        , projectTravis <span class="fu">=</span> <span class="dt">True</span></a>
+<a class="sourceLine" id="cb6-13" data-line-number="13">        }</a>
+<a class="sourceLine" id="cb6-14" data-line-number="14"></a>
+<a class="sourceLine" id="cb6-15" data-line-number="15">λ extract <span class="fu">$</span> buildProjectW <span class="st">&quot;travis-github&quot;</span> <span class="ot">=&gt;</span><span class="fu">&gt;</span> travisBW <span class="ot">=&gt;</span><span class="fu">&gt;</span> gitHubBW</a>
+<a class="sourceLine" id="cb6-16" data-line-number="16"><span class="dt">Project</span> { projectName <span class="fu">=</span> <span class="st">&quot;travis-github&quot;</span></a>
+<a class="sourceLine" id="cb6-17" data-line-number="17">        , projectHasLibrary <span class="fu">=</span> <span class="dt">False</span> </a>
+<a class="sourceLine" id="cb6-18" data-line-number="18">        , projectGitHub <span class="fu">=</span> <span class="dt">True</span></a>
+<a class="sourceLine" id="cb6-19" data-line-number="19">        , projectTravis <span class="fu">=</span> <span class="dt">True</span></a>
+<a class="sourceLine" id="cb6-20" data-line-number="20">        }</a></code></pre></div>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/comonad.html">comonad</a>, <a href="../tags/builder%20pattern.html">builder pattern</a>
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2019-04-22-000-comonadic-builders--minor-addition@therning.org?subject=A comment on Comonadic builders, minor addition&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

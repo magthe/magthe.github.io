@@ -8,8 +8,79 @@
         <name>Magnus Therning</name>
         <email>magnus@therning.org</email>
     </author>
-    <updated>2019-03-16T00:00:00Z</updated>
+    <updated>2019-04-22T00:00:00Z</updated>
     <entry>
+    <title>Comonadic builders, minor addition</title>
+    <link href="http://magnus.therning.org/posts/2019-04-22-000-comonadic-builders--minor-addition.html" />
+    <id>http://magnus.therning.org/posts/2019-04-22-000-comonadic-builders--minor-addition.html</id>
+    <published>2019-04-22T00:00:00Z</published>
+    <updated>2019-04-22T00:00:00Z</updated>
+    <summary type="html"><![CDATA[<p>When reading about <a href="https://chshersh.github.io/posts/2019-03-25-comonadic-builders">Comonadic builders</a> the other day I reacted to this comment:</p>
+<blockquote>
+<p>The <code>comonad</code> package has the <a href="https://hackage.haskell.org/package/comonad-5.0.4/docs/Control-Comonad-Trans-Traced.html#t:TracedT">Traced</a> <code>newtype</code> wrapper around the function <code>(-&gt;)</code>. The <code>Comonad</code> instance for this <code>newtype</code> gives us the desired behaviour. However, dealing with the <code>newtype</code> wrapping and unwrapping makes our code noisy and truly harder to understand, so let’s use the <code>Comonad</code> instance for the arrow <code>(-&gt;)</code> itself</p>
+</blockquote>
+<p>So, just for fun I thought I work out the “noisy and truly harder” bits.</p>
+<p>To begin with I needed two language extensions and two imports</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE OverloadedStrings#-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="ot">{-# LANGUAGE RecordWildCards #-}</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="kw">import</span> <span class="dt">Control.Comonad.Traced</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Data.Text</span></a></code></pre></div>
+<p>After that I could copy quite a bit of stuff directly from the other post</p>
+<ul>
+<li><code>Settings</code> definition</li>
+<li>The <code>Semigroup</code> instance for <code>Settings</code></li>
+<li>The <code>Monoid</code> instance for <code>Settings</code></li>
+<li><code>Project</code> definition</li>
+</ul>
+<p>After this everything had only minor changes. First off the <code>ProjectBuilder</code> type had to be changed to</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">type</span> <span class="dt">ProjectBuilder</span> <span class="fu">=</span> <span class="dt">Traced</span> <span class="dt">Settings</span> <span class="dt">Project</span></a></code></pre></div>
+<p>With that done the types of all the functions can actually be left as they are, but of course the definitions have to modified. However, it turned out that the necessary modifications were rather smaller than I had expected. First out <code>buildProject</code> which I decided to call <code>buildProjectW</code> to make it possible to keep the original code and the new code in the same file without causing name clashes:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">buildProjectW ::</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> <span class="dt">ProjectBuilder</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">buildProjectW <span class="fu">=</span> traced <span class="fu">.</span> buildProject</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">    buildProject projectName <span class="dt">Settings</span>{<span class="fu">..</span>} <span class="fu">=</span> <span class="dt">Project</span></a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">      { projectHasLibrary <span class="fu">=</span> getAny settingsHasLibrary</a>
+<a class="sourceLine" id="cb3-6" data-line-number="6">      , projectGitHub     <span class="fu">=</span> getAny settingsGitHub</a>
+<a class="sourceLine" id="cb3-7" data-line-number="7">      , projectTravis     <span class="fu">=</span> getAny settingsTravis</a>
+<a class="sourceLine" id="cb3-8" data-line-number="8">      , <span class="fu">..</span></a>
+<a class="sourceLine" id="cb3-9" data-line-number="9">      }</a></code></pre></div>
+<p>The only difference is the addition of <code>traced .</code> to wrap it up in the <code>newtype</code>, the rest is copied straight from the original article.</p>
+<p>The two simple project combinator functions, which I call <code>hasLibraryBW</code> and <code>gitHubBW</code>, needed a bit of tweaking. In the original version combinators take a <code>builder</code> which is an ordinary function, so it can just be called. Now however, the function is wrapped in a <code>newtype</code> so a bit of unwrapping is necessary:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">hasLibraryBW ::</span> <span class="dt">ProjectBuilder</span> <span class="ot">-&gt;</span> <span class="dt">Project</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">hasLibraryBW builder <span class="fu">=</span> runTraced builder <span class="fu">$</span> mempty { settingsHasLibrary <span class="fu">=</span> <span class="dt">Any</span> <span class="dt">True</span> }</a>
+<a class="sourceLine" id="cb4-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4"><span class="ot">gitHubBW ::</span> <span class="dt">ProjectBuilder</span> <span class="ot">-&gt;</span> <span class="dt">Project</span></a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">gitHubBW builder <span class="fu">=</span> runTraced builder <span class="fu">$</span> mempty { settingsGitHub <span class="fu">=</span> <span class="dt">Any</span> <span class="dt">True</span> }</a></code></pre></div>
+<p>Once again it’s rather small differences from the code in the article.</p>
+<p>As for the final combinator, which I call <code>travisBW</code>, actually needed no changes at all. I only rewrote it using a <code>when</code> clause, because I prefer that style over <code>let</code>:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">travisBW ::</span> <span class="dt">ProjectBuilder</span> <span class="ot">-&gt;</span> <span class="dt">Project</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">travisBW builder <span class="fu">=</span> project { projectTravis <span class="fu">=</span> projectGitHub project }</a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">    project <span class="fu">=</span> extract builder</a></code></pre></div>
+<p>Finally, to show that this implementation hasn’t really changed the behaviour</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1">λ extract <span class="fu">$</span> buildProjectW <span class="st">&quot;travis&quot;</span> <span class="ot">=&gt;</span><span class="fu">&gt;</span> travisBW</a>
+<a class="sourceLine" id="cb6-2" data-line-number="2"><span class="dt">Project</span> { projectName <span class="fu">=</span> <span class="st">&quot;travis&quot;</span></a>
+<a class="sourceLine" id="cb6-3" data-line-number="3">        , projectHasLibrary <span class="fu">=</span> <span class="dt">False</span></a>
+<a class="sourceLine" id="cb6-4" data-line-number="4">        , projectGitHub <span class="fu">=</span> <span class="dt">False</span> </a>
+<a class="sourceLine" id="cb6-5" data-line-number="5">        , projectTravis <span class="fu">=</span> <span class="dt">False</span></a>
+<a class="sourceLine" id="cb6-6" data-line-number="6">        }</a>
+<a class="sourceLine" id="cb6-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb6-8" data-line-number="8">λ extract <span class="fu">$</span> buildProjectW <span class="st">&quot;github-travis&quot;</span> <span class="ot">=&gt;</span><span class="fu">&gt;</span> gitHubBW <span class="ot">=&gt;</span><span class="fu">&gt;</span> travisBW</a>
+<a class="sourceLine" id="cb6-9" data-line-number="9"><span class="dt">Project</span> { projectName <span class="fu">=</span> <span class="st">&quot;github-travis&quot;</span></a>
+<a class="sourceLine" id="cb6-10" data-line-number="10">        , projectHasLibrary <span class="fu">=</span> <span class="dt">False</span></a>
+<a class="sourceLine" id="cb6-11" data-line-number="11">        , projectGitHub <span class="fu">=</span> <span class="dt">True</span></a>
+<a class="sourceLine" id="cb6-12" data-line-number="12">        , projectTravis <span class="fu">=</span> <span class="dt">True</span></a>
+<a class="sourceLine" id="cb6-13" data-line-number="13">        }</a>
+<a class="sourceLine" id="cb6-14" data-line-number="14"></a>
+<a class="sourceLine" id="cb6-15" data-line-number="15">λ extract <span class="fu">$</span> buildProjectW <span class="st">&quot;travis-github&quot;</span> <span class="ot">=&gt;</span><span class="fu">&gt;</span> travisBW <span class="ot">=&gt;</span><span class="fu">&gt;</span> gitHubBW</a>
+<a class="sourceLine" id="cb6-16" data-line-number="16"><span class="dt">Project</span> { projectName <span class="fu">=</span> <span class="st">&quot;travis-github&quot;</span></a>
+<a class="sourceLine" id="cb6-17" data-line-number="17">        , projectHasLibrary <span class="fu">=</span> <span class="dt">False</span> </a>
+<a class="sourceLine" id="cb6-18" data-line-number="18">        , projectGitHub <span class="fu">=</span> <span class="dt">True</span></a>
+<a class="sourceLine" id="cb6-19" data-line-number="19">        , projectTravis <span class="fu">=</span> <span class="dt">True</span></a>
+<a class="sourceLine" id="cb6-20" data-line-number="20">        }</a></code></pre></div>]]></summary>
+</entry>
+<entry>
     <title>TIL: prompt matters to org-mode</title>
     <link href="http://magnus.therning.org/posts/2019-03-16-000-til--prompt-matters-to-org-mode.html" />
     <id>http://magnus.therning.org/posts/2019-03-16-000-til--prompt-matters-to-org-mode.html</id>
@@ -2995,61 +3066,6 @@ CalcResult 73</code></pre>
 <p>The idea of a formal design discipline is often rejected on account of vague cultural/philosophical condemnations such as “stifling creativity”; this is more pronounced in the Anglo-Saxon world where a romantic vision of “the humanities” in fact idealizes technical incompetence. Another aspect of that same trait is the cult of iterative design.</p>
 </blockquote>
 <p>It amazes me every time I read something by someone like Dijkstra, just how much things stay the same, even in a field like computing science, which is said to be moving so fast.</p>]]></summary>
-</entry>
-<entry>
-    <title>Optparse-applicative and custom argument parsers</title>
-    <link href="http://magnus.therning.org/posts/2014-10-13-000-optparse-applicative.html" />
-    <id>http://magnus.therning.org/posts/2014-10-13-000-optparse-applicative.html</id>
-    <published>2014-10-13T00:00:00Z</published>
-    <updated>2014-10-13T00:00:00Z</updated>
-    <summary type="html"><![CDATA[<p>The latest update of <a href="http://hackage.haskell.org/package/optparse-applicative">optparse-applicative</a> triggered me to look over the functions in <a href="http://hackage.haskell.org/package/cblrepo">cblrepo</a> for parsing a few custom command line options. I used to do the parsing in a rather ad-hoc way with lots of use of list functions to split on specific characters. For instance, some option values are pairs of package name and version separated by a comma: <code>PKG-NAME,VERSION</code>. This worked fine and was easy to plug into version 0.10 of <em>optparse-applicative</em>. It was also easily extended to triples, <code>PKG-NAME,VERSION,RELEASE</code>, but it started feeling a bit brittle when some tuples got extended with an optional list of flag assignments, <code>PKG-NAME,VERSION[:FLAG,FLAG,FLAG,...]</code>. The recent release of version 0.11 of <em>optparse-applicative</em> changed the API for custom option value parsers radically; instead of passing a string to the parser, the parser has to use <code>readerAsk</code> to get the string. In short, <code>ReaderM</code> turned into a state monad.</p>
-<p>In adjusting to the new API I noticed that the code was organised in such a way that some low-level parsing functions were used directly from command line option definitions, while also being used as building blocks for the more complex parsers. This of course meant that the structuring of the functions needed to be changed completely to deal with the API change.</p>
-<p>It turns out there already was a parser that was written in a different style (here already adjusted to the 0.11 API):</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">readerGhcVersion ::</span> <span class="dt">ReadM</span> <span class="dt">Version</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">readerGhcVersion <span class="fu">=</span></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">    arg <span class="ot">&lt;-</span> readerAsk</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">    <span class="kw">case</span> lastMay <span class="fu">$</span> readP_to_S parseVersion arg <span class="kw">of</span></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">        <span class="dt">Just</span> (v, <span class="st">&quot;&quot;</span>) <span class="ot">-&gt;</span> return v</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6">        _ <span class="ot">-&gt;</span> fail <span class="fu">$</span> <span class="st">&quot;cannot parse value `&quot;</span> <span class="fu">++</span> arg <span class="fu">++</span> <span class="st">&quot;`&quot;</span></a></code></pre></div>
-<p>So I rewrote the rest of the parsers in a similar style. The arguably most complicated is this one:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">readPkgNVersion ::</span> <span class="dt">ReadP</span> (<span class="dt">String</span>, <span class="dt">Version</span>)</a>
-<a class="sourceLine" id="cb2-2" data-line-number="2">readPkgNVersion <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-3" data-line-number="3">    n <span class="ot">&lt;-</span> many (satisfy (<span class="fu">/=</span> <span class="ch">&#39;,&#39;</span>))</a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">    char <span class="ch">&#39;,&#39;</span></a>
-<a class="sourceLine" id="cb2-5" data-line-number="5">    v <span class="ot">&lt;-</span> parseVersion</a>
-<a class="sourceLine" id="cb2-6" data-line-number="6">    return (n, v)</a>
-<a class="sourceLine" id="cb2-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb2-8" data-line-number="8"><span class="ot">readFlag ::</span> <span class="dt">ReadP</span> (<span class="dt">FlagName</span>, <span class="dt">Bool</span>)</a>
-<a class="sourceLine" id="cb2-9" data-line-number="9">readFlag <span class="fu">=</span> readNegFlag <span class="fu">&lt;++</span> readPosFlag</a>
-<a class="sourceLine" id="cb2-10" data-line-number="10">    <span class="kw">where</span></a>
-<a class="sourceLine" id="cb2-11" data-line-number="11">        readNegFlag <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-12" data-line-number="12">            char <span class="ch">&#39;-&#39;</span></a>
-<a class="sourceLine" id="cb2-13" data-line-number="13">            n <span class="ot">&lt;-</span> many (satisfy (<span class="fu">/=</span> <span class="ch">&#39;,&#39;</span>))</a>
-<a class="sourceLine" id="cb2-14" data-line-number="14">            return (<span class="dt">FlagName</span> n, <span class="dt">False</span>)</a>
-<a class="sourceLine" id="cb2-15" data-line-number="15"></a>
-<a class="sourceLine" id="cb2-16" data-line-number="16">        readPosFlag <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-17" data-line-number="17">            n0 <span class="ot">&lt;-</span> get</a>
-<a class="sourceLine" id="cb2-18" data-line-number="18">            n <span class="ot">&lt;-</span> many (satisfy (<span class="fu">/=</span> <span class="ch">&#39;,&#39;</span>))</a>
-<a class="sourceLine" id="cb2-19" data-line-number="19">            return (<span class="dt">FlagName</span> (n0 <span class="fu">:</span> n), <span class="dt">True</span>)</a>
-<a class="sourceLine" id="cb2-20" data-line-number="20"></a>
-<a class="sourceLine" id="cb2-21" data-line-number="21"><span class="ot">strCblPkgArgReader ::</span> <span class="dt">ReadM</span> (<span class="dt">String</span>, <span class="dt">Version</span>, <span class="dt">FlagAssignment</span>)</a>
-<a class="sourceLine" id="cb2-22" data-line-number="22">strCblPkgArgReader <span class="fu">=</span> <span class="kw">let</span></a>
-<a class="sourceLine" id="cb2-23" data-line-number="23">        readWithFlags <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-24" data-line-number="24">            (n, v) <span class="ot">&lt;-</span> readPkgNVersion</a>
-<a class="sourceLine" id="cb2-25" data-line-number="25">            char <span class="ch">&#39;:&#39;</span></a>
-<a class="sourceLine" id="cb2-26" data-line-number="26">            fas <span class="ot">&lt;-</span> sepBy readFlag (char <span class="ch">&#39;,&#39;</span>)</a>
-<a class="sourceLine" id="cb2-27" data-line-number="27">            return (n, v, fas)</a>
-<a class="sourceLine" id="cb2-28" data-line-number="28"></a>
-<a class="sourceLine" id="cb2-29" data-line-number="29">        readWithoutFlags <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-30" data-line-number="30">            (n, v) <span class="ot">&lt;-</span> readPkgNVersion</a>
-<a class="sourceLine" id="cb2-31" data-line-number="31">            return (n, v, [])</a>
-<a class="sourceLine" id="cb2-32" data-line-number="32"></a>
-<a class="sourceLine" id="cb2-33" data-line-number="33">    <span class="kw">in</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-34" data-line-number="34">        s <span class="ot">&lt;-</span> readerAsk</a>
-<a class="sourceLine" id="cb2-35" data-line-number="35">        <span class="kw">case</span> lastMay (readP_to_S (readWithFlags <span class="fu">&lt;++</span> readWithoutFlags) s) <span class="kw">of</span></a>
-<a class="sourceLine" id="cb2-36" data-line-number="36">            <span class="dt">Just</span> (r, <span class="st">&quot;&quot;</span>) <span class="ot">-&gt;</span> return r</a>
-<a class="sourceLine" id="cb2-37" data-line-number="37">            _ <span class="ot">-&gt;</span> fail <span class="fu">$</span> <span class="st">&quot;Cannot parse: &quot;</span> <span class="fu">++</span> s</a></code></pre></div>
-<p>It is slightly longer, but it’s rather a lot easier to read what’s happening after this rewrite. <code>ReadP</code> feels like a lighter option than pulling in <a href="http://hackage.haskell.org/package/parsec">parsec</a> as a dependency, but I’d love to hear any comments or suggestions, as well as pointers to how other people deal with parsing of non-trivial types of arguments in combination with <em>optparse-applicative</em>.</p>]]></summary>
 </entry>
 
 </feed>
