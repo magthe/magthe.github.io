@@ -97,6 +97,46 @@ Tags: <a href="../tags/conduit.html">conduit</a>, <a href="../tags/event%20sourc
 </div>
 
 
+<article class="comment-body">
+  <a name="comment-0"></a>
+  <header>
+    <p><b>Felipe Lessa</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2019-03-03">2019-03-03</time></p>
+  </header>
+<p>I’ve never used LISTEN/NOTIFY myself, so take this with a grain of salt. From my understanding of the docs, you only need to call LISTEN once:</p>
+<blockquote>
+<p>LISTEN registers the current session as a listener on the notification channel named channel. If the current session is already registered as a listener for this notification channel, nothing is done.</p>
+</blockquote>
+<p>Furthermore, there’s a race condition in the first invocation of <code>dbSource</code>: a notification that arrives after the SELECT but before the LISTEN would be lost.</p>
+<p>Assuming my understanding is correct, here’s some totally untested code:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">dbSource ::</span> <span class="dt">MonadIO</span> m <span class="ot">=&gt;</span> <span class="dt">Connection</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">C.ConduitT</span> () (<span class="dt">Int</span>, <span class="dt">UTCTime</span>, <span class="dt">Int</span>, <span class="dt">Int</span>, <span class="dt">Bool</span>, <span class="dt">UUID</span>, <span class="dt">Text</span>, <span class="dt">Value</span>) m ()</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">dbSource conn initialVer <span class="fu">=</span> CC.bracketP setup teardown loop1</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">    setup       <span class="fu">=</span> execute_ conn <span class="st">&quot;LISTEN   MyEvent&quot;</span> <span class="co">-- Setting up the listener before any SELECTs.</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">    teardown () <span class="fu">=</span> execute_ conn <span class="st">&quot;UNLISTEN MyEvent&quot;</span></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">    loop1 () <span class="fu">=</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7">      <span class="co">-- First iteration of the loop, do a query to look for</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8">      <span class="co">-- events that were alerady in the DB before setup.</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9">      queryAndYield initialVer <span class="fu">&gt;&gt;=</span> loop</a>
+<a class="sourceLine" id="cb1-10" data-line-number="10">    loop ver <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11">      <span class="co">-- Listener was already in place, so wait for a notification straight away.</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12">      liftIO <span class="fu">$</span> getNotification conn</a>
+<a class="sourceLine" id="cb1-13" data-line-number="13">      queryAndYield ver <span class="fu">&gt;&gt;=</span> loop</a>
+<a class="sourceLine" id="cb1-14" data-line-number="14">    queryAndYield ver <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15">      res <span class="ot">&lt;-</span> liftIO <span class="fu">$</span> query conn <span class="st">&quot;SELECT * from events where id &gt; (?) ORDER BY id&quot;</span> (<span class="dt">Only</span> ver)</a>
+<a class="sourceLine" id="cb1-16" data-line-number="16">      CC.yieldMany res</a>
+<a class="sourceLine" id="cb1-17" data-line-number="17">      return <span class="fu">$</span> maximum <span class="fu">$</span> ver <span class="fu">:</span> map fst8 res</a></code></pre></div>
+</article>
+
+<article class="comment-body">
+  <a name="comment-1"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2019-04-28">2019-04-28</time></p>
+  </header>
+<p>Thanks Felipe, that’s exactly the kind of comment I was hoping for. I’ll make sure to adjust my code based on your insights.</p>
+</article>
+
 
 <div class="post-leave-comment">
   <a href="mailto:magnus+blog.comment.2019-03-03-000-conduit-and-postgresql@therning.org?subject=A comment on Conduit and PostgreSQL&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
