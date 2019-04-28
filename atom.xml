@@ -8,8 +8,18 @@
         <name>Magnus Therning</name>
         <email>magnus@therning.org</email>
     </author>
-    <updated>2019-04-22T00:00:00Z</updated>
+    <updated>2019-04-28T00:00:00Z</updated>
     <entry>
+    <title>A simple browser chooser</title>
+    <link href="http://magnus.therning.org/posts/2019-04-28-000-a-simple-browser-chooser.html" />
+    <id>http://magnus.therning.org/posts/2019-04-28-000-a-simple-browser-chooser.html</id>
+    <published>2019-04-28T00:00:00Z</published>
+    <updated>2019-04-28T00:00:00Z</updated>
+    <summary type="html"><![CDATA[<p>Up until a few days ago I sort of mixed my private and work web browsing, e.g. I connected my private <a href="https://www.lastpass.com/">LastPass</a> account to my work account. Then I heard about <a href="https://bitwarden.com/">BitWarden</a> and wanted to try it out. A quick export from LastPass and import to BitWarden later I realised that I really ought to try to split my private browsing from my work browsing too – <a href="https://www.mozilla.org/firefox/">Firefox</a> for the former and <a href="https://www.chromium.org/">Chromium</a> for the latter.</p>
+<p>After about a day of this I found that having a single default browser was a bit of a limitation. Inspired by behaviour on my Android phone I started looking for a <a href="https://mstdn.io/@magnus/101985705763568037">browser choosing</a>. Unfortunately I didn’t find anything for Linux/Gnome. With the help from <a href="https://is.gd/9ajN0y">a Reddit post</a> I ended putting together a package for <a href="https://www.archlinux.org/">Arch Linux</a>.</p>
+<p>I gave it the name <a href="https://gitlab.com/magus/browser-chooser">browser-chooser</a>.</p>]]></summary>
+</entry>
+<entry>
     <title>Comonadic builders, minor addition</title>
     <link href="http://magnus.therning.org/posts/2019-04-22-000-comonadic-builders--minor-addition.html" />
     <id>http://magnus.therning.org/posts/2019-04-22-000-comonadic-builders--minor-addition.html</id>
@@ -3048,24 +3058,6 @@ CalcResult 73</code></pre>
 <p>With more practice comes more and more insights into what functions are available and how to string them together. When I don’t even feel like doing a full exercise on Exercism I just dig out something that smells a little and clean it up. Anything is fair game, no matter how tiny. Just take a look at my implementation of <a href="https://github.com/magthe/cblrepo/commit/eefe3b9015c96d8f69392e4043c6e31c7dc36219"><code>reThrowError</code></a>.</p>
 <h3 id="what-else">What else?</h3>
 <p>I’d love to hear tips and tricks from other people who aren’t lucky enough to have a day job where they get to write Haskell. How do you keep up the learning and practice?</p>]]></summary>
-</entry>
-<entry>
-    <title>Dijkstra quotes from EWD1284</title>
-    <link href="http://magnus.therning.org/posts/2014-10-20-000-dijkstra-ewd1284.html" />
-    <id>http://magnus.therning.org/posts/2014-10-20-000-dijkstra-ewd1284.html</id>
-    <published>2014-10-20T00:00:00Z</published>
-    <updated>2014-10-20T00:00:00Z</updated>
-    <summary type="html"><![CDATA[<p>I recently read through this <em>long</em> post entitles <a href="http://www.smashcompany.com/technology/object-oriented-programming-is-an-expensive-disaster-which-must-end">Object Oriented Programming is an expensive disaster which must end</a>. I have to agree I largely agree with what he writes, but I don’t think I ever could have written such a well-researched article, and absolutely never one of equal length ;)</p>
-<p>It does include some nice quotes and references and so far I’ve only read one of the many that I bookmarked, <a href="https://www.cs.utexas.edu/users/EWD/transcriptions/EWD12xx/EWD1284.html">Computing Science: Achievements and Challenges (EWD1284)</a>. It does include a few quips that, based on other articles I’ve read, seem fairly typical to Dijkstra. I simply love the way he expressed his opinions at times.</p>
-<p>This one really ought to have been in the lengthy post on the OOP disaster:</p>
-<blockquote>
-<p>After more than 45 years in the field, I am still convinced that in computing, elegance is not a dispensable luxury but a quality that decides between success and failure; in this connection I gratefully quote from The Concise Oxford Dictionary a definition of “elegant”, viz. “ingeniously simple and effective”. Amen. (For those who have wondered: I don’t think object-oriented programming is a structuring paradigm that meets my standards of elegance.)</p>
-</blockquote>
-<p>And his thoughts on formal methods are well-known of course, as are his thoughts on iterative design. However, I rather like how he expresses a certain level of disgust of the Anglo-Saxon world when writing about those topics:</p>
-<blockquote>
-<p>The idea of a formal design discipline is often rejected on account of vague cultural/philosophical condemnations such as “stifling creativity”; this is more pronounced in the Anglo-Saxon world where a romantic vision of “the humanities” in fact idealizes technical incompetence. Another aspect of that same trait is the cult of iterative design.</p>
-</blockquote>
-<p>It amazes me every time I read something by someone like Dijkstra, just how much things stay the same, even in a field like computing science, which is said to be moving so fast.</p>]]></summary>
 </entry>
 
 </feed>

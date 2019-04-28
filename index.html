@@ -26,6 +26,25 @@
 
   <div class="post-body">
     <header>
+      <h1 class="post-title"><a href="./posts/2019-04-28-000-a-simple-browser-chooser.html">A simple browser chooser</a></h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2019-04-28">2019-04-28</time> - Magnus Therning</p>
+</header>
+
+<p>Up until a few days ago I sort of mixed my private and work web browsing, e.g. I connected my private <a href="https://www.lastpass.com/">LastPass</a> account to my work account. Then I heard about <a href="https://bitwarden.com/">BitWarden</a> and wanted to try it out. A quick export from LastPass and import to BitWarden later I realised that I really ought to try to split my private browsing from my work browsing too – <a href="https://www.mozilla.org/firefox/">Firefox</a> for the former and <a href="https://www.chromium.org/">Chromium</a> for the latter.</p>
+<p>After about a day of this I found that having a single default browser was a bit of a limitation. Inspired by behaviour on my Android phone I started looking for a <a href="https://mstdn.io/@magnus/101985705763568037">browser choosing</a>. Unfortunately I didn’t find anything for Linux/Gnome. With the help from <a href="https://is.gd/9ajN0y">a Reddit post</a> I ended putting together a package for <a href="https://www.archlinux.org/">Arch Linux</a>.</p>
+<p>I gave it the name <a href="https://gitlab.com/magus/browser-chooser">browser-chooser</a>.</p>
+
+
+  </div>
+
+</article>
+
+
+<article>
+
+  <div class="post-body">
+    <header>
       <h1 class="post-title"><a href="./posts/2019-04-22-000-comonadic-builders--minor-addition.html">Comonadic builders, minor addition</a></h1>
 
 <p class="post-date"><time pubdate="pubdate" datetime="2019-04-22">2019-04-22</time> - Magnus Therning</p>
@@ -751,37 +770,6 @@ fi</code></pre>
 <hr />
 <ol>
 <li id="fn1"><p>All it does is set a bunch of environment variables and then start the app, so I’m planning on moving the environment variables into a separate file and put the start command the service unit file instead.<a href="#fnref1" class="footnote-back">↩</a></p></li>
-</ol>
-</section>
-
-
-  </div>
-
-</article>
-
-
-<article>
-
-  <div class="post-body">
-    <header>
-      <h1 class="post-title"><a href="./posts/2019-01-05-000-components-feel-so-not-fp.html">Components feel so not FP</a></h1>
-
-<p class="post-date"><time pubdate="pubdate" datetime="2019-01-05">2019-01-05</time> - Magnus Therning</p>
-</header>
-
-<p>At work we’re writing most of the new stuff using Clojure. That’s been going on since before I started working there, and from the beginning there’s been exploration of style and libraries, yes, even of frameworks (ugh!). Now there’s discussion of standardising. The discussion is still in its infancy, but it prompted me to start thinking about what I’m come across in the code base we have now, what I like and what I dislike. The first thing that came to mind was how our different services are set up. I mean set up internally. Like, what’s actually in the <code>main</code> function (or in <code>-main</code>, since we’re talking Clojure). In many services we use <a href="https://clojars.org/com.stuartsierra/component">Stuart Sierra’s <code>component</code></a>, in a growing number of services we use <a href="https://clojars.org/integrant"><code>integrant</code></a>, and in one we use <a href="https://clojars.org/mount"><code>mount</code></a>.</p>
-<p>The current discussion is going in the direction of <code>integrant</code>, and I don’t like it!</p>
-<p>AFAICS <code>integrant</code> suffers from all the same things as <code>component</code> (the author of <code>mount</code> has put it into words better than I ever could in his text on <code>mount</code>‘s <a href="https://github.com/tolitius/mount/blob/master/doc/differences-from-component.md#differences-from-component">differences from component</a>’) plus one more thing to boot: systems are “configured into being”. It’s touted as “data-driven architecture”, I tend to see it as <em>architecture defined in a language separate from my functions</em>. The <code>integrant</code> README says that one of its strengths over <code>component</code> is that</p>
-<blockquote>
-<p>In Integrant, systems are created from a configuration data structure, typically loaded from an edn resource. The architecture of the application is defined through data, rather than code.</p>
-</blockquote>
-<p>Somehow that statement makes me think of OO and DI frameworks. I suspect the above paragraph is just as true with the two replacements <code>s/Integrant/Spring/</code> and <code>s/edn/XML/</code>. I’m not convinced this is a strength at all! My experience with DI frameworks in OO is limited (I’ve never used external configuration), but the enduring impression is that it’s unwieldy. In particular it was very far between cause and effect of errors. So far this is true for <code>integrant</code> as well.</p>
-<p>Also, it makes me think of “functional in the small, OO in the large”<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>, which is a comment coming out of the f-sharp world. Maybe there’s a connection here. Maybe “OO in the large” is something that resonates with OO-turned-FP developers. Maybe that means it’s only a quesiton of time (and exposure to FP) before they embrace “functional all the way”? Or, maybe I’m simply missing something crucial.</p>
-<p>In any case I’m going to have to take a closer look at <code>mount</code> in the near future. I’ll also have to take a look at its brother <a href="https://github.com/tolitius/yurt"><code>yurt</code></a>, and at its distant cousin <a href="https://github.com/aroemers/mount-lite"><code>mount-lite</code></a>.</p>
-<section class="footnotes">
-<hr />
-<ol>
-<li id="fn1"><p><a href="https://www.johndcook.com/blog/2009/03/23/functional-in-the-small-oo-in-the-large/" class="uri">https://www.johndcook.com/blog/2009/03/23/functional-in-the-small-oo-in-the-large/</a><a href="#fnref1" class="footnote-back">↩</a></p></li>
 </ol>
 </section>
 
