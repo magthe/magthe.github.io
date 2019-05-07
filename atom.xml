@@ -8,8 +8,67 @@
         <name>Magnus Therning</name>
         <email>magnus@therning.org</email>
     </author>
-    <updated>2019-04-28T00:00:00Z</updated>
+    <updated>2019-05-07T00:00:00Z</updated>
     <entry>
+    <title>Some OrgMode stuff</title>
+    <link href="http://magnus.therning.org/posts/2019-05-07-000-some-orgmode-stuff.html" />
+    <id>http://magnus.therning.org/posts/2019-05-07-000-some-orgmode-stuff.html</id>
+    <published>2019-05-07T00:00:00Z</published>
+    <updated>2019-05-07T00:00:00Z</updated>
+    <summary type="html"><![CDATA[<p>The last few days I’ve watched <a href="https://www.youtube.com/user/koenighaunstetten">Rainer König’s OrgMode videos</a>. It’s resulted in a few new settings that makes <a href="https://orgmode.org/">Org</a> a little more useful.</p>
+<table>
+<colgroup>
+<col style="width: 35%" />
+<col style="width: 11%" />
+<col style="width: 52%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>calendar-week-start-day</code></td>
+<td><code>1</code></td>
+<td>Weeks start of Monday!</td>
+</tr>
+<tr class="even">
+<td><code>org-modules</code> (list)</td>
+<td><code>org-habit</code></td>
+<td>Support for tracking habits</td>
+</tr>
+<tr class="odd">
+<td><code>org-modules</code> (list)</td>
+<td><code>org-id</code></td>
+<td>Improved support for <code>ID</code> property</td>
+</tr>
+<tr class="even">
+<td><code>org-agenda-start-on-weekday</code></td>
+<td><code>1</code></td>
+<td>Weeks start on Monday, again!</td>
+</tr>
+<tr class="odd">
+<td><code>org-log-into-drawer</code></td>
+<td><code>t</code></td>
+<td>Put notes (logs) into a drawer</td>
+</tr>
+<tr class="even">
+<td><code>org-enforce-todo-checkbox-dependencies</code></td>
+<td><code>t</code></td>
+<td>Checkboxes must be checked before a <em>TODO</em> can become <em>DONE</em></td>
+</tr>
+<tr class="odd">
+<td><code>org-id-link-to-org-use-id</code></td>
+<td><code>t</code></td>
+<td>Prefer use of <code>ID</code> property for links</td>
+</tr>
+</tbody>
+</table>]]></summary>
+</entry>
+<entry>
     <title>A simple browser chooser</title>
     <link href="http://magnus.therning.org/posts/2019-04-28-000-a-simple-browser-chooser.html" />
     <id>http://magnus.therning.org/posts/2019-04-28-000-a-simple-browser-chooser.html</id>
@@ -3028,36 +3087,6 @@ CalcResult 73</code></pre>
 <li>In many of the exercises the code isn’t plain text but rather images; this makes it impossible to copy the code and paste it into a REPL.</li>
 <li>In some cases the layout of the code in the exercises, especially in the answer options, were very badly laid out. For instance in FP101x there are several question where the answer options are code and rather wordy, due to the layout the code becomes unnecessarily difficult to read. (And thanks to the previous issue with the site, it was not an option to copy the code and reformat it to make it easier to read.)</li>
 </ol>]]></summary>
-</entry>
-<entry>
-    <title>Regular Haskelling.  How?</title>
-    <link href="http://magnus.therning.org/posts/2014-11-16-000-regular-haskelling.html" />
-    <id>http://magnus.therning.org/posts/2014-11-16-000-regular-haskelling.html</id>
-    <published>2014-11-16T00:00:00Z</published>
-    <updated>2014-11-16T00:00:00Z</updated>
-    <summary type="html"><![CDATA[<p>Ever since <a href="http://icfpconference.org/icfp2014/">ICFP 2014</a> I’ve had as a goal to get into the habit of coding in Haskell. It’s been the language I enjoy most for a few years now, but being surrounded by and talking to so many brilliant developers as I did during that week really drove home that I will only have more fun the more code I write. My goal was not very ambitious; just write something in Haskell most days every week. So far I’ve managed to keep it up.</p>
-<p>These are a few tricks I’ve used and they’ve worked well for me so far.</p>
-<h3 id="just-write-no-matter-what-just-write">Just write, no matter what, just write</h3>
-<p>In ninth grade a rather successful Swedish author visited my school and what I remember most from that is one thing he said:</p>
-<blockquote>
-<p>Just read! It doesn’t matter what. It doesn’t matter if what you read isn’t considered good literature; read Harlequin books if that’s what you like, read magazines, read comics. Just read!</p>
-</blockquote>
-<p>I think the same holds for writing code; it’s only with practice that one gets comfortable expressing oneself in a particular language.</p>
-<h3 id="fix-warts">Fix warts</h3>
-<p>I can’t actually think of any piece of code I’ve written that doesn’t have some warts. It may be in the form of missing features, or quirks (bugs) in the implementation that forces the user to regularly work in a less-than-optimal way. I’ve found fixing warts in tools and libraries I use myself to be one of the most rewarding tasks to take on; the feedback is so immediate that every fix cause a boost in motivation to fix the next one.</p>
-<h3 id="exercise-sites">Exercise sites</h3>
-<p>Sometimes it’s simply difficult to find the motivation to tackle working on an existing project, and inspiration for starting something new might be lacking too. This happens to me regularly, and I used to simply close the lid on the computer earlier, but now I try to find some exercises to do instead.</p>
-<p>There are several sources of exercises. I know <a href="https://projecteuler.net/problems">Project Euler</a> is rather popular among new Haskellers, but there are others.</p>
-<ul>
-<li><a href="https://www.codeeval.com/">CodeEval</a> is a site with problems in three different levels. It may be extra interesting for people in the US since some of the problems are sponsored by companies which seem to use the site as a place for recruiting. So far I’ve only seen American companies do that, but I suppose it might catch on in other parts of the world too. Haskell is one of several languages supported.</li>
-<li><a href="http://exercism.io/">Exercism</a> is both a site and a tool. The goal is to facilitate learning of languages. On first use the tool will download the first exercise, and after completion one uses it to upload the solution to the site. Once uploaded the solution is visible to other users, and they are allowed to “nitpick” (comment). After uploading a solution to one exercise the next exercise in the series becomes available. It supports a rather long list programming languages.</li>
-</ul>
-<p>I like both of these, but I’ve spent more time on the latter one. Personally I find the idea behind Exercism very appealing and I’ve been recommending it to a couple of co-workers already.</p>
-<p>Feel free to put links to other sources of exercises in the comments.</p>
-<h3 id="simplify-old-code">Simplify old code</h3>
-<p>With more practice comes more and more insights into what functions are available and how to string them together. When I don’t even feel like doing a full exercise on Exercism I just dig out something that smells a little and clean it up. Anything is fair game, no matter how tiny. Just take a look at my implementation of <a href="https://github.com/magthe/cblrepo/commit/eefe3b9015c96d8f69392e4043c6e31c7dc36219"><code>reThrowError</code></a>.</p>
-<h3 id="what-else">What else?</h3>
-<p>I’d love to hear tips and tricks from other people who aren’t lucky enough to have a day job where they get to write Haskell. How do you keep up the learning and practice?</p>]]></summary>
 </entry>
 
 </feed>
