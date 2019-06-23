@@ -30,7 +30,7 @@
 </header>
 
 <p>Recently I bumped into <a href="https://github.com/brendanhay/amazonka/issues/517">a bug in <em>amazonka</em></a>.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> I can’t really sit around waiting for Amazon to fix it, and then for <em>amazonka</em> to use the fixed documentation to generate the code and make another release.</p>
-<p>Luckily <a href="https://docs.haskellstack.org/en/stable/README/"><code>slack</code></a> contains features that make it fairly simple to work around this bug until it’s properly fixed. Here’s how.</p>
+<p>Luckily <a href="https://docs.haskellstack.org/en/stable/README/"><code>stack</code></a> contains features that make it fairly simple to work around this bug until it’s properly fixed. Here’s how.</p>
 <ol type="1">
 <li>Put the upstream code in a git repository of your own. In my case I simply forked the <a href="https://github.com/brendanhay/amazonka"><em>amazonka</em> repository on github</a> (my fork is <a href="https://github.com/magthe/amazonka">here</a>).</li>
 <li>Fix the bug and commit the change. <a href="https://github.com/magthe/amazonka/commit/1543b65e3a8b692aa9038ada68aaed9967752983">My change to <em>amazonka-codepipeline</em></a> was simply to remove the missing fields – it was easier than trying to make them optional (i.e. wrapping them in <code>Maybe</code>s).</li>

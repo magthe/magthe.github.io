@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="../index.html">Top</a> <a href="../archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Hedgehog on a REST API, part 2</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2019-06-23">2019-06-23</time> - Magnus Therning</p>
+</header>
+
+<p>This is a short follow-up to <a href="../posts/2019-05-30-000-hedgehog-on-a-rest-api.html">Hedgehog on a REST API</a> where I actually run the tests in that post.</p>
+<h2 id="fixing-an-issue-with-the-model">Fixing an issue with the model</h2>
+<p>The first issue I run into is</p>
+<pre><code>━━━ Main ━━━
+  ✗ sequential failed after 18 tests and 1 shrink.
+  
+        ┏━━ tst/test-01.hs ━━━
+     89 ┃ getUser :: (MonadGen n, MonadIO m) =&gt; Command n m State
+     90 ┃ getUser = Command gen exec [ Require r
+     91 ┃                            , Ensure e
+     92 ┃                            ]
+     93 ┃   where
+     94 ┃     gen (State m) = case M.keys m of
+     95 ┃       [] -&gt; Nothing
+     96 ┃       ks -&gt; Just $ GetUser &lt;$&gt; Gen.element ks
+     97 ┃ 
+     98 ┃     exec (GetUser i) = liftIO $ do
+     99 ┃       mgr &lt;- newManager defaultManagerSettings
+    100 ┃       getReq &lt;- parseRequest $ &quot;GET http://localhost:3000/users/&quot; ++ show i
+    101 ┃       getResp &lt;- httpLbs getReq mgr
+    102 ┃       let us = decode $ responseBody getResp :: Maybe [User]
+    103 ┃       return (status200 == responseStatus getResp, us)
+    104 ┃ 
+    105 ┃     r (State m) (GetUser i) = i `elem` M.keys m
+    106 ┃ 
+    107 ┃     e _ _ (GetUser _) (r, us) = do
+    108 ┃       r === True
+    109 ┃       assert $ isJust us
+    110 ┃       (length &lt;$&gt; us) === Just 1
+        ┃       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+        ┃       │ Failed (- lhs =/= + rhs)
+        ┃       │ - Just 0
+        ┃       │ + Just 1
+    
+        ┏━━ tst/test-01.hs ━━━
+    118 ┃ prop_seq :: Property
+    119 ┃ prop_seq = property $ do
+    120 ┃   actions &lt;- forAll $ Gen.sequential (Range.linear 1 10) initialState [addUser, deleteUser, getUser]
+        ┃   │ Var 0 = AddUser &quot;&quot;
+        ┃   │ Var 1 = GetUser 1
+    121 ┃   resetWS
+    122 ┃   executeSequential initialState actions
+    
+    This failure can be reproduced by running:
+    &gt; recheck (Size 17) (Seed 2158538972777046104 (-1442908127347265675)) sequential
+  
+  ✗ 1 failed.</code></pre>
+<p>It’s easy to verify this using <a href="https://httpie.org/">httpie</a>:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb2-1" data-line-number="1">$ <span class="ex">http</span> -p b POST :3000/users userId:=0 <span class="st">&quot;userName=&quot;</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2"><span class="kw">{</span></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">    <span class="st">&quot;userId&quot;</span>: <span class="ex">0</span>,</a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">    <span class="st">&quot;userName&quot;</span>: <span class="st">&quot;&quot;</span></a>
+<a class="sourceLine" id="cb2-5" data-line-number="5"><span class="kw">}</span></a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">$ <span class="ex">http</span> -p b GET :3000/users/1</a>
+<a class="sourceLine" id="cb2-7" data-line-number="7">[]</a></code></pre></div>
+<p>It’s clear that my assumption that <em>User ID</em> starts at 1 is wrong. Luckily fixing that isn’t too difficult. Instead of defining the update function for <code>addUser</code> as</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1">u (<span class="dt">State</span> m) (<span class="dt">AddUser</span> n) _o <span class="fu">=</span> <span class="dt">State</span> <span class="fu">$</span> M.insert k n m</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">    k <span class="fu">=</span> succ <span class="fu">$</span> foldl max <span class="dv">0</span> (M.keys m)</a></code></pre></div>
+<p>I define it as</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">u (<span class="dt">State</span> m) (<span class="dt">AddUser</span> n) _o <span class="fu">=</span> <span class="dt">State</span> <span class="fu">$</span> M.insert k n m</a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">    k <span class="fu">=</span> <span class="kw">case</span> M.keys m <span class="kw">of</span></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">      [] <span class="ot">-&gt;</span> <span class="dv">0</span></a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">      ks <span class="ot">-&gt;</span> succ <span class="fu">$</span> foldl max <span class="dv">0</span> ks</a></code></pre></div>
+<p>The complete code at this point can be found <a href="https://gist.github.com/8cbbfdb130a173bb51c317df0c00aa15">here</a>.</p>
+<h2 id="fixing-another-issue-with-the-model">Fixing another issue with the model</h2>
+<p>With that fix in place another issue with the model shows up</p>
+<pre><code>━━━ Main ━━━
+  ✗ sequential failed after 74 tests and 2 shrinks.
+  
+        ┏━━ tst/test-01.hs ━━━
+     91 ┃ getUser :: (MonadGen n, MonadIO m) =&gt; Command n m State
+     92 ┃ getUser = Command gen exec [ Require r
+     93 ┃                            , Ensure e
+     94 ┃                            ]
+     95 ┃   where
+     96 ┃     gen (State m) = case M.keys m of
+     97 ┃       [] -&gt; Nothing
+     98 ┃       ks -&gt; Just $ GetUser &lt;$&gt; Gen.element ks
+     99 ┃ 
+    100 ┃     exec (GetUser i) = liftIO $ do
+    101 ┃       mgr &lt;- newManager defaultManagerSettings
+    102 ┃       getReq &lt;- parseRequest $ &quot;GET http://localhost:3000/users/&quot; ++ show i
+    103 ┃       getResp &lt;- httpLbs getReq mgr
+    104 ┃       let us = decode $ responseBody getResp :: Maybe [User]
+    105 ┃       return (status200 == responseStatus getResp, us)
+    106 ┃ 
+    107 ┃     r (State m) (GetUser i) = i `elem` M.keys m
+    108 ┃ 
+    109 ┃     e _ _ (GetUser _) (r, us) = do
+    110 ┃       r === True
+    111 ┃       assert $ isJust us
+    112 ┃       (length &lt;$&gt; us) === Just 1
+        ┃       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+        ┃       │ Failed (- lhs =/= + rhs)
+        ┃       │ - Just 0
+        ┃       │ + Just 1
+    
+        ┏━━ tst/test-01.hs ━━━
+    120 ┃ prop_seq :: Property
+    121 ┃ prop_seq = property $ do
+    122 ┃   actions &lt;- forAll $ Gen.sequential (Range.linear 1 10) initialState [addUser, deleteUser, getUser]
+        ┃   │ Var 0 = AddUser &quot;&quot;
+        ┃   │ Var 1 = DeleteUser 0
+        ┃   │ Var 2 = AddUser &quot;&quot;
+        ┃   │ Var 3 = GetUser 0
+    123 ┃   resetWS
+    124 ┃   executeSequential initialState actions
+    
+    This failure can be reproduced by running:
+    &gt; recheck (Size 73) (Seed 3813043122711576923 (-444438259649958339)) sequential
+  
+  ✗ 1 failed.</code></pre>
+<p>Again, verifying this using <a href="https://httpie.org/">httpie</a> shows what the issue is</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb6-1" data-line-number="1">$ <span class="ex">http</span> -p b POST :3000/users userId:=0 <span class="st">&quot;userName=&quot;</span></a>
+<a class="sourceLine" id="cb6-2" data-line-number="2"><span class="kw">{</span></a>
+<a class="sourceLine" id="cb6-3" data-line-number="3">    <span class="st">&quot;userId&quot;</span>: <span class="ex">0</span>,</a>
+<a class="sourceLine" id="cb6-4" data-line-number="4">    <span class="st">&quot;userName&quot;</span>: <span class="st">&quot;&quot;</span></a>
+<a class="sourceLine" id="cb6-5" data-line-number="5"><span class="kw">}</span></a>
+<a class="sourceLine" id="cb6-6" data-line-number="6">$ <span class="ex">http</span> -p b DELETE :3000/users/0                  </a>
+<a class="sourceLine" id="cb6-7" data-line-number="7">$ <span class="ex">http</span> -p b POST :3000/users userId:=0 <span class="st">&quot;userName=&quot;</span></a>
+<a class="sourceLine" id="cb6-8" data-line-number="8"><span class="kw">{</span></a>
+<a class="sourceLine" id="cb6-9" data-line-number="9">    <span class="st">&quot;userId&quot;</span>: <span class="ex">1</span>,</a>
+<a class="sourceLine" id="cb6-10" data-line-number="10">    <span class="st">&quot;userName&quot;</span>: <span class="st">&quot;&quot;</span></a>
+<a class="sourceLine" id="cb6-11" data-line-number="11"><span class="kw">}</span></a>
+<a class="sourceLine" id="cb6-12" data-line-number="12">$ <span class="ex">http</span> -p b GET :3000/users/0</a>
+<a class="sourceLine" id="cb6-13" data-line-number="13">[]</a></code></pre></div>
+<p>In other words, the model assumes that the 0 <em>User ID</em> get’s re-used.</p>
+<p>To fix this I need a bigger change. The central bit is that the state is changed to keep track of the index more explicitly. That is, it changes from</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="kw">newtype</span> <span class="dt">State</span> (<span class="ot">v ::</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span>)<span class="fu">=</span> <span class="dt">State</span> (<span class="dt">M.Map</span> <span class="dt">Int</span> <span class="dt">Text</span>)</a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</a></code></pre></div>
+<p>to</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="kw">data</span> <span class="dt">State</span> (<span class="ot">v ::</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span>)<span class="fu">=</span> <span class="dt">State</span> <span class="dt">Int</span> (<span class="dt">M.Map</span> <span class="dt">Int</span> <span class="dt">Text</span>)</a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</a></code></pre></div>
+<p>That change does, quite obviously, require a bunch of other changes in the other functions dealing with the state. The complete file can be viewed <a href="https://gist.github.com/e3c3f4a3c35ab8a529045f90f9f4ba71">here</a>.</p>
+<h2 id="all-is-well-or-is-it">All is well, or is it?</h2>
+<p>After this the tests pass, so all is good in the world, right?</p>
+<p>In the test I defined the <a href="../posts/2019-05-30-000-hedgehog-on-a-rest-api.html#the-property-and-test">property</a> over rather short sequences of commands. What happens if I increase the (maximum) length of the sequences a bit? Instead using <code>Range.linear 1 10</code> I’ll use <code>Range.linear 1 1000</code>. Well, besides taking slightly longer to run I get another sequence of commands that triggers an issue:</p>
+<pre><code>━━━ Main ━━━
+  ✗ sequential failed after 13 tests and 29 shrinks.
+  
+        ┏━━ tst/test-01.hs ━━━
+     87 ┃ getUser :: (MonadGen n, MonadIO m) =&gt; Command n m State
+     88 ┃ getUser = Command gen exec [ Require r
+     89 ┃                            , Ensure e
+     90 ┃                            ]
+     91 ┃   where
+     92 ┃     gen (State _ m) = case M.keys m of
+     93 ┃       [] -&gt; Nothing
+     94 ┃       ks -&gt; Just $ GetUser &lt;$&gt; Gen.element ks
+     95 ┃ 
+     96 ┃     exec (GetUser i) = liftIO $ do
+     97 ┃       mgr &lt;- newManager defaultManagerSettings
+     98 ┃       getReq &lt;- parseRequest $ &quot;GET http://localhost:3000/users/&quot; ++ show i
+     99 ┃       getResp &lt;- httpLbs getReq mgr
+    100 ┃       let us = decode $ responseBody getResp :: Maybe [User]
+    101 ┃       return (status200 == responseStatus getResp, us)
+    102 ┃ 
+    103 ┃     r (State _ m) (GetUser i) = i `elem` M.keys m
+    104 ┃ 
+    105 ┃     e _ _ (GetUser _) (r, us) = do
+    106 ┃       r === True
+    107 ┃       assert $ isJust us
+    108 ┃       (length &lt;$&gt; us) === Just 1
+        ┃       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+        ┃       │ Failed (- lhs =/= + rhs)
+        ┃       │ - Just 0
+        ┃       │ + Just 1
+    
+        ┏━━ tst/test-01.hs ━━━
+    116 ┃ prop_seq :: Property
+    117 ┃ prop_seq = property $ do
+    118 ┃   actions &lt;- forAll $ Gen.sequential (Range.linear 1 1000) initialState [addUser, deleteUser, getUser]
+        ┃   │ Var 0 = AddUser &quot;&quot;
+        ┃   │ Var 2 = AddUser &quot;&quot;
+        ┃   │ Var 5 = AddUser &quot;&quot;
+        ┃   │ Var 7 = AddUser &quot;&quot;
+        ┃   │ Var 9 = AddUser &quot;&quot;
+        ┃   │ Var 11 = AddUser &quot;&quot;
+        ┃   │ Var 20 = AddUser &quot;&quot;
+        ┃   │ Var 28 = AddUser &quot;&quot;
+        ┃   │ Var 30 = AddUser &quot;&quot;
+        ┃   │ Var 32 = AddUser &quot;&quot;
+        ┃   │ Var 33 = AddUser &quot;&quot;
+        ┃   │ Var 34 = AddUser &quot;&quot;
+        ┃   │ Var 37 = AddUser &quot;&quot;
+        ┃   │ Var 38 = AddUser &quot;&quot;
+        ┃   │ Var 41 = AddUser &quot;&quot;
+        ┃   │ Var 45 = AddUser &quot;&quot;
+        ┃   │ Var 47 = GetUser 15
+    119 ┃   resetWS
+    120 ┃   executeSequential initialState actions
+    
+    This failure can be reproduced by running:
+    &gt; recheck (Size 12) (Seed 2976784816810995551 (-47094630645854485)) sequential
+  
+  ✗ 1 failed.</code></pre>
+<p>That is, after inserting 16 users, we don’t see any user when trying to get that 16th user (<em>User ID</em> 15). That’s a proper bug in the server.</p>
+<p>As a matter of fact, this is the bug I put into the server and was hoping to find. In particular, I wanted <em>hedgehog</em> to find the minimal sequence leading to this bug.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> Which it clearly has!</p>
+<section class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>If you recall from the <a href="../posts/2019-05-30-000-hedgehog-on-a-rest-api.html">previous post</a>, I was interested in the integrated shrinking offered by <em>hedgehog</em>.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+</ol>
+</section>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/hedgehog.html">hedgehog</a>, <a href="../tags/testing.html">testing</a>
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2019-06-23-000-hedgehog-on-a-rest-api--part-2@therning.org?subject=A comment on Hedgehog on a REST API, part 2&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>
