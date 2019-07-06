@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="../index.html">Top</a> <a href="../archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Elasticsearch, types and indices</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2019-07-06">2019-07-06</time> - Magnus Therning</p>
+</header>
+
+<p>The other day I added some more logging into a service at work, but not all logs appeared in Kibana. Some messages got lost between CloudWatch Logs and Elasticsearch. After turning up the logging in the Lambda shuffling log messages I was in for a bit of learning about Elasticsearch.</p>
+<p>Running the following in a Kibana console will show what the issue was</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode json"><code class="sourceCode json"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="er">PUT</span> <span class="er">idx-0/_doc/1</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="fu">{</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;John&quot;</span><span class="fu">,</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  <span class="dt">&quot;full_name&quot;</span><span class="fu">:</span> <span class="st">&quot;John Doe&quot;</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="fu">}</span></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="er">PUT</span> <span class="er">idx-0/_doc/2</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="fu">{</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9">  <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;Jane&quot;</span><span class="fu">,</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10">  <span class="dt">&quot;full_name&quot;</span><span class="fu">:</span> <span class="fu">{</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11">    <span class="dt">&quot;first&quot;</span><span class="fu">:</span> <span class="st">&quot;Jane&quot;</span><span class="fu">,</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12">    <span class="dt">&quot;last&quot;</span><span class="fu">:</span> <span class="st">&quot;Doe&quot;</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13">  <span class="fu">}</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="fu">}</span></a></code></pre></div>
+<p>Executing them in order results in the following error on the second command</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode json"><code class="sourceCode json"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="fu">{</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">  <span class="dt">&quot;error&quot;</span><span class="fu">:</span> <span class="fu">{</span></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">    <span class="dt">&quot;root_cause&quot;</span><span class="fu">:</span> <span class="ot">[</span></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">      <span class="fu">{</span></a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">        <span class="dt">&quot;type&quot;</span><span class="fu">:</span> <span class="st">&quot;mapper_parsing_exception&quot;</span><span class="fu">,</span></a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">        <span class="dt">&quot;reason&quot;</span><span class="fu">:</span> <span class="st">&quot;failed to parse field [full_name] of type [text]&quot;</span></a>
+<a class="sourceLine" id="cb2-7" data-line-number="7">      <span class="fu">}</span></a>
+<a class="sourceLine" id="cb2-8" data-line-number="8">    <span class="ot">]</span><span class="fu">,</span></a>
+<a class="sourceLine" id="cb2-9" data-line-number="9">    <span class="dt">&quot;type&quot;</span><span class="fu">:</span> <span class="st">&quot;mapper_parsing_exception&quot;</span><span class="fu">,</span></a>
+<a class="sourceLine" id="cb2-10" data-line-number="10">    <span class="dt">&quot;reason&quot;</span><span class="fu">:</span> <span class="st">&quot;failed to parse field [full_name] of type [text]&quot;</span><span class="fu">,</span></a>
+<a class="sourceLine" id="cb2-11" data-line-number="11">    <span class="dt">&quot;caused_by&quot;</span><span class="fu">:</span> <span class="fu">{</span></a>
+<a class="sourceLine" id="cb2-12" data-line-number="12">      <span class="dt">&quot;type&quot;</span><span class="fu">:</span> <span class="st">&quot;illegal_state_exception&quot;</span><span class="fu">,</span></a>
+<a class="sourceLine" id="cb2-13" data-line-number="13">      <span class="dt">&quot;reason&quot;</span><span class="fu">:</span> <span class="st">&quot;Can't get text on a START_OBJECT at 3:16&quot;</span></a>
+<a class="sourceLine" id="cb2-14" data-line-number="14">    <span class="fu">}</span></a>
+<a class="sourceLine" id="cb2-15" data-line-number="15">  <span class="fu">},</span></a>
+<a class="sourceLine" id="cb2-16" data-line-number="16">  <span class="dt">&quot;status&quot;</span><span class="fu">:</span> <span class="dv">400</span></a>
+<a class="sourceLine" id="cb2-17" data-line-number="17"><span class="fu">}</span></a></code></pre></div>
+<p>The reason for this is that a schema for the data is built up dynamically as documents are pushed in.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> It is possible to turn off dynamic schema building for an index using a <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/dynamic-mapping.html">mapping</a>. For the documents above it’d look something lik this</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode json"><code class="sourceCode json"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="er">PUT</span> <span class="er">idx-0</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2"><span class="fu">{</span></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">  <span class="dt">&quot;mappings&quot;</span><span class="fu">:</span> <span class="fu">{</span></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">    <span class="dt">&quot;_doc&quot;</span><span class="fu">:</span> <span class="fu">{</span></a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">      <span class="dt">&quot;dynamic&quot;</span><span class="fu">:</span> <span class="kw">false</span></a>
+<a class="sourceLine" id="cb3-6" data-line-number="6">    <span class="fu">}</span></a>
+<a class="sourceLine" id="cb3-7" data-line-number="7">  <span class="fu">}</span></a>
+<a class="sourceLine" id="cb3-8" data-line-number="8"><span class="fu">}</span></a></code></pre></div>
+<p>Now it’s possible to push both documents, however searching is not possible, because, as the <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/dynamic.html">documentation for <code>dynamic</code></a> says:</p>
+<blockquote>
+<p>fields will not be indexed so will not be searchable but will still appear in the _source field of returned hits</p>
+</blockquote>
+<p>If there’s something that determines the value of logs it’s them being searchable.</p>
+<p>As far as I understand one solution to all of this would have been <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping.html#mapping-type">mapping types</a>, but that’s being removed (see <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/removal-of-types.html">removal of mapping types</a>) so isn’t a solution. I’m not sure if Elasticsearch offers any <em>good</em> solution to it nowadays. There’s however a workaround, more indices.</p>
+<p>Using two indices instead of one does work. So modifying the first commands to use separate indices works.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode json"><code class="sourceCode json"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="er">PUT</span> <span class="er">idx-0/_doc/1</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2"><span class="fu">{</span></a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">  <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;John&quot;</span><span class="fu">,</span></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">  <span class="dt">&quot;full_name&quot;</span><span class="fu">:</span> <span class="st">&quot;John Doe&quot;</span></a>
+<a class="sourceLine" id="cb4-5" data-line-number="5"><span class="fu">}</span></a>
+<a class="sourceLine" id="cb4-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb4-7" data-line-number="7"><span class="er">PUT</span> <span class="er">idx-1/_doc/1</span></a>
+<a class="sourceLine" id="cb4-8" data-line-number="8"><span class="fu">{</span></a>
+<a class="sourceLine" id="cb4-9" data-line-number="9">  <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;Jane&quot;</span><span class="fu">,</span></a>
+<a class="sourceLine" id="cb4-10" data-line-number="10">  <span class="dt">&quot;full_name&quot;</span><span class="fu">:</span> <span class="fu">{</span></a>
+<a class="sourceLine" id="cb4-11" data-line-number="11">    <span class="dt">&quot;first&quot;</span><span class="fu">:</span> <span class="st">&quot;Jane&quot;</span><span class="fu">,</span></a>
+<a class="sourceLine" id="cb4-12" data-line-number="12">    <span class="dt">&quot;last&quot;</span><span class="fu">:</span> <span class="st">&quot;Doe&quot;</span></a>
+<a class="sourceLine" id="cb4-13" data-line-number="13">  <span class="fu">}</span></a>
+<a class="sourceLine" id="cb4-14" data-line-number="14"><span class="fu">}</span></a></code></pre></div>
+<p>When creating an index pattern for <code>idx-*</code> there’s a warning about many analysis functions not working due to the type conflict. However, searching <em>does</em> work and that’s all I really care about in this case.</p>
+<p>When shuffling the logs from CloudWatch Logs to Elasticsearch we already use multiple indices. They’re constructed based on service name, deploy environment (<em>staging</em>, <em>production</em>) and date (a new index each day). To deal with these type conflicts I added a <em>log type</em> that’s taken out of the log message itself. It’s not an elegant solution – it puts the solution into the services themselves – but it’s acceptable.</p>
+<section class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>Something that makes me wonder what the definition of <em>schema-free</em> is. I sure didn’t expect there to ever be a type constraint preventing pushing a document into something that’s called schema-free (see the <a href="https://en.wikipedia.org/wiki/Elasticsearch">Wikipedia article</a>). (The initiated say it’s Lucene, not Elasticsearch, but to me that doesn’t make any difference at all.)<a href="#fnref1" class="footnote-back">↩</a></p></li>
+</ol>
+</section>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/elasticsearch.html">elasticsearch</a>
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2019-07-06-000-elasticsearch--types-and-indices@therning.org?subject=A comment on Elasticsearch, types and indices&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>
