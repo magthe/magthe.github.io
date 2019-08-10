@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="../index.html">Top</a> <a href="../archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Irony of frameworks and magic</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2005-06-15">2005-06-15</time> - Magnus Therning</p>
+</header>
+
+<p>I’ve been looking into .Net the last few days. Especially the interplay between managed and unmanaged code relating to COM (COM+) components. The most amazing thing is how much thing the framework will do for you implicitly. E.g. there is no visible difference in the source between instantiating a COM component and instantiating an object of a class. From a run-time perspective there is a huge difference of course, but the source for the managed code looks the same. No use of CoCreateInstance() anywhere!</p>
+<p>I can clearly see how this is an appealing feature from the coder’s point of view. It means the deployment can be decided very late. You wan’t class A to be a COM component? Sure, why not? All it takes is adding an attribute to a class, that can be done at the very late in development. In short the COM-isation doesn’t have to happen until the very last step. Decision time is pushed as far back as possible. Cool! Right?</p>
+<p>Explicitness does have a lot going for itself:</p>
+<ul>
+<li>It makes the developer think about what he’s doing.</li>
+<li>It also forces some things to come up to the surface early on.</li>
+</ul>
+<p>In the example with managed COM components the thing that doesn’t surface until it’s too late is access control. When pushing the deployment decisions to the end of a project there is little incentive to put access control in the code during development. By the time it’s clear where the access control is needed it’s too late to put it in, unless you want to blow your dead line.</p>
+<p>So, in the end the lack of explicitness will require the developer to know more about the framework and how it works… the irony is that this is what the magic was put there to prevent.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/com.html">com</a>, <a href="../tags/dotNet.html">dotNet</a>, <a href="../tags/framework.html">framework</a>
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2005-06-15-40-irony-of-frameworks-and-magic@therning.org?subject=A comment on Irony of frameworks and magic&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

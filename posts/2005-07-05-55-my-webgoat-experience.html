@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="../index.html">Top</a> <a href="../archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">My WebGoat experience</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2005-07-05">2005-07-05</time> - Magnus Therning</p>
+</header>
+
+<p>Webgoat is pretty cool! It’s a good idea, and to a large part it delivers what it promises. My main gripes:</p>
+<ul>
+<li>Some of the lessons listed are actually not available, they aren’t implemented yet. A bit disappointing to first see the long list and then being cheated out of about 5 of them.</li>
+<li>I didn’t get one of the lessons to complete, the one on dangerous XSS. I’m not sure but I think the reason was I’m not using a browser made by Microsoft.</li>
+<li>One lesson, the one with the admin interface, I didn’t finish. The hints were utterly useless (what <em>source</em> should I follow?). After looking both in the source in WebGoat and in WebGoat’s CVS repo (you don’t have to play fair when breaking things you know) I was even more confused.</li>
+</ul>
+<p>Many lessons are somewhat simplistic and naive, I don’t doubt people still make those mistakes though. I’d say WebGoat is a nice, short, introduction to hands-on playing with web vulnerabilities.</p>
+<p>The maybe most valuable thing about WebGoat is that it suggests using WebScarab.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/webgoat.html">webgoat</a>, <a href="../tags/webscarab.html">webscarab</a>
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-447"></a>
+  <header>
+    <p><b>webgoatatician</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2006-05-10">2006-05-10</time></p>
+  </header>
+<p>Use the Source! I found it…though it took me almost 45 seconds…it is there. Hint, for basic auth you use guest/guest. You have to login as a user with admin rights to see the admin menu, though its not as simple as admin/admin it is pretty easy….same word for login and password…here is a common type of hash against the answer:</p>
+<p>009c02eb4abe20099075355689fc5a0a</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2005-07-05-55-my-webgoat-experience@therning.org?subject=A comment on My WebGoat experience&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

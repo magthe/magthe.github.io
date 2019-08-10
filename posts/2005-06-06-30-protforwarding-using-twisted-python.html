@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="../index.html">Top</a> <a href="../archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Portforwarding using Twisted, Python</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2005-06-06">2005-06-06</time> - Magnus Therning</p>
+</header>
+
+<p>This is a very short proxy written in Python using Twisted 1.3. It forwards port 1080 to localhost:80.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="im">from</span> twisted.internet <span class="im">import</span> reactor</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="im">from</span> twisted.protocols <span class="im">import</span> portforward</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="kw">def</span> server_dataReceived(<span class="va">self</span>, data):</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">    <span class="bu">print</span> <span class="st">'Server received data:'</span>, data</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">    portforward.Proxy.dataReceived(<span class="va">self</span>, data)</a>
+<a class="sourceLine" id="cb1-7" data-line-number="7">portforward.ProxyServer.dataReceived <span class="op">=</span> server_dataReceived</a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">def</span> client_dataReceived(<span class="va">self</span>, data):</a>
+<a class="sourceLine" id="cb1-10" data-line-number="10">    <span class="bu">print</span> <span class="st">'Client received data:'</span>, data</a>
+<a class="sourceLine" id="cb1-11" data-line-number="11">    portforward.Proxy.dataReceived(<span class="va">self</span>, data)</a>
+<a class="sourceLine" id="cb1-12" data-line-number="12">portforward.ProxyClient.dataReceived <span class="op">=</span> client_dataReceived</a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14">reactor.listenTCP(<span class="dv">1080</span>, portforward.ProxyFactory(<span class="st">'localhost'</span>, <span class="dv">80</span>))</a>
+<a class="sourceLine" id="cb1-15" data-line-number="15">reactor.run()</a></code></pre></div>
+<p>Short and sweet, I think.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/proxy.html">proxy</a>, <a href="../tags/python.html">python</a>, <a href="../tags/twisted.html">twisted</a>
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-359505"></a>
+  <header>
+    <p><b>mike</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2014-05-18">2014-05-18</time></p>
+  </header>
+<p>Hello,</p>
+<p>This is the best example that I have found on the net. Thank You for the share,I have been saved from a lot of trial and error(twisted.protocols.portforward has little docs for beginners ) ..</p>
+<p>Cheers.</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2005-06-06-30-protforwarding-using-twisted-python@therning.org?subject=A comment on Portforwarding using Twisted, Python&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

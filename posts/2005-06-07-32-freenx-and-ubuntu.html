@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="../index.html">Top</a> <a href="../archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">FreeNX and Ubuntu</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2005-06-07">2005-06-07</time> - Magnus Therning</p>
+</header>
+
+<p>I just discovered FreeNX today :)</p>
+<p>I’ve been using VNC for a while at work now, and mostly I’ve been happy with it. Being on a fast internal network with the server literally at my feet hasn’t made me swear at the lack of speed. The only thing that has irritated me a little is that my VNC sessions aren’t properly secured. I don’t have anything to hide really, but working with security it just didn’t feel right. Sure, I could, and I did for a while, secure it using SSH, but since the client is a Windows machine it makes it all a bit clunky. Requiring a PuTTY instance with port forwarding to be running is plain ugly. An encrypted connection really should be built into VNC by now. So, I decided to take <a href="http://freenx.berlios.de/">FreeNX</a> for a ride.</p>
+<p>Unfortunately FreeNX isn’t in Ubuntu Hoary, however there is a <a href="http://www.ubuntuforums.org/showthread.php?t=1968">page in the Ubuntu Forum</a>, which is a bit outdated–it covers Warty mostly. Some of the comments in the forum did point me to the Backports project. I don’t really like the Backports (I managed to screw my system up a bit a while ago) but they do seem to have grown up a bit by now. Anyway, I only added the repos to my <code>sources.list</code> long enough to install the packages I needed.</p>
+<p>Installation was a breeze. I chose to use custom keys, sorting out the client-side problems created by that turned out to be simple as well. No extra tinkering with the config files seemed necessary.</p>
+<p>For the Windows client I am using <a href="http://www.nomachine.com/">NoMachine</a>’s Windows client. In order to use it with my server I needed to copy the public key (on the server: <code>/var/lib/nxserver/home/.ssh/client.id_dsa.key</code>) to the <code>share</code> dir on the client side (you’ll find it’s a subdir to the install dir of the client software). That’s it, password-less remoting of my Linux desktop with the security of SSH. Brilliant.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/freenx.html">freenx</a>, <a href="../tags/ubuntu.html">ubuntu</a>, <a href="../tags/vnc.html">vnc</a>
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2005-06-07-32-freenx-and-ubuntu@therning.org?subject=A comment on FreeNX and Ubuntu&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

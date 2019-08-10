@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="../index.html">Top</a> <a href="../archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">udev for USB sticks</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2005-05-27">2005-05-27</time> - Magnus Therning</p>
+</header>
+
+<p>I am not too fond of Gnome’s volume manager (GVM). I still use it, but for one of my sticks it doesn’t quite suffice, at least not for my current use of that stick. GVM doesn’t seem to handle USB sticks with multiple partitions that well (it mounts all partitions as well as the basic device), it doesn’t mount them with nice names (for FAT partitions it seems to take the volume name, nice, but ext2 doesn’t have a volume name). I’ve put two partitions on my USB stick, one FAT and one ext2. The first one I use for moving files between work and home, since I’m forced to use Windows at work :( The second one is where I put my important things, GNUPG keys, lists of passwords for different places, etc. I simply don’t trust FAT that much so the option of having one big FAT partition with a file mount on a loop device didn’t give me the same warm and fuzzy feeling as two separate partitions.</p>
+<p>Just popping the stick in will most likely cause GVM to mount it for you. Unmount it using the right mouse button then throw up a terminal. This is what I did to find the required information on my USB stick:</p>
+<pre><code>$ udevinfo -q path -n /dev/sda
+/block/sda
+$ udevinfo -a -p /sys/block/sda | less</code></pre>
+<p>Look for a an entry the looks like this <code>SYSFS{serial}=&quot;070B000514B09F0&quot;</code>. Now you know enough to set up your udev rule. I don’t like modifying system files so I created a new one <code>/etc/udev/rules.d/local.rules</code> and put the following line in it:</p>
+<pre><code>BUS=&quot;usb&quot;, SYSFS{serial}=&quot;070B000514B09F0&quot;, KERNEL=&quot;sd*&quot;, \
+  NAME=&quot;%k&quot;, SYMLINK=&quot;usbstick_priv%n&quot;</code></pre>
+<p>This means that when my USB stick is inserted a few symlinks will be created, one for the device (usbstick_priv to sdX) and one for each partition (usbstick_priv1 to sdX1, etc). Pretty nice, I think, since it doesn’t matter what X is. Then I use <code>pmount</code> to mount the partitions using the link names:</p>
+<pre><code>pmount /dev/usbstick_priv1 mystick_1
+pmount /dev/usbstick_priv2 mystick_2</code></pre>
+<p>More information can be found in the document titled <a href="http://www.reactivated.net/writing_udev_rules.html">Writing udev rules</a>.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/gnome.html">gnome</a>, <a href="../tags/udev.html">udev</a>, <a href="../tags/usb.html">usb</a>
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2005-05-27-9-udev-for-usb-sticks@therning.org?subject=A comment on udev for USB sticks&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

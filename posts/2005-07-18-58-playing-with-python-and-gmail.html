@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="../index.html">Top</a> <a href="../archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Playing with Python and GMail</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2005-07-18">2005-07-18</time> - Magnus Therning</p>
+</header>
+
+<p>For a project that I’m considering I’ve spent a few hours looking into using Python to access GMail. There’s a nice Python library called <a href="http://libgmail.sourceforge.net/">libgmail</a>, but it’s a bit overkill since all I want is to see how many unread emails I have. After a bit of searching I found ot that there’s an atom feed that can be used to do exactly that, <code>https://mail.google.com/mail/feed/atom</code>. It uses basic authentication, your GMail username and password. So, I started looking at Python and HTTP.</p>
+<p><code>urllib2</code> seemed to fit the bill. It has a class called <code>HTTPBasicAuthHandler</code> to do the authentication and everything. I used the following code (entered in <a href="http://ipython.scipy.org/">ipython</a> of course):</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="im">import</span> urllib2</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">req <span class="op">=</span> urllib2.Request(<span class="st">'https://mail.google.com/mail/feed/atom'</span>)</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="cf">try</span>:</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">    h <span class="op">=</span> urllib2.urlopen(req)</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="cf">except</span> <span class="pp">IOError</span>, e:</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">    <span class="cf">pass</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7">e.headers[<span class="st">'www-authenticate'</span>]</a></code></pre></div>
+<p>It should produce something like <code>'BASIC realm=&quot;New mail feed&quot;'</code>. Now we can do the proper connection, pull down the atom entry. I opted to use <a href="http://effbot.org/zone/element-index.htm">elementtree</a> since it’s so easy to use. Here’s the full code I put together for this little experiment:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="im">import</span> urllib2</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2"><span class="im">from</span> elementtree.ElementTree <span class="im">import</span> fromstring</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">ah <span class="op">=</span> urllib2.HTTPBasicAuthHandler()</a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">ah.add_password(<span class="st">'New mail feed'</span>, <span class="st">'https://mail.google.com'</span>, <span class="op">\</span></a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">    <span class="st">'user@gmail.com'</span>, <span class="st">'password'</span>)</a>
+<a class="sourceLine" id="cb2-7" data-line-number="7">op <span class="op">=</span> urllib2.build_opener(ah)</a>
+<a class="sourceLine" id="cb2-8" data-line-number="8">urllib2.install_opener(op)</a>
+<a class="sourceLine" id="cb2-9" data-line-number="9">res <span class="op">=</span> urllib2.urlopen(<span class="st">'https://mail.google.com/mail/feed/atom'</span>)</a>
+<a class="sourceLine" id="cb2-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb2-11" data-line-number="11">lines <span class="op">=</span> <span class="st">''</span>.join(res.readlines())</a>
+<a class="sourceLine" id="cb2-12" data-line-number="12">e <span class="op">=</span> fromstring(lines)</a>
+<a class="sourceLine" id="cb2-13" data-line-number="13">fc <span class="op">=</span> e.find(<span class="st">'{http://purl.org/atom/ns#}fullcount'</span>)</a>
+<a class="sourceLine" id="cb2-14" data-line-number="14"><span class="bu">print</span> <span class="st">'You have </span><span class="sc">%i</span><span class="st"> unread mail(s) in your GMail account'</span> <span class="op">%</span> <span class="bu">int</span>(fc.text)</a></code></pre></div>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/gmail.html">gmail</a>, <a href="../tags/python.html">python</a>
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-1649"></a>
+  <header>
+    <p><b>LJ</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2006-07-01">2006-07-01</time></p>
+  </header>
+<p>Thanks a ton, this is exactly what I was looking for, trying to do the same thing. :)</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2005-07-18-58-playing-with-python-and-gmail@therning.org?subject=A comment on Playing with Python and GMail&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

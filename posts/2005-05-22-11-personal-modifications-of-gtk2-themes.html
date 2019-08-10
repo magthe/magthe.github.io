@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="../index.html">Top</a> <a href="../archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Personal modifications of GTK2 themes</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2005-05-22">2005-05-22</time> - Magnus Therning</p>
+</header>
+
+<p>Ever since I tried out a NeXT-based theme I’ve loved having both an up- and down-stepper at the bottom of every scrollbar. I’ve liked this so much that I’ve regularly discarded GTK2 themes that look awesome simply because they didn’t have this little usability feature.</p>
+<p>The other day I took a quick look at the Lush theme, which does have the two steppers. I’ve always suspected GTK2 is brilliant and now I know. I found the following lines in the theme:</p>
+<pre><code>GtkScrollbar::has_backward_stepper = 1
+GtkScrollbar::has_secondary_forward_stepper = 0
+GtkScrollbar::has_forward_stepper = 1
+GtkScrollbar::has_secondary_backward_stepper = 1</code></pre>
+<p>Basically it looks like the standard theme engine can handle up to four steppers, and each can be visible or not. Brilliant! Now I only need to modify my favourite theme (Simple) adding those lines to it. I don’t like modifying system files, so adding the lines to the file in <code>/usr/share/themes/</code> wasn’t very appealing. After asking on the Gnome-Love mailing list I found out that one file where I could modify all themes is <code>~/.gtkrc-2.0</code>. So, this is now the full contents of that file:</p>
+<pre><code>style &quot;default&quot;{
+  GtkScrollbar::has_backward_stepper = 1
+  GtkScrollbar::has_secondary_forward_stepper = 0
+  GtkScrollbar::has_forward_stepper = 1
+  GtkScrollbar::has_secondary_backward_stepper = 1
+}</code></pre>
+<p>This works fine for the Simple theme since it doesn’t explicitly set any of those variables itself. The theme Lush however does set those variables and the theme will override the user’s own settings. Using strace on a GTK2 application it’s easy to see that the theme settings are loaded after the user’s. There also doesn’t seem to be any user-specific file loaded after the theme itself, so I’m still wondering how a user can override the settings of a theme.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/gnome.html">gnome</a>, <a href="../tags/gtk2.html">gtk2</a>, <a href="../tags/themes.html">themes</a>
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2005-05-22-11-personal-modifications-of-gtk2-themes@therning.org?subject=A comment on Personal modifications of GTK2 themes&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

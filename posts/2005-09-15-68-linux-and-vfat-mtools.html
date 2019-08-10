@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="../index.html">Top</a> <a href="../archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Linux and vfat: mtools</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2005-09-15">2005-09-15</time> - Magnus Therning</p>
+</header>
+
+<p>When it’s not enough to just read and write files on a VFAT file system there’s a good change <code>mtools</code> can help. The only problem is that <code>mtools</code> work with <em>drive letters</em>. To assign a letter to your device you need to edit <code>/etc/mtools.conf</code>. This is the line I use to access the VFAT partition on my USB stick:</p>
+<pre><code>drive d: file=&quot;/dev/sdb1&quot;</code></pre>
+<p>After this I can use <code>mlabel</code> to set the label of the partition:</p>
+<pre><code>mlabel d:MyLabel</code></pre>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/linux.html">linux</a>, <a href="../tags/mtools.html">mtools</a>
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-9"></a>
+  <header>
+    <p><b>Carthik</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2005-09-15">2005-09-15</time></p>
+  </header>
+<p>Cool to see you made a note of this for the future! :)</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2005-09-15-68-linux-and-vfat-mtools@therning.org?subject=A comment on Linux and vfat: mtools&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

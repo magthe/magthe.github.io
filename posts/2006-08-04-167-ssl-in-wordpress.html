@@ -40,6 +40,30 @@ Tags: <a href="../tags/security.html">security</a>, <a href="../tags/wordpress.h
 </div>
 
 
+<article class="comment-body">
+  <a name="comment-2172"></a>
+  <header>
+    <p><b>wjl</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2006-08-05">2006-08-05</time></p>
+  </header>
+<p>Magnus,</p>
+<p>maybe it wasn’t on the codex, but on the developer pages or on some other blog - I forgot. But the “solution” was to point the wordpress url to https, while the blog url stays at http in the options. Of course you have to set up Apache to listen to port 443 first, so your best bet would be with an own (virtual) server.</p>
+<p>Problem is: now the CSS stylesheet, and things like these get loaded with https for normal readers of your page, which is not only totally unneccessary, but also in my case gives them “error messages”, since I use a free CAcert cert. So I disabled it for the moment, waiting for WP2.1, which should have secure admin access built in.</p>
+<p>Oh, and I allow responses on my pages now (also on the new community blog thedebianuser.org).</p>
+<p>Cheers, and thanks for your comment, Wolfgang</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-2194"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2006-08-06">2006-08-06</time></p>
+  </header>
+<p>My first thought was actually to put my entire site behind an SSL cert, not only the admin stuff. However some links didn’t “inherit” https which meant a lot of warnings regarding “mixed security”. That was irritating.</p>
+<p>I guess SSL is really only needed for the admin stuff though. It’s good that WP will have support for it in the next version.</p>
+<p>Thanks for the pointer to thedebianuser.org. I’ll point my RSS reader to it :-)</p>
+</article>
+
 
 <div class="post-leave-comment">
   <a href="mailto:magnus+blog.comment.2006-08-04-167-ssl-in-wordpress@therning.org?subject=A comment on SSL in WordPress?&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>

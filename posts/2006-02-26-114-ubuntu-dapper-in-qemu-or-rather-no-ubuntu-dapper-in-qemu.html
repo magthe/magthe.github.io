@@ -42,6 +42,29 @@ Tags: <a href="../tags/qemu.html">qemu</a>, <a href="../tags/ubuntu.html">ubuntu
 </div>
 
 
+<article class="comment-body">
+  <a name="comment-141"></a>
+  <header>
+    <p><b>Phil</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2006-03-18">2006-03-18</time></p>
+  </header>
+<p>Hi, I’m running Dapper and have just come to try del/epilicious today. Initially, nothing worked, but I think I’ve made some progress. I began by branching with bzr, so I’ll expose my copy if anything worthwhile comes of it.</p>
+<p>So far the changes that have been needed: - Resave the fr.po file as UTF-8, so that make doesn’t fail. - Ignore the idea that you can install single user, as I have no idea how to set gconf keys with no schemas, and I don’t feel like finding out. - Change to make string from the README suggested version to <code>sudo make DESTINATION=/usr/lib/epiphany/2.14/extensions  GCONF_INSTALL_SCHEMAS=y LOCALE_INSTALL_LANGS=y uninstall</code>, so that it actually installs. - Do all the gconf schema install by hand, the entire related section of the makefile never seems to run.</p>
+<p>If I can work out the Makefile problem, I’ll let you know.</p>
+<p>As for installing dapper, starting from a flight cd image is the way to go, but there will probably be people who would appreciate if you report the problems moving from breezy too!</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-142"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2006-03-19">2006-03-19</time></p>
+  </header>
+<p>I’m glad you’re interested in epilicious. I’m even more glad you’re willing to improve on it. Let me know whe your bzr repo is available.</p>
+<p>I’ve received and applied a patch that converts fr.po to UTF-8.</p>
+<p>I’ve never actually tried the part of the makefile that installs the GCONF schema (I know, my bad!). Any improvements you make to it will be most appreciated.</p>
+</article>
+
 
 <div class="post-leave-comment">
   <a href="mailto:magnus+blog.comment.2006-02-26-114-ubuntu-dapper-in-qemu-or-rather-no-ubuntu-dapper-in-qemu@therning.org?subject=A comment on Ubuntu Dapper in qemu (or rather no Ubuntu Dapper in qemu)&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>

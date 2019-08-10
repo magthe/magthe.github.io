@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="../index.html">Top</a> <a href="../archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Successful upgrade to Breezy</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2005-10-10">2005-10-10</time> - Magnus Therning</p>
+</header>
+
+<p>I’ve been walking around for a while wondering if I should dare upgrade my machine to Breezy. Given that my home machine still isn’t back (and it might never be actually) I didn’t have any place to check if upgrading Hoary to Breezy really worked—if I were to do it, it’d have to be on my work machine. I really didn’t want my work machine to be out of commission, running Linux in a Windowsshop has made me feel like I need to show just how stable Linux is, having to spend a day to re-install Hoary just because an upgrade to Breezy failed wasn’t really an option. Today I took the plunge, and it worked just fine!</p>
+<p>I started with downloading all the needed packages:</p>
+<pre><code>$ sudo apt-get dist-upgrade -d</code></pre>
+<p>Quite some time later I had a <code>/var</code> partition that was 93% full. I dropped out to a console and changed to single-user mode. I got myself a root shell with</p>
+<pre><code>$ sudo su -</code></pre>
+<p>And then started the upgrade. I did get two failures and <code>dpkg</code> bailed out but a simple <code>apt-get -f install</code> repaired it all and I could continue the upgrade. All in all I issued the following command:</p>
+<pre><code># apt-get dist-upgrade
+# apt-get -f install
+# apt-get dist-upgrade
+# apt-get -f install
+# apt-get dist-upgrade</code></pre>
+<p>After the last <code>dist-upgrade</code> there was still one package that wasn’t upgraded, rhythmbox. Installing it explicitly took care of its dependencies:</p>
+<pre><code># apt-get install rhythmbox</code></pre>
+<p>After some clean-up in <code>/etc</code> I was ready to reboot. Not a single problem :)</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/breezy.html">breezy</a>, <a href="../tags/ubuntu.html">ubuntu</a>, <a href="../tags/upgrade.html">upgrade</a>
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2005-10-10-71-successful-upgrade-to-breezy@therning.org?subject=A comment on Successful upgrade to Breezy&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

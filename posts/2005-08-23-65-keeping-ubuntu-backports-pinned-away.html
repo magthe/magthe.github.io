@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="../index.html">Top</a> <a href="../archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Keeping Ubuntu backports pinned away</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2005-08-23">2005-08-23</time> - Magnus Therning</p>
+</header>
+
+<p>I’ve been keeping the entries for Ubuntu backports in my <code>sources.list</code> for a long time now. They always been commented out though, since I don’t really trust them enough to keep my system up to date with backports. It wasn’t very elegant though so I decided to see if pinning could do the trick. After an email to the Ubuntu user list my <code>/etc/apt/preferences</code> now look like this:</p>
+<pre><code>Explanation: Make sure backports is not installed be default
+Package: *
+Pin: origin ubuntu-backports.mirrormax.net
+Pin-Priority: 499</code></pre>
+<p>This means that I can keep the backports’ entries in <code>sources.list</code> enabled without being bothered with updating the entire system when doing an <code>apt-get upgrade</code>.</p>
+<p>There’s only a minor detail—<code>update-notifier</code> thinks that there are updates available, but once I click it no upgrades are found. I guess there are two pieces of code that checks for upgrades, one doesn’t handle pinning and one does.</p>
+<p><em>[Edited]</em> It seems my whinging about <code>update-notifier's</code> inability to handle pinning was a little premature. It seemed it just needed some time to adapt. Now it’s correctly respecting my whishes not to upgrade any packages available in backports.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/backports.html">backports</a>, <a href="../tags/ubuntu.html">ubuntu</a>
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-7"></a>
+  <header>
+    <p><b>Ubuntonista</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2005-09-11">2005-09-11</time></p>
+  </header>
+<p>But…</p>
+<p>Wouldn’t this mean that you end up not using the backports to get more up-to-date versions of software (Which is really what the backports are for)?</p>
+<p>What/How do you use the backports after making the change you have just described? Do you get to selectively upgrade some packages using the backports version or something?</p>
+<p>I will be glad if you could explain this - I am a newbie :)</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-8"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2005-09-11">2005-09-11</time></p>
+  </header>
+<p>Ubuntonista,</p>
+<p>You’ve got it right, I don’t get the backports packages unless I ask for them explicitly. The easiest way is to use synaptics and force a version.</p>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2005-08-23-65-keeping-ubuntu-backports-pinned-away@therning.org?subject=A comment on Keeping Ubuntu backports pinned away&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="../index.html">Top</a> <a href="../archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">OWASP's WebGoat, first impression</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2005-07-04">2005-07-04</time> - Magnus Therning</p>
+</header>
+
+<p>I’ve finally found the time to check out <a href="http://www.owasp.org/">OWASP</a>’s <a href="http://www.owasp.org/software/webgoat.html">WebGoat</a>. I have been putting this off for a while now, but it’s kept my interest enough to make me keep the zip-files on my desktop for a few weeks already.</p>
+<p>My first impression wasn’t too good. I tried running it on Linux first (preferred platform for work/play/goofing around, yes anything) but installation failed miserably. The zip-file containing JDK1.5 only contains Java for Windows. Luckily I have Sun’s JDK1.5 on my Ubuntu machine already so I switched to using the <em>StandAlone</em> version. Now began the fun. There are numerous problems with the shell-scripts:</p>
+<ul>
+<li>they are not executable</li>
+<li>they have DOS line-endings</li>
+<li>the main setup script has a wacky reference to <code>JAVA_HOME</code></li>
+<li>all files are read-only (not only the scripts, but <em>all</em> files)</li>
+</ul>
+<p>So, after a call to ‘chmod’ to make everything writable, a few calls to <code>dos2unix</code> and <code>chmod +x</code> on the script files, a quick edit of <code>webgoat.sh</code> to set <code>JAVA_HOME</code> to something sane I thought I’d be off. Oh, no! Running <code>webgoat.sh</code> results in nothing. <code>netstat -lpt</code> reveals there is some java app listening on port 8005, but pointing my browser to it results in nothing. The total lack of documentation on how to use it didn’t help in my frustration.</p>
+<p>After browsing the <a href="http://sourceforge.net/mailarchive/forum.php?forum=owasp-webgoat">WebGoat Archives</a> I turned off my Apache2 to free up port 80. Rerun <code>webgost.sh</code>, still nothing!</p>
+<p>Some more browsing the archives revelead that I’m not only one having problems <a href="http://sourceforge.net/mailarchive/message.php?msg_id=11936208">running WebGoat on Linux</a> , the <a href="http://sourceforge.net/mailarchive/message.php?msg_id=11938691">answer</a> wasn’t too encouraging. I decided to try my luck on (yuck) Windows. Unzip, run the bat-file, point a browser to <code>http://localhost/</code>. Wow, worked perfectly!</p>
+<p>Ok, on to the next problem, where are the lessons? Again, bitten by the lack of documentation it seems. Well, the archive has been saving me before… Again, I’m not the only one <a href="http://sourceforge.net/mailarchive/message.php?msg_id=10488457">having problems</a> the answer was <a href="http://sourceforge.net/mailarchive/message.php?msg_id=10492883">there</a> as well:</p>
+<pre><code>http://localhost/WebGoat/attack
+Username: guest
+Password: guest</code></pre>
+<p>Worked again, and now I can start taking the lessons. Not a great start, but after this bumpy ride I got to the destination. I do hope the WebGoat developers improve on the Linux support and documentation though!</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/linux.html">linux</a>, <a href="../tags/owasp.html">owasp</a>, <a href="../tags/webgoat.html">webgoat</a>
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2005-07-04-53-owasps-webgoat-first-impression@therning.org?subject=A comment on OWASP's WebGoat, first impression&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

@@ -44,6 +44,26 @@ Tags: <a href="../tags/hal.html">hal</a>, <a href="../tags/luks.html">luks</a>, 
 </div>
 
 
+<article class="comment-body">
+  <a name="comment-2573"></a>
+  <header>
+    <p><b>Erich</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2006-09-04">2006-09-04</time></p>
+  </header>
+<p>Can you insert your stick and try to find out which application is actually displaying the password prompt? Maybe it needs a certain package I don’t have installed and falls back to the text mode prompt. Try doing a “pstree” to see children of pmount or so maybe? Thanks!</p>
+<p>As for the volume label, did you try using tune2fs to label your volume directly?</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-2614"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2006-09-08">2006-09-08</time></p>
+  </header>
+<p>Hmm, tried doing that. <code>pmount</code> isn’t running while I enter the password. I did find an article on <a href="https://www.redhat.com/magazine/012oct05/features/hal/">encryption support in HAL</a> which leads me to believe that <code>pmount</code> isn’t involved in the password collecting at all.</p>
+<p>Yes, I tried using <em>tune2fs</em> to set the label, but it didn’t work. The LUKS device is mapped onto <code>/dev/mapper/_dev_sdb1</code>, then that device is mounted by <code>pmount</code>. Somewhere in that indirection my volume label got lost, forcing me to do the <code>hal</code> thing.</p>
+</article>
+
 
 <div class="post-leave-comment">
   <a href="mailto:magnus+blog.comment.2006-08-30-183-luks-on-gnome@therning.org?subject=A comment on LUKS on GNOME&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>

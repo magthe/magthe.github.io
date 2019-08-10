@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="../index.html">Top</a> <a href="../archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Windows CA---why you shouldn't!</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2005-06-07">2005-06-07</time> - Magnus Therning</p>
+</header>
+
+<p>Today I ran into another case where Windows just isn’t very friendly. I’ve been using a Windows box as a CA for a while now. Mostly because it was so easy to set up, I was off in just minutes granting certificates to my hearts content. Great! Or so I thought.</p>
+<p>Today I wanted to look at the traffic comming from a server I have installed. I’m using an SSL cert signed with my own CA. The problem is that I need to get the secret key out of Windows’ tight grip. I’m admitting, this is not something that should be easy, but the question is where to put the hurdles. using the <em>Certificates Snap-in</em> in MMC I can’t export the secret key. My next step was of course to check if I couldn’t get my CA to create a new cert, where the key was exportable. Oh, no! That shouldn’t be allowed when the cert is for a server! The tick box is taunting me with its disabled presence! Bloody hell!</p>
+<p>Well, I’ve always thought it might be a good idea to explore the dark side–OpenSSL. Here’s my chance. I get to use Linux while doing it as well, that’s always a plus. Just pray that I can get the results back onto my Windows server in the end!</p>
+<p>I guess it’s true, Windows my be user friendly, but it shure as hell isn’t admin/developer freindly!</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/certification%20authority.html">certification authority</a>, <a href="../tags/windows.html">windows</a>
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2005-06-07-33-windows-ca-why-you-shouldnt@therning.org?subject=A comment on Windows CA---why you shouldn't!&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

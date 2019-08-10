@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="../index.html">Top</a> <a href="../archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">udev update</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2005-06-08">2005-06-08</time> - Magnus Therning</p>
+</header>
+
+<p>In <a href="../posts/2005-05-27-9-udev-for-usb-sticks.mkd">this post</a> I described my <code>udev</code> setup. The one drawback with using <code>udev</code> that way is that I need to cll <code>pmount</code> manually everytime. Yesterday I stumbled across some posts on the the Ubuntu mailing list and I’ve started liking Gnome’s Volume Manager a little better since.</p>
+<p>Using <a href="http://minkirri.apana.org.au/cgi-bin/dwww?type=man&amp;location=/usr/share/man/man8/e2label.8.gz"><code>e2label</code></a> I set the label on my ext2 partition. This causes <a href="http://minkirri.apana.org.au/cgi-bin/dwww?type=man&amp;location=/usr/share/man/man1/pmount.1.gz"><code>pmount</code></a> to mount the partition using that name.</p>
+<p>Then of course I didn’t want the device itself (<code>/dev/sda</code> in most cases) to be mounted. As an experiment I modified my <code>udev</code> rule to only apply to the device:</p>
+<pre><code>BUS=&quot;usb&quot;, SYSFS{serial}=&quot;070B000514B09F0&quot;, KERNEL=&quot;sd?&quot;, NAME=&quot;%k&quot;, \
+  SYMLINK=&quot;usbstick_priv&quot;</code></pre>
+<p>As expected having <code>udev</code> add the link somehow prevents <code>pmount</code> from mounting the device.</p>
+<p>Now all that is left is to set the label of the VFAT partition on my USB stick.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/pmount.html">pmount</a>, <a href="../tags/ubuntu.html">ubuntu</a>, <a href="../tags/udev.html">udev</a>
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2005-06-08-34-udev-update@therning.org?subject=A comment on udev update&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

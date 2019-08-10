@@ -47,6 +47,52 @@ Tags: <a href="../tags/programming.html">programming</a>, <a href="../tags/windo
 </div>
 
 
+<article class="comment-body">
+  <a name="comment-3625"></a>
+  <header>
+    <p><b>Hulten</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2006-10-26">2006-10-26</time></p>
+  </header>
+<p>To get the needed size for <code>QueryWorkingSet()</code> try something like:</p>
+<pre><code>DWORD dw, dwNeededSize;
+QueryWorkingSet(hProc, &amp;amp;dw, sizeof(DWORD));
+dwNeededSize = (dw+1) * sizeof(DWORD_PTR);
+...
+QueryWorkingSet(hProc, some allocated buff, dwNeededSize);</code></pre>
+<p>you will want to check for correct error codes etc (like <code>ERROR_BAD_LENGTH</code>) after the first call..</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-3635"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2006-10-27">2006-10-27</time></p>
+  </header>
+<p>What you are suggesting is that <code>QueryWorkingSet()</code> returns the size (well, actually a multiplier) in the “buffer” if the buffer size is too small.</p>
+<p>That is <em>not</em> consistent with the documentation of the function in <a href="http://windowssdk.msdn.microsoft.com/en-us/library/ms684946.aspx">MSDN</a>. I’ll give it a shot and report on the results.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-3638"></a>
+  <header>
+    <p><b>Hulten</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2006-10-27">2006-10-27</time></p>
+  </header>
+<p>Well, not exactly.</p>
+<p>Basically what the code does is passing a 4 byte <code>PSAPI_WORKING_SET_INFORMATION</code> structure to <code>QueryWorkingSet()</code>. The first 4 bytes of the structure is the <code>NumberOfEntries</code> member. If the buffer is 4 bytes or more but still too small he will still fill out the <code>NumberOfEntries</code> member.</p>
+<p>Once you have <code>NumberOfEntries</code> you can easily calculate the full size of the structure. <code>(NumberOfEntries+1)*4</code> and you have the number of bytes the structure needs.</p>
+<p>This behaviour is not inconsistent with msdn’s documentation. But you’re right, they don’t document it at all. It’s a well know hack that’s been around at least since NT4. As with most hacks, the main drawback with it is that you don’t get to whine if they change this behaviour in future versions..</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-3682"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2006-10-29">2006-10-29</time></p>
+  </header>
+<p>Well, despite my being wrong initially I think you’ve just made my initial point anyway. Absolutely <em>brilliant</em> API. :-)</p>
+</article>
+
 
 <div class="post-leave-comment">
   <a href="mailto:magnus+blog.comment.2006-07-14-157-from-the-list-of-idiotic-function-signatures@therning.org?subject=A comment on From the list of idiotic function signatures...&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>

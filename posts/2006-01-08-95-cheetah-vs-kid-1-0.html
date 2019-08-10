@@ -131,6 +131,95 @@ Tags: <a href="../tags/cheeta.html">cheeta</a>, <a href="../tags/cherrypy.html">
 </div>
 
 
+<article class="comment-body">
+  <a name="comment-20"></a>
+  <header>
+    <p><b>Adrian Holovaty</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2006-01-09">2006-01-09</time></p>
+  </header>
+<p>Here’s how it’d look using <a href="http://www.djangoproject.com">Django</a>’s template language. I hope this ends up being formatted correctly… :)</p>
+<pre><code>{{ title }}
+
+&lt;ol&gt;
+  {% for line in lines %}
+  &lt;li&gt;{{ line }}&lt;/li&gt;
+  {% endfor %}
+&lt;/ol&gt;
+
+&lt;dl&gt;
+  &lt;span&gt;
+    {% for line in lines %}
+    &lt;dt&gt;Line {{ forloop.counter }}&lt;/dt&gt;
+    &lt;dd&gt;{{ line }}&lt;/dd&gt;
+    {% endfor %}
+  &lt;/span&gt;
+&lt;/dl&gt;
+
+&lt;p&gt;End of page {{ title }}&lt;/p&gt;</code></pre>
+</article>
+
+<article class="comment-body">
+  <a name="comment-21"></a>
+  <header>
+    <p><b>Adrian Holovaty</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2006-01-09">2006-01-09</time></p>
+  </header>
+<p>Ah, some of that was eaten by the comment system. But you get the point. :)</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-22"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2006-01-09">2006-01-09</time></p>
+  </header>
+<p>Yes, point gotten. Very nice actually. Might be worth a look that Django thingie ;)</p>
+<p>How does CherryPy and (the relevant part of) Django compare?</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-23"></a>
+  <header>
+    <p><b>Adrian Holovaty</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2006-01-10">2006-01-10</time></p>
+  </header>
+<p>To answer your question, here’s what your example would look like as a Django “view”:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="im">from</span> django.core.extensions <span class="im">import</span> render_to_response</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">def</span> homepage(request):</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">    context <span class="op">=</span> {<span class="st">'title'</span>: <span class="st">'Test Page'</span>, <span class="st">'lines'</span>: [<span class="st">'qwe'</span>, <span class="st">'asd'</span>, <span class="st">'zxc'</span>]}</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">    <span class="cf">return</span> render_to_response(<span class="st">'templatename'</span>, context)</a></code></pre></div>
+<p>You’d design your URL(s) in a separate file – a <a href="http://www.djangoproject.com/documentation/url_dispatch/">URLconf</a> – which is essentially a “table of contents” of your site’s URL structure.</p>
+<p>Feel free to ask any more questions, or join the <a href="http://groups.google.com/group/django-users">django-users mailing list</a>, which is full of helpful people!</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-24"></a>
+  <header>
+    <p><b>Adrian Holovaty</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2006-01-10">2006-01-10</time></p>
+  </header>
+<p>BTW, there’s an unofficial Django screencast here:</p>
+<p><a href="http://www.throwingbeans.org/django_screencasts.html" class="uri">http://www.throwingbeans.org/django_screencasts.html</a></p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-12904"></a>
+  <header>
+    <p><b>yguaratÃ£</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-02-08">2007-02-08</time></p>
+  </header>
+<p>Hey, have you tried to use Cheetah with cherrypy session? When i use cheetah with cherrypy session the session doesn’t work correctly. In other words, the cherrypy doesn’t keep the session values when using cheetah templates. Any suggestion?</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-12940"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2007-02-08">2007-02-08</time></p>
+  </header>
+<p>yguaratÃ£, nope, no suggestions. I haven’t played with cheeta/cherrypy in a long time. Sorry I couldn’t be of any help…</p>
+</article>
+
 
 <div class="post-leave-comment">
   <a href="mailto:magnus+blog.comment.2006-01-08-95-cheetah-vs-kid-1-0@therning.org?subject=A comment on Cheetah vs. kid: 1 - 0&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>

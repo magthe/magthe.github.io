@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="../index.html">Top</a> <a href="../archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Theo de Raadt and Linux</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2005-06-20">2005-06-20</time> - Magnus Therning</p>
+</header>
+
+<p>I’ve just read the <a href="http://makeashorterlink.com/?I1ED23B4B">interview with Theo de Raadt</a>(TdR) and I just need to get my thoughts into words.</p>
+<p>First I need to say that of course he is right. You don’t get to run the OpenBSD project without knowing what you talk about most of the time. The only problem, from my point of view, is that he’s evaluating OpenBSD from an administrator’s point of view.</p>
+<p>I’ll address a few of the points where I think he’s overly negative about Linux and I’ll end with a few of my own points.</p>
+<h3 id="linux-developers-are-the-slaves-of-corporations">Linux developers are the slaves of corporations</h3>
+<p>Well, of course he’s right, but I think TdR would agree that they are in good company. Especially if one considers the bigger picture. The kernel on its own is useless piece of code without the rest of software that makes up a useful Linux system. That software is largely shared with <em>BSD, and several large pieces in there are supported by corporations, <a href="http://www.gnome.org/">GNOME</a>, <a href="http://www.trolltech.com/">Qt</a> (the GUI toolkit used in KDE), <a href="http://gcc.gnu.org/">GCC</a>, <a href="http://apache.org/">Apache</a>… The list goes on and on. All of these things are available on </em>BSD as well, and they make those OSs usable as well.</p>
+<h3 id="linux-is-of-lower-quality-than-bsd">Linux is of lower quality than *BSD</h3>
+<p>He’s probably right. The *BSD maintainers are well-known for being demanding when it comes to what code makes it into the kernel. The problem with Linux adopting a similar style is that it’d reduce the momentum that Linux enjoys at the moment, without that momentum Linux would become less popular. It’d probably lead to several kernel developers moving onto some other OS project where they have a chance of getting there code in. Linus has a hard job balancing quality and speed of implementation, so far he’s been doing a good job. Sure, a few patches have been merged that should have been left out, but so far the Linux community has reacted fast enough to avoid disaster.</p>
+<p>TdR also forgets to point out a crucial difference between <em>BSD and Linux. All of the </em>BSDs are both a kernel and a distribution. In the case of Linux there is a separation between kernel and distributions, for good and for bad. What it does allow is a more relaxed attitude with the kernel. There’s more freedom since some of the work is shifted to others. In this case it works in favour of Linux, even though it works against it in other situations.</p>
+<h3 id="linux-is-getting-to-be-as-bloated-as-windows">Linux is getting to be as bloated as Windows</h3>
+<p>Yes. I can’t argue with that. It’s getting big, yes, but Windows’ biggest problem–the backwards-compatability requirement–is not weighing Linux down at all. Entire subsystems have been replaced with better solutions, and the old code is being phased out. I don’t believe Microsoft has ever done that.</p>
+<h3 id="linux-people-do-what-they-do-because-they-hate-windows.">“Linux people do what they do because they hate Windows.”</h3>
+<p>He continues: “We do it becuase we love Unix.”</p>
+<p>“All generalisations are evil!” ;-)</p>
+<p>I wonder if TdR hasn’t been reading too many <em>Linux vs. Windows</em> postings on <a href="http://www.slashdot.org/">/.</a>. It’s just such a silly statement!</p>
+<h3 id="my-points">My points</h3>
+<p>I recently bought a Toshiba laptop. I installed Ubuntu on it, and <em>almost everything</em> worked on it right away. I needed to tweak a few things, install a few more packages to get it to the point where Linux was a replacement for Windows (functionality-wise I mean, I wasn’t even considering running Windows as my main OS on it). Could I have done it with <em>BSD? Maybe! I don’t know. Looking at </em>BSDs laptop pages suggest some success with installing them on laptops. My particular model is not mentioned anywhere–there are two pages, besides my own, on running Linux on it. I am absolutely sure I would have to spend a considerable amount of time configuring a *BSD system on it if I got it to install successfully.</p>
+<p>That is the kind of experience a modern OS has to offer in order to attract regular users today. AFACS *BSD doesn’t offer it! As long as they don’t they will be satisfied with being second to Linux in most user’s eyes. Administrators, or power users, are a different matter.</p>
+<p>It might even be that TdR should be thankful for Linux. User-friendly Linux distributions are attracting much attention from people today. Chances are many of them will be bitten by <em>Unix bug</em> and then they might be moving onto *BSD for their server needs. When I buy a server for home use I know I’ll be putting OpenBSD on it.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/linux.html">linux</a>, <a href="../tags/openbsd.html">openbsd</a>
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2005-06-20-48-theo-de-raadt-and-linux@therning.org?subject=A comment on Theo de Raadt and Linux&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

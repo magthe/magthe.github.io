@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="../index.html">Top</a> <a href="../archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">OpenSSL CA</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2005-06-08">2005-06-08</time> - Magnus Therning</p>
+</header>
+
+<p>As I mentioned <a href="../posts/2005-06-07-33-windows-ca-why-you-shouldnt.mkd">here</a> I’ve been having problems with my Windows CA. I’ve now managed to get an OpenSSL CA up and running and I’m able to get my Windows box to accept the certs/keys. This is how I did it.</p>
+<p>First make sure all tools are available. You’ll need <code>openssl</code>, make, and some way of getting the generated certs/keys from your CA machine to your server, I use SSH for that.</p>
+<p>I used this <a href="http://sial.org/howto/openssl/ca/">site</a> as inspiration. I changed the <code>policy</code> to the more accepting <code>policy_anything</code> and I changed the description of my CA in <code>root_ca_distinguished_name</code>. After that I ran <code>make init</code> to create the CA cert and key.</p>
+<pre><code>$ make init
+Generating a 2048 bit RSA private key
+........+++
+.................................+++
+writing new private key to './private/ca-key.pem'
+-----</code></pre>
+<p>Quite a few new directories and files have been created:</p>
+<pre><code>$ tree
+.
+|-- Makefile
+|-- ca-cert.pem
+|-- crl
+|-- index
+|-- newcerts
+|-- openssl.cnf
+|-- private
+|   `-- ca-key.pem
+`-- serial
+
+3 directories, 6 files</code></pre>
+<p>We’ll convert the CA’s certificate (<code>ca-cert.pem</code>) to a format that Windows can use right away, we’ll need it later:</p>
+<pre><code>$ openssl x509 -in ca-cert.pem -outform der -out ca-cert.der</code></pre>
+<p>Now it’s time to create a certificate signing request (CSR). To impose some order I created a dir to keep my client-related stuff in, <code>$ mkdir -p client/svc01</code>. After changing into the client dir I create a CSR:</p>
+<pre><code>$ openssl req -newkey rsa:2048 -keyout svc01_priv.pem -keyform pem \
+    -out svc01.csr -outform pem</code></pre>
+<p>A few questions are asked about the cert/key (remember that the common name should be the FQDN of the server), and a password for the private key is required (at least four characters long). The CSR is saved to <code>svc01.csr</code>. Now change back to the CA top directory and copy the CSR here. Then run <code>make sign</code> to issue the certificate. The cert ends up in <code>svc01.cert</code>, move it down to the client directory (<code>$ mv svc01.cert client/svc01/svc01_cert.pem</code>, since I’m using the CA to issue certificates for Windows servers I like to make the file format explicit).</p>
+<p>Now that we have the signed certificate, <code>svc01_cert.pem</code>, and the private key, <code>svc01_priv.pem</code>, we need to package them both in a PKCS12 file so that Windows can use them:</p>
+<pre><code>$ openssl pkcs12 -export -inkey svc01_priv.pem -in svc01_cert.pem \
+    -out svc01_CertNKey_p12.cer</code></pre>
+<p>You’ll have to enter the password to unlock the private key, you’ll also have to enter the password to be used for exporting the private key out of the resulting file later on (I like leaving it empty). Copy the file to the Windows machine and change its suffix to <code>.pfx</code>, now you should be able to import the key and cert. In order to use the key you’ll also have to install your CA’s cert (<code>ca-cert.der</code>).</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/certification%20authority.html">certification authority</a>, <a href="../tags/openssl.html">openssl</a>
+</div>
+
+
+<article class="comment-body">
+  <a name="comment-188394"></a>
+  <header>
+    <p><b>Magnus</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-09-09">2009-09-09</time></p>
+  </header>
+<p>The following commands are useful at times:</p>
+<p>To remove the passphrase on the private key:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ex">%</span> openssl rsa -in svc01_priv.pem -out svc01_priv_nopp.pem</a></code></pre></div>
+<p>To combine the private key and certificate into one file (e.g. to use with stunnel):</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ex">%</span> cp svc01_priv_nopp.pem svc01_full.pem</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2"><span class="ex">%</span> openssl x509 -in svc01.pem <span class="op">&gt;&gt;</span> svc01_full.pem</a></code></pre></div>
+</article>
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2005-06-08-35-openssl-ca@therning.org?subject=A comment on OpenSSL CA&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

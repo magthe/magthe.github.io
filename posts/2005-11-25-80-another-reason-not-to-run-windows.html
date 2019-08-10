@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="../index.html">Top</a> <a href="../archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Another reason not to run Windows...</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2005-11-25">2005-11-25</time> - Magnus Therning</p>
+</header>
+
+<p>As if I needed any more reasons :-)</p>
+<p>Triggered by the email I wrote about yesterday (<a href="../posts/2005-11-24-79-one-of-the-main-reasons-im-not-running-windows.mkd">One of the main reasons I’m not running Windows</a>) I went to Micro$oft’s update site to see if there were any non-essential updates for my windows system. Given the name of the service—“Microsoft Update”—I assumed what I’d be presented with would be updates of components I already had installed. I didn’t bother reading all the text, I just chose all the available updates. What a giant mistake!</p>
+<p>Had I read all the I would have avoided spending 30 minutes trying to recover my Windows box. I performed the update through TS (Terminal Services), as I have done many a time before. I clicked OK when I was told the system needed to reboot to perform the last steps of the update. I waited a few minutes before connecting to the machine again, the login screen came up, I entered my credentials, then nothing. Nothing! Until the TS session died. Another attempt, the same outcome. (Computing is an exception to the rule that repeating the same action and expecting different outcomes is a sign of insanity.) I dived under my desk and started re-connecting monitors and mouse so that I would stand a better chance of fixing the system. Wow, did my Windows look ugly. 640x400 resolution and hardly any colours at all! Try to log in, so far so good. A dialogue pops up telling me that the resolution is VERY low, do I want to auto-configure the display? Yes, please! Blue screen of death! Hmm, somewhat puzzled I booted into failsafe mode. That worked just fine. Reboot! Blue screen again. Reboot. We continued the dancing for a while. No improvement.</p>
+<p>The culprit, you ask? The driver for the graphics card (of course). “Microsoft Update” had urged me to upgrade the graphics card. Not reading the text I didn’t realise that this “upgrade” was to an earlier version than what I already had! Rolling back to the later version seemed to work at first. Another Blue screen later I simply uninstalled the driver alltogether. I haven’t had any problems since.</p>
+<p>Need I say that what confidence remained now is gone? I have absolutely no trust in Microsoft anymore!</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/microsoft%20update.html">microsoft update</a>, <a href="../tags/windows.html">windows</a>
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2005-11-25-80-another-reason-not-to-run-windows@therning.org?subject=A comment on Another reason not to run Windows...&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

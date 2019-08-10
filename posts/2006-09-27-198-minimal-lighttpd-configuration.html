@@ -47,6 +47,25 @@ Tags: <a href="../tags/axman.html">axman</a>, <a href="../tags/lighttpd.html">li
 </div>
 
 
+<article class="comment-body">
+  <a name="comment-119869"></a>
+  <header>
+    <p><b>Bob</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2008-05-07">2008-05-07</time></p>
+  </header>
+<p>Nice! I needed a thin webserver for posting a “We’re sorry, but our service seems to be on fire…” placeholder page to placate users during extended outages. While we’re currently using Apache, I want to reduce the footprint of the “sorry” announcement and the example lighttpd config was just too much to wade through. I added entries for server.username and server.groupname so the “sorry” docroot could lie within the (broken) application directory and there’d be no issue with users and permissions.</p>
+<p>All this gets stuffed into our configuration management system (Puppet) so as we deploy servers, lighttpd is automatically installed and configured on the boxes that need it.</p>
+</article>
+
+<article class="comment-body">
+  <a name="comment-184966"></a>
+  <header>
+    <p><b>MichaellaS</b></p>
+    <p class="comment-date"><time pubdate="pubdate" datetime="2009-07-21">2009-07-21</time></p>
+  </header>
+<p>tks for the effort you put in here I appreciate it!</p>
+</article>
+
 
 <div class="post-leave-comment">
   <a href="mailto:magnus+blog.comment.2006-09-27-198-minimal-lighttpd-configuration@therning.org?subject=A comment on Minimal lighttpd configuration&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
