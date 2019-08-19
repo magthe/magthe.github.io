@@ -26,6 +26,84 @@
 
   <div class="post-body">
     <header>
+      <h1 class="post-title"><a href="./posts/2019-08-19-000-hedgehog-on-a-rest-api--part-3.html">Hedgehog on a REST API, part 3</a></h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2019-08-19">2019-08-19</time> - Magnus Therning</p>
+</header>
+
+<p>In my previous post on using Hedgehog on a REST API, <a href="./posts/2019-06-23-000-hedgehog-on-a-rest-api--part-2.html">Hedgehog on a REST API, part 2</a> I ran the test a few times and adjusted the model to deal with the incorrect assumptions I had initially made. In particular, I had to adjust how I modelled the <em>User ID</em>. Because of the simplicity of the API that wasn’t too difficult. However, that kind of completely predictable ID isn’t found in all APIs. In fact, it’s not uncommon to have completely random IDs in API (often they are <a href="https://en.wikipedia.org/wiki/Universally_unique_identifier">UUID</a>s).</p>
+<p>So, I set out to try to deal with that. I’m still using the simple API from the previous posts, but this time I’m pretending that I can’t build the ID into the model myself, or, put another way, I’m capturing the ID from the responses.</p>
+<h2 id="the-model-state">The model state</h2>
+<p>When capturing the ID it’s no longer possible to use a simple <code>Map Int Text</code> for the state, because I don’t actually have the ID until I have an HTTP response. However, the ID is playing an important role in the constructing of a sequence of actions. The trick is to use <code>Var Int v</code> instead of an ordinary <code>Int</code>. As I understand it, and I believe that’s a good enough understanding to make use of Hedgehog possible, is that this way the ID is an opaque blob in the construction phase, and it’s turned into a concrete value during execution. When in the opaque state it implements enough type classes to be useful for my purposes.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">newtype</span> <span class="dt">State</span> (<span class="ot">v ::</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span>)<span class="fu">=</span> <span class="dt">State</span> (<span class="dt">M.Map</span> (<span class="dt">Var</span> <span class="dt">Int</span> v) <span class="dt">Text</span>)</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</a></code></pre></div>
+<h2 id="the-api-calls-add-user">The API calls: add user</h2>
+<p>When taking a closer look at the <a href="https://hackage.haskell.org/package/hedgehog-0.5.3/docs/Hedgehog.html#t:Callback"><code>Callback</code></a> type not all the callbacks will get the state in the same form, opaque or concrete, and one of them, <code>Update</code> actually receives the state in both states depending on the phase of execution. This has the most impact on the add user action. To deal with it there’s a need to rearrange the code a bit, to be specific, <code>commandExecute</code> can no longer return a tuple of both the ID and the status of the HTTP response because the update function can’t reach into the tuple, which it needs to update the state.</p>
+<p>That means the <code>commandExecute</code> function will have to do tests too. It <em>is</em> nice to keep all tests in the callbacks, but by sticking a <code>MonadTest m</code> constraint on the <code>commandExecute</code> it turns into a nice solution anyway.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">addUser ::</span> (<span class="dt">MonadGen</span> n, <span class="dt">MonadIO</span> m, <span class="dt">MonadTest</span> m) <span class="ot">=&gt;</span> <span class="dt">Command</span> n m <span class="dt">State</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">addUser <span class="fu">=</span> <span class="dt">Command</span> gen exec [ <span class="dt">Update</span> u</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">                           ]</a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">    gen _ <span class="fu">=</span> <span class="dt">Just</span> <span class="fu">$</span> <span class="dt">AddUser</span> <span class="fu">&lt;$&gt;</span> Gen.text (Range.linear <span class="dv">0</span> <span class="dv">42</span>) Gen.alpha</a>
+<a class="sourceLine" id="cb2-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb2-7" data-line-number="7">    exec (<span class="dt">AddUser</span> n) <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-8" data-line-number="8">      (s, ui) <span class="ot">&lt;-</span> liftIO <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-9" data-line-number="9">        mgr <span class="ot">&lt;-</span> newManager defaultManagerSettings</a>
+<a class="sourceLine" id="cb2-10" data-line-number="10">        addReq <span class="ot">&lt;-</span> parseRequest <span class="st">&quot;POST http://localhost:3000/users&quot;</span></a>
+<a class="sourceLine" id="cb2-11" data-line-number="11">        <span class="kw">let</span> addReq' <span class="fu">=</span> addReq { requestBody <span class="fu">=</span> <span class="dt">RequestBodyLBS</span> (encode <span class="fu">$</span> <span class="dt">User</span> <span class="dv">0</span> n)}</a>
+<a class="sourceLine" id="cb2-12" data-line-number="12">        addResp <span class="ot">&lt;-</span> httpLbs addReq' mgr</a>
+<a class="sourceLine" id="cb2-13" data-line-number="13">        <span class="kw">let</span> user <span class="fu">=</span> decode (responseBody addResp)<span class="ot"> ::</span> <span class="dt">Maybe</span> <span class="dt">User</span></a>
+<a class="sourceLine" id="cb2-14" data-line-number="14">        return (responseStatus addResp, user)</a>
+<a class="sourceLine" id="cb2-15" data-line-number="15">      status201 <span class="fu">===</span> s</a>
+<a class="sourceLine" id="cb2-16" data-line-number="16">      assert <span class="fu">$</span> isJust ui</a>
+<a class="sourceLine" id="cb2-17" data-line-number="17">      (userName <span class="fu">&lt;$&gt;</span> ui) <span class="fu">===</span> <span class="dt">Just</span> n</a>
+<a class="sourceLine" id="cb2-18" data-line-number="18">      return <span class="fu">$</span> userId <span class="fu">$</span> fromJust ui</a>
+<a class="sourceLine" id="cb2-19" data-line-number="19"></a>
+<a class="sourceLine" id="cb2-20" data-line-number="20">    u (<span class="dt">State</span> m) (<span class="dt">AddUser</span> n) o <span class="fu">=</span> <span class="dt">State</span> (M.insert o n m)</a></code></pre></div>
+<p>I found that once I’d come around to folding the <code>Ensure</code> callback into the <code>commandExecute</code> function the rest fell out from the types.</p>
+<h2 id="the-api-calls-delete-user">The API calls: delete user</h2>
+<p>The other actions, deleting a user and getting a user, required only minor changes and the changes were rather similar in both cases.</p>
+<p>Not the type for the action needs to take a <code>Var Int v</code> instead of just a plain <code>Int</code>.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">newtype</span> <span class="dt">DeleteUser</span> (<span class="ot">v ::</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span>) <span class="fu">=</span> <span class="dt">DeleteUser</span> (<span class="dt">Var</span> <span class="dt">Int</span> v)</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</a></code></pre></div>
+<p>Which in turn affect the implementation of <code>HTraversable</code></p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">HTraversable</span> <span class="dt">DeleteUser</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">  htraverse f (<span class="dt">DeleteUser</span> vi) <span class="fu">=</span> <span class="dt">DeleteUser</span> <span class="fu">&lt;$&gt;</span> htraverse f vi</a></code></pre></div>
+<p>Then the changes to the <code>Command</code> mostly comprise use of <a href="https://hackage.haskell.org/package/hedgehog-0.5.3/docs/Hedgehog.html#v:concrete"><code>concrete</code></a> in places where the real ID is needed.</p>
+<pre class="haskll"><code>deleteUser :: (MonadGen n, MonadIO m) =&gt; Command n m State
+deleteUser = Command gen exec [ Update u
+                              , Require r
+                              , Ensure e
+                              ]
+  where
+    gen (State m) = case M.keys m of
+      [] -&gt; Nothing
+      ks -&gt; Just $ DeleteUser &lt;$&gt; Gen.element ks
+
+    exec (DeleteUser vi) = liftIO $ do
+      mgr &lt;- newManager defaultManagerSettings
+      delReq &lt;- parseRequest $ &quot;DELETE http://localhost:3000/users/&quot; ++ show (concrete vi)
+      delResp &lt;- httpNoBody delReq mgr
+      return $ responseStatus delResp
+
+    u (State m) (DeleteUser i) _ = State $ M.delete i m
+
+    r (State m) (DeleteUser i) = i `elem` M.keys m
+
+    e _ _ (DeleteUser _) r = r === status200</code></pre>
+<h2 id="conclusion">Conclusion</h2>
+<p>This post concludes my playing around with state machines in Hedgehog for this time. I certainly hope I find the time to put it to use on some larger API soon. In particular I’d love to put it to use at work; I think it’d be an excellent addition to the integration tests we currently have.</p>
+
+
+  </div>
+
+</article>
+
+
+<article>
+
+  <div class="post-body">
+    <header>
       <h1 class="post-title"><a href="./posts/2019-08-10-000-architecture-of-a-service.html">Architecture of a service</a></h1>
 
 <p class="post-date"><time pubdate="pubdate" datetime="2019-08-10">2019-08-10</time> - Magnus Therning</p>
@@ -934,91 +1012,6 @@ fi</code></pre>
 <hr />
 <ol>
 <li id="fn1"><p>If I’ve missed something crucial I would of course love to hear about it.<a href="#fnref1" class="footnote-back">↩</a></p></li>
-</ol>
-</section>
-
-
-  </div>
-
-</article>
-
-
-<article>
-
-  <div class="post-body">
-    <header>
-      <h1 class="post-title"><a href="./posts/2019-02-17-000-choosing-a-conduit-randomly.html">Choosing a conduit randomly</a></h1>
-
-<p class="post-date"><time pubdate="pubdate" datetime="2019-02-17">2019-02-17</time> - Magnus Therning</p>
-</header>
-
-<p>Lately I’ve been playing around <a href="https://hackage.haskell.org/package/conduit">conduit</a>. One thing I wanted to try out was to set up processing where one processing step was chosen on random from a number of components, based on weights. In short I guess I wanted a function with a type something like this</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">foo ::</span> [(<span class="dt">Int</span>, <span class="dt">ConduitT</span> i o m r)] <span class="ot">-&gt;</span> <span class="dt">ConduitT</span> i o m r</a></code></pre></div>
-<p>I have to admit I don’t even know where to start writing such a function<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> but after a little bit of thinking I realised I could get the same effect by controlling how chunks of data is routed. That is, instead of choosing a component randomly, I can choose a route randomly. It would look something like when choosing from three components</p>
-<pre><code>                        +---------+   +----------+   +-------------+
-                        | Filter  |   | Drop tag |   | Component A |
-                    +--&gt;| Value-0 |--&gt;|          |--&gt;|             |--+
-                    |   +---------+   +----------+   +-------------+  |
-+----------------+  |   +---------+   +----------+   +-------------+  |
-| Choose random  |  |   | Filter  |   | Drop tag |   | Component B |  |
-| value based on +-----&gt;| Value-1 |--&gt;|          |--&gt;|             |-----&gt;
-| weights        |  |   +---------+   +----------+   +-------------+  |
-+----------------+  |   +---------+   +----------+   +-------------+  |
-                    |   | Filter  |   | Drop tag |   | Component C |  |
-                    +--&gt;| Value-2 |--&gt;|          |--&gt;|             |--+
-                        +---------+   +----------+   +-------------+
-
-
-</code></pre>
-<p>That is</p>
-<ol type="1">
-<li>For each chunk that comes in, choose a value randomly based on weights and tag the chunk with the choosen value, then</li>
-<li>split the processing into one route for each component,</li>
-<li>in each route filter out chunks tagged with a single value, and</li>
-<li>remove the tag, then</li>
-<li>pass the chunk to the component, and finally</li>
-<li>bring the routes back together again.</li>
-</ol>
-<p>Out of these steps all but the very first one are already available in <a href="https://hackage.haskell.org/package/conduit">conduit</a>:</p>
-<ul>
-<li>for splitting routes combining them again, use <a href="https://hackage.haskell.org/package/conduit-1.3.1/docs/Data-Conduit.html#v:sequenceConduits"><code>sequenceConduits</code></a></li>
-<li>for filtering, use <a href="https://hackage.haskell.org/package/conduit-1.3.1/docs/Data-Conduit-Combinators.html#v:filter"><code>filter</code></a></li>
-<li>for dropping the tag, use <a href="https://hackage.haskell.org/package/conduit-1.3.1/docs/Data-Conduit-Combinators.html#v:map"><code>map</code></a></li>
-</ul>
-<p>What’s left is the beginning. I started with a function to pick a value on random based on weights<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a></p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">pickByWeight ::</span> [(<span class="dt">Int</span>, b)] <span class="ot">-&gt;</span> <span class="dt">IO</span> b</a>
-<a class="sourceLine" id="cb3-2" data-line-number="2">pickByWeight xs <span class="fu">=</span> randomRIO (<span class="dv">1</span>, tot) <span class="fu">&gt;&gt;=</span> \ n <span class="ot">-&gt;</span> return (pick n xs)</a>
-<a class="sourceLine" id="cb3-3" data-line-number="3">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb3-4" data-line-number="4">    tot <span class="fu">=</span> sum <span class="fu">$</span> map fst xs</a>
-<a class="sourceLine" id="cb3-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb3-6" data-line-number="6">    pick n ((k, x)<span class="fu">:</span>xs)</a>
-<a class="sourceLine" id="cb3-7" data-line-number="7">      <span class="fu">|</span> n <span class="fu">&lt;=</span> k <span class="fu">=</span> x</a>
-<a class="sourceLine" id="cb3-8" data-line-number="8">      <span class="fu">|</span> otherwise <span class="fu">=</span> pick (n <span class="fu">-</span> k) xs</a>
-<a class="sourceLine" id="cb3-9" data-line-number="9">    pick _ _ <span class="fu">=</span> error <span class="st">&quot;pick error&quot;</span></a></code></pre></div>
-<p>Using that I then made a component that tags chunks</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">picker ws <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb4-2" data-line-number="2">  evt <span class="ot">&lt;-</span> await</a>
-<a class="sourceLine" id="cb4-3" data-line-number="3">  <span class="kw">case</span> evt <span class="kw">of</span></a>
-<a class="sourceLine" id="cb4-4" data-line-number="4">    <span class="dt">Nothing</span> <span class="ot">-&gt;</span> return ()</a>
-<a class="sourceLine" id="cb4-5" data-line-number="5">    <span class="dt">Just</span> e <span class="ot">-&gt;</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb4-6" data-line-number="6">      p <span class="ot">&lt;-</span> liftIO <span class="fu">$</span> pickByWeight ws</a>
-<a class="sourceLine" id="cb4-7" data-line-number="7">      yield (p, e)</a>
-<a class="sourceLine" id="cb4-8" data-line-number="8">      picker ws</a></code></pre></div>
-<p>I was rather happy with this…</p>
-<center>
-<blockquote class="twitter-tweet" data-lang="en">
-<p lang="en" dir="ltr">
-<a href="https://twitter.com/snoyberg?ref_src=twsrc%5Etfw"><span class="citation" data-cites="snoyberg">@snoyberg</span></a> just have to let you know, conduit is a joy to use. Thanks for sharing it.
-</p>
-— Magnus Therning (<span class="citation" data-cites="magthe">@magthe</span>) <a href="https://twitter.com/magthe/status/1093175648993140736?ref_src=twsrc%5Etfw">February 6, 2019</a>
-</blockquote>
-<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
-</center>
-<section class="footnotes">
-<hr />
-<ol>
-<li id="fn1"><p>Except maybe by using Template Haskell to generate the code I did come up with.<a href="#fnref1" class="footnote-back">↩</a></p></li>
-<li id="fn2"><p>I used <code>Quickcheck</code>’s <a href="https://hackage.haskell.org/package/QuickCheck-2.12.6.1/docs/Test-QuickCheck-Gen.html#v:frequency"><code>frequency</code></a> as inspiration for writing it.<a href="#fnref2" class="footnote-back">↩</a></p></li>
 </ol>
 </section>
 

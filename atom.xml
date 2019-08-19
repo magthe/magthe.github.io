@@ -8,8 +8,77 @@
         <name>Magnus Therning</name>
         <email>magnus@therning.org</email>
     </author>
-    <updated>2019-08-10T00:00:00Z</updated>
+    <updated>2019-08-19T00:00:00Z</updated>
     <entry>
+    <title>Hedgehog on a REST API, part 3</title>
+    <link href="http://magnus.therning.org/posts/2019-08-19-000-hedgehog-on-a-rest-api--part-3.html" />
+    <id>http://magnus.therning.org/posts/2019-08-19-000-hedgehog-on-a-rest-api--part-3.html</id>
+    <published>2019-08-19T00:00:00Z</published>
+    <updated>2019-08-19T00:00:00Z</updated>
+    <summary type="html"><![CDATA[<p>In my previous post on using Hedgehog on a REST API, <a href="/posts/2019-06-23-000-hedgehog-on-a-rest-api--part-2.html">Hedgehog on a REST API, part 2</a> I ran the test a few times and adjusted the model to deal with the incorrect assumptions I had initially made. In particular, I had to adjust how I modelled the <em>User ID</em>. Because of the simplicity of the API that wasn’t too difficult. However, that kind of completely predictable ID isn’t found in all APIs. In fact, it’s not uncommon to have completely random IDs in API (often they are <a href="https://en.wikipedia.org/wiki/Universally_unique_identifier">UUID</a>s).</p>
+<p>So, I set out to try to deal with that. I’m still using the simple API from the previous posts, but this time I’m pretending that I can’t build the ID into the model myself, or, put another way, I’m capturing the ID from the responses.</p>
+<h2 id="the-model-state">The model state</h2>
+<p>When capturing the ID it’s no longer possible to use a simple <code>Map Int Text</code> for the state, because I don’t actually have the ID until I have an HTTP response. However, the ID is playing an important role in the constructing of a sequence of actions. The trick is to use <code>Var Int v</code> instead of an ordinary <code>Int</code>. As I understand it, and I believe that’s a good enough understanding to make use of Hedgehog possible, is that this way the ID is an opaque blob in the construction phase, and it’s turned into a concrete value during execution. When in the opaque state it implements enough type classes to be useful for my purposes.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">newtype</span> <span class="dt">State</span> (<span class="ot">v ::</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span>)<span class="fu">=</span> <span class="dt">State</span> (<span class="dt">M.Map</span> (<span class="dt">Var</span> <span class="dt">Int</span> v) <span class="dt">Text</span>)</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</a></code></pre></div>
+<h2 id="the-api-calls-add-user">The API calls: add user</h2>
+<p>When taking a closer look at the <a href="https://hackage.haskell.org/package/hedgehog-0.5.3/docs/Hedgehog.html#t:Callback"><code>Callback</code></a> type not all the callbacks will get the state in the same form, opaque or concrete, and one of them, <code>Update</code> actually receives the state in both states depending on the phase of execution. This has the most impact on the add user action. To deal with it there’s a need to rearrange the code a bit, to be specific, <code>commandExecute</code> can no longer return a tuple of both the ID and the status of the HTTP response because the update function can’t reach into the tuple, which it needs to update the state.</p>
+<p>That means the <code>commandExecute</code> function will have to do tests too. It <em>is</em> nice to keep all tests in the callbacks, but by sticking a <code>MonadTest m</code> constraint on the <code>commandExecute</code> it turns into a nice solution anyway.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">addUser ::</span> (<span class="dt">MonadGen</span> n, <span class="dt">MonadIO</span> m, <span class="dt">MonadTest</span> m) <span class="ot">=&gt;</span> <span class="dt">Command</span> n m <span class="dt">State</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">addUser <span class="fu">=</span> <span class="dt">Command</span> gen exec [ <span class="dt">Update</span> u</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">                           ]</a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">    gen _ <span class="fu">=</span> <span class="dt">Just</span> <span class="fu">$</span> <span class="dt">AddUser</span> <span class="fu">&lt;$&gt;</span> Gen.text (Range.linear <span class="dv">0</span> <span class="dv">42</span>) Gen.alpha</a>
+<a class="sourceLine" id="cb2-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb2-7" data-line-number="7">    exec (<span class="dt">AddUser</span> n) <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-8" data-line-number="8">      (s, ui) <span class="ot">&lt;-</span> liftIO <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-9" data-line-number="9">        mgr <span class="ot">&lt;-</span> newManager defaultManagerSettings</a>
+<a class="sourceLine" id="cb2-10" data-line-number="10">        addReq <span class="ot">&lt;-</span> parseRequest <span class="st">&quot;POST http://localhost:3000/users&quot;</span></a>
+<a class="sourceLine" id="cb2-11" data-line-number="11">        <span class="kw">let</span> addReq&#39; <span class="fu">=</span> addReq { requestBody <span class="fu">=</span> <span class="dt">RequestBodyLBS</span> (encode <span class="fu">$</span> <span class="dt">User</span> <span class="dv">0</span> n)}</a>
+<a class="sourceLine" id="cb2-12" data-line-number="12">        addResp <span class="ot">&lt;-</span> httpLbs addReq&#39; mgr</a>
+<a class="sourceLine" id="cb2-13" data-line-number="13">        <span class="kw">let</span> user <span class="fu">=</span> decode (responseBody addResp)<span class="ot"> ::</span> <span class="dt">Maybe</span> <span class="dt">User</span></a>
+<a class="sourceLine" id="cb2-14" data-line-number="14">        return (responseStatus addResp, user)</a>
+<a class="sourceLine" id="cb2-15" data-line-number="15">      status201 <span class="fu">===</span> s</a>
+<a class="sourceLine" id="cb2-16" data-line-number="16">      assert <span class="fu">$</span> isJust ui</a>
+<a class="sourceLine" id="cb2-17" data-line-number="17">      (userName <span class="fu">&lt;$&gt;</span> ui) <span class="fu">===</span> <span class="dt">Just</span> n</a>
+<a class="sourceLine" id="cb2-18" data-line-number="18">      return <span class="fu">$</span> userId <span class="fu">$</span> fromJust ui</a>
+<a class="sourceLine" id="cb2-19" data-line-number="19"></a>
+<a class="sourceLine" id="cb2-20" data-line-number="20">    u (<span class="dt">State</span> m) (<span class="dt">AddUser</span> n) o <span class="fu">=</span> <span class="dt">State</span> (M.insert o n m)</a></code></pre></div>
+<p>I found that once I’d come around to folding the <code>Ensure</code> callback into the <code>commandExecute</code> function the rest fell out from the types.</p>
+<h2 id="the-api-calls-delete-user">The API calls: delete user</h2>
+<p>The other actions, deleting a user and getting a user, required only minor changes and the changes were rather similar in both cases.</p>
+<p>Not the type for the action needs to take a <code>Var Int v</code> instead of just a plain <code>Int</code>.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">newtype</span> <span class="dt">DeleteUser</span> (<span class="ot">v ::</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span>) <span class="fu">=</span> <span class="dt">DeleteUser</span> (<span class="dt">Var</span> <span class="dt">Int</span> v)</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</a></code></pre></div>
+<p>Which in turn affect the implementation of <code>HTraversable</code></p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">HTraversable</span> <span class="dt">DeleteUser</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">  htraverse f (<span class="dt">DeleteUser</span> vi) <span class="fu">=</span> <span class="dt">DeleteUser</span> <span class="fu">&lt;$&gt;</span> htraverse f vi</a></code></pre></div>
+<p>Then the changes to the <code>Command</code> mostly comprise use of <a href="https://hackage.haskell.org/package/hedgehog-0.5.3/docs/Hedgehog.html#v:concrete"><code>concrete</code></a> in places where the real ID is needed.</p>
+<pre class="haskll"><code>deleteUser :: (MonadGen n, MonadIO m) =&gt; Command n m State
+deleteUser = Command gen exec [ Update u
+                              , Require r
+                              , Ensure e
+                              ]
+  where
+    gen (State m) = case M.keys m of
+      [] -&gt; Nothing
+      ks -&gt; Just $ DeleteUser &lt;$&gt; Gen.element ks
+
+    exec (DeleteUser vi) = liftIO $ do
+      mgr &lt;- newManager defaultManagerSettings
+      delReq &lt;- parseRequest $ &quot;DELETE http://localhost:3000/users/&quot; ++ show (concrete vi)
+      delResp &lt;- httpNoBody delReq mgr
+      return $ responseStatus delResp
+
+    u (State m) (DeleteUser i) _ = State $ M.delete i m
+
+    r (State m) (DeleteUser i) = i `elem` M.keys m
+
+    e _ _ (DeleteUser _) r = r === status200</code></pre>
+<h2 id="conclusion">Conclusion</h2>
+<p>This post concludes my playing around with state machines in Hedgehog for this time. I certainly hope I find the time to put it to use on some larger API soon. In particular I’d love to put it to use at work; I think it’d be an excellent addition to the integration tests we currently have.</p>]]></summary>
+</entry>
+<entry>
     <title>Architecture of a service</title>
     <link href="http://magnus.therning.org/posts/2019-08-10-000-architecture-of-a-service.html" />
     <id>http://magnus.therning.org/posts/2019-08-10-000-architecture-of-a-service.html</id>
@@ -3296,55 +3365,6 @@ StartLimitAction=reboot</code></pre>
     <published>2015-01-14T00:00:00Z</published>
     <updated>2015-01-14T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>Over the holidays I’ve been reading Douglas Crockford’s excellent book <a href="http://goo.gl/ed3nUz">JavaScript: The Good Parts</a>. About halfway through I came to the conclusion that JavaScript is an “anti-LISP”. There are <a href="http://www.paulgraham.com/avg.html">many</a> <a href="http://nickmudge.info/?post=27">reasons</a> <a href="https://groovyguts.wordpress.com/2010/01/08/10-reasons-to-learn-clojure-or-any-other-lisp/">to</a> <a href="https://acm.wustl.edu/functional/whyfp.php">learn</a> LISP, but none of them is “LISP is widely used in industry.” As Eric Raymond is famous words claim, knowing LISP will make you a better programmer. On the other hand there seems to be almost no reasons to learn JavaScript. It sure doesn’t seem to teach anything that’ll make you a better programmer. The <em>only</em> reason I can come up with is “JavaScript is widely used in industry.”</p>]]></summary>
-</entry>
-<entry>
-    <title>State machine with conduit</title>
-    <link href="http://magnus.therning.org/posts/2015-01-13-000-state-machine-with-conduit.html" />
-    <id>http://magnus.therning.org/posts/2015-01-13-000-state-machine-with-conduit.html</id>
-    <published>2015-01-13T00:00:00Z</published>
-    <updated>2015-01-13T00:00:00Z</updated>
-    <summary type="html"><![CDATA[<p>Previously I wrote about a <a href="/posts/2015-01-03-000-simple-state-machines-in-haskell.html">simple state machine in Haskell</a> and then offered a simple example, an <a href="/posts/2015-01-06-000-adder-as-a-state-machine.html">adder</a>. As I wrote in the initial post I’ve been using this to implement communication protocols. That means IO, and for that I’ve been using <a href="http://hackage.haskell.org/package/conduit">conduit</a>. In this post I thought I’d show how easy it is to wrap up the adder in <em>conduit</em>, read input from <em>stdin</em> and produce the result on <em>stdout</em>.</p>
-<p>At the top level is a function composing three parts:</p>
-<ol type="1">
-<li>input from <em>stdin</em></li>
-<li>processing in the <em>adder</em></li>
-<li>output on <em>stdout</em></li>
-</ol>
-<p>This can be written as this</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">process ::</span> <span class="dt">ResourceT</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">process <span class="fu">=</span> source <span class="fu">$=</span> calc <span class="fu">$$</span> output</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">    <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">        source <span class="fu">=</span> stdinC</a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb1-6" data-line-number="6">        output <span class="fu">=</span> stdoutC</a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8">        calc <span class="fu">=</span> concatMapC unpack <span class="fu">=$=</span> wrapMachine calcMachine <span class="fu">=$=</span> filterC f <span class="fu">=$=</span> mapC (pack <span class="fu">.</span> show)</a>
-<a class="sourceLine" id="cb1-9" data-line-number="9">            <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10">                f (<span class="dt">CalcResult</span> _) <span class="fu">=</span> <span class="dt">True</span></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11">                f _ <span class="fu">=</span> <span class="dt">False</span></a></code></pre></div>
-<p>The input to the <em>adder</em> is ordinary <code>Char</code>s so the <code>ByteString</code>s generated by <code>stdinC</code> need to be converted before being handed off to the state machine, which is wrapped to make it a <code>Conduit</code> (see below). The state machine is generating more signals that I want printed, so I filter out everything but the <code>CalcResult</code>s. Then it’s passed to <code>show</code> and turned into a <code>ByteString</code> before sent to <code>stdoutC</code>.</p>
-<p>I think the implementation of <code>wrapMachine</code> shows off the simplicity of <em>conduit</em> rather well:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">wrapMachine ::</span> (<span class="dt">Monad</span> m) <span class="ot">=&gt;</span> <span class="dt">Machine</span> state event signal <span class="ot">-&gt;</span> <span class="dt">Conduit</span> event m signal</a>
-<a class="sourceLine" id="cb2-2" data-line-number="2">wrapMachine mach <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-3" data-line-number="3">    maybeEvent <span class="ot">&lt;-</span> await</a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">    <span class="kw">case</span> maybeEvent <span class="kw">of</span></a>
-<a class="sourceLine" id="cb2-5" data-line-number="5">        <span class="dt">Nothing</span> <span class="ot">-&gt;</span> return ()</a>
-<a class="sourceLine" id="cb2-6" data-line-number="6">        <span class="dt">Just</span> event <span class="ot">-&gt;</span> <span class="kw">let</span></a>
-<a class="sourceLine" id="cb2-7" data-line-number="7">                (newMach, signals) <span class="fu">=</span> stepMachine mach event</a>
-<a class="sourceLine" id="cb2-8" data-line-number="8">            <span class="kw">in</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-9" data-line-number="9">                yield signals</a>
-<a class="sourceLine" id="cb2-10" data-line-number="10">                wrapMachine newMach</a></code></pre></div>
-<p>The <code>main</code> function is as short as this:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb3-2" data-line-number="2">main <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb3-3" data-line-number="3">    hSetBuffering stdin <span class="dt">NoBuffering</span></a>
-<a class="sourceLine" id="cb3-4" data-line-number="4">    hSetBuffering stdout <span class="dt">NoBuffering</span></a>
-<a class="sourceLine" id="cb3-5" data-line-number="5">    runResourceT process</a></code></pre></div>
-<p>The result is about as exciting as expected</p>
-<pre><code>% runhaskell Calculator.hs
-56 42 +CalcResult 98
-17 56 +CalcResult 73</code></pre>
-<p>It never exits on its own so one has to use Ctrl-C to terminate. I thought I’d try to address that in the next post by adding a time-out to the adder machine.</p>]]></summary>
 </entry>
 
 </feed>
