@@ -8,8 +8,31 @@
         <name>Magnus Therning</name>
         <email>magnus@therning.org</email>
     </author>
-    <updated>2019-08-19T00:00:00Z</updated>
+    <updated>2019-09-15T00:00:00Z</updated>
     <entry>
+    <title>Nested tmux</title>
+    <link href="http://magnus.therning.org/posts/2019-09-15-nested-tmux.html" />
+    <id>http://magnus.therning.org/posts/2019-09-15-nested-tmux.html</id>
+    <published>2019-09-15T00:00:00Z</published>
+    <updated>2019-09-15T00:00:00Z</updated>
+    <summary type="html"><![CDATA[<p>I’ve finally gotten around to sorting out running nested tmux instances. I found the base for the configuration in the article <a href="https://is.gd/slxE45">Tmux in practice: local and nested remote tmux sessions</a>, which links a few other related resources.</p>
+<p>What I ended up with was this:</p>
+<pre><code># Toggle tmux keybindings on/off, for use with inner tmux
+# https://is.gd/slxE45
+bind -T root F12  \
+  set prefix None \;\
+  set key-table off \;\
+  set status-left &quot;#[fg=black,bg=blue,bold] OFF &quot; \;\
+  refresh-client -S
+
+bind -T off F12 \
+  set -u prefix \;\
+  set -u key-table \;\
+  set -u status-left \;\
+  refresh-client -S</code></pre>
+<p>It’s slightly simpler than what’s in the article above, but it works and it fits rather nicely with the <a href="https://github.com/arcticicestudio/nord-tmux">nord theme</a>.</p>]]></summary>
+</entry>
+<entry>
     <title>Hedgehog on a REST API, part 3</title>
     <link href="http://magnus.therning.org/posts/2019-08-19-000-hedgehog-on-a-rest-api--part-3.html" />
     <id>http://magnus.therning.org/posts/2019-08-19-000-hedgehog-on-a-rest-api--part-3.html</id>
@@ -3357,14 +3380,6 @@ StartLimitAction=reboot</code></pre>
 </dd>
 </dl>
 <p>The next step will be to modify the <em>conduit</em> process and the state machine.</p>]]></summary>
-</entry>
-<entry>
-    <title>Thought on JavaScript</title>
-    <link href="http://magnus.therning.org/posts/2015-01-14-000-thought-on-javascript.html" />
-    <id>http://magnus.therning.org/posts/2015-01-14-000-thought-on-javascript.html</id>
-    <published>2015-01-14T00:00:00Z</published>
-    <updated>2015-01-14T00:00:00Z</updated>
-    <summary type="html"><![CDATA[<p>Over the holidays I’ve been reading Douglas Crockford’s excellent book <a href="http://goo.gl/ed3nUz">JavaScript: The Good Parts</a>. About halfway through I came to the conclusion that JavaScript is an “anti-LISP”. There are <a href="http://www.paulgraham.com/avg.html">many</a> <a href="http://nickmudge.info/?post=27">reasons</a> <a href="https://groovyguts.wordpress.com/2010/01/08/10-reasons-to-learn-clojure-or-any-other-lisp/">to</a> <a href="https://acm.wustl.edu/functional/whyfp.php">learn</a> LISP, but none of them is “LISP is widely used in industry.” As Eric Raymond is famous words claim, knowing LISP will make you a better programmer. On the other hand there seems to be almost no reasons to learn JavaScript. It sure doesn’t seem to teach anything that’ll make you a better programmer. The <em>only</em> reason I can come up with is “JavaScript is widely used in industry.”</p>]]></summary>
 </entry>
 
 </feed>

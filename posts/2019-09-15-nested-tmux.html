@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="../index.html">Top</a> <a href="../archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Nested tmux</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2019-09-15">2019-09-15</time> - Magnus Therning</p>
+</header>
+
+<p>I’ve finally gotten around to sorting out running nested tmux instances. I found the base for the configuration in the article <a href="https://is.gd/slxE45">Tmux in practice: local and nested remote tmux sessions</a>, which links a few other related resources.</p>
+<p>What I ended up with was this:</p>
+<pre><code># Toggle tmux keybindings on/off, for use with inner tmux
+# https://is.gd/slxE45
+bind -T root F12  \
+  set prefix None \;\
+  set key-table off \;\
+  set status-left &quot;#[fg=black,bg=blue,bold] OFF &quot; \;\
+  refresh-client -S
+
+bind -T off F12 \
+  set -u prefix \;\
+  set -u key-table \;\
+  set -u status-left \;\
+  refresh-client -S</code></pre>
+<p>It’s slightly simpler than what’s in the article above, but it works and it fits rather nicely with the <a href="https://github.com/arcticicestudio/nord-tmux">nord theme</a>.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/tmux.html">tmux</a>
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2019-09-15-nested-tmux@therning.org?subject=A comment on Nested tmux&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>
