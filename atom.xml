@@ -8,11 +8,46 @@
         <name>Magnus Therning</name>
         <email>magnus@therning.org</email>
     </author>
-    <updated>2019-09-15T00:00:00Z</updated>
+    <updated>2019-09-19T00:00:00Z</updated>
     <entry>
+    <title>Haskell, ghcide, and Spacemacs</title>
+    <link href="http://magnus.therning.org/posts/2019-09-19-000-haskell--ghcide--and-spacemacs.html" />
+    <id>http://magnus.therning.org/posts/2019-09-19-000-haskell--ghcide--and-spacemacs.html</id>
+    <published>2019-09-19T00:00:00Z</published>
+    <updated>2019-09-19T00:00:00Z</updated>
+    <summary type="html"><![CDATA[<p>The other day I read Chris Penner’s post on <a href="https://chrispenner.ca/posts/hie-core">Haskell IDE Support</a> and thought I’d make an attempt to use it with Spacemacs.</p>
+<p>After running <code>stack build hie-bios ghcide haskell-lsp --copy-compiler-tool</code> I had a look at the <a href="https://github.com/haskell/haskell-ide-engine#using-hie-with-spacemacs">instructions on using <code>haskell-ide-engine</code> with Spacemacs</a>. After a bit of trial and error I came up with these changes to my <code>~/.spacemacs</code>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode commonlisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb1-1" data-line-number="1">(<span class="kw">defun</span><span class="fu"> dotspacemacs/layers </span>()</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">  (setq-default</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">   dotspacemacs-configuration-layers</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">   &#39;(</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">    ...</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">    lsp</a>
+<a class="sourceLine" id="cb1-7" data-line-number="7">    (haskell :variables</a>
+<a class="sourceLine" id="cb1-8" data-line-number="8">             haskell-completion-backend &#39;lsp</a>
+<a class="sourceLine" id="cb1-9" data-line-number="9">             )</a>
+<a class="sourceLine" id="cb1-10" data-line-number="10">    ...)</a>
+<a class="sourceLine" id="cb1-11" data-line-number="11">  )</a>
+<a class="sourceLine" id="cb1-12" data-line-number="12">)</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode commonlisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb2-1" data-line-number="1">(<span class="kw">defun</span><span class="fu"> dotspacemacs/user-config </span>()</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">  (<span class="kw">setq</span> lsp-haskell-process-args-hie &#39;(<span class="st">&quot;exec&quot;</span> <span class="st">&quot;ghcide&quot;</span> <span class="st">&quot;--&quot;</span> <span class="st">&quot;--lsp&quot;</span>)</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">        lsp-haskell-process-path-hie <span class="st">&quot;stack&quot;</span></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">        lsp-haskell-process-wrapper-function (<span class="kw">lambda</span> (argv) (<span class="kw">cons</span> (<span class="kw">car</span> argv) (<span class="kw">cddr</span> argv)))</a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">        )</a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">  (add-hook &#39;haskell-mode-hook</a>
+<a class="sourceLine" id="cb2-7" data-line-number="7">            #&#39;lsp)</a>
+<a class="sourceLine" id="cb2-8" data-line-number="8">)</a></code></pre></div>
+<p>The slightly weird looking <code>lsp-haskell-process-wrapper-function</code> is removing the pesky <code>--lsp</code> inserted by <a href="https://github.com/emacs-lsp/lsp-haskell/blob/64106be79350f9ce6903d22c66b29761dadb5001/lsp-haskell.el#L179">this line</a>.</p>
+<p>That seems to work. Though I have to say I’m not ready to switch from <a href="https://hackage.haskell.org/package/intero">intero</a> just yet. Two things in particular didn’t work with <code>ghcide</code>/LSP:</p>
+<ol type="1">
+<li>Switching from one the <code>Main.hs</code> in one executable to the <code>Main.hs</code> of another executable in the same project didn’t work as expected – I had hints and types in the first, but nothing in the second.</li>
+<li>Jump to the definition of a function defined in the package didn’t work – I’m not willing to use <a href="https://www.gnu.org/software/global/">GNU GLOBAL</a> or some other source tagging system.</li>
+</ol>]]></summary>
+</entry>
+<entry>
     <title>Nested tmux</title>
-    <link href="http://magnus.therning.org/posts/2019-09-15-nested-tmux.html" />
-    <id>http://magnus.therning.org/posts/2019-09-15-nested-tmux.html</id>
+    <link href="http://magnus.therning.org/posts/2019-09-15-000-nested-tmux.html" />
+    <id>http://magnus.therning.org/posts/2019-09-15-000-nested-tmux.html</id>
     <published>2019-09-15T00:00:00Z</published>
     <updated>2019-09-15T00:00:00Z</updated>
     <summary type="html"><![CDATA[<p>I’ve finally gotten around to sorting out running nested tmux instances. I found the base for the configuration in the article <a href="https://is.gd/slxE45">Tmux in practice: local and nested remote tmux sessions</a>, which links a few other related resources.</p>
@@ -3328,58 +3363,6 @@ StartLimitAction=reboot</code></pre>
 *** CalcError (ReadOperator 5 6) &quot;Bad operator&quot;
 42 17 + =59</code></pre>
 <p>The process can be terminated by either pressing Ctrl-C, just like before, or by waiting for a time-out, like I did above.</p>]]></summary>
-</entry>
-<entry>
-    <title>Combining inputs in conduit</title>
-    <link href="http://magnus.therning.org/posts/2015-01-22-000-combining-inputs-in-conduit.html" />
-    <id>http://magnus.therning.org/posts/2015-01-22-000-combining-inputs-in-conduit.html</id>
-    <published>2015-01-22T00:00:00Z</published>
-    <updated>2015-01-22T00:00:00Z</updated>
-    <summary type="html"><![CDATA[<p>The code the post on using my <a href="/posts/2015-01-13-000-state-machine-with-conduit.html">simplistic state machine together with conduit</a> will happily wait forever for input, and the only way to terminate it is pressing Ctrl-C. In this series I’m writing a simple adder machine, but my actual use case for these ideas are protocols for communication (see the <a href="/posts/2015-01-03-000-simple-state-machines-in-haskell.html">first post</a>), and waiting forever isn’t such a good thing; I want my machine to time out if input doesn’t arrive in a timely fashion.</p>
-<p>I can think of a few ways to achieve this:</p>
-<ol type="1">
-<li>Use a watchdog thread that is signalled from the main thread, e.g. by a <code>Conduit</code> that sends a signal as each <code>Char</code> passes through it.</li>
-<li>As each <code>Char</code> is read kick off a “timeout thread” which throws an exception back to the main thread, unless the main thread kills it before the timeout expires.</li>
-<li>Run a thread that creates ticks that then can be combined with the <code>Char</code>s read and fed into the state machine itself.</li>
-</ol>
-<p>Since this is all about state machines I’ve opted for option 3. Furthermore, since I’ve recently finished reading the excellent <em>Parallel and Concurrent Programming in Haskell</em> I decided to attempt writing the <em>conduit</em> code myself instead of using something like <a href="http://hackage.haskell.org/package/stm-conduit">stm-conduit</a>.</p>
-<p>The idea is to write two functions:</p>
-<ol type="1">
-<li>one <code>Source</code> to combine two <code>Source</code>s, and</li>
-<li>one <code>Sink</code> that writes its input into a <code>TMVar</code>.</li>
-</ol>
-<p>The latter of the two is the easiest one. Given a <code>TMVar</code> it just awaits input, stores it in the <code>TMVar</code> and then calls itself:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">sinkTMVar ::</span> <span class="dt">MonadIO</span> m <span class="ot">=&gt;</span> <span class="dt">TMVar</span> a <span class="ot">-&gt;</span> <span class="dt">Sink</span> a m ()</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">sinkTMVar tmv <span class="fu">=</span> forever <span class="fu">$</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">    v <span class="ot">&lt;-</span> await</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">    <span class="kw">case</span> v <span class="kw">of</span></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">        <span class="dt">Nothing</span> <span class="ot">-&gt;</span> return ()</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6">        <span class="dt">Just</span> v&#39; <span class="ot">-&gt;</span> liftIO (atomically <span class="fu">$</span> putTMVar tmv v&#39;)</a></code></pre></div>
-<p>The other one is only slightly more involved:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">whyTMVar ::</span> <span class="dt">MonadIO</span> m <span class="ot">=&gt;</span> <span class="dt">Source</span> (<span class="dt">ResourceT</span> <span class="dt">IO</span>) a <span class="ot">-&gt;</span> <span class="dt">Source</span> (<span class="dt">ResourceT</span> <span class="dt">IO</span>) a <span class="ot">-&gt;</span> <span class="dt">Source</span> m a</a>
-<a class="sourceLine" id="cb2-2" data-line-number="2">whyTMVar src1 src2 <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-3" data-line-number="3">    t1 <span class="ot">&lt;-</span> liftIO newEmptyTMVarIO </a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">    t2 <span class="ot">&lt;-</span> liftIO newEmptyTMVarIO</a>
-<a class="sourceLine" id="cb2-5" data-line-number="5">    void <span class="fu">$</span> liftIO <span class="fu">$</span> async <span class="fu">$</span> fstProc t1</a>
-<a class="sourceLine" id="cb2-6" data-line-number="6">    void <span class="fu">$</span> liftIO <span class="fu">$</span> async <span class="fu">$</span> sndProc t2</a>
-<a class="sourceLine" id="cb2-7" data-line-number="7">    forever <span class="fu">$</span> liftIO (atomically <span class="fu">$</span> takeTMVar t1 <span class="ot">`orElse`</span> takeTMVar t2) <span class="fu">&gt;&gt;=</span> C.yield</a>
-<a class="sourceLine" id="cb2-8" data-line-number="8">    </a>
-<a class="sourceLine" id="cb2-9" data-line-number="9">    <span class="kw">where</span></a>
-<a class="sourceLine" id="cb2-10" data-line-number="10">        fstProc t <span class="fu">=</span> runResourceT <span class="fu">$</span> src1 <span class="fu">$$</span> sinkTMVar t</a>
-<a class="sourceLine" id="cb2-11" data-line-number="11">        sndProc t <span class="fu">=</span> runResourceT <span class="fu">$</span> src2 <span class="fu">$$</span> sinkTMVar t</a></code></pre></div>
-<p>Rather short and sweet I think. However, there are a few things that I’m not completely sure of yet.</p>
-<dl>
-<dt><code>forkIO</code> vs. <code>async</code> vs. <code>resourceForkIO</code></dt>
-<dd>There is a choice between at least three functions when it comes to creating the threads and I haven’t looked into which one is better to use. AFAIU there may be issues around exception handling and with resources. For now I’ve gone with <code>async</code> for no particular reason at all.
-</dd>
-<dt>Using <code>TMVar</code></dt>
-<dd>In this example the input arrives rather slowly, which means having room for a single piece at a time is enough. If the use case changes and input arrives quicker then this decision has to be revisited. I’d probably choose to use <a href="http://hackage.haskell.org/package/stm-conduit">stm-conduit</a> in that case since it uses <code>TMChan</code> internally.
-</dd>
-<dt>Combining only two <code>Source</code>s</dt>
-<dd>Again, this use case doesn’t call for more than two <code>Source</code>s, at least at this point. If the need arises for using more <code>Source</code>s I’ll switch to <a href="http://hackage.haskell.org/package/stm-conduit">stm-conduit</a> since it already defines a function to combine a list of <code>Source</code>s.
-</dd>
-</dl>
-<p>The next step will be to modify the <em>conduit</em> process and the state machine.</p>]]></summary>
 </entry>
 
 </feed>
