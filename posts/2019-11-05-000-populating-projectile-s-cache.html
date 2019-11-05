@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="../index.html">Top</a> <a href="../archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Populating Projectile's cache</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2019-11-05">2019-11-05</time> - Magnus Therning</p>
+</header>
+
+<p>As I track the <em>develop</em> branch of <a href="https://github.com/syl20bnr/spacemacs/">Spacemacs</a> I occasionally clean out my cache of projects known to Projectile. Every time it takes a while before I’m back at a stage where I very rarely have to visit something that isn’t already in the cache.</p>
+<p>However, today I found the function <code>projectile-add-known-project</code>, which prompted me to write the following function that’ll help me quickly re-building the cache the next time I need to reset Spacemacs to a known state again.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb1-1" data-line-number="1">(<span class="kw">defun</span><span class="fu"> projectile-extra-add-projects-in-subfolders </span>(projects-root)</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">  (interactive (<span class="kw">list</span> (read-directory-name <span class="st">&quot;Add to known projects: &quot;</span>)))</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  (message <span class="st">&quot;Searching for projects in %s...&quot;</span> projects-root)</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  (<span class="kw">let</span> ((dirs (seq-map 'file-name-directory (directory-files-recursively projects-root <span class="st">&quot;^.git$&quot;</span> <span class="kw">t</span>))))</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">    (seq-do 'projectile-add-known-project dirs)</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">    (message <span class="st">&quot;Added %d projects&quot;</span> (<span class="kw">length</span> dirs))))</a></code></pre></div>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/emacs.html">emacs</a>, <a href="../tags/elisp.html">elisp</a>
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2019-11-05-000-populating-projectile-s-cache@therning.org?subject=A comment on Populating Projectile's cache&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>
