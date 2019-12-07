@@ -26,6 +26,58 @@
 
   <div class="post-body">
     <header>
+      <h1 class="post-title"><a href="./posts/2019-12-07-000-nix-setup-for-spacemacs.html">Nix setup for Spacemacs</a></h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2019-12-07">2019-12-07</time> - Magnus Therning</p>
+</header>
+
+<p>When using <code>ghcide</code> and LSP, as I wrote about in my post on <a href="./2019-09-19-000-haskell--ghcide--and-spacemacs.html">Haskell, ghcide, and Spacemacs</a>, I found myself ending up recompiling a little too often. This pushed me to finally start looking at <a href="https://nixos.org/nix/">Nix</a>. After a bit of a fight I managed to <a href="https://discourse.nixos.org/t/import-and-use-ghide-nix">get ghcide from Nix</a>, which brought me the issue of setting up Spacemacs. Inspired by <a href="https://gist.github.com/sevanspowell/23b0135dae2834e59904a502b8a0eb5d">a gist from Samuel Evans-Powell</a> and a guide to <a href="https://github.com/thalesmg/reflex-skeleton/blob/master/Readme.org#setting-up-editor-integration-with-emacs">setting up an environment for Reflex by Thales Macedo Garitezi</a> I ended up with the following setup:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode commonlisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb1-1" data-line-number="1">(<span class="kw">defun</span><span class="fu"> dotspacemacs/layers </span>()</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">  (setq-default</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">   ...</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">   dotspacemacs-additional-packages</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">   '(</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">     nix-sandbox</a>
+<a class="sourceLine" id="cb1-7" data-line-number="7">     nix-haskell-mode</a>
+<a class="sourceLine" id="cb1-8" data-line-number="8">     ...</a>
+<a class="sourceLine" id="cb1-9" data-line-number="9">     )</a>
+<a class="sourceLine" id="cb1-10" data-line-number="10">   ...</a>
+<a class="sourceLine" id="cb1-11" data-line-number="11">   ))</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode commonlisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb2-1" data-line-number="1">(<span class="kw">defun</span><span class="fu"> dotspacemacs/user-config </span>()</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">  ...</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">  (add-hook 'haskell-mode-hook #'lsp)</a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">  (add-hook 'haskell-mode-hook 'nix-haskell-mode)</a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">  (add-hook 'haskell-mode-hook</a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">            (<span class="kw">lambda</span> ()</a>
+<a class="sourceLine" id="cb2-7" data-line-number="7">              (setq-local flycheck-executable-find</a>
+<a class="sourceLine" id="cb2-8" data-line-number="8">                          (<span class="kw">lambda</span> (cmd)</a>
+<a class="sourceLine" id="cb2-9" data-line-number="9">                            (nix-executable-find (nix-current-sandbox) cmd)))</a>
+<a class="sourceLine" id="cb2-10" data-line-number="10">              (setq-local flycheck-command-wrapper-function</a>
+<a class="sourceLine" id="cb2-11" data-line-number="11">                          (<span class="kw">lambda</span> (argv)</a>
+<a class="sourceLine" id="cb2-12" data-line-number="12">                            (<span class="kw">apply</span> 'nix-shell-command (nix-current-sandbox) argv)))</a>
+<a class="sourceLine" id="cb2-13" data-line-number="13">              (setq-local haskell-process-wrapper-function</a>
+<a class="sourceLine" id="cb2-14" data-line-number="14">                          (<span class="kw">lambda</span> (argv)</a>
+<a class="sourceLine" id="cb2-15" data-line-number="15">                            (<span class="kw">apply</span> 'nix-shell-command (nix-current-sandbox) argv)))</a>
+<a class="sourceLine" id="cb2-16" data-line-number="16">              (setq-local lsp-haskell-process-wrapper-function</a>
+<a class="sourceLine" id="cb2-17" data-line-number="17">                          (<span class="kw">lambda</span> (argv)</a>
+<a class="sourceLine" id="cb2-18" data-line-number="18">                            `(<span class="st">&quot;nix-shell&quot;</span> <span class="st">&quot;-I&quot;</span> <span class="st">&quot;.&quot;</span> <span class="st">&quot;--command&quot;</span> <span class="st">&quot;ghcide --lsp&quot;</span> ,(nix-current-sandbox))))))</a>
+<a class="sourceLine" id="cb2-19" data-line-number="19">  (add-hook 'haskell-mode-hook</a>
+<a class="sourceLine" id="cb2-20" data-line-number="20">            (<span class="kw">lambda</span> ()</a>
+<a class="sourceLine" id="cb2-21" data-line-number="21">              (flycheck-add-next-checker 'lsp-ui '(<span class="kw">warning</span> . haskell-stack-ghc))))</a>
+<a class="sourceLine" id="cb2-22" data-line-number="22">  ...</a>
+<a class="sourceLine" id="cb2-23" data-line-number="23">  )</a></code></pre></div>
+<p>It seems to work, but please let me know if you have suggestions for improvements.</p>
+
+
+  </div>
+
+</article>
+
+
+<article>
+
+  <div class="post-body">
+    <header>
       <h1 class="post-title"><a href="./posts/2019-11-05-000-populating-projectile-s-cache.html">Populating Projectile's cache</a></h1>
 
 <p class="post-date"><time pubdate="pubdate" datetime="2019-11-05">2019-11-05</time> - Magnus Therning</p>
@@ -874,74 +926,6 @@ deleteUser = Command gen exec [ Update u
 <li id="fn3"><p>At least that’s my understanding of the impact of <code>Range.linear 1 10</code>.<a href="#fnref3" class="footnote-back">↩</a></p></li>
 </ol>
 </section>
-
-
-  </div>
-
-</article>
-
-
-<article>
-
-  <div class="post-body">
-    <header>
-      <h1 class="post-title"><a href="./posts/2019-05-07-000-some-orgmode-stuff.html">Some OrgMode stuff</a></h1>
-
-<p class="post-date"><time pubdate="pubdate" datetime="2019-05-07">2019-05-07</time> - Magnus Therning</p>
-</header>
-
-<p>The last few days I’ve watched <a href="https://www.youtube.com/user/koenighaunstetten">Rainer König’s OrgMode videos</a>. It’s resulted in a few new settings that makes <a href="https://orgmode.org/">Org</a> a little more useful.</p>
-<table>
-<colgroup>
-<col style="width: 35%" />
-<col style="width: 11%" />
-<col style="width: 52%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th>Variable</th>
-<th>Value</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><code>calendar-week-start-day</code></td>
-<td><code>1</code></td>
-<td>Weeks start of Monday!</td>
-</tr>
-<tr class="even">
-<td><code>org-modules</code> (list)</td>
-<td><code>org-habit</code></td>
-<td>Support for tracking habits</td>
-</tr>
-<tr class="odd">
-<td><code>org-modules</code> (list)</td>
-<td><code>org-id</code></td>
-<td>Improved support for <code>ID</code> property</td>
-</tr>
-<tr class="even">
-<td><code>org-agenda-start-on-weekday</code></td>
-<td><code>1</code></td>
-<td>Weeks start on Monday, again!</td>
-</tr>
-<tr class="odd">
-<td><code>org-log-into-drawer</code></td>
-<td><code>t</code></td>
-<td>Put notes (logs) into a drawer</td>
-</tr>
-<tr class="even">
-<td><code>org-enforce-todo-checkbox-dependencies</code></td>
-<td><code>t</code></td>
-<td>Checkboxes must be checked before a <em>TODO</em> can become <em>DONE</em></td>
-</tr>
-<tr class="odd">
-<td><code>org-id-link-to-org-use-id</code></td>
-<td><code>t</code></td>
-<td>Prefer use of <code>ID</code> property for links</td>
-</tr>
-</tbody>
-</table>
 
 
   </div>
