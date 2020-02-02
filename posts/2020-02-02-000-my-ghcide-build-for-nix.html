@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="../index.html">Top</a> <a href="../archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">My ghcide build for Nix</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2020-02-02">2020-02-02</time> - Magnus Therning</p>
+</header>
+
+<p>I was slightly disappointed to find out that not all packages on Hackage that are marked as present in <a href="https://nixos.org/nixpkgs/">Nix(pkgs)</a> actually are available. Quite a few of them are marked broken and hence not installable. One of these packages is <a href="https://hackage.haskell.org/package/ghcide">ghcide</a>.</p>
+<p>There are of course expressions available for getting a working <code>ghcide</code> executable installed, like <a href="https://github.com/hercules-ci/ghcide-nix">ghcide-nix</a>. However, since I have rather simple needs for my Haskell projects I thought I’d play with my own approach to it.</p>
+<p>What I care about is:</p>
+<ol type="1">
+<li>availability of the development tools I use, at the moment it’s mainly <code>ghcide</code> but I’m planning on making use of <a href="https://hackage.haskell.org/package/ormolu">ormolu</a> in the near future</li>
+<li>pre-built packages</li>
+<li>ease of use</li>
+</ol>
+<p>So, I put together <a href="https://github.com/magthe/ghcide-for-nix">ghcide-for-nix</a>. It’s basically just a constumized Nixpkgs where the packages needed to un-break <code>ghcide</code> are present.</p>
+<p>Usage is a simple <code>import</code> away:</p>
+<pre><code>import (builtins.fetchGit {
+  name = &quot;ghcide-for-nix&quot;;
+  url = https://github.com/magthe/ghcide-for-nix;
+  rev = &quot;927a8caa62cece60d9d66dbdfc62b7738d61d75f&quot;;
+}) </code></pre>
+<p>and it’ll give you a superset of Nixpkgs. Pre-built packages are available on <a href="https://magthe.cachix.org/">Cachix</a>.</p>
+<p>It’s not sophisticated, but it’s rather easy to use and suffices for my purposes.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/nix.html">nix</a>
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2020-02-02-000-my-ghcide-build-for-nix@therning.org?subject=A comment on My ghcide build for Nix&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

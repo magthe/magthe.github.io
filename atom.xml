@@ -8,8 +8,32 @@
         <name>Magnus Therning</name>
         <email>magnus@therning.org</email>
     </author>
-    <updated>2019-12-07T00:00:00Z</updated>
+    <updated>2020-02-02T00:00:00Z</updated>
     <entry>
+    <title>My ghcide build for Nix</title>
+    <link href="http://magnus.therning.org/posts/2020-02-02-000-my-ghcide-build-for-nix.html" />
+    <id>http://magnus.therning.org/posts/2020-02-02-000-my-ghcide-build-for-nix.html</id>
+    <published>2020-02-02T00:00:00Z</published>
+    <updated>2020-02-02T00:00:00Z</updated>
+    <summary type="html"><![CDATA[<p>I was slightly disappointed to find out that not all packages on Hackage that are marked as present in <a href="https://nixos.org/nixpkgs/">Nix(pkgs)</a> actually are available. Quite a few of them are marked broken and hence not installable. One of these packages is <a href="https://hackage.haskell.org/package/ghcide">ghcide</a>.</p>
+<p>There are of course expressions available for getting a working <code>ghcide</code> executable installed, like <a href="https://github.com/hercules-ci/ghcide-nix">ghcide-nix</a>. However, since I have rather simple needs for my Haskell projects I thought I’d play with my own approach to it.</p>
+<p>What I care about is:</p>
+<ol type="1">
+<li>availability of the development tools I use, at the moment it’s mainly <code>ghcide</code> but I’m planning on making use of <a href="https://hackage.haskell.org/package/ormolu">ormolu</a> in the near future</li>
+<li>pre-built packages</li>
+<li>ease of use</li>
+</ol>
+<p>So, I put together <a href="https://github.com/magthe/ghcide-for-nix">ghcide-for-nix</a>. It’s basically just a constumized Nixpkgs where the packages needed to un-break <code>ghcide</code> are present.</p>
+<p>Usage is a simple <code>import</code> away:</p>
+<pre><code>import (builtins.fetchGit {
+  name = &quot;ghcide-for-nix&quot;;
+  url = https://github.com/magthe/ghcide-for-nix;
+  rev = &quot;927a8caa62cece60d9d66dbdfc62b7738d61d75f&quot;;
+}) </code></pre>
+<p>and it’ll give you a superset of Nixpkgs. Pre-built packages are available on <a href="https://magthe.cachix.org/">Cachix</a>.</p>
+<p>It’s not sophisticated, but it’s rather easy to use and suffices for my purposes.</p>]]></summary>
+</entry>
+<entry>
     <title>Nix setup for Spacemacs</title>
     <link href="http://magnus.therning.org/posts/2019-12-07-000-nix-setup-for-spacemacs.html" />
     <id>http://magnus.therning.org/posts/2019-12-07-000-nix-setup-for-spacemacs.html</id>
@@ -3338,17 +3362,6 @@ StartLimitAction=reboot</code></pre>
 <a class="sourceLine" id="cb1-7" data-line-number="7">            put s&#39;</a>
 <a class="sourceLine" id="cb1-8" data-line-number="8">            return r</a></code></pre></div>
 <p>Bring on the comments/suggestions/improvements/etc!</p>]]></summary>
-</entry>
-<entry>
-    <title>Oh no!  Success</title>
-    <link href="http://magnus.therning.org/posts/2015-06-04-000-oh-no---success.html" />
-    <id>http://magnus.therning.org/posts/2015-06-04-000-oh-no---success.html</id>
-    <published>2015-06-04T00:00:00Z</published>
-    <updated>2015-06-04T00:00:00Z</updated>
-    <summary type="html"><![CDATA[<p><a href="http://www.automatedtrader.net/news/at/153887/otas-launches-otas-lingo">This</a> can’t possibly be good for Haskell…</p>
-<blockquote>
-<p>We chose Haskell and the FP Complete stack because we knew the complexity of the problem required a new approach. The result was that we built better software faster than ever, and delivered it defect-free into a production environment where it has proven robust and high-performance</p>
-</blockquote>]]></summary>
 </entry>
 
 </feed>
