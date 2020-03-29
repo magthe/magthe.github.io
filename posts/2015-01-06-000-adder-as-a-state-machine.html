@@ -37,44 +37,44 @@
 <li>on errors the machine resets and starts over</li>
 </ol>
 <p>The signals (a.k.a. the output alphabet) is the following type</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">data</span> <span class="dt">CalcSignal</span> <span class="fu">=</span> <span class="dt">CalcNothing</span> <span class="fu">|</span> <span class="dt">CalcResult</span> <span class="dt">Int</span> <span class="fu">|</span> <span class="dt">CalcError</span> <span class="dt">CalcStates</span> <span class="dt">String</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">    <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">data</span> <span class="dt">CalcSignal</span> <span class="ot">=</span> <span class="dt">CalcNothing</span> <span class="op">|</span> <span class="dt">CalcResult</span> <span class="dt">Int</span> <span class="op">|</span> <span class="dt">CalcError</span> <span class="dt">CalcStates</span> <span class="dt">String</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a>    <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span></code></pre></div>
 <p>The events (a.k.a. the input alphabet) is simply <code>Char</code>. The states are</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">data</span> <span class="dt">CalcStates</span> <span class="fu">=</span> <span class="dt">Start</span> <span class="fu">|</span> <span class="dt">ReadFirst</span> <span class="dt">Int</span> <span class="fu">|</span> <span class="dt">ReadSecond</span> <span class="dt">Int</span> <span class="dt">Int</span> <span class="fu">|</span> <span class="dt">ReadOperator</span> <span class="dt">Int</span> <span class="dt">Int</span></a>
-<a class="sourceLine" id="cb2-2" data-line-number="2">    <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">data</span> <span class="dt">CalcStates</span> <span class="ot">=</span> <span class="dt">Start</span> <span class="op">|</span> <span class="dt">ReadFirst</span> <span class="dt">Int</span> <span class="op">|</span> <span class="dt">ReadSecond</span> <span class="dt">Int</span> <span class="dt">Int</span> <span class="op">|</span> <span class="dt">ReadOperator</span> <span class="dt">Int</span> <span class="dt">Int</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a>    <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span></code></pre></div>
 <p>where the names hopefully are self explanatory. The type of the machine is then</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">type</span> <span class="dt">CalcMachine</span> <span class="fu">=</span> <span class="dt">Machine</span> <span class="dt">CalcStates</span> <span class="dt">Char</span> <span class="dt">CalcSignal</span></a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">type</span> <span class="dt">CalcMachine</span> <span class="ot">=</span> <span class="dt">Machine</span> <span class="dt">CalcStates</span> <span class="dt">Char</span> <span class="dt">CalcSignal</span></span></code></pre></div>
 <p>The machine itself can then be written like this:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">calcMachine ::</span> <span class="dt">CalcMachine</span></a>
-<a class="sourceLine" id="cb4-2" data-line-number="2">calcMachine <span class="fu">=</span> createMachine <span class="dt">Start</span> go</a>
-<a class="sourceLine" id="cb4-3" data-line-number="3">    <span class="kw">where</span></a>
-<a class="sourceLine" id="cb4-4" data-line-number="4">        go <span class="dt">Start</span> e</a>
-<a class="sourceLine" id="cb4-5" data-line-number="5">            <span class="fu">|</span> isNumber e <span class="fu">=</span> (<span class="dt">ReadFirst</span> (read [e]), <span class="dt">CalcNothing</span>)</a>
-<a class="sourceLine" id="cb4-6" data-line-number="6">            <span class="fu">|</span> otherwise <span class="fu">=</span> (<span class="dt">Start</span>, <span class="dt">CalcError</span> <span class="dt">Start</span> <span class="st">&quot;No number&quot;</span>)</a>
-<a class="sourceLine" id="cb4-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb4-8" data-line-number="8">        go s<span class="fu">@</span>(<span class="dt">ReadFirst</span> i) e</a>
-<a class="sourceLine" id="cb4-9" data-line-number="9">            <span class="fu">|</span> isNumber e <span class="fu">=</span> (<span class="dt">ReadFirst</span> (<span class="dv">10</span> <span class="fu">*</span> i <span class="fu">+</span> read [e]), <span class="dt">CalcNothing</span>)</a>
-<a class="sourceLine" id="cb4-10" data-line-number="10">            <span class="fu">|</span> isSpace e <span class="fu">=</span> (<span class="dt">ReadSecond</span> i <span class="dv">0</span>, <span class="dt">CalcNothing</span>)</a>
-<a class="sourceLine" id="cb4-11" data-line-number="11">            <span class="fu">|</span> otherwise <span class="fu">=</span> (<span class="dt">Start</span>, <span class="dt">CalcError</span> s <span class="st">&quot;Bad format&quot;</span>)</a>
-<a class="sourceLine" id="cb4-12" data-line-number="12"></a>
-<a class="sourceLine" id="cb4-13" data-line-number="13">        go s<span class="fu">@</span>(<span class="dt">ReadSecond</span> l i) e</a>
-<a class="sourceLine" id="cb4-14" data-line-number="14">            <span class="fu">|</span> isNumber e <span class="fu">=</span> (<span class="dt">ReadSecond</span> l (<span class="dv">10</span> <span class="fu">*</span> i <span class="fu">+</span> read [e]), <span class="dt">CalcNothing</span>)</a>
-<a class="sourceLine" id="cb4-15" data-line-number="15">            <span class="fu">|</span> isSpace e <span class="fu">=</span> (<span class="dt">ReadOperator</span> l i, <span class="dt">CalcNothing</span>)</a>
-<a class="sourceLine" id="cb4-16" data-line-number="16">            <span class="fu">|</span> otherwise <span class="fu">=</span> (<span class="dt">Start</span>, <span class="dt">CalcError</span> s <span class="st">&quot;Bad format&quot;</span>)</a>
-<a class="sourceLine" id="cb4-17" data-line-number="17"></a>
-<a class="sourceLine" id="cb4-18" data-line-number="18">        go s<span class="fu">@</span>(<span class="dt">ReadOperator</span> i j) e</a>
-<a class="sourceLine" id="cb4-19" data-line-number="19">            <span class="fu">|</span> e <span class="fu">==</span> <span class="ch">'+'</span> <span class="fu">=</span> (<span class="dt">Start</span>, <span class="dt">CalcResult</span> (i <span class="fu">+</span> j))</a>
-<a class="sourceLine" id="cb4-20" data-line-number="20">            <span class="fu">|</span> isSpace e <span class="fu">=</span> (s, <span class="dt">CalcNothing</span>)</a>
-<a class="sourceLine" id="cb4-21" data-line-number="21">            <span class="fu">|</span> otherwise <span class="fu">=</span> (<span class="dt">Start</span>, <span class="dt">CalcError</span> s <span class="st">&quot;Bad operator&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a><span class="ot">calcMachine ::</span> <span class="dt">CalcMachine</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a>calcMachine <span class="ot">=</span> createMachine <span class="dt">Start</span> go</span>
+<span id="cb4-3"><a href="#cb4-3"></a>    <span class="kw">where</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a>        go <span class="dt">Start</span> e</span>
+<span id="cb4-5"><a href="#cb4-5"></a>            <span class="op">|</span> isNumber e <span class="ot">=</span> (<span class="dt">ReadFirst</span> (<span class="fu">read</span> [e]), <span class="dt">CalcNothing</span>)</span>
+<span id="cb4-6"><a href="#cb4-6"></a>            <span class="op">|</span> <span class="fu">otherwise</span> <span class="ot">=</span> (<span class="dt">Start</span>, <span class="dt">CalcError</span> <span class="dt">Start</span> <span class="st">&quot;No number&quot;</span>)</span>
+<span id="cb4-7"><a href="#cb4-7"></a></span>
+<span id="cb4-8"><a href="#cb4-8"></a>        go s<span class="op">@</span>(<span class="dt">ReadFirst</span> i) e</span>
+<span id="cb4-9"><a href="#cb4-9"></a>            <span class="op">|</span> isNumber e <span class="ot">=</span> (<span class="dt">ReadFirst</span> (<span class="dv">10</span> <span class="op">*</span> i <span class="op">+</span> <span class="fu">read</span> [e]), <span class="dt">CalcNothing</span>)</span>
+<span id="cb4-10"><a href="#cb4-10"></a>            <span class="op">|</span> <span class="fu">isSpace</span> e <span class="ot">=</span> (<span class="dt">ReadSecond</span> i <span class="dv">0</span>, <span class="dt">CalcNothing</span>)</span>
+<span id="cb4-11"><a href="#cb4-11"></a>            <span class="op">|</span> <span class="fu">otherwise</span> <span class="ot">=</span> (<span class="dt">Start</span>, <span class="dt">CalcError</span> s <span class="st">&quot;Bad format&quot;</span>)</span>
+<span id="cb4-12"><a href="#cb4-12"></a></span>
+<span id="cb4-13"><a href="#cb4-13"></a>        go s<span class="op">@</span>(<span class="dt">ReadSecond</span> l i) e</span>
+<span id="cb4-14"><a href="#cb4-14"></a>            <span class="op">|</span> isNumber e <span class="ot">=</span> (<span class="dt">ReadSecond</span> l (<span class="dv">10</span> <span class="op">*</span> i <span class="op">+</span> <span class="fu">read</span> [e]), <span class="dt">CalcNothing</span>)</span>
+<span id="cb4-15"><a href="#cb4-15"></a>            <span class="op">|</span> <span class="fu">isSpace</span> e <span class="ot">=</span> (<span class="dt">ReadOperator</span> l i, <span class="dt">CalcNothing</span>)</span>
+<span id="cb4-16"><a href="#cb4-16"></a>            <span class="op">|</span> <span class="fu">otherwise</span> <span class="ot">=</span> (<span class="dt">Start</span>, <span class="dt">CalcError</span> s <span class="st">&quot;Bad format&quot;</span>)</span>
+<span id="cb4-17"><a href="#cb4-17"></a></span>
+<span id="cb4-18"><a href="#cb4-18"></a>        go s<span class="op">@</span>(<span class="dt">ReadOperator</span> i j) e</span>
+<span id="cb4-19"><a href="#cb4-19"></a>            <span class="op">|</span> e <span class="op">==</span> <span class="ch">'+'</span> <span class="ot">=</span> (<span class="dt">Start</span>, <span class="dt">CalcResult</span> (i <span class="op">+</span> j))</span>
+<span id="cb4-20"><a href="#cb4-20"></a>            <span class="op">|</span> <span class="fu">isSpace</span> e <span class="ot">=</span> (s, <span class="dt">CalcNothing</span>)</span>
+<span id="cb4-21"><a href="#cb4-21"></a>            <span class="op">|</span> <span class="fu">otherwise</span> <span class="ot">=</span> (<span class="dt">Start</span>, <span class="dt">CalcError</span> s <span class="st">&quot;Bad operator&quot;</span>)</span></code></pre></div>
 <p>That’s rather simple and easy to read I find. Though I’m not sure it scales too well to much larger machines. I’ve not really used any DSLs to create large machines either, so I don’t know how well <em>any</em> method scales ;)</p>
 <p>To do a bit of exploratory testing it’s handy to create the following function</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">calculate ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb5-2" data-line-number="2">calculate <span class="fu">=</span> foldM_ go calcMachine</a>
-<a class="sourceLine" id="cb5-3" data-line-number="3">    <span class="kw">where</span> </a>
-<a class="sourceLine" id="cb5-4" data-line-number="4">        go mach c <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb5-5" data-line-number="5">            <span class="kw">let</span> (m, s) <span class="fu">=</span> stepMachine mach c</a>
-<a class="sourceLine" id="cb5-6" data-line-number="6">            print s </a>
-<a class="sourceLine" id="cb5-7" data-line-number="7">            return m</a></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1"></a><span class="ot">calculate ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
+<span id="cb5-2"><a href="#cb5-2"></a>calculate <span class="ot">=</span> foldM_ go calcMachine</span>
+<span id="cb5-3"><a href="#cb5-3"></a>    <span class="kw">where</span> </span>
+<span id="cb5-4"><a href="#cb5-4"></a>        go mach c <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb5-5"><a href="#cb5-5"></a>            <span class="kw">let</span> (m, s) <span class="ot">=</span> stepMachine mach c</span>
+<span id="cb5-6"><a href="#cb5-6"></a>            <span class="fu">print</span> s </span>
+<span id="cb5-7"><a href="#cb5-7"></a>            <span class="fu">return</span> m</span></code></pre></div>
 <p>Using that function it’s easy to check if the machine works as intended.</p>
 <pre><code>&gt; calculate &quot;56 67 +&quot;
 CalcNothing
@@ -101,7 +101,7 @@ CalcResult 73</code></pre>
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/fsm.html">fsm</a>
+Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>, <a title="All pages tagged 'fsm'." href="../tags/fsm.html">fsm</a>
 </div>
 
 

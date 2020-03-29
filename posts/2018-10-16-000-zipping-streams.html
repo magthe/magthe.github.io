@@ -30,19 +30,19 @@
 </header>
 
 <p>Writing the following is easy after glancing through the documentation for <a href="https://hackage.haskell.org/package/conduit">conduit</a>:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">foo <span class="fu">=</span> <span class="kw">let</span> src <span class="fu">=</span> mapM_ C.yield [<span class="dv">0</span><span class="fu">..</span><span class="dv">9</span><span class="ot"> ::</span> <span class="dt">Int</span>]</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">          p0 <span class="fu">=</span> CC.map (\ i <span class="ot">-&gt;</span> (<span class="st">&quot;p0&quot;</span>, succ i))</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">          p1 <span class="fu">=</span> CC.filter odd <span class="fu">.|</span> CC.map (\ i <span class="ot">-&gt;</span> (<span class="st">&quot;p1&quot;</span>, i))</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">          p <span class="fu">=</span> C.getZipConduit <span class="fu">$</span> <span class="dt">C.ZipConduit</span> p0 <span class="fu">&lt;*</span> <span class="dt">C.ZipConduit</span> p1</a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">          sink <span class="fu">=</span> CC.mapM_ print</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6">      <span class="kw">in</span> C.runConduit <span class="fu">$</span> src <span class="fu">.|</span> p <span class="fu">.|</span> sink</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a>foo <span class="ot">=</span> <span class="kw">let</span> src <span class="ot">=</span> <span class="fu">mapM_</span> C.yield [<span class="dv">0</span><span class="op">..</span><span class="dv">9</span><span class="ot"> ::</span> <span class="dt">Int</span>]</span>
+<span id="cb1-2"><a href="#cb1-2"></a>          p0 <span class="ot">=</span> CC.map (\ i <span class="ot">-&gt;</span> (<span class="st">&quot;p0&quot;</span>, <span class="fu">succ</span> i))</span>
+<span id="cb1-3"><a href="#cb1-3"></a>          p1 <span class="ot">=</span> CC.filter <span class="fu">odd</span> <span class="op">.|</span> CC.map (\ i <span class="ot">-&gt;</span> (<span class="st">&quot;p1&quot;</span>, i))</span>
+<span id="cb1-4"><a href="#cb1-4"></a>          p <span class="ot">=</span> C.getZipConduit <span class="op">$</span> <span class="dt">C.ZipConduit</span> p0 <span class="op">&lt;*</span> <span class="dt">C.ZipConduit</span> p1</span>
+<span id="cb1-5"><a href="#cb1-5"></a>          sink <span class="ot">=</span> CC.mapM_ <span class="fu">print</span></span>
+<span id="cb1-6"><a href="#cb1-6"></a>      <span class="kw">in</span> C.runConduit <span class="op">$</span> src <span class="op">.|</span> p <span class="op">.|</span> sink</span></code></pre></div>
 <p>Neither <a href="https://hackage.haskell.org/package/pipes">pipes</a> nor <a href="https://hackage.haskell.org/package/streaming">streaming</a> make it as easy to figure out. I must be missing something! What functions should I be looking at?</p>
 
 
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/conduit.html">conduit</a>, <a href="../tags/pipes.html">pipes</a>, <a href="../tags/streaming.html">streaming</a>
+Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>, <a title="All pages tagged 'conduit'." href="../tags/conduit.html">conduit</a>, <a title="All pages tagged 'pipes'." href="../tags/pipes.html">pipes</a>, <a title="All pages tagged 'streaming'." href="../tags/streaming.html">streaming</a>
 </div>
 
 
@@ -53,16 +53,16 @@ Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/conduit.html"
     <p class="comment-date"><time pubdate="pubdate" datetime="2018-10-17">2018-10-17</time></p>
   </header>
 <p>You can use <code>Streaming.Prelude.copy</code> to process and interleave streams:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Streaming.Prelude</span> <span class="kw">as</span> <span class="dt">S</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="ot">fooStreaming ::</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">fooStreaming <span class="fu">=</span></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">  <span class="kw">let</span></a>
-<a class="sourceLine" id="cb1-6" data-line-number="6">    src <span class="fu">=</span> S.each [<span class="dv">0</span><span class="fu">..</span><span class="dv">9</span>]</a>
-<a class="sourceLine" id="cb1-7" data-line-number="7">    p0 <span class="fu">=</span> S.map (\i <span class="ot">-&gt;</span> (<span class="st">&quot;p0&quot;</span>, succ i))</a>
-<a class="sourceLine" id="cb1-8" data-line-number="8">    p1 <span class="fu">=</span> S.map (<span class="st">&quot;p1&quot;</span>,) <span class="fu">.</span> S.filter odd</a>
-<a class="sourceLine" id="cb1-9" data-line-number="9">  <span class="kw">in</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10">    S.print <span class="fu">.</span> p1 <span class="fu">$</span> S.print <span class="fu">.</span> p0 <span class="fu">$</span> S.copy src</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Streaming.Prelude</span> <span class="kw">as</span> <span class="dt">S</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a></span>
+<span id="cb1-3"><a href="#cb1-3"></a><span class="ot">fooStreaming ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb1-4"><a href="#cb1-4"></a>fooStreaming <span class="ot">=</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a>  <span class="kw">let</span></span>
+<span id="cb1-6"><a href="#cb1-6"></a>    src <span class="ot">=</span> S.each [<span class="dv">0</span><span class="op">..</span><span class="dv">9</span>]</span>
+<span id="cb1-7"><a href="#cb1-7"></a>    p0 <span class="ot">=</span> S.map (\i <span class="ot">-&gt;</span> (<span class="st">&quot;p0&quot;</span>, <span class="fu">succ</span> i))</span>
+<span id="cb1-8"><a href="#cb1-8"></a>    p1 <span class="ot">=</span> S.map (<span class="st">&quot;p1&quot;</span>,) <span class="op">.</span> S.filter <span class="fu">odd</span></span>
+<span id="cb1-9"><a href="#cb1-9"></a>  <span class="kw">in</span></span>
+<span id="cb1-10"><a href="#cb1-10"></a>    S.print <span class="op">.</span> p1 <span class="op">$</span> S.print <span class="op">.</span> p0 <span class="op">$</span> S.copy src</span></code></pre></div>
 <p>It comes out in a slightly different order compared to your conduit code.</p>
 </article>
 
@@ -81,7 +81,7 @@ Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/conduit.html"
     <p><b>Magnus Therning</b></p>
     <p class="comment-date"><time pubdate="pubdate" datetime="2018-10-27">2018-10-27</time></p>
   </header>
-<p><em><span class="citation" data-cites="Jack">@Jack</span> Kelly</em>: I might be wrong, but as far as I understand your code using <code>Streaming.Prelude.copy</code> is <em>not</em> equivalent because you end up with <em>two sinks</em>. It’s the re-combining of the streams that I’m after because that lets me organise my code and set up the whole stream processing in a very nice way, e.g. for testing I just switch out the source, <code>src</code>, and the sink, <code>sink</code>, for pure variants.</p>
+<p><em><span class="citation" data-cites="Jack">@Jack</span> Kelly</em>: I might be wrong, but as far as I understand your code using <code>Streaming.Prelude.copy</code> is <em>not</em> equivalent because you end up with <em>two sinks</em>. It’s the re-combining of the streams that I’m after because that lets me organise my code and set up the whole stream processing in a very nice way, e.g. for testing I just switch out the source, <code>src</code>, and the sink, <code>sink</code>, for pure variants.</p>
 </article>
 
 

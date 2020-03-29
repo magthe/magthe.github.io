@@ -30,47 +30,47 @@
 </header>
 
 <p>When using <code>ghcide</code> and LSP, as I wrote about in my post on <a href="./2019-09-19-000-haskell--ghcide--and-spacemacs.html">Haskell, ghcide, and Spacemacs</a>, I found myself ending up recompiling a little too often. This pushed me to finally start looking at <a href="https://nixos.org/nix/">Nix</a>. After a bit of a fight I managed to <a href="https://discourse.nixos.org/t/import-and-use-ghide-nix">get ghcide from Nix</a>, which brought me the issue of setting up Spacemacs. Inspired by <a href="https://gist.github.com/sevanspowell/23b0135dae2834e59904a502b8a0eb5d">a gist from Samuel Evans-Powell</a> and a guide to <a href="https://github.com/thalesmg/reflex-skeleton/blob/master/Readme.org#setting-up-editor-integration-with-emacs">setting up an environment for Reflex by Thales Macedo Garitezi</a> I ended up with the following setup:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode commonlisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb1-1" data-line-number="1">(<span class="kw">defun</span><span class="fu"> dotspacemacs/layers </span>()</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  (setq-default</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">   ...</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">   dotspacemacs-additional-packages</a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">   '(</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6">     nix-sandbox</a>
-<a class="sourceLine" id="cb1-7" data-line-number="7">     nix-haskell-mode</a>
-<a class="sourceLine" id="cb1-8" data-line-number="8">     ...</a>
-<a class="sourceLine" id="cb1-9" data-line-number="9">     )</a>
-<a class="sourceLine" id="cb1-10" data-line-number="10">   ...</a>
-<a class="sourceLine" id="cb1-11" data-line-number="11">   ))</a></code></pre></div>
-<div class="sourceCode" id="cb2"><pre class="sourceCode commonlisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb2-1" data-line-number="1">(<span class="kw">defun</span><span class="fu"> dotspacemacs/user-config </span>()</a>
-<a class="sourceLine" id="cb2-2" data-line-number="2">  ...</a>
-<a class="sourceLine" id="cb2-3" data-line-number="3">  (add-hook 'haskell-mode-hook #'lsp)</a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">  (add-hook 'haskell-mode-hook 'nix-haskell-mode)</a>
-<a class="sourceLine" id="cb2-5" data-line-number="5">  (add-hook 'haskell-mode-hook</a>
-<a class="sourceLine" id="cb2-6" data-line-number="6">            (<span class="kw">lambda</span> ()</a>
-<a class="sourceLine" id="cb2-7" data-line-number="7">              (setq-local flycheck-executable-find</a>
-<a class="sourceLine" id="cb2-8" data-line-number="8">                          (<span class="kw">lambda</span> (cmd)</a>
-<a class="sourceLine" id="cb2-9" data-line-number="9">                            (nix-executable-find (nix-current-sandbox) cmd)))</a>
-<a class="sourceLine" id="cb2-10" data-line-number="10">              (setq-local flycheck-command-wrapper-function</a>
-<a class="sourceLine" id="cb2-11" data-line-number="11">                          (<span class="kw">lambda</span> (argv)</a>
-<a class="sourceLine" id="cb2-12" data-line-number="12">                            (<span class="kw">apply</span> 'nix-shell-command (nix-current-sandbox) argv)))</a>
-<a class="sourceLine" id="cb2-13" data-line-number="13">              (setq-local haskell-process-wrapper-function</a>
-<a class="sourceLine" id="cb2-14" data-line-number="14">                          (<span class="kw">lambda</span> (argv)</a>
-<a class="sourceLine" id="cb2-15" data-line-number="15">                            (<span class="kw">apply</span> 'nix-shell-command (nix-current-sandbox) argv)))</a>
-<a class="sourceLine" id="cb2-16" data-line-number="16">              (setq-local lsp-haskell-process-wrapper-function</a>
-<a class="sourceLine" id="cb2-17" data-line-number="17">                          (<span class="kw">lambda</span> (argv)</a>
-<a class="sourceLine" id="cb2-18" data-line-number="18">                            `(<span class="st">&quot;nix-shell&quot;</span> <span class="st">&quot;-I&quot;</span> <span class="st">&quot;.&quot;</span> <span class="st">&quot;--command&quot;</span> <span class="st">&quot;ghcide --lsp&quot;</span> ,(nix-current-sandbox))))))</a>
-<a class="sourceLine" id="cb2-19" data-line-number="19">  (add-hook 'haskell-mode-hook</a>
-<a class="sourceLine" id="cb2-20" data-line-number="20">            (<span class="kw">lambda</span> ()</a>
-<a class="sourceLine" id="cb2-21" data-line-number="21">              (flycheck-add-next-checker 'lsp-ui '(<span class="kw">warning</span> . haskell-stack-ghc))))</a>
-<a class="sourceLine" id="cb2-22" data-line-number="22">  ...</a>
-<a class="sourceLine" id="cb2-23" data-line-number="23">  )</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode commonlisp"><code class="sourceCode commonlisp"><span id="cb1-1"><a href="#cb1-1"></a>(<span class="kw">defun</span><span class="fu"> dotspacemacs/layers </span>()</span>
+<span id="cb1-2"><a href="#cb1-2"></a>  (setq-default</span>
+<span id="cb1-3"><a href="#cb1-3"></a>   ...</span>
+<span id="cb1-4"><a href="#cb1-4"></a>   dotspacemacs-additional-packages</span>
+<span id="cb1-5"><a href="#cb1-5"></a>   '(</span>
+<span id="cb1-6"><a href="#cb1-6"></a>     nix-sandbox</span>
+<span id="cb1-7"><a href="#cb1-7"></a>     nix-haskell-mode</span>
+<span id="cb1-8"><a href="#cb1-8"></a>     ...</span>
+<span id="cb1-9"><a href="#cb1-9"></a>     )</span>
+<span id="cb1-10"><a href="#cb1-10"></a>   ...</span>
+<span id="cb1-11"><a href="#cb1-11"></a>   ))</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode commonlisp"><code class="sourceCode commonlisp"><span id="cb2-1"><a href="#cb2-1"></a>(<span class="kw">defun</span><span class="fu"> dotspacemacs/user-config </span>()</span>
+<span id="cb2-2"><a href="#cb2-2"></a>  ...</span>
+<span id="cb2-3"><a href="#cb2-3"></a>  (add-hook 'haskell-mode-hook #'lsp)</span>
+<span id="cb2-4"><a href="#cb2-4"></a>  (add-hook 'haskell-mode-hook 'nix-haskell-mode)</span>
+<span id="cb2-5"><a href="#cb2-5"></a>  (add-hook 'haskell-mode-hook</span>
+<span id="cb2-6"><a href="#cb2-6"></a>            (<span class="kw">lambda</span> ()</span>
+<span id="cb2-7"><a href="#cb2-7"></a>              (setq-local flycheck-executable-find</span>
+<span id="cb2-8"><a href="#cb2-8"></a>                          (<span class="kw">lambda</span> (cmd)</span>
+<span id="cb2-9"><a href="#cb2-9"></a>                            (nix-executable-find (nix-current-sandbox) cmd)))</span>
+<span id="cb2-10"><a href="#cb2-10"></a>              (setq-local flycheck-command-wrapper-function</span>
+<span id="cb2-11"><a href="#cb2-11"></a>                          (<span class="kw">lambda</span> (argv)</span>
+<span id="cb2-12"><a href="#cb2-12"></a>                            (<span class="kw">apply</span> 'nix-shell-command (nix-current-sandbox) argv)))</span>
+<span id="cb2-13"><a href="#cb2-13"></a>              (setq-local haskell-process-wrapper-function</span>
+<span id="cb2-14"><a href="#cb2-14"></a>                          (<span class="kw">lambda</span> (argv)</span>
+<span id="cb2-15"><a href="#cb2-15"></a>                            (<span class="kw">apply</span> 'nix-shell-command (nix-current-sandbox) argv)))</span>
+<span id="cb2-16"><a href="#cb2-16"></a>              (setq-local lsp-haskell-process-wrapper-function</span>
+<span id="cb2-17"><a href="#cb2-17"></a>                          (<span class="kw">lambda</span> (argv)</span>
+<span id="cb2-18"><a href="#cb2-18"></a>                            `(<span class="st">&quot;nix-shell&quot;</span> <span class="st">&quot;-I&quot;</span> <span class="st">&quot;.&quot;</span> <span class="st">&quot;--command&quot;</span> <span class="st">&quot;ghcide --lsp&quot;</span> ,(nix-current-sandbox))))))</span>
+<span id="cb2-19"><a href="#cb2-19"></a>  (add-hook 'haskell-mode-hook</span>
+<span id="cb2-20"><a href="#cb2-20"></a>            (<span class="kw">lambda</span> ()</span>
+<span id="cb2-21"><a href="#cb2-21"></a>              (flycheck-add-next-checker 'lsp-ui '(<span class="kw">warning</span> . haskell-stack-ghc))))</span>
+<span id="cb2-22"><a href="#cb2-22"></a>  ...</span>
+<span id="cb2-23"><a href="#cb2-23"></a>  )</span></code></pre></div>
 <p>It seems to work, but please let me know if you have suggestions for improvements.</p>
 
 
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/emacs.html">emacs</a>, <a href="../tags/nix.html">nix</a>, <a href="../tags/spacemacs.html">spacemacs</a>
+Tags: <a title="All pages tagged 'emacs'." href="../tags/emacs.html">emacs</a>, <a title="All pages tagged 'nix'." href="../tags/nix.html">nix</a>, <a title="All pages tagged 'spacemacs'." href="../tags/spacemacs.html">spacemacs</a>
 </div>
 
 

@@ -30,30 +30,30 @@
 </header>
 
 <p>After some feedback on my <a href="../posts/2016-03-06-000-from-json-to-sum-type.html">previous post</a> I ended up with the following implementation.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">V.VersionRange</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  parseJSON <span class="fu">=</span> withObject <span class="st">&quot;VersionRange&quot;</span> go</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">    <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">      go o <span class="fu">=</span></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">        V.thisVersion <span class="fu">&lt;$&gt;</span> o <span class="fu">.:</span> <span class="st">&quot;ThisVersion&quot;</span> <span class="fu">&lt;|&gt;</span></a>
-<a class="sourceLine" id="cb1-6" data-line-number="6">        V.laterVersion <span class="fu">&lt;$&gt;</span> o <span class="fu">.:</span> <span class="st">&quot;LaterVersion&quot;</span> <span class="fu">&lt;|&gt;</span></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7">        V.earlierVersion <span class="fu">&lt;$&gt;</span> o <span class="fu">.:</span> <span class="st">&quot;EarlierVersion&quot;</span> <span class="fu">&lt;|&gt;</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8">        <span class="dt">V.WildcardVersion</span> <span class="fu">&lt;$&gt;</span> o <span class="fu">.:</span> <span class="st">&quot;WildcardVersion&quot;</span> <span class="fu">&lt;|&gt;</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9">        nullaryOp V.anyVersion <span class="fu">&lt;$&gt;</span> o <span class="fu">.:</span> <span class="st">&quot;AnyVersion&quot;</span> <span class="fu">&lt;|&gt;</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10">        binaryOp V.unionVersionRanges <span class="fu">&lt;$&gt;</span> o <span class="fu">.:</span> <span class="st">&quot;UnionVersionRanges&quot;</span> <span class="fu">&lt;|&gt;</span></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11">        binaryOp V.intersectVersionRanges <span class="fu">&lt;$&gt;</span> o <span class="fu">.:</span> <span class="st">&quot;IntersectVersionRanges&quot;</span> <span class="fu">&lt;|&gt;</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12">        <span class="dt">V.VersionRangeParens</span> <span class="fu">&lt;$&gt;</span> o <span class="fu">.:</span> <span class="st">&quot;VersionRangeParens&quot;</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"></a>
-<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="ot">      nullaryOp ::</span> a <span class="ot">-&gt;</span> <span class="dt">Value</span> <span class="ot">-&gt;</span> a</a>
-<a class="sourceLine" id="cb1-15" data-line-number="15">      nullaryOp <span class="fu">=</span> const</a>
-<a class="sourceLine" id="cb1-16" data-line-number="16"></a>
-<a class="sourceLine" id="cb1-17" data-line-number="17">      binaryOp f [a, b] <span class="fu">=</span> f a b</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">instance</span> <span class="dt">FromJSON</span> <span class="dt">V.VersionRange</span> <span class="kw">where</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a>  parseJSON <span class="ot">=</span> withObject <span class="st">&quot;VersionRange&quot;</span> go</span>
+<span id="cb1-3"><a href="#cb1-3"></a>    <span class="kw">where</span></span>
+<span id="cb1-4"><a href="#cb1-4"></a>      go o <span class="ot">=</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a>        V.thisVersion <span class="op">&lt;$&gt;</span> o <span class="op">.:</span> <span class="st">&quot;ThisVersion&quot;</span> <span class="op">&lt;|&gt;</span></span>
+<span id="cb1-6"><a href="#cb1-6"></a>        V.laterVersion <span class="op">&lt;$&gt;</span> o <span class="op">.:</span> <span class="st">&quot;LaterVersion&quot;</span> <span class="op">&lt;|&gt;</span></span>
+<span id="cb1-7"><a href="#cb1-7"></a>        V.earlierVersion <span class="op">&lt;$&gt;</span> o <span class="op">.:</span> <span class="st">&quot;EarlierVersion&quot;</span> <span class="op">&lt;|&gt;</span></span>
+<span id="cb1-8"><a href="#cb1-8"></a>        <span class="dt">V.WildcardVersion</span> <span class="op">&lt;$&gt;</span> o <span class="op">.:</span> <span class="st">&quot;WildcardVersion&quot;</span> <span class="op">&lt;|&gt;</span></span>
+<span id="cb1-9"><a href="#cb1-9"></a>        nullaryOp V.anyVersion <span class="op">&lt;$&gt;</span> o <span class="op">.:</span> <span class="st">&quot;AnyVersion&quot;</span> <span class="op">&lt;|&gt;</span></span>
+<span id="cb1-10"><a href="#cb1-10"></a>        binaryOp V.unionVersionRanges <span class="op">&lt;$&gt;</span> o <span class="op">.:</span> <span class="st">&quot;UnionVersionRanges&quot;</span> <span class="op">&lt;|&gt;</span></span>
+<span id="cb1-11"><a href="#cb1-11"></a>        binaryOp V.intersectVersionRanges <span class="op">&lt;$&gt;</span> o <span class="op">.:</span> <span class="st">&quot;IntersectVersionRanges&quot;</span> <span class="op">&lt;|&gt;</span></span>
+<span id="cb1-12"><a href="#cb1-12"></a>        <span class="dt">V.VersionRangeParens</span> <span class="op">&lt;$&gt;</span> o <span class="op">.:</span> <span class="st">&quot;VersionRangeParens&quot;</span></span>
+<span id="cb1-13"><a href="#cb1-13"></a></span>
+<span id="cb1-14"><a href="#cb1-14"></a><span class="ot">      nullaryOp ::</span> a <span class="ot">-&gt;</span> <span class="dt">Value</span> <span class="ot">-&gt;</span> a</span>
+<span id="cb1-15"><a href="#cb1-15"></a>      nullaryOp <span class="ot">=</span> <span class="fu">const</span></span>
+<span id="cb1-16"><a href="#cb1-16"></a></span>
+<span id="cb1-17"><a href="#cb1-17"></a>      binaryOp f [a, b] <span class="ot">=</span> f a b</span></code></pre></div>
 <p>Thanks David for your suggestions.</p>
 
 
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/json.html">json</a>, <a href="../tags/aeson.html">aeson</a>
+Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>, <a title="All pages tagged 'json'." href="../tags/json.html">json</a>, <a title="All pages tagged 'aeson'." href="../tags/aeson.html">aeson</a>
 </div>
 
 

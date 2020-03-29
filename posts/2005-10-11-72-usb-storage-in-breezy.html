@@ -31,12 +31,12 @@
 
 <p>I wrote a post on <a href="../posts/2005-06-08-34-udev-update.mkd">using udev together with Gnome Volume Manager</a> (GVM). My recent upgrade to Ubuntu Breezy revealed that my hack was just that, a hack, and a bad hack at that. It doesn’t work in Breezy!</p>
 <p>It turns out there’s a right way of doing this—use HAL! As so often I could have saved some time by simply reading the comments in the configuration files in <code>/etc</code>. (BTW, this is exactly the reason why I love Debian/Ubuntu. The configuration files are their own documentation. Brilliant, simply brilliant.) Anyway, playing around a little with HAL’s fdi files wasn’t a bad thing I guess. In the end I retired my udev setup from my earlier post and put the following lines in <code>/etc/hal/fdi/policy/local.fdi</code>:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode xml"><code class="sourceCode xml"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">&lt;device&gt;</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  <span class="kw">&lt;match</span><span class="ot"> key=</span><span class="st">&quot;volume.uuid&quot;</span><span class="ot"> string=</span><span class="st">&quot;60CA-2822&quot;</span><span class="kw">&gt;</span></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">    <span class="kw">&lt;merge</span><span class="ot"> key=</span><span class="st">&quot;storage.automount_enabled_hint&quot;</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="ot">      type=</span><span class="st">&quot;bool&quot;</span><span class="kw">&gt;</span>false<span class="kw">&lt;/merge&gt;</span></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">  <span class="kw">&lt;/match&gt;</span></a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">&lt;/device&gt;</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode xml"><code class="sourceCode xml"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">&lt;device&gt;</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a>  <span class="kw">&lt;match</span><span class="ot"> key=</span><span class="st">&quot;volume.uuid&quot;</span><span class="ot"> string=</span><span class="st">&quot;60CA-2822&quot;</span><span class="kw">&gt;</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a>    <span class="kw">&lt;merge</span><span class="ot"> key=</span><span class="st">&quot;storage.automount_enabled_hint&quot;</span></span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="ot">      type=</span><span class="st">&quot;bool&quot;</span><span class="kw">&gt;</span>false<span class="kw">&lt;/merge&gt;</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a>  <span class="kw">&lt;/match&gt;</span></span>
+<span id="cb1-6"><a href="#cb1-6"></a><span class="kw">&lt;/device&gt;</span></span></code></pre></div>
 <p>This hint is honoured by GVM and the device isn’t mounted.</p>
 <p>RedHat published quite a useful <a href="http://www.redhat.com/magazine/003jan05/features/hal/">introduction to hal</a>. The <a href="http://freedesktop.org/Software/hal">hal specification</a> is also a good place to find information.</p>
 
@@ -44,7 +44,7 @@
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/hal.html">hal</a>, <a href="../tags/ubuntu.html">ubuntu</a>, <a href="../tags/usb.html">usb</a>
+Tags: <a title="All pages tagged 'hal'." href="../tags/hal.html">hal</a>, <a title="All pages tagged 'ubuntu'." href="../tags/ubuntu.html">ubuntu</a>, <a title="All pages tagged 'usb'." href="../tags/usb.html">usb</a>
 </div>
 
 

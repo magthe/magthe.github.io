@@ -31,23 +31,23 @@
 
 <p>A few days ago I thougth I’d take a look at calling C functions from haskell. I wrote up the following set of files:</p>
 <p><em>foo.h</em>:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode c"><code class="sourceCode c"><a class="sourceLine" id="cb1-1" data-line-number="1">    <span class="dt">int</span> foo(<span class="dt">int</span> i);</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb1-1"><a href="#cb1-1"></a>    <span class="dt">int</span> foo(<span class="dt">int</span> i);</span></code></pre></div>
 <p><em>foo.c</em>:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode c"><code class="sourceCode c"><a class="sourceLine" id="cb2-1" data-line-number="1">    <span class="dt">int</span></a>
-<a class="sourceLine" id="cb2-2" data-line-number="2">    foo(<span class="dt">int</span> i)</a>
-<a class="sourceLine" id="cb2-3" data-line-number="3">    {</a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">        <span class="cf">return</span> i * i;</a>
-<a class="sourceLine" id="cb2-5" data-line-number="5">    }</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb2-1"><a href="#cb2-1"></a>    <span class="dt">int</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a>    foo(<span class="dt">int</span> i)</span>
+<span id="cb2-3"><a href="#cb2-3"></a>    {</span>
+<span id="cb2-4"><a href="#cb2-4"></a>        <span class="cf">return</span> i * i;</span>
+<span id="cb2-5"><a href="#cb2-5"></a>    }</span></code></pre></div>
 <p><em>Foo.hs</em>:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1">    <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb3-2" data-line-number="2">    </a>
-<a class="sourceLine" id="cb3-3" data-line-number="3">    <span class="kw">import</span> <span class="dt">Foreign.C.Types</span></a>
-<a class="sourceLine" id="cb3-4" data-line-number="4">    </a>
-<a class="sourceLine" id="cb3-5" data-line-number="5">    main <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb3-6" data-line-number="6">        r <span class="ot">&lt;-</span> foo <span class="dv">2</span></a>
-<a class="sourceLine" id="cb3-7" data-line-number="7">        putStrLn <span class="fu">$</span> show r</a>
-<a class="sourceLine" id="cb3-8" data-line-number="8">    </a>
-<a class="sourceLine" id="cb3-9" data-line-number="9">    foreign <span class="kw">import</span> ccall safe &quot;foo.h foo&quot; foo :: <span class="dt">CInt</span> -&gt; <span class="dt">IO</span> <span class="dt">CInt</span></a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a>    <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a>    </span>
+<span id="cb3-3"><a href="#cb3-3"></a>    <span class="kw">import</span> <span class="dt">Foreign.C.Types</span></span>
+<span id="cb3-4"><a href="#cb3-4"></a>    </span>
+<span id="cb3-5"><a href="#cb3-5"></a>    main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb3-6"><a href="#cb3-6"></a>        r <span class="ot">&lt;-</span> foo <span class="dv">2</span></span>
+<span id="cb3-7"><a href="#cb3-7"></a>        <span class="fu">putStrLn</span> <span class="op">$</span> <span class="fu">show</span> r</span>
+<span id="cb3-8"><a href="#cb3-8"></a>    </span>
+<span id="cb3-9"><a href="#cb3-9"></a>    foreign <span class="kw">import</span> ccall safe &quot;foo.h foo&quot; foo :: <span class="dt">CInt</span> -&gt; <span class="dt">IO</span> <span class="dt">CInt</span></span></code></pre></div>
 <p>Compiling the C file was of course no problem:</p>
 <pre><code>% gcc -c foo.c</code></pre>
 <p>The haskell file offered some resistance:</p>
@@ -62,39 +62,39 @@ Foo.hs:9:8: parse error on input `import'</code></pre>
 <p>It’s also possible to build and link it all in one go:</p>
 <pre><code>% ghc --make -fffi -o foo foo.c Foo.hs</code></pre>
 <p>Now, that’s pretty nice, however it’d be even nicer to use <a href="http://www.haskell.org/ghc/docs/latest/html/Cabal/">cabal</a> to do the building. At the same time I decided to put <a href="http://www.cse.unsw.edu.au/~chak/haskell/c2hs/">c2hs</a> to use. It seemed to be a lot easier than having to create the <em>import</em> statements manually. I ended up with the following:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode c"><code class="sourceCode c"><a class="sourceLine" id="cb9-1" data-line-number="1">_csrc/foo.h_:</a>
-<a class="sourceLine" id="cb9-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb9-3" data-line-number="3">    <span class="pp">#ifndef _FOO_H_</span></a>
-<a class="sourceLine" id="cb9-4" data-line-number="4">    </a>
-<a class="sourceLine" id="cb9-5" data-line-number="5">    <span class="dt">int</span> foo(<span class="dt">int</span>);</a>
-<a class="sourceLine" id="cb9-6" data-line-number="6">    </a>
-<a class="sourceLine" id="cb9-7" data-line-number="7">    <span class="pp">#endif</span></a></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb9-1"><a href="#cb9-1"></a>_csrc/foo.h_:</span>
+<span id="cb9-2"><a href="#cb9-2"></a></span>
+<span id="cb9-3"><a href="#cb9-3"></a>    <span class="pp">#ifndef _FOO_H_</span></span>
+<span id="cb9-4"><a href="#cb9-4"></a>    </span>
+<span id="cb9-5"><a href="#cb9-5"></a>    <span class="dt">int</span> foo(<span class="dt">int</span>);</span>
+<span id="cb9-6"><a href="#cb9-6"></a>    </span>
+<span id="cb9-7"><a href="#cb9-7"></a>    <span class="pp">#endif</span></span></code></pre></div>
 <p><em>csrc/foo.c</em>:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode c"><code class="sourceCode c"><a class="sourceLine" id="cb10-1" data-line-number="1">    <span class="pp">#include </span><span class="im">&quot;foo.h&quot;</span></a>
-<a class="sourceLine" id="cb10-2" data-line-number="2">    </a>
-<a class="sourceLine" id="cb10-3" data-line-number="3">    <span class="dt">int</span></a>
-<a class="sourceLine" id="cb10-4" data-line-number="4">    foo(<span class="dt">int</span> i)</a>
-<a class="sourceLine" id="cb10-5" data-line-number="5">    {</a>
-<a class="sourceLine" id="cb10-6" data-line-number="6">        <span class="cf">return</span> i * i;</a>
-<a class="sourceLine" id="cb10-7" data-line-number="7">    }</a></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb10-1"><a href="#cb10-1"></a>    <span class="pp">#include </span><span class="im">&quot;foo.h&quot;</span></span>
+<span id="cb10-2"><a href="#cb10-2"></a>    </span>
+<span id="cb10-3"><a href="#cb10-3"></a>    <span class="dt">int</span></span>
+<span id="cb10-4"><a href="#cb10-4"></a>    foo(<span class="dt">int</span> i)</span>
+<span id="cb10-5"><a href="#cb10-5"></a>    {</span>
+<span id="cb10-6"><a href="#cb10-6"></a>        <span class="cf">return</span> i * i;</span>
+<span id="cb10-7"><a href="#cb10-7"></a>    }</span></code></pre></div>
 <p>I couldn’t get cabal to accept <em>Foo.chs</em> as the file containing the <em>Main</em> module in my project. So I ended up putting all the relevant code in <em>Foo</em> and then have a dummy <em>Main</em>.</p>
 <p><em>src/Foo.chs</em>:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1">    <span class="kw">module</span> <span class="dt">Foo</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb11-2" data-line-number="2">    </a>
-<a class="sourceLine" id="cb11-3" data-line-number="3">    <span class="fu">#</span>include <span class="st">&quot;foo.h&quot;</span></a>
-<a class="sourceLine" id="cb11-4" data-line-number="4">    </a>
-<a class="sourceLine" id="cb11-5" data-line-number="5">    <span class="kw">import</span> <span class="dt">Foreign.C.Types</span></a>
-<a class="sourceLine" id="cb11-6" data-line-number="6">    </a>
-<a class="sourceLine" id="cb11-7" data-line-number="7">    main <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb11-8" data-line-number="8">        r <span class="ot">&lt;-</span> <span class="st">{# </span><span class="kw">call</span><span class="st"> foo #}</span> <span class="dv">2</span></a>
-<a class="sourceLine" id="cb11-9" data-line-number="9">        putStrLn <span class="fu">$</span> show r</a></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1"></a>    <span class="kw">module</span> <span class="dt">Foo</span> <span class="kw">where</span></span>
+<span id="cb11-2"><a href="#cb11-2"></a>    </span>
+<span id="cb11-3"><a href="#cb11-3"></a>    <span class="op">#</span>include <span class="st">&quot;foo.h&quot;</span></span>
+<span id="cb11-4"><a href="#cb11-4"></a>    </span>
+<span id="cb11-5"><a href="#cb11-5"></a>    <span class="kw">import</span> <span class="dt">Foreign.C.Types</span></span>
+<span id="cb11-6"><a href="#cb11-6"></a>    </span>
+<span id="cb11-7"><a href="#cb11-7"></a>    main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb11-8"><a href="#cb11-8"></a>        r <span class="ot">&lt;-</span> <span class="st">{# </span><span class="kw">call</span><span class="st"> foo #}</span> <span class="dv">2</span></span>
+<span id="cb11-9"><a href="#cb11-9"></a>        <span class="fu">putStrLn</span> <span class="op">$</span> <span class="fu">show</span> r</span></code></pre></div>
 <p>Here’s the dummy <em>Main</em>.</p>
 <p><em>src/Main.hs</em>:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1">    <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb12-2" data-line-number="2">    </a>
-<a class="sourceLine" id="cb12-3" data-line-number="3">    <span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Foo</span></a>
-<a class="sourceLine" id="cb12-4" data-line-number="4">    </a>
-<a class="sourceLine" id="cb12-5" data-line-number="5">    main <span class="fu">=</span> Foo.main</a></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1"></a>    <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></span>
+<span id="cb12-2"><a href="#cb12-2"></a>    </span>
+<span id="cb12-3"><a href="#cb12-3"></a>    <span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Foo</span></span>
+<span id="cb12-4"><a href="#cb12-4"></a>    </span>
+<span id="cb12-5"><a href="#cb12-5"></a>    main <span class="ot">=</span> Foo.main</span></code></pre></div>
 <p>The cabal file is rather straight forward. It took me a round on <em>haskell-cafe</em> to find out how to let the compiler know that I need the foreign function interface without putting compiler directives in the source file.</p>
 <p><em>cnh.cabal</em>:</p>
 <pre><code>name: cnh
@@ -109,10 +109,10 @@ c-sources: csrc/foo.c
 extensions: ForeignFunctionInterface
 other-modules: Foo</code></pre>
 <p>Nothing special is needed in the <em>Setup.hs</em>:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1">    <span class="fu">#!</span> <span class="fu">/</span>usr<span class="fu">/</span>bin<span class="fu">/</span>env runhaskell</a>
-<a class="sourceLine" id="cb14-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb14-3" data-line-number="3">    <span class="kw">import</span> <span class="dt">Distribution.Simple</span></a>
-<a class="sourceLine" id="cb14-4" data-line-number="4">    main <span class="fu">=</span> defaultMain</a></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1"></a>    <span class="op">#!</span> <span class="op">/</span>usr<span class="op">/</span>bin<span class="op">/</span>env runhaskell</span>
+<span id="cb14-2"><a href="#cb14-2"></a></span>
+<span id="cb14-3"><a href="#cb14-3"></a>    <span class="kw">import</span> <span class="dt">Distribution.Simple</span></span>
+<span id="cb14-4"><a href="#cb14-4"></a>    main <span class="ot">=</span> defaultMain</span></code></pre></div>
 <p>Make it executable and you can build in two easy steps:</p>
 <pre><code>% ./Setup.hs configure &amp;&amp; ./Setup.hs build</code></pre>
 
@@ -120,7 +120,7 @@ other-modules: Foo</code></pre>
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/c2hs.html">c2hs</a>, <a href="../tags/cabal.html">cabal</a>, <a href="../tags/haskell.html">haskell</a>
+Tags: <a title="All pages tagged 'c2hs'." href="../tags/c2hs.html">c2hs</a>, <a title="All pages tagged 'cabal'." href="../tags/cabal.html">cabal</a>, <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>
 </div>
 
 

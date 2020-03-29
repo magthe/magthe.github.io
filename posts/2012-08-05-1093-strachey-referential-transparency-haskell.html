@@ -60,7 +60,7 @@
 <p>which I actually think is a rather good, and very short, description of it. It’s not the full story, there are further important details, but it’s a good first intuition. Also, it’s a description usable in Haskell. Well, to be slightly more nuanced, it good for <em>Haskell without IO</em> (Haskell-IO). However, this is where the strict type system of Haskell really starts to shine because (here I’m probably a bit imprecise) we only have <em>R-values</em> in Haskell-IO. If we want to use assignment we add the use of a state monad, and <em>we do that explicitly</em>.</p>
 <p>A former colleague of mine said that in Haskell we need to build up our own computational models ourselves. For instance, if we need assigment we use <em>State</em>, if we need to record progress we use <em>Writer</em>, etc. In other languages the language designer has already made all those choices for us, we don’t get to make them ourselves. For RT it means that Haskell is <em>more explicit</em> in what the environment of a function is.</p>
 <p>Moving on to general side effects those are also more explicit in Haskell since they have to happen inside the <em>IO</em> monad. That alone is a great boon for RT in Haskell since it becomes explicit where RT as worked out by Strachey applies directly, and where there are (hopefully amenable) problems of side effects left. Even further, in Haskell it’s possible to make <em>subsets of IO</em> (by wrapping IO, see e.g. my own posts on <a href="../posts/2009-09-07-738-wrapping-io-part-1.html">wrapping IO, part 1</a> and <a href="../posts/2009-09-07-742-wrapping-io-part-2.html">wrappint IO, part 2</a>. I’m sure that <em>if</em> including the world in the environment is the way to achieve RT with general side effects, then it’s highly beneficial to be able to create subsets of the world.</p>
-<h3 id="rt-in-haskell-vs.rt-in-common-imperative-languages">RT in Haskell vs. RT in (common) imperative languages</h3>
+<h3 id="rt-in-haskell-vs.-rt-in-common-imperative-languages">RT in Haskell vs. RT in (common) imperative languages</h3>
 <p>Uday writes in <a href="http://stackoverflow.com/a/9859966">his first answer</a> that:</p>
 <blockquote>
 <p>But, today, functional programmers claim that imperative programming languages are not referentially transparent. Strachey would be turning in his grave.</p>
@@ -79,7 +79,7 @@
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/referential%20transparency.html">referential transparency</a>, <a href="../tags/strachey.html">strachey</a>
+Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>, <a title="All pages tagged 'referential transparency'." href="../tags/referential%20transparency.html">referential transparency</a>, <a title="All pages tagged 'strachey'." href="../tags/strachey.html">strachey</a>
 </div>
 
 

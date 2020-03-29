@@ -30,38 +30,38 @@
 </header>
 
 <p>A couple of weeks ago I found a link to a <a href="http://goo.gl/if48lQ">stackoverflow question</a> I’d saved away a long time ago. I’d saved it due to having asked myself the exact same question and being curious about the papers when I found that answer. Over the last few weeks I’ve made my way through those papers and as so often I found a couple of references to other papers that sound interesting. One such paper was <a href="http://www.cs.ucla.edu/~palsberg/paper/compsac98.pdf">The Essence of the Visitor Pattern</a> by Jens Palsberg and C. Barry Jay. There was however one little thing that bugged me with the <em>Walkabout</em> pattern and I thought I’d try to work that out for myself. Of course I’m using Python rather than Java ;)</p>
-<p>The full code can be found at <a href="https://gist.github.com/magthe/ad6e23fb560a8a494fd2" class="uri">https://gist.github.com/magthe/ad6e23fb560a8a494fd2</a></p>
+<p>The full code can be found at <a href="https://gist.github.com/magthe/ad6e23fb560a8a494fd2">https://gist.github.com/magthe/ad6e23fb560a8a494fd2</a></p>
 <h3 id="visitor">Visitor</h3>
 <p>The <em>Visitor</em> pattern separates the <em>traversal</em> and the <em>operation</em>. It does this by using an <code>accept</code> method in the classes making up the data structure, this method takes a <code>Visitor</code> instance which implements the operation to be carried out. This enables adding new operations without modifying the data structure.</p>
 <p>First we need a simple structure to play with: a tree where each node can have zero or more sub-trees.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">class</span> Tree:</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, value, children<span class="op">=</span>[]):</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">        <span class="va">self</span>.value <span class="op">=</span> value</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">        <span class="va">self</span>.children <span class="op">=</span> children</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">class</span> Tree:</span>
+<span id="cb1-2"><a href="#cb1-2"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, value, children<span class="op">=</span>[]):</span>
+<span id="cb1-3"><a href="#cb1-3"></a>        <span class="va">self</span>.value <span class="op">=</span> value</span>
+<span id="cb1-4"><a href="#cb1-4"></a>        <span class="va">self</span>.children <span class="op">=</span> children</span></code></pre></div>
 <p>The implementation of <code>accept</code> for this type is rather obvious:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb2-1" data-line-number="1">    <span class="kw">def</span> accept(<span class="va">self</span>, visitor):</a>
-<a class="sourceLine" id="cb2-2" data-line-number="2">        visitor.visit(<span class="va">self</span>)</a>
-<a class="sourceLine" id="cb2-3" data-line-number="3">        <span class="cf">for</span> c <span class="kw">in</span> <span class="va">self</span>.children:</a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">            c.accept(visitor)</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1"></a>    <span class="kw">def</span> accept(<span class="va">self</span>, visitor):</span>
+<span id="cb2-2"><a href="#cb2-2"></a>        visitor.visit(<span class="va">self</span>)</span>
+<span id="cb2-3"><a href="#cb2-3"></a>        <span class="cf">for</span> c <span class="kw">in</span> <span class="va">self</span>.children:</span>
+<span id="cb2-4"><a href="#cb2-4"></a>            c.accept(visitor)</span></code></pre></div>
 <p>Next we need an implemention of a <code>Visitor</code> that all visitors can derive from. Since Python’s dispatch doesn’t depend at all on the type of the argument we’ll have to implement the necessary behaviour ourselves, i.e. inspect the type and then pick the correct method to call.</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">class</span> Visitor:</a>
-<a class="sourceLine" id="cb3-2" data-line-number="2">    <span class="kw">def</span> visit(<span class="va">self</span>, obj):</a>
-<a class="sourceLine" id="cb3-3" data-line-number="3">        func_name <span class="op">=</span> <span class="st">'visit_'</span> <span class="op">+</span> obj.__class__.<span class="va">__name__</span></a>
-<a class="sourceLine" id="cb3-4" data-line-number="4">        visit_func <span class="op">=</span> <span class="bu">getattr</span>(<span class="va">self</span>, func_name)</a>
-<a class="sourceLine" id="cb3-5" data-line-number="5">        visit_func(obj)</a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">class</span> Visitor:</span>
+<span id="cb3-2"><a href="#cb3-2"></a>    <span class="kw">def</span> visit(<span class="va">self</span>, obj):</span>
+<span id="cb3-3"><a href="#cb3-3"></a>        func_name <span class="op">=</span> <span class="st">'visit_'</span> <span class="op">+</span> obj.__class__.<span class="va">__name__</span></span>
+<span id="cb3-4"><a href="#cb3-4"></a>        visit_func <span class="op">=</span> <span class="bu">getattr</span>(<span class="va">self</span>, func_name)</span>
+<span id="cb3-5"><a href="#cb3-5"></a>        visit_func(obj)</span></code></pre></div>
 <p>In order to visit a <code>Tree</code> type it also needs the appropriately named method:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb4-1" data-line-number="1">    <span class="kw">def</span> visit_Tree(<span class="va">self</span>, obj):</a>
-<a class="sourceLine" id="cb4-2" data-line-number="2">        <span class="cf">pass</span></a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1"></a>    <span class="kw">def</span> visit_Tree(<span class="va">self</span>, obj):</span>
+<span id="cb4-2"><a href="#cb4-2"></a>        <span class="cf">pass</span></span></code></pre></div>
 <p>Now it’s easy to create a visitor. Here’s a very simple one:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="kw">class</span> TreePrintVisitor(Visitor):</a>
-<a class="sourceLine" id="cb5-2" data-line-number="2">    <span class="kw">def</span> visit_Tree(<span class="va">self</span>, obj):</a>
-<a class="sourceLine" id="cb5-3" data-line-number="3">        <span class="bu">print</span>(<span class="st">'Tree (</span><span class="sc">%s</span><span class="st">): </span><span class="sc">%i</span><span class="st">'</span> <span class="op">%</span> (<span class="bu">hex</span>(<span class="bu">id</span>(obj)), obj.value))</a></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">class</span> TreePrintVisitor(Visitor):</span>
+<span id="cb5-2"><a href="#cb5-2"></a>    <span class="kw">def</span> visit_Tree(<span class="va">self</span>, obj):</span>
+<span id="cb5-3"><a href="#cb5-3"></a>        <span class="bu">print</span>(<span class="st">'Tree (</span><span class="sc">%s</span><span class="st">): </span><span class="sc">%i</span><span class="st">'</span> <span class="op">%</span> (<span class="bu">hex</span>(<span class="bu">id</span>(obj)), obj.value))</span></code></pre></div>
 <p>Finally here’s a function that exercises what we’ve just put together:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="kw">def</span> test_visitor():</a>
-<a class="sourceLine" id="cb6-2" data-line-number="2">    leaves <span class="op">=</span> [Tree(<span class="dv">42</span>), Tree(<span class="dv">17</span>)]</a>
-<a class="sourceLine" id="cb6-3" data-line-number="3">    tree <span class="op">=</span> Tree(<span class="dv">1</span>, leaves)</a>
-<a class="sourceLine" id="cb6-4" data-line-number="4">    printer <span class="op">=</span> TreePrintVisitor()</a>
-<a class="sourceLine" id="cb6-5" data-line-number="5">    tree.accept(printer)</a></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">def</span> test_visitor():</span>
+<span id="cb6-2"><a href="#cb6-2"></a>    leaves <span class="op">=</span> [Tree(<span class="dv">42</span>), Tree(<span class="dv">17</span>)]</span>
+<span id="cb6-3"><a href="#cb6-3"></a>    tree <span class="op">=</span> Tree(<span class="dv">1</span>, leaves)</span>
+<span id="cb6-4"><a href="#cb6-4"></a>    printer <span class="op">=</span> TreePrintVisitor()</span>
+<span id="cb6-5"><a href="#cb6-5"></a>    tree.accept(printer)</span></code></pre></div>
 <p>Looking at this it’s easy to see the objections Palsberg and Jay present in their paper:</p>
 <ol type="1">
 <li>A data type is only ‘visitable’ if it has an <code>accept</code> method, and</li>
@@ -70,44 +70,44 @@
 <p>The authors then introduce <code>Walkabout</code> in order to remove these limitations.</p>
 <h3 id="walkabout">Walkabout</h3>
 <p>To remove these limitations the authors use reflection to find if the visitor has a method to carry out the operation on the type of the current object. If such a method doesn’t exist they use reflection to find all members of the object and then visits them. The <code>Walkbout</code> class and its <code>visit</code> method then looks something like this:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="kw">class</span> Walkabout:</a>
-<a class="sourceLine" id="cb7-2" data-line-number="2">    <span class="kw">def</span> visit(<span class="va">self</span>, obj):</a>
-<a class="sourceLine" id="cb7-3" data-line-number="3">        func_name <span class="op">=</span> <span class="st">'visit_</span><span class="sc">%s</span><span class="st">'</span> <span class="op">%</span> obj.__class__.<span class="va">__name__</span></a>
-<a class="sourceLine" id="cb7-4" data-line-number="4">        <span class="cf">if</span> <span class="bu">hasattr</span>(<span class="va">self</span>, func_name):</a>
-<a class="sourceLine" id="cb7-5" data-line-number="5">            visit_func <span class="op">=</span> <span class="bu">getattr</span>(<span class="va">self</span>, func_name)</a>
-<a class="sourceLine" id="cb7-6" data-line-number="6">            visit_func(obj)</a>
-<a class="sourceLine" id="cb7-7" data-line-number="7">        <span class="cf">elif</span> <span class="bu">hasattr</span>(obj, <span class="st">'__dict__'</span>):</a>
-<a class="sourceLine" id="cb7-8" data-line-number="8">            <span class="cf">for</span> m <span class="kw">in</span> obj.__dict__.keys():</a>
-<a class="sourceLine" id="cb7-9" data-line-number="9">                <span class="va">self</span>.visit(<span class="bu">getattr</span>(obj, m))</a></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">class</span> Walkabout:</span>
+<span id="cb7-2"><a href="#cb7-2"></a>    <span class="kw">def</span> visit(<span class="va">self</span>, obj):</span>
+<span id="cb7-3"><a href="#cb7-3"></a>        func_name <span class="op">=</span> <span class="st">'visit_</span><span class="sc">%s</span><span class="st">'</span> <span class="op">%</span> obj.__class__.<span class="va">__name__</span></span>
+<span id="cb7-4"><a href="#cb7-4"></a>        <span class="cf">if</span> <span class="bu">hasattr</span>(<span class="va">self</span>, func_name):</span>
+<span id="cb7-5"><a href="#cb7-5"></a>            visit_func <span class="op">=</span> <span class="bu">getattr</span>(<span class="va">self</span>, func_name)</span>
+<span id="cb7-6"><a href="#cb7-6"></a>            visit_func(obj)</span>
+<span id="cb7-7"><a href="#cb7-7"></a>        <span class="cf">elif</span> <span class="bu">hasattr</span>(obj, <span class="st">'__dict__'</span>):</span>
+<span id="cb7-8"><a href="#cb7-8"></a>            <span class="cf">for</span> m <span class="kw">in</span> obj.__dict__.keys():</span>
+<span id="cb7-9"><a href="#cb7-9"></a>                <span class="va">self</span>.visit(<span class="bu">getattr</span>(obj, m))</span></code></pre></div>
 <p>The <code>accept</code> method can be removed from <code>Tree</code> and the visitor is changed to include code to continue the traversal:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="kw">class</span> TreePrintWalkabout(Walkabout):</a>
-<a class="sourceLine" id="cb8-2" data-line-number="2">    <span class="kw">def</span> visit_Tree(<span class="va">self</span>, tree):</a>
-<a class="sourceLine" id="cb8-3" data-line-number="3">        <span class="bu">print</span>(<span class="st">'Tree (</span><span class="sc">%s</span><span class="st">): </span><span class="sc">%i</span><span class="st">'</span> <span class="op">%</span> (<span class="bu">hex</span>(<span class="bu">id</span>(tree)), tree.value))</a>
-<a class="sourceLine" id="cb8-4" data-line-number="4">        <span class="cf">for</span> c <span class="kw">in</span> tree.children:</a>
-<a class="sourceLine" id="cb8-5" data-line-number="5">            <span class="va">self</span>.visit(c)</a></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">class</span> TreePrintWalkabout(Walkabout):</span>
+<span id="cb8-2"><a href="#cb8-2"></a>    <span class="kw">def</span> visit_Tree(<span class="va">self</span>, tree):</span>
+<span id="cb8-3"><a href="#cb8-3"></a>        <span class="bu">print</span>(<span class="st">'Tree (</span><span class="sc">%s</span><span class="st">): </span><span class="sc">%i</span><span class="st">'</span> <span class="op">%</span> (<span class="bu">hex</span>(<span class="bu">id</span>(tree)), tree.value))</span>
+<span id="cb8-4"><a href="#cb8-4"></a>        <span class="cf">for</span> c <span class="kw">in</span> tree.children:</span>
+<span id="cb8-5"><a href="#cb8-5"></a>            <span class="va">self</span>.visit(c)</span></code></pre></div>
 <p>The function for exercising this only changes slightly:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="kw">def</span> test_walkabout():</a>
-<a class="sourceLine" id="cb9-2" data-line-number="2">    leaves <span class="op">=</span> [Tree(<span class="dv">42</span>), Tree(<span class="dv">17</span>)]</a>
-<a class="sourceLine" id="cb9-3" data-line-number="3">    tree <span class="op">=</span> Tree(<span class="dv">1</span>, leaves)</a>
-<a class="sourceLine" id="cb9-4" data-line-number="4">    printer <span class="op">=</span> TreePrintWalkabout()</a>
-<a class="sourceLine" id="cb9-5" data-line-number="5">    printer.visit(tree)</a></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">def</span> test_walkabout():</span>
+<span id="cb9-2"><a href="#cb9-2"></a>    leaves <span class="op">=</span> [Tree(<span class="dv">42</span>), Tree(<span class="dv">17</span>)]</span>
+<span id="cb9-3"><a href="#cb9-3"></a>    tree <span class="op">=</span> Tree(<span class="dv">1</span>, leaves)</span>
+<span id="cb9-4"><a href="#cb9-4"></a>    printer <span class="op">=</span> TreePrintWalkabout()</span>
+<span id="cb9-5"><a href="#cb9-5"></a>    printer.visit(tree)</span></code></pre></div>
 <p>This is where Palsberg and Jay stop, but I think there is one little detail in <code>Walkabout</code> that’s worth looking a little closer at.</p>
 <h3 id="walkabout-two">Walkabout Two</h3>
 <p>I personally find it a little strange that the authors first note that the visitor pattern suffers from the limitation that one has to know up front the full set of types to visit, then they don’t recognise that their own solution to this instead require one to know the shape of (parts of) the structure to operate on. In other words, the classes deriving from <code>Walkabout</code> are in charge of carrying on the traversal (the last two lines of <code>visit_Tree</code> above).</p>
 <p>This little detail is of course easy to work around, we just modify <code>visit</code> to always visit all members irrespective of whether there is a method to handle the current object. There may be cases where we want to stop the walking about for efficiency reasons, we can address that at the same time and <code>WalkaboutTwo</code> will then look like this:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="kw">class</span> WalkaboutTwo:</a>
-<a class="sourceLine" id="cb10-2" data-line-number="2">    <span class="kw">def</span> visit(<span class="va">self</span>, obj):</a>
-<a class="sourceLine" id="cb10-3" data-line-number="3">        func_name <span class="op">=</span> <span class="st">'visit_</span><span class="sc">%s</span><span class="st">'</span> <span class="op">%</span> obj.__class__.<span class="va">__name__</span></a>
-<a class="sourceLine" id="cb10-4" data-line-number="4">        descend <span class="op">=</span> <span class="va">True</span></a>
-<a class="sourceLine" id="cb10-5" data-line-number="5">        <span class="cf">if</span> <span class="bu">hasattr</span>(<span class="va">self</span>, func_name):</a>
-<a class="sourceLine" id="cb10-6" data-line-number="6">            visit_func <span class="op">=</span> <span class="bu">getattr</span>(<span class="va">self</span>, func_name)</a>
-<a class="sourceLine" id="cb10-7" data-line-number="7">            descend <span class="op">=</span> visit_func(obj)</a>
-<a class="sourceLine" id="cb10-8" data-line-number="8">        <span class="cf">if</span> descend <span class="kw">and</span> <span class="bu">hasattr</span>(obj, <span class="st">'__dict__'</span>):</a>
-<a class="sourceLine" id="cb10-9" data-line-number="9">            <span class="cf">for</span> m <span class="kw">in</span> obj.__dict__.keys():</a>
-<a class="sourceLine" id="cb10-10" data-line-number="10">                <span class="va">self</span>.visit(<span class="bu">getattr</span>(obj, m))</a>
-<a class="sourceLine" id="cb10-11" data-line-number="11">        <span class="cf">if</span> descend <span class="kw">and</span> <span class="bu">hasattr</span>(obj, <span class="st">'__iter__'</span>):</a>
-<a class="sourceLine" id="cb10-12" data-line-number="12">            <span class="cf">for</span> o <span class="kw">in</span> obj:</a>
-<a class="sourceLine" id="cb10-13" data-line-number="13">                <span class="va">self</span>.visit(o)</a></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1"></a><span class="kw">class</span> WalkaboutTwo:</span>
+<span id="cb10-2"><a href="#cb10-2"></a>    <span class="kw">def</span> visit(<span class="va">self</span>, obj):</span>
+<span id="cb10-3"><a href="#cb10-3"></a>        func_name <span class="op">=</span> <span class="st">'visit_</span><span class="sc">%s</span><span class="st">'</span> <span class="op">%</span> obj.__class__.<span class="va">__name__</span></span>
+<span id="cb10-4"><a href="#cb10-4"></a>        descend <span class="op">=</span> <span class="va">True</span></span>
+<span id="cb10-5"><a href="#cb10-5"></a>        <span class="cf">if</span> <span class="bu">hasattr</span>(<span class="va">self</span>, func_name):</span>
+<span id="cb10-6"><a href="#cb10-6"></a>            visit_func <span class="op">=</span> <span class="bu">getattr</span>(<span class="va">self</span>, func_name)</span>
+<span id="cb10-7"><a href="#cb10-7"></a>            descend <span class="op">=</span> visit_func(obj)</span>
+<span id="cb10-8"><a href="#cb10-8"></a>        <span class="cf">if</span> descend <span class="kw">and</span> <span class="bu">hasattr</span>(obj, <span class="st">'__dict__'</span>):</span>
+<span id="cb10-9"><a href="#cb10-9"></a>            <span class="cf">for</span> m <span class="kw">in</span> obj.__dict__.keys():</span>
+<span id="cb10-10"><a href="#cb10-10"></a>                <span class="va">self</span>.visit(<span class="bu">getattr</span>(obj, m))</span>
+<span id="cb10-11"><a href="#cb10-11"></a>        <span class="cf">if</span> descend <span class="kw">and</span> <span class="bu">hasattr</span>(obj, <span class="st">'__iter__'</span>):</span>
+<span id="cb10-12"><a href="#cb10-12"></a>            <span class="cf">for</span> o <span class="kw">in</span> obj:</span>
+<span id="cb10-13"><a href="#cb10-13"></a>                <span class="va">self</span>.visit(o)</span></code></pre></div>
 <p>One little detail above is that if we use only reflection to traverse the <code>Tree</code> we won’t actually find the sub-trees as immediate members since they are contained in a list. We address this by checking whether the object has an iterator as well, and if it does we visit all items.</p>
 <p><em>2014-06-12</em> Fixed minor typo, thanks to Joe for pointing it out.</p>
 
@@ -115,7 +115,7 @@
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/design%20patterns.html">design patterns</a>, <a href="../tags/python.html">python</a>, <a href="../tags/visitor.html">visitor</a>, <a href="../tags/walkabout.html">walkabout</a>
+Tags: <a title="All pages tagged 'design patterns'." href="../tags/design%20patterns.html">design patterns</a>, <a title="All pages tagged 'python'." href="../tags/python.html">python</a>, <a title="All pages tagged 'visitor'." href="../tags/visitor.html">visitor</a>, <a title="All pages tagged 'walkabout'." href="../tags/walkabout.html">walkabout</a>
 </div>
 
 
@@ -126,9 +126,9 @@ Tags: <a href="../tags/design%20patterns.html">design patterns</a>, <a href="../
     <p class="comment-date"><time pubdate="pubdate" datetime="2014-06-12">2014-06-12</time></p>
   </header>
 <p>Great article, thanks! Just noticed that the usage example for the first Walkabout has the following:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb1-1" data-line-number="1">printer <span class="op">=</span> </a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a>printer <span class="op">=</span> </span></code></pre></div>
 <p>I think it should be:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb2-1" data-line-number="1">printer <span class="op">=</span> Walkabout()</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1"></a>printer <span class="op">=</span> Walkabout()</span></code></pre></div>
 </article>
 
 

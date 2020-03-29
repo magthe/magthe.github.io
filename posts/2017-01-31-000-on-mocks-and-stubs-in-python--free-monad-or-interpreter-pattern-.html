@@ -40,13 +40,13 @@
 <p>Every time I’ve used mocks and stubs for unit testing I’ve had a feeling that “this can’t be how it’s supposed to be done!” So to me, Ken’s talk offered some hope, and I <em>really</em> want to know how applicable the ideas are in mainstream OO/imperative languages.</p>
 <h3 id="the-example">The example</h3>
 <p>To play around with this I picked the following function (in Python):</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">def</span> count_chars_of_file(fn):</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">    fd <span class="op">=</span> os.<span class="bu">open</span>(fn, os.O_RDONLY)</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">    text <span class="op">=</span> os.read(fd, <span class="dv">10000</span>)</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">    n <span class="op">=</span> <span class="bu">len</span>(text)</a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">    os.close(fd)</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6">    <span class="cf">return</span> n</a></code></pre></div>
-<p>It’s small and simple, but I think it suffices to highlight a few important points. So the goal is to rewrite this function such that calls to IO operations (actions) (e.g. <code>os.read</code>) are replaced by data (an instance of some data type) conveying the intent of the operation. This data can later be passed to an <em>interpreter of actions</em>.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">def</span> count_chars_of_file(fn):</span>
+<span id="cb1-2"><a href="#cb1-2"></a>    fd <span class="op">=</span> os.<span class="bu">open</span>(fn, os.O_RDONLY)</span>
+<span id="cb1-3"><a href="#cb1-3"></a>    text <span class="op">=</span> os.read(fd, <span class="dv">10000</span>)</span>
+<span id="cb1-4"><a href="#cb1-4"></a>    n <span class="op">=</span> <span class="bu">len</span>(text)</span>
+<span id="cb1-5"><a href="#cb1-5"></a>    os.close(fd)</span>
+<span id="cb1-6"><a href="#cb1-6"></a>    <span class="cf">return</span> n</span></code></pre></div>
+<p>It’s small and simple, but I think it suffices to highlight a few important points. So the goal is to rewrite this function such that calls to IO operations (actions) (e.g. <code>os.read</code>) are replaced by data (an instance of some data type) conveying the intent of the operation. This data can later be passed to an <em>interpreter of actions</em>.</p>
 <h3 id="thoughts-on-the-execution-of-actions-and-the-interpreter-pattern">Thoughts on the execution of actions and the interpreter pattern</h3>
 <p>When reading the examples in the <a href="http://www.oodesign.com/interpreter-pattern.html">description of the interpreter pattern</a> what stands out to me is that they are either</p>
 <ol type="1">
@@ -64,111 +64,111 @@
 <p>Sure, but it’s not really idiomatic Python code!</p>
 <h3 id="actions-and-continuations">Actions and continuations</h3>
 <p>The IO operations (actions) are represented as a named tuple:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb2-1" data-line-number="1">Op <span class="op">=</span> collections.namedtuple(<span class="st">'Op'</span>, [<span class="st">'op'</span>, <span class="st">'args'</span>, <span class="st">'k'</span>])</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1"></a>Op <span class="op">=</span> collections.namedtuple(<span class="st">'Op'</span>, [<span class="st">'op'</span>, <span class="st">'args'</span>, <span class="st">'k'</span>])</span></code></pre></div>
 <p>and the functions returning actions can then be written as</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">def</span> cps_open(fn, k):</a>
-<a class="sourceLine" id="cb3-2" data-line-number="2">    <span class="cf">return</span> Op(<span class="st">'open'</span>, [fn], k)</a>
-<a class="sourceLine" id="cb3-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb3-4" data-line-number="4"><span class="kw">def</span> cps_read(fd, k):</a>
-<a class="sourceLine" id="cb3-5" data-line-number="5">    <span class="cf">return</span> Op(<span class="st">'read'</span>, [fd], k)</a>
-<a class="sourceLine" id="cb3-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb3-7" data-line-number="7"><span class="kw">def</span> cps_close(fd, k):</a>
-<a class="sourceLine" id="cb3-8" data-line-number="8">    <span class="cf">return</span> Op(<span class="st">'close'</span>, [fd], k)</a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">def</span> cps_open(fn, k):</span>
+<span id="cb3-2"><a href="#cb3-2"></a>    <span class="cf">return</span> Op(<span class="st">'open'</span>, [fn], k)</span>
+<span id="cb3-3"><a href="#cb3-3"></a></span>
+<span id="cb3-4"><a href="#cb3-4"></a><span class="kw">def</span> cps_read(fd, k):</span>
+<span id="cb3-5"><a href="#cb3-5"></a>    <span class="cf">return</span> Op(<span class="st">'read'</span>, [fd], k)</span>
+<span id="cb3-6"><a href="#cb3-6"></a></span>
+<span id="cb3-7"><a href="#cb3-7"></a><span class="kw">def</span> cps_close(fd, k):</span>
+<span id="cb3-8"><a href="#cb3-8"></a>    <span class="cf">return</span> Op(<span class="st">'close'</span>, [fd], k)</span></code></pre></div>
 <p>The interpreter is then an <em>if</em> statement checking the value of <code>op.op</code> with each branch executing the IO operation and passing the result to the rest of the program. I decided to wrap it directly in the program runner:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="kw">def</span> runProgram(prog):</a>
-<a class="sourceLine" id="cb4-2" data-line-number="2">    <span class="kw">def</span> runOp(op):</a>
-<a class="sourceLine" id="cb4-3" data-line-number="3">        <span class="cf">if</span> op.op <span class="op">==</span> <span class="st">'open'</span>:</a>
-<a class="sourceLine" id="cb4-4" data-line-number="4">            fd <span class="op">=</span> os.<span class="bu">open</span>(<span class="op">*</span>op.args, os.O_RDONLY)</a>
-<a class="sourceLine" id="cb4-5" data-line-number="5">            <span class="cf">return</span> op.k(fd)</a>
-<a class="sourceLine" id="cb4-6" data-line-number="6">        <span class="cf">elif</span> op.op <span class="op">==</span> <span class="st">'read'</span>:</a>
-<a class="sourceLine" id="cb4-7" data-line-number="7">            text <span class="op">=</span> os.read(<span class="op">*</span>op.args, <span class="dv">10000</span>)</a>
-<a class="sourceLine" id="cb4-8" data-line-number="8">            <span class="cf">return</span> op.k(text)</a>
-<a class="sourceLine" id="cb4-9" data-line-number="9">        <span class="cf">elif</span> op.op <span class="op">==</span> <span class="st">'close'</span>:</a>
-<a class="sourceLine" id="cb4-10" data-line-number="10">            os.close(<span class="op">*</span>op.args)</a>
-<a class="sourceLine" id="cb4-11" data-line-number="11">            <span class="cf">return</span> op.k()</a>
-<a class="sourceLine" id="cb4-12" data-line-number="12"></a>
-<a class="sourceLine" id="cb4-13" data-line-number="13">    <span class="cf">while</span> <span class="bu">isinstance</span>(prog, Op):</a>
-<a class="sourceLine" id="cb4-14" data-line-number="14">        prog <span class="op">=</span> runOp(prog)</a>
-<a class="sourceLine" id="cb4-15" data-line-number="15"></a>
-<a class="sourceLine" id="cb4-16" data-line-number="16">    <span class="cf">return</span> prog</a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">def</span> runProgram(prog):</span>
+<span id="cb4-2"><a href="#cb4-2"></a>    <span class="kw">def</span> runOp(op):</span>
+<span id="cb4-3"><a href="#cb4-3"></a>        <span class="cf">if</span> op.op <span class="op">==</span> <span class="st">'open'</span>:</span>
+<span id="cb4-4"><a href="#cb4-4"></a>            fd <span class="op">=</span> os.<span class="bu">open</span>(<span class="op">*</span>op.args, os.O_RDONLY)</span>
+<span id="cb4-5"><a href="#cb4-5"></a>            <span class="cf">return</span> op.k(fd)</span>
+<span id="cb4-6"><a href="#cb4-6"></a>        <span class="cf">elif</span> op.op <span class="op">==</span> <span class="st">'read'</span>:</span>
+<span id="cb4-7"><a href="#cb4-7"></a>            text <span class="op">=</span> os.read(<span class="op">*</span>op.args, <span class="dv">10000</span>)</span>
+<span id="cb4-8"><a href="#cb4-8"></a>            <span class="cf">return</span> op.k(text)</span>
+<span id="cb4-9"><a href="#cb4-9"></a>        <span class="cf">elif</span> op.op <span class="op">==</span> <span class="st">'close'</span>:</span>
+<span id="cb4-10"><a href="#cb4-10"></a>            os.close(<span class="op">*</span>op.args)</span>
+<span id="cb4-11"><a href="#cb4-11"></a>            <span class="cf">return</span> op.k()</span>
+<span id="cb4-12"><a href="#cb4-12"></a></span>
+<span id="cb4-13"><a href="#cb4-13"></a>    <span class="cf">while</span> <span class="bu">isinstance</span>(prog, Op):</span>
+<span id="cb4-14"><a href="#cb4-14"></a>        prog <span class="op">=</span> runOp(prog)</span>
+<span id="cb4-15"><a href="#cb4-15"></a></span>
+<span id="cb4-16"><a href="#cb4-16"></a>    <span class="cf">return</span> prog</span></code></pre></div>
 <p>So far so good, but what will <code>count_char_of_file</code> all of this do to <code>count_chars_of_file</code>?</p>
 <p>Well, it’s not quite as easy to read any more (basically it’s rewritten in <a href="https://en.wikipedia.org/wiki/Continuation-passing_style">CPS</a>):</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="kw">def</span> count_chars_of_file(fn):</a>
-<a class="sourceLine" id="cb5-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb5-3" data-line-number="3">    <span class="kw">def</span> cont_1(text, fd):</a>
-<a class="sourceLine" id="cb5-4" data-line-number="4">        n <span class="op">=</span> <span class="bu">len</span>(text)</a>
-<a class="sourceLine" id="cb5-5" data-line-number="5">        <span class="cf">return</span> cps_close(fd, <span class="kw">lambda</span> n<span class="op">=</span>n: n)</a>
-<a class="sourceLine" id="cb5-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb5-7" data-line-number="7">    <span class="kw">def</span> cont_0(fd):</a>
-<a class="sourceLine" id="cb5-8" data-line-number="8">        <span class="cf">return</span> cps_read(fd, <span class="kw">lambda</span> text, fd<span class="op">=</span>fd: cont_1(text, fd))</a>
-<a class="sourceLine" id="cb5-9" data-line-number="9"></a>
-<a class="sourceLine" id="cb5-10" data-line-number="10">    <span class="cf">return</span> cps_open(fn, cont_0)</a></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">def</span> count_chars_of_file(fn):</span>
+<span id="cb5-2"><a href="#cb5-2"></a></span>
+<span id="cb5-3"><a href="#cb5-3"></a>    <span class="kw">def</span> cont_1(text, fd):</span>
+<span id="cb5-4"><a href="#cb5-4"></a>        n <span class="op">=</span> <span class="bu">len</span>(text)</span>
+<span id="cb5-5"><a href="#cb5-5"></a>        <span class="cf">return</span> cps_close(fd, <span class="kw">lambda</span> n<span class="op">=</span>n: n)</span>
+<span id="cb5-6"><a href="#cb5-6"></a></span>
+<span id="cb5-7"><a href="#cb5-7"></a>    <span class="kw">def</span> cont_0(fd):</span>
+<span id="cb5-8"><a href="#cb5-8"></a>        <span class="cf">return</span> cps_read(fd, <span class="kw">lambda</span> text, fd<span class="op">=</span>fd: cont_1(text, fd))</span>
+<span id="cb5-9"><a href="#cb5-9"></a></span>
+<span id="cb5-10"><a href="#cb5-10"></a>    <span class="cf">return</span> cps_open(fn, cont_0)</span></code></pre></div>
 <h3 id="generators-to-the-rescue">Generators to the rescue</h3>
-<p>Python does have a notion of continuations in the form of generators.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> By making <code>count_char_of_file</code> into a generator it’s possible to remove the explicit continuations and the program actually resembles the original one again.</p>
+<p>Python does have a notion of continuations in the form of generators.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> By making <code>count_char_of_file</code> into a generator it’s possible to remove the explicit continuations and the program actually resembles the original one again.</p>
 <p>The type for the actions loses one member, and the functions creating them lose an argument:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb6-1" data-line-number="1">Op <span class="op">=</span> collections.namedtuple(<span class="st">'Op'</span>, [<span class="st">'op'</span>, <span class="st">'args'</span>])</a>
-<a class="sourceLine" id="cb6-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb6-3" data-line-number="3"><span class="kw">def</span> gen_open(fn):</a>
-<a class="sourceLine" id="cb6-4" data-line-number="4">    <span class="cf">return</span> Op(<span class="st">'open'</span>, [fn])</a>
-<a class="sourceLine" id="cb6-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb6-6" data-line-number="6"><span class="kw">def</span> gen_read(fd):</a>
-<a class="sourceLine" id="cb6-7" data-line-number="7">    <span class="cf">return</span> Op(<span class="st">'read'</span>, [fd])</a>
-<a class="sourceLine" id="cb6-8" data-line-number="8"></a>
-<a class="sourceLine" id="cb6-9" data-line-number="9"><span class="kw">def</span> gen_close(fd):</a>
-<a class="sourceLine" id="cb6-10" data-line-number="10">    <span class="cf">return</span> Op(<span class="st">'close'</span>, [fd])</a></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1"></a>Op <span class="op">=</span> collections.namedtuple(<span class="st">'Op'</span>, [<span class="st">'op'</span>, <span class="st">'args'</span>])</span>
+<span id="cb6-2"><a href="#cb6-2"></a></span>
+<span id="cb6-3"><a href="#cb6-3"></a><span class="kw">def</span> gen_open(fn):</span>
+<span id="cb6-4"><a href="#cb6-4"></a>    <span class="cf">return</span> Op(<span class="st">'open'</span>, [fn])</span>
+<span id="cb6-5"><a href="#cb6-5"></a></span>
+<span id="cb6-6"><a href="#cb6-6"></a><span class="kw">def</span> gen_read(fd):</span>
+<span id="cb6-7"><a href="#cb6-7"></a>    <span class="cf">return</span> Op(<span class="st">'read'</span>, [fd])</span>
+<span id="cb6-8"><a href="#cb6-8"></a></span>
+<span id="cb6-9"><a href="#cb6-9"></a><span class="kw">def</span> gen_close(fd):</span>
+<span id="cb6-10"><a href="#cb6-10"></a>    <span class="cf">return</span> Op(<span class="st">'close'</span>, [fd])</span></code></pre></div>
 <p>The interpreter and program runner must be modified to step the generator until its end:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="kw">def</span> runProgram(prog):</a>
-<a class="sourceLine" id="cb7-2" data-line-number="2">    <span class="kw">def</span> runOp(op):</a>
-<a class="sourceLine" id="cb7-3" data-line-number="3">        <span class="cf">if</span> op.op <span class="op">==</span> <span class="st">'open'</span>:</a>
-<a class="sourceLine" id="cb7-4" data-line-number="4">            fd <span class="op">=</span> os.<span class="bu">open</span>(op.args[<span class="dv">0</span>], os.O_RDONLY)</a>
-<a class="sourceLine" id="cb7-5" data-line-number="5">            <span class="cf">return</span> fd</a>
-<a class="sourceLine" id="cb7-6" data-line-number="6">        <span class="cf">elif</span> op.op <span class="op">==</span> <span class="st">'read'</span>:</a>
-<a class="sourceLine" id="cb7-7" data-line-number="7">            text <span class="op">=</span> os.read(op.args[<span class="dv">0</span>], <span class="dv">10000</span>)</a>
-<a class="sourceLine" id="cb7-8" data-line-number="8">            <span class="cf">return</span> text</a>
-<a class="sourceLine" id="cb7-9" data-line-number="9">        <span class="cf">elif</span> op.op <span class="op">==</span> <span class="st">'close'</span>:</a>
-<a class="sourceLine" id="cb7-10" data-line-number="10">            os.close(op.args[<span class="dv">0</span>])</a>
-<a class="sourceLine" id="cb7-11" data-line-number="11">            <span class="cf">return</span> <span class="va">None</span></a>
-<a class="sourceLine" id="cb7-12" data-line-number="12"></a>
-<a class="sourceLine" id="cb7-13" data-line-number="13">    <span class="cf">try</span>:</a>
-<a class="sourceLine" id="cb7-14" data-line-number="14">        op <span class="op">=</span> prog.send(<span class="va">None</span>)</a>
-<a class="sourceLine" id="cb7-15" data-line-number="15">        <span class="cf">while</span> <span class="va">True</span>:</a>
-<a class="sourceLine" id="cb7-16" data-line-number="16">            r <span class="op">=</span> runOp(op)</a>
-<a class="sourceLine" id="cb7-17" data-line-number="17">            op <span class="op">=</span> prog.send(r)</a>
-<a class="sourceLine" id="cb7-18" data-line-number="18">    <span class="cf">except</span> <span class="pp">StopIteration</span> <span class="im">as</span> e:</a>
-<a class="sourceLine" id="cb7-19" data-line-number="19">        <span class="cf">return</span> e.value</a></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">def</span> runProgram(prog):</span>
+<span id="cb7-2"><a href="#cb7-2"></a>    <span class="kw">def</span> runOp(op):</span>
+<span id="cb7-3"><a href="#cb7-3"></a>        <span class="cf">if</span> op.op <span class="op">==</span> <span class="st">'open'</span>:</span>
+<span id="cb7-4"><a href="#cb7-4"></a>            fd <span class="op">=</span> os.<span class="bu">open</span>(op.args[<span class="dv">0</span>], os.O_RDONLY)</span>
+<span id="cb7-5"><a href="#cb7-5"></a>            <span class="cf">return</span> fd</span>
+<span id="cb7-6"><a href="#cb7-6"></a>        <span class="cf">elif</span> op.op <span class="op">==</span> <span class="st">'read'</span>:</span>
+<span id="cb7-7"><a href="#cb7-7"></a>            text <span class="op">=</span> os.read(op.args[<span class="dv">0</span>], <span class="dv">10000</span>)</span>
+<span id="cb7-8"><a href="#cb7-8"></a>            <span class="cf">return</span> text</span>
+<span id="cb7-9"><a href="#cb7-9"></a>        <span class="cf">elif</span> op.op <span class="op">==</span> <span class="st">'close'</span>:</span>
+<span id="cb7-10"><a href="#cb7-10"></a>            os.close(op.args[<span class="dv">0</span>])</span>
+<span id="cb7-11"><a href="#cb7-11"></a>            <span class="cf">return</span> <span class="va">None</span></span>
+<span id="cb7-12"><a href="#cb7-12"></a></span>
+<span id="cb7-13"><a href="#cb7-13"></a>    <span class="cf">try</span>:</span>
+<span id="cb7-14"><a href="#cb7-14"></a>        op <span class="op">=</span> prog.send(<span class="va">None</span>)</span>
+<span id="cb7-15"><a href="#cb7-15"></a>        <span class="cf">while</span> <span class="va">True</span>:</span>
+<span id="cb7-16"><a href="#cb7-16"></a>            r <span class="op">=</span> runOp(op)</span>
+<span id="cb7-17"><a href="#cb7-17"></a>            op <span class="op">=</span> prog.send(r)</span>
+<span id="cb7-18"><a href="#cb7-18"></a>    <span class="cf">except</span> <span class="pp">StopIteration</span> <span class="im">as</span> e:</span>
+<span id="cb7-19"><a href="#cb7-19"></a>        <span class="cf">return</span> e.value</span></code></pre></div>
 <p>Finally, the generator-version of <code>count_chars_of_file</code> goes back to being a bit more readable:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="kw">def</span> count_chars_of_file(fn):</a>
-<a class="sourceLine" id="cb8-2" data-line-number="2">    fd <span class="op">=</span> <span class="cf">yield</span> gen_open(fn)</a>
-<a class="sourceLine" id="cb8-3" data-line-number="3">    text <span class="op">=</span> <span class="cf">yield</span> gen_read(fd)</a>
-<a class="sourceLine" id="cb8-4" data-line-number="4">    n <span class="op">=</span> <span class="bu">len</span>(text)</a>
-<a class="sourceLine" id="cb8-5" data-line-number="5">    <span class="cf">yield</span> gen_close(fd)</a>
-<a class="sourceLine" id="cb8-6" data-line-number="6">    <span class="cf">return</span> n</a></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">def</span> count_chars_of_file(fn):</span>
+<span id="cb8-2"><a href="#cb8-2"></a>    fd <span class="op">=</span> <span class="cf">yield</span> gen_open(fn)</span>
+<span id="cb8-3"><a href="#cb8-3"></a>    text <span class="op">=</span> <span class="cf">yield</span> gen_read(fd)</span>
+<span id="cb8-4"><a href="#cb8-4"></a>    n <span class="op">=</span> <span class="bu">len</span>(text)</span>
+<span id="cb8-5"><a href="#cb8-5"></a>    <span class="cf">yield</span> gen_close(fd)</span>
+<span id="cb8-6"><a href="#cb8-6"></a>    <span class="cf">return</span> n</span></code></pre></div>
 <h3 id="generators-all-the-way">Generators all the way</h3>
 <p>Limitations of Python generators mean that we have either have to push the interpreter (<code>runProgram</code>) down to where <code>count_char_of_file</code> is used, or make all intermediate layers into generators and rewrite the interpreter to deal with this. It could look something like this then:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="kw">def</span> runProgram(prog):</a>
-<a class="sourceLine" id="cb9-2" data-line-number="2">    <span class="kw">def</span> runOp(op):</a>
-<a class="sourceLine" id="cb9-3" data-line-number="3">        <span class="cf">if</span> op.op <span class="op">==</span> <span class="st">'open'</span>:</a>
-<a class="sourceLine" id="cb9-4" data-line-number="4">            fd <span class="op">=</span> os.<span class="bu">open</span>(op.args[<span class="dv">0</span>], os.O_RDONLY)</a>
-<a class="sourceLine" id="cb9-5" data-line-number="5">            <span class="cf">return</span> fd</a>
-<a class="sourceLine" id="cb9-6" data-line-number="6">        <span class="cf">elif</span> op.op <span class="op">==</span> <span class="st">'read'</span>:</a>
-<a class="sourceLine" id="cb9-7" data-line-number="7">            text <span class="op">=</span> os.read(op.args[<span class="dv">0</span>], <span class="dv">10000</span>)</a>
-<a class="sourceLine" id="cb9-8" data-line-number="8">            <span class="cf">return</span> text</a>
-<a class="sourceLine" id="cb9-9" data-line-number="9">        <span class="cf">elif</span> op.op <span class="op">==</span> <span class="st">'close'</span>:</a>
-<a class="sourceLine" id="cb9-10" data-line-number="10">            os.close(op.args[<span class="dv">0</span>])</a>
-<a class="sourceLine" id="cb9-11" data-line-number="11">            <span class="cf">return</span> <span class="va">None</span></a>
-<a class="sourceLine" id="cb9-12" data-line-number="12"></a>
-<a class="sourceLine" id="cb9-13" data-line-number="13">    <span class="cf">try</span>:</a>
-<a class="sourceLine" id="cb9-14" data-line-number="14">        op <span class="op">=</span> prog.send(<span class="va">None</span>)</a>
-<a class="sourceLine" id="cb9-15" data-line-number="15">        <span class="cf">while</span> <span class="va">True</span>:</a>
-<a class="sourceLine" id="cb9-16" data-line-number="16">            <span class="cf">if</span> <span class="bu">isinstance</span>(op, Op):</a>
-<a class="sourceLine" id="cb9-17" data-line-number="17">                r <span class="op">=</span> runOp(op)</a>
-<a class="sourceLine" id="cb9-18" data-line-number="18">                op <span class="op">=</span> prog.send(r)</a>
-<a class="sourceLine" id="cb9-19" data-line-number="19">            <span class="cf">elif</span> <span class="bu">isinstance</span>(op, types.GeneratorType):</a>
-<a class="sourceLine" id="cb9-20" data-line-number="20">                r <span class="op">=</span> runProgram(op)</a>
-<a class="sourceLine" id="cb9-21" data-line-number="21">                op <span class="op">=</span> prog.send(r)</a>
-<a class="sourceLine" id="cb9-22" data-line-number="22"></a>
-<a class="sourceLine" id="cb9-23" data-line-number="23">    <span class="cf">except</span> <span class="pp">StopIteration</span> <span class="im">as</span> e:</a>
-<a class="sourceLine" id="cb9-24" data-line-number="24">        <span class="cf">return</span> e.value</a></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">def</span> runProgram(prog):</span>
+<span id="cb9-2"><a href="#cb9-2"></a>    <span class="kw">def</span> runOp(op):</span>
+<span id="cb9-3"><a href="#cb9-3"></a>        <span class="cf">if</span> op.op <span class="op">==</span> <span class="st">'open'</span>:</span>
+<span id="cb9-4"><a href="#cb9-4"></a>            fd <span class="op">=</span> os.<span class="bu">open</span>(op.args[<span class="dv">0</span>], os.O_RDONLY)</span>
+<span id="cb9-5"><a href="#cb9-5"></a>            <span class="cf">return</span> fd</span>
+<span id="cb9-6"><a href="#cb9-6"></a>        <span class="cf">elif</span> op.op <span class="op">==</span> <span class="st">'read'</span>:</span>
+<span id="cb9-7"><a href="#cb9-7"></a>            text <span class="op">=</span> os.read(op.args[<span class="dv">0</span>], <span class="dv">10000</span>)</span>
+<span id="cb9-8"><a href="#cb9-8"></a>            <span class="cf">return</span> text</span>
+<span id="cb9-9"><a href="#cb9-9"></a>        <span class="cf">elif</span> op.op <span class="op">==</span> <span class="st">'close'</span>:</span>
+<span id="cb9-10"><a href="#cb9-10"></a>            os.close(op.args[<span class="dv">0</span>])</span>
+<span id="cb9-11"><a href="#cb9-11"></a>            <span class="cf">return</span> <span class="va">None</span></span>
+<span id="cb9-12"><a href="#cb9-12"></a></span>
+<span id="cb9-13"><a href="#cb9-13"></a>    <span class="cf">try</span>:</span>
+<span id="cb9-14"><a href="#cb9-14"></a>        op <span class="op">=</span> prog.send(<span class="va">None</span>)</span>
+<span id="cb9-15"><a href="#cb9-15"></a>        <span class="cf">while</span> <span class="va">True</span>:</span>
+<span id="cb9-16"><a href="#cb9-16"></a>            <span class="cf">if</span> <span class="bu">isinstance</span>(op, Op):</span>
+<span id="cb9-17"><a href="#cb9-17"></a>                r <span class="op">=</span> runOp(op)</span>
+<span id="cb9-18"><a href="#cb9-18"></a>                op <span class="op">=</span> prog.send(r)</span>
+<span id="cb9-19"><a href="#cb9-19"></a>            <span class="cf">elif</span> <span class="bu">isinstance</span>(op, types.GeneratorType):</span>
+<span id="cb9-20"><a href="#cb9-20"></a>                r <span class="op">=</span> runProgram(op)</span>
+<span id="cb9-21"><a href="#cb9-21"></a>                op <span class="op">=</span> prog.send(r)</span>
+<span id="cb9-22"><a href="#cb9-22"></a></span>
+<span id="cb9-23"><a href="#cb9-23"></a>    <span class="cf">except</span> <span class="pp">StopIteration</span> <span class="im">as</span> e:</span>
+<span id="cb9-24"><a href="#cb9-24"></a>        <span class="cf">return</span> e.value</span></code></pre></div>
 <h3 id="final-thoughts">Final thoughts</h3>
 <p>I think I’ve shown one way to achieve, at least parts of, what Ken talks about. The resulting code looks almost like “normal Python”. There are some things to note:</p>
 <ol type="1">
@@ -178,10 +178,10 @@
 </ol>
 <p>Would I ever advocate this approach for a larger Python project, or even any project in an OO/imperative language?</p>
 <p>I’m not sure! I think that testing using mocks and stubs has lead to a smelly code base each an every time I’ve used it, but this approach feels a little too far from how OO/imperative code usually is written. I would love to try it out and see what the implications really are.</p>
-<section class="footnotes">
+<section class="footnotes" role="doc-endnotes">
 <hr />
 <ol>
-<li id="fn1"><p>I know, I know, <em>coroutines</em>! I’m simplifying and brushing over details here, but I don’t think I’m brushing over any details that are <em>important</em> for this example.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+<li id="fn1" role="doc-endnote"><p>I know, I know, <em>coroutines</em>! I’m simplifying and brushing over details here, but I don’t think I’m brushing over any details that are <em>important</em> for this example.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section>
 
@@ -189,7 +189,7 @@
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/python.html">python</a>, <a href="../tags/free.html">free</a>
+Tags: <a title="All pages tagged 'python'." href="../tags/python.html">python</a>, <a title="All pages tagged 'free'." href="../tags/free.html">free</a>
 </div>
 
 

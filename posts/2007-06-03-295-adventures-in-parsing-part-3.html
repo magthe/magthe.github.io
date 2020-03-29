@@ -31,65 +31,65 @@
 
 <p>I got a great many comments, at least by my standards, on my earlier <a href="../posts/2007-05-29-290-more-adventures-in-parsing.html">two</a> <a href="../posts/2007-05-27-289-adventures-in-parsing.html">posts</a> on parsing in Haskell. Especially on the latest one. Conal posted a comment on the first pointing me towards <code>liftM</code> and its siblings, without telling me that it would only be the first step towards “applicative style”. So, here I go again…</p>
 <p>First off, importing <code>Control.Applicative</code>. Apparently <code>&lt;|&gt;</code> is defined in both <code>Applicative</code> and in <code>Parsec</code>. I do use <code>&lt;|&gt;</code> from <code>Parsec</code> so preventing importing it from <code>Applicative</code> seemed like a good idea:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">import</span> <span class="dt">Control.Applicative</span> <span class="kw">hiding</span> ( (&lt;|&gt;) )</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">import</span> <span class="dt">Control.Applicative</span> <span class="kw">hiding</span> ( (&lt;|&gt;) )</span></code></pre></div>
 <p>Second, Cale pointed out that I need to make an instance for <code>Control.Applicative.Applicative</code> for <code>GenParser</code>. He was nice enough to point out how to do that, leaving syntax the only thing I had to struggle with:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Applicative</span> (<span class="dt">GenParser</span> c st) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb2-2" data-line-number="2">    pure <span class="fu">=</span> return</a>
-<a class="sourceLine" id="cb2-3" data-line-number="3">    (<span class="fu">&lt;*&gt;</span>) <span class="fu">=</span> ap</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">instance</span> <span class="dt">Applicative</span> (<span class="dt">GenParser</span> c st) <span class="kw">where</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a>    <span class="fu">pure</span> <span class="ot">=</span> <span class="fu">return</span></span>
+<span id="cb2-3"><a href="#cb2-3"></a>    (<span class="op">&lt;*&gt;</span>) <span class="ot">=</span> ap</span></code></pre></div>
 <p>I decided to take baby-steps and I started with <code>parseAddress</code>. Here’s what it used to look like:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1">parseAddress <span class="fu">=</span> <span class="kw">let</span></a>
-<a class="sourceLine" id="cb3-2" data-line-number="2">        hexStr2Int <span class="fu">=</span> Prelude.read <span class="fu">.</span> (<span class="st">&quot;0x&quot;</span> <span class="fu">++</span>)</a>
-<a class="sourceLine" id="cb3-3" data-line-number="3">    <span class="kw">in</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb3-4" data-line-number="4">        start <span class="ot">&lt;-</span> liftM hexStr2Int <span class="fu">$</span> thenChar <span class="ch">'-'</span> <span class="fu">$</span> many1 hexDigit</a>
-<a class="sourceLine" id="cb3-5" data-line-number="5">        end <span class="ot">&lt;-</span> liftM hexStr2Int <span class="fu">$</span> many1 hexDigit</a>
-<a class="sourceLine" id="cb3-6" data-line-number="6">        return <span class="fu">$</span> <span class="dt">Address</span> start end</a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a>parseAddress <span class="ot">=</span> <span class="kw">let</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a>        hexStr2Int <span class="ot">=</span> Prelude.read <span class="op">.</span> (<span class="st">&quot;0x&quot;</span> <span class="op">++</span>)</span>
+<span id="cb3-3"><a href="#cb3-3"></a>    <span class="kw">in</span> <span class="kw">do</span></span>
+<span id="cb3-4"><a href="#cb3-4"></a>        start <span class="ot">&lt;-</span> liftM hexStr2Int <span class="op">$</span> thenChar <span class="ch">'-'</span> <span class="op">$</span> many1 hexDigit</span>
+<span id="cb3-5"><a href="#cb3-5"></a>        end <span class="ot">&lt;-</span> liftM hexStr2Int <span class="op">$</span> many1 hexDigit</span>
+<span id="cb3-6"><a href="#cb3-6"></a>        <span class="fu">return</span> <span class="op">$</span> <span class="dt">Address</span> start end</span></code></pre></div>
 <p>On Twan’s suggestion I rewrote it using <code>where</code> rather than <code>let ... in</code> and since this was my first function I decided to go via the <code>ap</code> function (at the same time I broke out <code>hexStr2Int</code> since it’s used in so many places):</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">parseAddress <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb4-2" data-line-number="2">    start <span class="ot">&lt;-</span> return hexStr2Int <span class="ot">`ap`</span> (thenChar <span class="ch">'-'</span> <span class="fu">$</span> many1 hexDigit)</a>
-<a class="sourceLine" id="cb4-3" data-line-number="3">    end <span class="ot">&lt;-</span> return hexStr2Int <span class="ot">`ap`</span> (many1 hexDigit)</a>
-<a class="sourceLine" id="cb4-4" data-line-number="4">    return <span class="fu">$</span> <span class="dt">Address</span> start end</a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a>parseAddress <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a>    start <span class="ot">&lt;-</span> <span class="fu">return</span> hexStr2Int <span class="ot">`ap`</span> (thenChar <span class="ch">'-'</span> <span class="op">$</span> many1 hexDigit)</span>
+<span id="cb4-3"><a href="#cb4-3"></a>    end <span class="ot">&lt;-</span> <span class="fu">return</span> hexStr2Int <span class="ot">`ap`</span> (many1 hexDigit)</span>
+<span id="cb4-4"><a href="#cb4-4"></a>    <span class="fu">return</span> <span class="op">$</span> <span class="dt">Address</span> start end</span></code></pre></div>
 <p>Then on to applying some functions from <code>Applicative</code>:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1">parseAddress <span class="fu">=</span> <span class="dt">Address</span> start end</a>
-<a class="sourceLine" id="cb5-2" data-line-number="2">    <span class="kw">where</span></a>
-<a class="sourceLine" id="cb5-3" data-line-number="3">        start <span class="fu">=</span> hexStr2Int <span class="fu">&lt;$&gt;</span> (thenChar <span class="ch">'-'</span> <span class="fu">$</span> many1 hexDigit)</a>
-<a class="sourceLine" id="cb5-4" data-line-number="4">        end <span class="fu">=</span> hexStr2Int <span class="fu">&lt;$&gt;</span> (many1 hexDigit)</a></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1"></a>parseAddress <span class="ot">=</span> <span class="dt">Address</span> start end</span>
+<span id="cb5-2"><a href="#cb5-2"></a>    <span class="kw">where</span></span>
+<span id="cb5-3"><a href="#cb5-3"></a>        start <span class="ot">=</span> hexStr2Int <span class="op">&lt;$&gt;</span> (thenChar <span class="ch">'-'</span> <span class="op">$</span> many1 hexDigit)</span>
+<span id="cb5-4"><a href="#cb5-4"></a>        end <span class="ot">=</span> hexStr2Int <span class="op">&lt;$&gt;</span> (many1 hexDigit)</span></code></pre></div>
 <p>By now the use of <code>thenChar</code> looks a little silly so I changed that part into <code>many1 hexDigit &lt;* char '-'</code> instead. Finally I removed the <code>where</code> part altogether and use <code>&lt;*&gt;</code> to string it all together:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1">parseAddress <span class="fu">=</span> <span class="dt">Address</span> <span class="fu">&lt;$&gt;</span></a>
-<a class="sourceLine" id="cb6-2" data-line-number="2">    (hexStr2Int <span class="fu">&lt;$&gt;</span> many1 hexDigit <span class="fu">&lt;*</span> char <span class="ch">'-'</span>) <span class="fu">&lt;*&gt;</span></a>
-<a class="sourceLine" id="cb6-3" data-line-number="3">    (hexStr2Int <span class="fu">&lt;$&gt;</span> (many1 hexDigit))</a></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1"></a>parseAddress <span class="ot">=</span> <span class="dt">Address</span> <span class="op">&lt;$&gt;</span></span>
+<span id="cb6-2"><a href="#cb6-2"></a>    (hexStr2Int <span class="op">&lt;$&gt;</span> many1 hexDigit <span class="op">&lt;*</span> char <span class="ch">'-'</span>) <span class="op">&lt;*&gt;</span></span>
+<span id="cb6-3"><a href="#cb6-3"></a>    (hexStr2Int <span class="op">&lt;$&gt;</span> (many1 hexDigit))</span></code></pre></div>
 <p>From here on I skipped the intermediate steps and went straight for the last form. Here’s what I ended up with:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1">parsePerms <span class="fu">=</span> <span class="dt">Perms</span> <span class="fu">&lt;$&gt;</span></a>
-<a class="sourceLine" id="cb7-2" data-line-number="2">    ( (<span class="fu">==</span> <span class="ch">'r'</span>) <span class="fu">&lt;$&gt;</span> anyChar) <span class="fu">&lt;*&gt;</span></a>
-<a class="sourceLine" id="cb7-3" data-line-number="3">    ( (<span class="fu">==</span> <span class="ch">'w'</span>) <span class="fu">&lt;$&gt;</span> anyChar) <span class="fu">&lt;*&gt;</span></a>
-<a class="sourceLine" id="cb7-4" data-line-number="4">    ( (<span class="fu">==</span> <span class="ch">'x'</span>) <span class="fu">&lt;$&gt;</span> anyChar) <span class="fu">&lt;*&gt;</span></a>
-<a class="sourceLine" id="cb7-5" data-line-number="5">    (cA <span class="fu">&lt;$&gt;</span> anyChar)</a>
-<a class="sourceLine" id="cb7-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb7-7" data-line-number="7">    <span class="kw">where</span></a>
-<a class="sourceLine" id="cb7-8" data-line-number="8">        cA a <span class="fu">=</span> <span class="kw">case</span> a <span class="kw">of</span></a>
-<a class="sourceLine" id="cb7-9" data-line-number="9">            <span class="ch">'p'</span> <span class="ot">-&gt;</span> <span class="dt">Private</span></a>
-<a class="sourceLine" id="cb7-10" data-line-number="10">            <span class="ch">'s'</span> <span class="ot">-&gt;</span> <span class="dt">Shared</span></a>
-<a class="sourceLine" id="cb7-11" data-line-number="11"></a>
-<a class="sourceLine" id="cb7-12" data-line-number="12">parseDevice <span class="fu">=</span> <span class="dt">Device</span> <span class="fu">&lt;$&gt;</span></a>
-<a class="sourceLine" id="cb7-13" data-line-number="13">    (hexStr2Int <span class="fu">&lt;$&gt;</span> many1 hexDigit <span class="fu">&lt;*</span> char <span class="ch">':'</span>) <span class="fu">&lt;*&gt;</span></a>
-<a class="sourceLine" id="cb7-14" data-line-number="14">    (hexStr2Int <span class="fu">&lt;$&gt;</span> (many1 hexDigit))</a>
-<a class="sourceLine" id="cb7-15" data-line-number="15"></a>
-<a class="sourceLine" id="cb7-16" data-line-number="16">parseRegion <span class="fu">=</span> <span class="dt">MemRegion</span> <span class="fu">&lt;$&gt;</span></a>
-<a class="sourceLine" id="cb7-17" data-line-number="17">    (parseAddress <span class="fu">&lt;*</span> char <span class="ch">' '</span>) <span class="fu">&lt;*&gt;</span></a>
-<a class="sourceLine" id="cb7-18" data-line-number="18">    (parsePerms <span class="fu">&lt;*</span> char <span class="ch">' '</span>) <span class="fu">&lt;*&gt;</span></a>
-<a class="sourceLine" id="cb7-19" data-line-number="19">    (hexStr2Int <span class="fu">&lt;$&gt;</span> (many1 hexDigit <span class="fu">&lt;*</span> char <span class="ch">' '</span>)) <span class="fu">&lt;*&gt;</span></a>
-<a class="sourceLine" id="cb7-20" data-line-number="20">    (parseDevice <span class="fu">&lt;*</span> char <span class="ch">' '</span>) <span class="fu">&lt;*&gt;</span></a>
-<a class="sourceLine" id="cb7-21" data-line-number="21">    (Prelude.read <span class="fu">&lt;$&gt;</span> (many1 digit <span class="fu">&lt;*</span> char <span class="ch">' '</span>)) <span class="fu">&lt;*&gt;</span></a>
-<a class="sourceLine" id="cb7-22" data-line-number="22">    (parsePath <span class="fu">&lt;|&gt;</span> string <span class="st">&quot;&quot;</span>)</a>
-<a class="sourceLine" id="cb7-23" data-line-number="23"></a>
-<a class="sourceLine" id="cb7-24" data-line-number="24">    <span class="kw">where</span></a>
-<a class="sourceLine" id="cb7-25" data-line-number="25">        parsePath <span class="fu">=</span> (many1 <span class="fu">$</span> char <span class="ch">' '</span>) <span class="fu">*&gt;</span> (many1 anyChar)</a></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1"></a>parsePerms <span class="ot">=</span> <span class="dt">Perms</span> <span class="op">&lt;$&gt;</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a>    ( (<span class="op">==</span> <span class="ch">'r'</span>) <span class="op">&lt;$&gt;</span> anyChar) <span class="op">&lt;*&gt;</span></span>
+<span id="cb7-3"><a href="#cb7-3"></a>    ( (<span class="op">==</span> <span class="ch">'w'</span>) <span class="op">&lt;$&gt;</span> anyChar) <span class="op">&lt;*&gt;</span></span>
+<span id="cb7-4"><a href="#cb7-4"></a>    ( (<span class="op">==</span> <span class="ch">'x'</span>) <span class="op">&lt;$&gt;</span> anyChar) <span class="op">&lt;*&gt;</span></span>
+<span id="cb7-5"><a href="#cb7-5"></a>    (cA <span class="op">&lt;$&gt;</span> anyChar)</span>
+<span id="cb7-6"><a href="#cb7-6"></a></span>
+<span id="cb7-7"><a href="#cb7-7"></a>    <span class="kw">where</span></span>
+<span id="cb7-8"><a href="#cb7-8"></a>        cA a <span class="ot">=</span> <span class="kw">case</span> a <span class="kw">of</span></span>
+<span id="cb7-9"><a href="#cb7-9"></a>            <span class="ch">'p'</span> <span class="ot">-&gt;</span> <span class="dt">Private</span></span>
+<span id="cb7-10"><a href="#cb7-10"></a>            <span class="ch">'s'</span> <span class="ot">-&gt;</span> <span class="dt">Shared</span></span>
+<span id="cb7-11"><a href="#cb7-11"></a></span>
+<span id="cb7-12"><a href="#cb7-12"></a>parseDevice <span class="ot">=</span> <span class="dt">Device</span> <span class="op">&lt;$&gt;</span></span>
+<span id="cb7-13"><a href="#cb7-13"></a>    (hexStr2Int <span class="op">&lt;$&gt;</span> many1 hexDigit <span class="op">&lt;*</span> char <span class="ch">':'</span>) <span class="op">&lt;*&gt;</span></span>
+<span id="cb7-14"><a href="#cb7-14"></a>    (hexStr2Int <span class="op">&lt;$&gt;</span> (many1 hexDigit))</span>
+<span id="cb7-15"><a href="#cb7-15"></a></span>
+<span id="cb7-16"><a href="#cb7-16"></a>parseRegion <span class="ot">=</span> <span class="dt">MemRegion</span> <span class="op">&lt;$&gt;</span></span>
+<span id="cb7-17"><a href="#cb7-17"></a>    (parseAddress <span class="op">&lt;*</span> char <span class="ch">' '</span>) <span class="op">&lt;*&gt;</span></span>
+<span id="cb7-18"><a href="#cb7-18"></a>    (parsePerms <span class="op">&lt;*</span> char <span class="ch">' '</span>) <span class="op">&lt;*&gt;</span></span>
+<span id="cb7-19"><a href="#cb7-19"></a>    (hexStr2Int <span class="op">&lt;$&gt;</span> (many1 hexDigit <span class="op">&lt;*</span> char <span class="ch">' '</span>)) <span class="op">&lt;*&gt;</span></span>
+<span id="cb7-20"><a href="#cb7-20"></a>    (parseDevice <span class="op">&lt;*</span> char <span class="ch">' '</span>) <span class="op">&lt;*&gt;</span></span>
+<span id="cb7-21"><a href="#cb7-21"></a>    (Prelude.read <span class="op">&lt;$&gt;</span> (many1 digit <span class="op">&lt;*</span> char <span class="ch">' '</span>)) <span class="op">&lt;*&gt;</span></span>
+<span id="cb7-22"><a href="#cb7-22"></a>    (parsePath <span class="op">&lt;|&gt;</span> string <span class="st">&quot;&quot;</span>)</span>
+<span id="cb7-23"><a href="#cb7-23"></a></span>
+<span id="cb7-24"><a href="#cb7-24"></a>    <span class="kw">where</span></span>
+<span id="cb7-25"><a href="#cb7-25"></a>        parsePath <span class="ot">=</span> (many1 <span class="op">$</span> char <span class="ch">' '</span>) <span class="op">*&gt;</span> (many1 anyChar)</span></code></pre></div>
 <p>I have to say I’m fairly pleased with this version of the parser. It reads about as easy as the first version and there’s none of the “reversing” that <code>thenChar</code> introduced.</p>
 
 
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/parsec.html">parsec</a>
+Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>, <a title="All pages tagged 'parsec'." href="../tags/parsec.html">parsec</a>
 </div>
 
 
@@ -127,9 +127,9 @@ Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/parsec.html">
   </header>
 <p>First of all, note that you don’t need parentheses around <code>parseSomething &lt;* char ' '</code>.</p>
 <p>You can also simplify things a bit more by combining <code>hexStr2Int &lt;$&gt; many1 hexDigit</code> into a function, then you could say:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">parseHex <span class="fu">=</span> hexStr2Int <span class="fu">&lt;$&gt;</span> many1 hexDigit</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">parseAddress <span class="fu">=</span> <span class="dt">Address</span> <span class="fu">&lt;$&gt;</span> parseHex <span class="fu">&lt;*</span> char <span class="ch">'-'</span> <span class="fu">&lt;*&gt;</span> parseHex</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">parseDevice  <span class="fu">=</span> <span class="dt">Device</span> <span class="fu">&lt;$&gt;</span> parseHex <span class="fu">&lt;&lt;/</span>em<span class="fu">&gt;</span> char <span class="ch">':'</span> <span class="fu">&lt;*&gt;</span> parseHex</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a>parseHex <span class="ot">=</span> hexStr2Int <span class="op">&lt;$&gt;</span> many1 hexDigit</span>
+<span id="cb1-2"><a href="#cb1-2"></a>parseAddress <span class="ot">=</span> <span class="dt">Address</span> <span class="op">&lt;$&gt;</span> parseHex <span class="op">&lt;*</span> char <span class="ch">'-'</span> <span class="op">&lt;*&gt;</span> parseHex</span>
+<span id="cb1-3"><a href="#cb1-3"></a>parseDevice  <span class="ot">=</span> <span class="dt">Device</span> <span class="op">&lt;$&gt;</span> parseHex <span class="op">&lt;&lt;/</span>em<span class="op">&gt;</span> char <span class="ch">':'</span> <span class="op">&lt;*&gt;</span> parseHex</span></code></pre></div>
 <p>Also, in <code>cA</code>, should there be a case for character other than ‘p’ or ‘s’? Otherwise the program could fail with a pattern match error.</p>
 </article>
 

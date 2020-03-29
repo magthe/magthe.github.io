@@ -33,19 +33,19 @@
 <p>As I said, it’s always nice to receive praise, so here’s one solution that came to mind as I was reading the email.</p>
 <p>I should mention that it relies on there being a reasonable default value for each type of the fields, and that the default is the same for all fields sharing a type.</p>
 <p>First off, define a type class for types with default values:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">class</span> <span class="dt">Defaultable</span> d <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="ot">    def ::</span> d</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">class</span> <span class="dt">Defaultable</span> d <span class="kw">where</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="ot">    def ::</span> d</span></code></pre></div>
 <p>Then modify <code>mLookup</code> so that it uses <code>Defaultable</code>. I renamed it to <code>mLookupAndReadJSON</code>:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">mLookupAndReadJSON a as <span class="fu">=</span> maybe def readJSON (lookup a as)</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a>mLookupAndReadJSON a as <span class="ot">=</span> <span class="fu">maybe</span> def readJSON (<span class="fu">lookup</span> a as)</span></code></pre></div>
 <p>Now we need to provide some instances of <code>Defaultable</code> too. I limit this example to cover only <code>GlossDef</code>, so only the following instances are required:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Defaultable</span> [a] <span class="kw">where</span></a>
-<a class="sourceLine" id="cb3-2" data-line-number="2">    def <span class="fu">=</span> []</a>
-<a class="sourceLine" id="cb3-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb3-4" data-line-number="4"><span class="kw">instance</span> <span class="dt">Defaultable</span> a <span class="ot">=&gt;</span> <span class="dt">Defaultable</span> (<span class="dt">Result</span> a) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb3-5" data-line-number="5">    def <span class="fu">=</span> <span class="dt">Ok</span> def</a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">instance</span> <span class="dt">Defaultable</span> [a] <span class="kw">where</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a>    def <span class="ot">=</span> []</span>
+<span id="cb3-3"><a href="#cb3-3"></a></span>
+<span id="cb3-4"><a href="#cb3-4"></a><span class="kw">instance</span> <span class="dt">Defaultable</span> a <span class="ot">=&gt;</span> <span class="dt">Defaultable</span> (<span class="dt">Result</span> a) <span class="kw">where</span></span>
+<span id="cb3-5"><a href="#cb3-5"></a>    def <span class="ot">=</span> <span class="dt">Ok</span> def</span></code></pre></div>
 <p>Now it’s possible to decode incomplete JSON objects:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">ghci<span class="fu">&gt;</span> decode <span class="st">&quot;{ \&quot;GlossSeeAlso\&quot;: [\&quot;GML\&quot;, \&quot;XML\&quot;] }&quot;</span><span class="ot"> ::</span> <span class="dt">Result</span> <span class="dt">GlossDef</span></a>
-<a class="sourceLine" id="cb4-2" data-line-number="2"><span class="dt">Ok</span> (<span class="dt">GlossDef</span> {glossDefPara <span class="fu">=</span> <span class="st">&quot;&quot;</span>, glossDefSeeAlso <span class="fu">=</span> [<span class="st">&quot;GML&quot;</span>,<span class="st">&quot;XML&quot;</span>]})</a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a>ghci<span class="op">&gt;</span> decode <span class="st">&quot;{ \&quot;GlossSeeAlso\&quot;: [\&quot;GML\&quot;, \&quot;XML\&quot;] }&quot;</span><span class="ot"> ::</span> <span class="dt">Result</span> <span class="dt">GlossDef</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a><span class="dt">Ok</span> (<span class="dt">GlossDef</span> {glossDefPara <span class="ot">=</span> <span class="st">&quot;&quot;</span>, glossDefSeeAlso <span class="ot">=</span> [<span class="st">&quot;GML&quot;</span>,<span class="st">&quot;XML&quot;</span>]})</span></code></pre></div>
 <p>I’m sure there are other ways of achieving what the author of the email asked for. Please let me know of them in comments.</p>
 
 

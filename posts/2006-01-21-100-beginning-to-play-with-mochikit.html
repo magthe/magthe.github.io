@@ -32,50 +32,50 @@
 <p>I haven’t written any JavaScript for years. The only lingering memory was of pain–pain to find information, pain to use the API, pain to debug… There were probably a few more pains, but I’ve managed to successfully repress those memories. So, why return? Well, I want to some day be able to debunk the AJAX hype in any discusion I partake in :-)</p>
 <p><a href="http://mochikit.com/">MochiKit</a> is used in <a href="http://www.turbogears.org/">turbogears</a> to make the life of a “web developer” easier. Given the comments on the turbogears site I tought I’d take a quick look at it… I was surprised. There was a lot less pain this time.</p>
 <p>Of course I started with some silly experiments. First off playing with the DOM tree a little. The HTML part ended up like this:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">&lt;html&gt;</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  <span class="kw">&lt;head&gt;</span></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">    <span class="kw">&lt;title&gt;</span>Experiment 1<span class="kw">&lt;/title&gt;</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">    <span class="kw">&lt;script</span><span class="ot"> type=</span><span class="st">&quot;text/javascript&quot;</span></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="ot">            src=</span><span class="st">&quot;MochiKit-1.1/lib/MochiKit/Base.js&quot;</span><span class="kw">&gt;&lt;/script&gt;</span></a>
-<a class="sourceLine" id="cb1-6" data-line-number="6">    <span class="kw">&lt;script</span><span class="ot"> type=</span><span class="st">&quot;text/javascript&quot;</span></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="ot">            src=</span><span class="st">&quot;MochiKit-1.1/lib/MochiKit/Iter.js&quot;</span><span class="kw">&gt;&lt;/script&gt;</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8">    <span class="kw">&lt;script</span><span class="ot"> type=</span><span class="st">&quot;text/javascript&quot;</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="ot">            src=</span><span class="st">&quot;MochiKit-1.1/lib/MochiKit/DOM.js&quot;</span><span class="kw">&gt;&lt;/script&gt;</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10">    <span class="kw">&lt;script</span><span class="ot"> type=</span><span class="st">&quot;text/javascript&quot;</span></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="ot">            src=</span><span class="st">&quot;exp01.js&quot;</span><span class="kw">&gt;&lt;/script&gt;</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12">  <span class="kw">&lt;/head&gt;</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"></a>
-<a class="sourceLine" id="cb1-14" data-line-number="14">  <span class="kw">&lt;body&gt;</span></a>
-<a class="sourceLine" id="cb1-15" data-line-number="15">  <span class="kw">&lt;table</span><span class="ot"> id=</span><span class="st">&quot;theTable&quot;</span><span class="kw">&gt;</span></a>
-<a class="sourceLine" id="cb1-16" data-line-number="16">  <span class="kw">&lt;/table&gt;</span></a>
-<a class="sourceLine" id="cb1-17" data-line-number="17">  <span class="kw">&lt;a</span><span class="ot"> href=</span><span class="st">&quot;#&quot;</span><span class="ot"> onclick=</span><span class="st">&quot;addEntry();&quot;</span><span class="kw">&gt;</span>Add entry<span class="kw">&lt;/a&gt;</span></a>
-<a class="sourceLine" id="cb1-18" data-line-number="18"></a>
-<a class="sourceLine" id="cb1-19" data-line-number="19">  <span class="kw">&lt;div</span><span class="ot"> id=</span><span class="st">&quot;theText&quot;</span><span class="kw">&gt;</span></a>
-<a class="sourceLine" id="cb1-20" data-line-number="20">  <span class="kw">&lt;/div&gt;</span></a>
-<a class="sourceLine" id="cb1-21" data-line-number="21">  <span class="kw">&lt;a</span><span class="ot"> href=</span><span class="st">&quot;#&quot;</span><span class="ot"> onclick=</span><span class="st">&quot;addText();&quot;</span><span class="kw">&gt;</span>Add text<span class="kw">&lt;/a&gt;</span></a>
-<a class="sourceLine" id="cb1-22" data-line-number="22">  <span class="kw">&lt;/body&gt;</span></a>
-<a class="sourceLine" id="cb1-23" data-line-number="23"><span class="kw">&lt;/html&gt;</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode html"><code class="sourceCode html"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">&lt;html&gt;</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a>  <span class="kw">&lt;head&gt;</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a>    <span class="kw">&lt;title&gt;</span>Experiment 1<span class="kw">&lt;/title&gt;</span></span>
+<span id="cb1-4"><a href="#cb1-4"></a>    <span class="kw">&lt;script</span><span class="ot"> type=</span><span class="st">&quot;text/javascript&quot;</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a><span class="ot">            src=</span><span class="st">&quot;MochiKit-1.1/lib/MochiKit/Base.js&quot;</span><span class="kw">&gt;&lt;/script&gt;</span></span>
+<span id="cb1-6"><a href="#cb1-6"></a>    <span class="kw">&lt;script</span><span class="ot"> type=</span><span class="st">&quot;text/javascript&quot;</span></span>
+<span id="cb1-7"><a href="#cb1-7"></a><span class="ot">            src=</span><span class="st">&quot;MochiKit-1.1/lib/MochiKit/Iter.js&quot;</span><span class="kw">&gt;&lt;/script&gt;</span></span>
+<span id="cb1-8"><a href="#cb1-8"></a>    <span class="kw">&lt;script</span><span class="ot"> type=</span><span class="st">&quot;text/javascript&quot;</span></span>
+<span id="cb1-9"><a href="#cb1-9"></a><span class="ot">            src=</span><span class="st">&quot;MochiKit-1.1/lib/MochiKit/DOM.js&quot;</span><span class="kw">&gt;&lt;/script&gt;</span></span>
+<span id="cb1-10"><a href="#cb1-10"></a>    <span class="kw">&lt;script</span><span class="ot"> type=</span><span class="st">&quot;text/javascript&quot;</span></span>
+<span id="cb1-11"><a href="#cb1-11"></a><span class="ot">            src=</span><span class="st">&quot;exp01.js&quot;</span><span class="kw">&gt;&lt;/script&gt;</span></span>
+<span id="cb1-12"><a href="#cb1-12"></a>  <span class="kw">&lt;/head&gt;</span></span>
+<span id="cb1-13"><a href="#cb1-13"></a></span>
+<span id="cb1-14"><a href="#cb1-14"></a>  <span class="kw">&lt;body&gt;</span></span>
+<span id="cb1-15"><a href="#cb1-15"></a>  <span class="kw">&lt;table</span><span class="ot"> id=</span><span class="st">&quot;theTable&quot;</span><span class="kw">&gt;</span></span>
+<span id="cb1-16"><a href="#cb1-16"></a>  <span class="kw">&lt;/table&gt;</span></span>
+<span id="cb1-17"><a href="#cb1-17"></a>  <span class="kw">&lt;a</span><span class="ot"> href=</span><span class="st">&quot;#&quot;</span><span class="ot"> onclick=</span><span class="st">&quot;addEntry();&quot;</span><span class="kw">&gt;</span>Add entry<span class="kw">&lt;/a&gt;</span></span>
+<span id="cb1-18"><a href="#cb1-18"></a></span>
+<span id="cb1-19"><a href="#cb1-19"></a>  <span class="kw">&lt;div</span><span class="ot"> id=</span><span class="st">&quot;theText&quot;</span><span class="kw">&gt;</span></span>
+<span id="cb1-20"><a href="#cb1-20"></a>  <span class="kw">&lt;/div&gt;</span></span>
+<span id="cb1-21"><a href="#cb1-21"></a>  <span class="kw">&lt;a</span><span class="ot"> href=</span><span class="st">&quot;#&quot;</span><span class="ot"> onclick=</span><span class="st">&quot;addText();&quot;</span><span class="kw">&gt;</span>Add text<span class="kw">&lt;/a&gt;</span></span>
+<span id="cb1-22"><a href="#cb1-22"></a>  <span class="kw">&lt;/body&gt;</span></span>
+<span id="cb1-23"><a href="#cb1-23"></a><span class="kw">&lt;/html&gt;</span></span></code></pre></div>
 <p>Nothing really exciting there. Here’s the two toy functions:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">var</span> i <span class="op">=</span> <span class="dv">0</span></a>
-<a class="sourceLine" id="cb2-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb2-3" data-line-number="3"><span class="kw">function</span> <span class="at">addEntry</span>() <span class="op">{</span></a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">    <span class="kw">var</span> row <span class="op">=</span> <span class="at">TR</span>(<span class="kw">null</span><span class="op">,</span></a>
-<a class="sourceLine" id="cb2-5" data-line-number="5">        <span class="at">TD</span>(<span class="kw">null</span><span class="op">,</span> <span class="st">'Hello'</span>)<span class="op">,</span></a>
-<a class="sourceLine" id="cb2-6" data-line-number="6">        <span class="at">TD</span>(<span class="kw">null</span><span class="op">,</span> i))<span class="op">;</span></a>
-<a class="sourceLine" id="cb2-7" data-line-number="7">    <span class="va">row</span>.<span class="at">id</span> <span class="op">=</span> <span class="st">'row'</span> <span class="op">+</span> i</a>
-<a class="sourceLine" id="cb2-8" data-line-number="8">    <span class="at">appendChildNodes</span>(<span class="st">'theTable'</span><span class="op">,</span> row)<span class="op">;</span></a>
-<a class="sourceLine" id="cb2-9" data-line-number="9">    i <span class="op">+=</span> <span class="dv">1</span><span class="op">;</span></a>
-<a class="sourceLine" id="cb2-10" data-line-number="10"><span class="op">}</span></a>
-<a class="sourceLine" id="cb2-11" data-line-number="11"></a>
-<a class="sourceLine" id="cb2-12" data-line-number="12"><span class="kw">function</span> <span class="at">addText</span>() <span class="op">{</span></a>
-<a class="sourceLine" id="cb2-13" data-line-number="13">    <span class="kw">var</span> txt <span class="op">=</span> <span class="at">getElement</span>(<span class="st">'theText'</span>)<span class="op">;</span></a>
-<a class="sourceLine" id="cb2-14" data-line-number="14">    <span class="cf">if</span> (<span class="va">txt</span>.<span class="at">text</span>) <span class="op">{</span></a>
-<a class="sourceLine" id="cb2-15" data-line-number="15">        <span class="va">txt</span>.<span class="at">text</span> <span class="op">+=</span> <span class="st">' Hello'</span><span class="op">;</span></a>
-<a class="sourceLine" id="cb2-16" data-line-number="16">    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
-<a class="sourceLine" id="cb2-17" data-line-number="17">        <span class="va">txt</span>.<span class="at">text</span> <span class="op">=</span> <span class="st">'Hello'</span><span class="op">;</span></a>
-<a class="sourceLine" id="cb2-18" data-line-number="18">    <span class="op">}</span></a>
-<a class="sourceLine" id="cb2-19" data-line-number="19">    <span class="at">replaceChildNodes</span>(txt<span class="op">,</span> <span class="at">P</span>(<span class="kw">null</span><span class="op">,</span> <span class="va">txt</span>.<span class="at">text</span>))<span class="op">;</span></a>
-<a class="sourceLine" id="cb2-20" data-line-number="20"><span class="op">}</span></a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">var</span> i <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a></span>
+<span id="cb2-3"><a href="#cb2-3"></a><span class="kw">function</span> <span class="fu">addEntry</span>() {</span>
+<span id="cb2-4"><a href="#cb2-4"></a>    <span class="kw">var</span> row <span class="op">=</span> TR(<span class="kw">null</span><span class="op">,</span></span>
+<span id="cb2-5"><a href="#cb2-5"></a>        TD(<span class="kw">null</span><span class="op">,</span> <span class="st">'Hello'</span>)<span class="op">,</span></span>
+<span id="cb2-6"><a href="#cb2-6"></a>        TD(<span class="kw">null</span><span class="op">,</span> i))<span class="op">;</span></span>
+<span id="cb2-7"><a href="#cb2-7"></a>    row<span class="op">.</span><span class="at">id</span> <span class="op">=</span> <span class="st">'row'</span> <span class="op">+</span> i</span>
+<span id="cb2-8"><a href="#cb2-8"></a>    appendChildNodes(<span class="st">'theTable'</span><span class="op">,</span> row)<span class="op">;</span></span>
+<span id="cb2-9"><a href="#cb2-9"></a>    i <span class="op">+=</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb2-10"><a href="#cb2-10"></a>}</span>
+<span id="cb2-11"><a href="#cb2-11"></a></span>
+<span id="cb2-12"><a href="#cb2-12"></a><span class="kw">function</span> <span class="fu">addText</span>() {</span>
+<span id="cb2-13"><a href="#cb2-13"></a>    <span class="kw">var</span> txt <span class="op">=</span> getElement(<span class="st">'theText'</span>)<span class="op">;</span></span>
+<span id="cb2-14"><a href="#cb2-14"></a>    <span class="cf">if</span> (txt<span class="op">.</span><span class="at">text</span>) {</span>
+<span id="cb2-15"><a href="#cb2-15"></a>        txt<span class="op">.</span><span class="at">text</span> <span class="op">+=</span> <span class="st">' Hello'</span><span class="op">;</span></span>
+<span id="cb2-16"><a href="#cb2-16"></a>    } <span class="cf">else</span> {</span>
+<span id="cb2-17"><a href="#cb2-17"></a>        txt<span class="op">.</span><span class="at">text</span> <span class="op">=</span> <span class="st">'Hello'</span><span class="op">;</span></span>
+<span id="cb2-18"><a href="#cb2-18"></a>    }</span>
+<span id="cb2-19"><a href="#cb2-19"></a>    replaceChildNodes(txt<span class="op">,</span> P(<span class="kw">null</span><span class="op">,</span> txt<span class="op">.</span><span class="at">text</span>))<span class="op">;</span></span>
+<span id="cb2-20"><a href="#cb2-20"></a>}</span></code></pre></div>
 <p>Wonderfully easy to navigate and modify the DOM tree.</p>
 <p>Well, this was somewhat silly. Hopefully there’ll be something more interesting to write about soon enough.</p>
 
@@ -83,7 +83,7 @@
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/javascript.html">javascript</a>, <a href="../tags/mochikit.html">mochikit</a>
+Tags: <a title="All pages tagged 'javascript'." href="../tags/javascript.html">javascript</a>, <a title="All pages tagged 'mochikit'." href="../tags/mochikit.html">mochikit</a>
 </div>
 
 

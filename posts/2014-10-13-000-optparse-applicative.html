@@ -32,57 +32,57 @@
 <p>The latest update of <a href="http://hackage.haskell.org/package/optparse-applicative">optparse-applicative</a> triggered me to look over the functions in <a href="http://hackage.haskell.org/package/cblrepo">cblrepo</a> for parsing a few custom command line options. I used to do the parsing in a rather ad-hoc way with lots of use of list functions to split on specific characters. For instance, some option values are pairs of package name and version separated by a comma: <code>PKG-NAME,VERSION</code>. This worked fine and was easy to plug into version 0.10 of <em>optparse-applicative</em>. It was also easily extended to triples, <code>PKG-NAME,VERSION,RELEASE</code>, but it started feeling a bit brittle when some tuples got extended with an optional list of flag assignments, <code>PKG-NAME,VERSION[:FLAG,FLAG,FLAG,...]</code>. The recent release of version 0.11 of <em>optparse-applicative</em> changed the API for custom option value parsers radically; instead of passing a string to the parser, the parser has to use <code>readerAsk</code> to get the string. In short, <code>ReaderM</code> turned into a state monad.</p>
 <p>In adjusting to the new API I noticed that the code was organised in such a way that some low-level parsing functions were used directly from command line option definitions, while also being used as building blocks for the more complex parsers. This of course meant that the structuring of the functions needed to be changed completely to deal with the API change.</p>
 <p>It turns out there already was a parser that was written in a different style (here already adjusted to the 0.11 API):</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">readerGhcVersion ::</span> <span class="dt">ReadM</span> <span class="dt">Version</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">readerGhcVersion <span class="fu">=</span></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">    arg <span class="ot">&lt;-</span> readerAsk</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">    <span class="kw">case</span> lastMay <span class="fu">$</span> readP_to_S parseVersion arg <span class="kw">of</span></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">        <span class="dt">Just</span> (v, <span class="st">&quot;&quot;</span>) <span class="ot">-&gt;</span> return v</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6">        _ <span class="ot">-&gt;</span> fail <span class="fu">$</span> <span class="st">&quot;cannot parse value `&quot;</span> <span class="fu">++</span> arg <span class="fu">++</span> <span class="st">&quot;`&quot;</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="ot">readerGhcVersion ::</span> <span class="dt">ReadM</span> <span class="dt">Version</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a>readerGhcVersion <span class="ot">=</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a>    arg <span class="ot">&lt;-</span> readerAsk</span>
+<span id="cb1-4"><a href="#cb1-4"></a>    <span class="kw">case</span> lastMay <span class="op">$</span> readP_to_S parseVersion arg <span class="kw">of</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a>        <span class="dt">Just</span> (v, <span class="st">&quot;&quot;</span>) <span class="ot">-&gt;</span> <span class="fu">return</span> v</span>
+<span id="cb1-6"><a href="#cb1-6"></a>        _ <span class="ot">-&gt;</span> <span class="fu">fail</span> <span class="op">$</span> <span class="st">&quot;cannot parse value `&quot;</span> <span class="op">++</span> arg <span class="op">++</span> <span class="st">&quot;`&quot;</span></span></code></pre></div>
 <p>So I rewrote the rest of the parsers in a similar style. The arguably most complicated is this one:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">readPkgNVersion ::</span> <span class="dt">ReadP</span> (<span class="dt">String</span>, <span class="dt">Version</span>)</a>
-<a class="sourceLine" id="cb2-2" data-line-number="2">readPkgNVersion <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-3" data-line-number="3">    n <span class="ot">&lt;-</span> many (satisfy (<span class="fu">/=</span> <span class="ch">','</span>))</a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">    char <span class="ch">','</span></a>
-<a class="sourceLine" id="cb2-5" data-line-number="5">    v <span class="ot">&lt;-</span> parseVersion</a>
-<a class="sourceLine" id="cb2-6" data-line-number="6">    return (n, v)</a>
-<a class="sourceLine" id="cb2-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb2-8" data-line-number="8"><span class="ot">readFlag ::</span> <span class="dt">ReadP</span> (<span class="dt">FlagName</span>, <span class="dt">Bool</span>)</a>
-<a class="sourceLine" id="cb2-9" data-line-number="9">readFlag <span class="fu">=</span> readNegFlag <span class="fu">&lt;++</span> readPosFlag</a>
-<a class="sourceLine" id="cb2-10" data-line-number="10">    <span class="kw">where</span></a>
-<a class="sourceLine" id="cb2-11" data-line-number="11">        readNegFlag <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-12" data-line-number="12">            char <span class="ch">'-'</span></a>
-<a class="sourceLine" id="cb2-13" data-line-number="13">            n <span class="ot">&lt;-</span> many (satisfy (<span class="fu">/=</span> <span class="ch">','</span>))</a>
-<a class="sourceLine" id="cb2-14" data-line-number="14">            return (<span class="dt">FlagName</span> n, <span class="dt">False</span>)</a>
-<a class="sourceLine" id="cb2-15" data-line-number="15"></a>
-<a class="sourceLine" id="cb2-16" data-line-number="16">        readPosFlag <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-17" data-line-number="17">            n0 <span class="ot">&lt;-</span> get</a>
-<a class="sourceLine" id="cb2-18" data-line-number="18">            n <span class="ot">&lt;-</span> many (satisfy (<span class="fu">/=</span> <span class="ch">','</span>))</a>
-<a class="sourceLine" id="cb2-19" data-line-number="19">            return (<span class="dt">FlagName</span> (n0 <span class="fu">:</span> n), <span class="dt">True</span>)</a>
-<a class="sourceLine" id="cb2-20" data-line-number="20"></a>
-<a class="sourceLine" id="cb2-21" data-line-number="21"><span class="ot">strCblPkgArgReader ::</span> <span class="dt">ReadM</span> (<span class="dt">String</span>, <span class="dt">Version</span>, <span class="dt">FlagAssignment</span>)</a>
-<a class="sourceLine" id="cb2-22" data-line-number="22">strCblPkgArgReader <span class="fu">=</span> <span class="kw">let</span></a>
-<a class="sourceLine" id="cb2-23" data-line-number="23">        readWithFlags <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-24" data-line-number="24">            (n, v) <span class="ot">&lt;-</span> readPkgNVersion</a>
-<a class="sourceLine" id="cb2-25" data-line-number="25">            char <span class="ch">':'</span></a>
-<a class="sourceLine" id="cb2-26" data-line-number="26">            fas <span class="ot">&lt;-</span> sepBy readFlag (char <span class="ch">','</span>)</a>
-<a class="sourceLine" id="cb2-27" data-line-number="27">            return (n, v, fas)</a>
-<a class="sourceLine" id="cb2-28" data-line-number="28"></a>
-<a class="sourceLine" id="cb2-29" data-line-number="29">        readWithoutFlags <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-30" data-line-number="30">            (n, v) <span class="ot">&lt;-</span> readPkgNVersion</a>
-<a class="sourceLine" id="cb2-31" data-line-number="31">            return (n, v, [])</a>
-<a class="sourceLine" id="cb2-32" data-line-number="32"></a>
-<a class="sourceLine" id="cb2-33" data-line-number="33">    <span class="kw">in</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-34" data-line-number="34">        s <span class="ot">&lt;-</span> readerAsk</a>
-<a class="sourceLine" id="cb2-35" data-line-number="35">        <span class="kw">case</span> lastMay (readP_to_S (readWithFlags <span class="fu">&lt;++</span> readWithoutFlags) s) <span class="kw">of</span></a>
-<a class="sourceLine" id="cb2-36" data-line-number="36">            <span class="dt">Just</span> (r, <span class="st">&quot;&quot;</span>) <span class="ot">-&gt;</span> return r</a>
-<a class="sourceLine" id="cb2-37" data-line-number="37">            _ <span class="ot">-&gt;</span> fail <span class="fu">$</span> <span class="st">&quot;Cannot parse: &quot;</span> <span class="fu">++</span> s</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="ot">readPkgNVersion ::</span> <span class="dt">ReadP</span> (<span class="dt">String</span>, <span class="dt">Version</span>)</span>
+<span id="cb2-2"><a href="#cb2-2"></a>readPkgNVersion <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb2-3"><a href="#cb2-3"></a>    n <span class="ot">&lt;-</span> many (satisfy (<span class="op">/=</span> <span class="ch">','</span>))</span>
+<span id="cb2-4"><a href="#cb2-4"></a>    char <span class="ch">','</span></span>
+<span id="cb2-5"><a href="#cb2-5"></a>    v <span class="ot">&lt;-</span> parseVersion</span>
+<span id="cb2-6"><a href="#cb2-6"></a>    <span class="fu">return</span> (n, v)</span>
+<span id="cb2-7"><a href="#cb2-7"></a></span>
+<span id="cb2-8"><a href="#cb2-8"></a><span class="ot">readFlag ::</span> <span class="dt">ReadP</span> (<span class="dt">FlagName</span>, <span class="dt">Bool</span>)</span>
+<span id="cb2-9"><a href="#cb2-9"></a>readFlag <span class="ot">=</span> readNegFlag <span class="op">&lt;++</span> readPosFlag</span>
+<span id="cb2-10"><a href="#cb2-10"></a>    <span class="kw">where</span></span>
+<span id="cb2-11"><a href="#cb2-11"></a>        readNegFlag <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb2-12"><a href="#cb2-12"></a>            char <span class="ch">'-'</span></span>
+<span id="cb2-13"><a href="#cb2-13"></a>            n <span class="ot">&lt;-</span> many (satisfy (<span class="op">/=</span> <span class="ch">','</span>))</span>
+<span id="cb2-14"><a href="#cb2-14"></a>            <span class="fu">return</span> (<span class="dt">FlagName</span> n, <span class="dt">False</span>)</span>
+<span id="cb2-15"><a href="#cb2-15"></a></span>
+<span id="cb2-16"><a href="#cb2-16"></a>        readPosFlag <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb2-17"><a href="#cb2-17"></a>            n0 <span class="ot">&lt;-</span> get</span>
+<span id="cb2-18"><a href="#cb2-18"></a>            n <span class="ot">&lt;-</span> many (satisfy (<span class="op">/=</span> <span class="ch">','</span>))</span>
+<span id="cb2-19"><a href="#cb2-19"></a>            <span class="fu">return</span> (<span class="dt">FlagName</span> (n0 <span class="op">:</span> n), <span class="dt">True</span>)</span>
+<span id="cb2-20"><a href="#cb2-20"></a></span>
+<span id="cb2-21"><a href="#cb2-21"></a><span class="ot">strCblPkgArgReader ::</span> <span class="dt">ReadM</span> (<span class="dt">String</span>, <span class="dt">Version</span>, <span class="dt">FlagAssignment</span>)</span>
+<span id="cb2-22"><a href="#cb2-22"></a>strCblPkgArgReader <span class="ot">=</span> <span class="kw">let</span></span>
+<span id="cb2-23"><a href="#cb2-23"></a>        readWithFlags <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb2-24"><a href="#cb2-24"></a>            (n, v) <span class="ot">&lt;-</span> readPkgNVersion</span>
+<span id="cb2-25"><a href="#cb2-25"></a>            char <span class="ch">':'</span></span>
+<span id="cb2-26"><a href="#cb2-26"></a>            fas <span class="ot">&lt;-</span> sepBy readFlag (char <span class="ch">','</span>)</span>
+<span id="cb2-27"><a href="#cb2-27"></a>            <span class="fu">return</span> (n, v, fas)</span>
+<span id="cb2-28"><a href="#cb2-28"></a></span>
+<span id="cb2-29"><a href="#cb2-29"></a>        readWithoutFlags <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb2-30"><a href="#cb2-30"></a>            (n, v) <span class="ot">&lt;-</span> readPkgNVersion</span>
+<span id="cb2-31"><a href="#cb2-31"></a>            <span class="fu">return</span> (n, v, [])</span>
+<span id="cb2-32"><a href="#cb2-32"></a></span>
+<span id="cb2-33"><a href="#cb2-33"></a>    <span class="kw">in</span> <span class="kw">do</span></span>
+<span id="cb2-34"><a href="#cb2-34"></a>        s <span class="ot">&lt;-</span> readerAsk</span>
+<span id="cb2-35"><a href="#cb2-35"></a>        <span class="kw">case</span> lastMay (readP_to_S (readWithFlags <span class="op">&lt;++</span> readWithoutFlags) s) <span class="kw">of</span></span>
+<span id="cb2-36"><a href="#cb2-36"></a>            <span class="dt">Just</span> (r, <span class="st">&quot;&quot;</span>) <span class="ot">-&gt;</span> <span class="fu">return</span> r</span>
+<span id="cb2-37"><a href="#cb2-37"></a>            _ <span class="ot">-&gt;</span> <span class="fu">fail</span> <span class="op">$</span> <span class="st">&quot;Cannot parse: &quot;</span> <span class="op">++</span> s</span></code></pre></div>
 <p>It is slightly longer, but it’s rather a lot easier to read what’s happening after this rewrite. <code>ReadP</code> feels like a lighter option than pulling in <a href="http://hackage.haskell.org/package/parsec">parsec</a> as a dependency, but I’d love to hear any comments or suggestions, as well as pointers to how other people deal with parsing of non-trivial types of arguments in combination with <em>optparse-applicative</em>.</p>
 
 
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/parsing.html">parsing</a>, <a href="../tags/arguments.html">arguments</a>, <a href="../tags/optparse-applicative.html">optparse-applicative</a>
+Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>, <a title="All pages tagged 'parsing'." href="../tags/parsing.html">parsing</a>, <a title="All pages tagged 'arguments'." href="../tags/arguments.html">arguments</a>, <a title="All pages tagged 'optparse-applicative'." href="../tags/optparse-applicative.html">optparse-applicative</a>
 </div>
 
 

@@ -29,24 +29,24 @@
 <p class="post-date"><time pubdate="pubdate" datetime="2009-09-07">2009-09-07</time> - Magnus Therning</p>
 </header>
 
-<p>I’ve many times heard that Haskell can be used to prevent certain kind of programmer mistakes. In a <a href="http://www.londonhug.net/2008/02/02/video-darcs-and-gadts/">presentation on Darcs</a> it was explained how GADTs (especially phantom types) are used in Darcs to make sure that operations on patches follow certain rules. Another way, and at least it sounds easier, is to limit the available functions by running code in some sort of container. This being Haskell, that container is often a monad. I’ve really never seen this presented<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> , so I thought I’d try to do it, and indeed it turns out to be very simple.</p>
+<p>I’ve many times heard that Haskell can be used to prevent certain kind of programmer mistakes. In a <a href="http://www.londonhug.net/2008/02/02/video-darcs-and-gadts/">presentation on Darcs</a> it was explained how GADTs (especially phantom types) are used in Darcs to make sure that operations on patches follow certain rules. Another way, and at least it sounds easier, is to limit the available functions by running code in some sort of container. This being Haskell, that container is often a monad. I’ve really never seen this presented<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> , so I thought I’d try to do it, and indeed it turns out to be very simple.</p>
 <p>I started with a data type:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">newtype</span> <span class="dt">HideIO</span> a <span class="fu">=</span> <span class="dt">HideIO</span> {<span class="ot"> runHideIO ::</span> <span class="dt">IO</span> a }</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">newtype</span> <span class="dt">HideIO</span> a <span class="ot">=</span> <span class="dt">HideIO</span> {<span class="ot"> runHideIO ::</span> <span class="dt">IO</span> a }</span></code></pre></div>
 <p>which I then made into a <code>Monad</code> in order to make it easy to work with:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Monad</span> <span class="dt">HideIO</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb2-2" data-line-number="2">    return <span class="fu">=</span> <span class="dt">HideIO</span> <span class="fu">.</span> return</a>
-<a class="sourceLine" id="cb2-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">    (<span class="fu">&gt;&gt;=</span>) m f <span class="fu">=</span> <span class="dt">HideIO</span> <span class="fu">$</span> runHideIO m <span class="fu">&gt;&gt;=</span> runHideIO <span class="fu">.</span> f</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">instance</span> <span class="dt">Monad</span> <span class="dt">HideIO</span> <span class="kw">where</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a>    <span class="fu">return</span> <span class="ot">=</span> <span class="dt">HideIO</span> <span class="op">.</span> <span class="fu">return</span></span>
+<span id="cb2-3"><a href="#cb2-3"></a></span>
+<span id="cb2-4"><a href="#cb2-4"></a>    (<span class="op">&gt;&gt;=</span>) m f <span class="ot">=</span> <span class="dt">HideIO</span> <span class="op">$</span> runHideIO m <span class="op">&gt;&gt;=</span> runHideIO <span class="op">.</span> f</span></code></pre></div>
 <p>Then I can create an IO function that <em>are</em> allowed in the <code>HideIO</code> monad:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1">hioPutStrLn <span class="fu">=</span> <span class="dt">HideIO</span> <span class="fu">.</span> putStrLn</a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a>hioPutStrLn <span class="ot">=</span> <span class="dt">HideIO</span> <span class="op">.</span> <span class="fu">putStrLn</span></span></code></pre></div>
 <p>In <code>ghci</code> I can then do the following:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="fu">&gt;</span> runHideIO <span class="fu">$</span> hioPutStrLn <span class="st">&quot;Hello, World!&quot;</span></a>
-<a class="sourceLine" id="cb4-2" data-line-number="2"><span class="dt">Hello</span>, <span class="dt">World</span><span class="fu">!</span></a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a><span class="op">&gt;</span> runHideIO <span class="op">$</span> hioPutStrLn <span class="st">&quot;Hello, World!&quot;</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a><span class="dt">Hello</span>, <span class="dt">World</span><span class="op">!</span></span></code></pre></div>
 <p>But I can’t do much else.</p>
-<section class="footnotes">
+<section class="footnotes" role="doc-endnotes">
 <hr />
 <ol>
-<li id="fn1"><p>Most probably due do my weak searching-fu than anything else.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+<li id="fn1" role="doc-endnote"><p>Most probably due do my weak searching-fu than anything else.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section>
 
@@ -54,7 +54,7 @@
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/monad.html">monad</a>
+Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>, <a title="All pages tagged 'monad'." href="../tags/monad.html">monad</a>
 </div>
 
 

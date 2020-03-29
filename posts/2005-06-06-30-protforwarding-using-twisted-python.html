@@ -30,28 +30,28 @@
 </header>
 
 <p>This is a very short proxy written in Python using Twisted 1.3. It forwards port 1080 to localhost:80.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="im">from</span> twisted.internet <span class="im">import</span> reactor</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="im">from</span> twisted.protocols <span class="im">import</span> portforward</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="kw">def</span> server_dataReceived(<span class="va">self</span>, data):</a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">    <span class="bu">print</span> <span class="st">'Server received data:'</span>, data</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6">    portforward.Proxy.dataReceived(<span class="va">self</span>, data)</a>
-<a class="sourceLine" id="cb1-7" data-line-number="7">portforward.ProxyServer.dataReceived <span class="op">=</span> server_dataReceived</a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">def</span> client_dataReceived(<span class="va">self</span>, data):</a>
-<a class="sourceLine" id="cb1-10" data-line-number="10">    <span class="bu">print</span> <span class="st">'Client received data:'</span>, data</a>
-<a class="sourceLine" id="cb1-11" data-line-number="11">    portforward.Proxy.dataReceived(<span class="va">self</span>, data)</a>
-<a class="sourceLine" id="cb1-12" data-line-number="12">portforward.ProxyClient.dataReceived <span class="op">=</span> client_dataReceived</a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"></a>
-<a class="sourceLine" id="cb1-14" data-line-number="14">reactor.listenTCP(<span class="dv">1080</span>, portforward.ProxyFactory(<span class="st">'localhost'</span>, <span class="dv">80</span>))</a>
-<a class="sourceLine" id="cb1-15" data-line-number="15">reactor.run()</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a><span class="im">from</span> twisted.internet <span class="im">import</span> reactor</span>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="im">from</span> twisted.protocols <span class="im">import</span> portforward</span>
+<span id="cb1-3"><a href="#cb1-3"></a></span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="kw">def</span> server_dataReceived(<span class="va">self</span>, data):</span>
+<span id="cb1-5"><a href="#cb1-5"></a>    <span class="bu">print</span> <span class="st">'Server received data:'</span>, data</span>
+<span id="cb1-6"><a href="#cb1-6"></a>    portforward.Proxy.dataReceived(<span class="va">self</span>, data)</span>
+<span id="cb1-7"><a href="#cb1-7"></a>portforward.ProxyServer.dataReceived <span class="op">=</span> server_dataReceived</span>
+<span id="cb1-8"><a href="#cb1-8"></a></span>
+<span id="cb1-9"><a href="#cb1-9"></a><span class="kw">def</span> client_dataReceived(<span class="va">self</span>, data):</span>
+<span id="cb1-10"><a href="#cb1-10"></a>    <span class="bu">print</span> <span class="st">'Client received data:'</span>, data</span>
+<span id="cb1-11"><a href="#cb1-11"></a>    portforward.Proxy.dataReceived(<span class="va">self</span>, data)</span>
+<span id="cb1-12"><a href="#cb1-12"></a>portforward.ProxyClient.dataReceived <span class="op">=</span> client_dataReceived</span>
+<span id="cb1-13"><a href="#cb1-13"></a></span>
+<span id="cb1-14"><a href="#cb1-14"></a>reactor.listenTCP(<span class="dv">1080</span>, portforward.ProxyFactory(<span class="st">'localhost'</span>, <span class="dv">80</span>))</span>
+<span id="cb1-15"><a href="#cb1-15"></a>reactor.run()</span></code></pre></div>
 <p>Short and sweet, I think.</p>
 
 
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/proxy.html">proxy</a>, <a href="../tags/python.html">python</a>, <a href="../tags/twisted.html">twisted</a>
+Tags: <a title="All pages tagged 'proxy'." href="../tags/proxy.html">proxy</a>, <a title="All pages tagged 'python'." href="../tags/python.html">python</a>, <a title="All pages tagged 'twisted'." href="../tags/twisted.html">twisted</a>
 </div>
 
 

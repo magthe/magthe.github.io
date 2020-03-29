@@ -30,17 +30,17 @@
 </header>
 
 <p>I’ve been playing around a little with <a href="https://hackage.haskell.org/package/postgresql-simple"><code>postgresql-simple</code></a> in combination with <a href="https://hackage.haskell.org/package/streaming"><code>streaming</code></a> for picking up inserted rows in a DB table. What I came up with was</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">eventStreamer ::</span> <span class="dt">Connection</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Stream</span> (<span class="dt">Of</span> (<span class="dt">Int</span>, <span class="dt">Int</span>)) <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">eventStreamer conn ver <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">  res <span class="ot">&lt;-</span> liftIO <span class="fu">$</span> query conn  <span class="st">&quot;SELECT * FROM events WHERE id &gt; (?) ORDER BY id&quot;</span> (<span class="dt">Only</span> ver)</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">  <span class="kw">case</span> res <span class="kw">of</span></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">    [] <span class="ot">-&gt;</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb1-6" data-line-number="6">      liftIO <span class="fu">$</span> threadDelay <span class="dv">1000000</span></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7">      eventStreamer conn ver</a>
-<a class="sourceLine" id="cb1-8" data-line-number="8">    _ <span class="ot">-&gt;</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9">      <span class="kw">let</span> ver' <span class="fu">=</span> maximum <span class="fu">$</span> map fst res</a>
-<a class="sourceLine" id="cb1-10" data-line-number="10">      each res</a>
-<a class="sourceLine" id="cb1-11" data-line-number="11">      eventStreamer conn ver'</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="ot">eventStreamer ::</span> <span class="dt">Connection</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Stream</span> (<span class="dt">Of</span> (<span class="dt">Int</span>, <span class="dt">Int</span>)) <span class="dt">IO</span> ()</span>
+<span id="cb1-2"><a href="#cb1-2"></a>eventStreamer conn ver <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a>  res <span class="ot">&lt;-</span> liftIO <span class="op">$</span> query conn  <span class="st">&quot;SELECT * FROM events WHERE id &gt; (?) ORDER BY id&quot;</span> (<span class="dt">Only</span> ver)</span>
+<span id="cb1-4"><a href="#cb1-4"></a>  <span class="kw">case</span> res <span class="kw">of</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a>    [] <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb1-6"><a href="#cb1-6"></a>      liftIO <span class="op">$</span> threadDelay <span class="dv">1000000</span></span>
+<span id="cb1-7"><a href="#cb1-7"></a>      eventStreamer conn ver</span>
+<span id="cb1-8"><a href="#cb1-8"></a>    _ <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb1-9"><a href="#cb1-9"></a>      <span class="kw">let</span> ver' <span class="ot">=</span> <span class="fu">maximum</span> <span class="op">$</span> <span class="fu">map</span> <span class="fu">fst</span> res</span>
+<span id="cb1-10"><a href="#cb1-10"></a>      each res</span>
+<span id="cb1-11"><a href="#cb1-11"></a>      eventStreamer conn ver'</span></code></pre></div>
 <p>It seems almost too simple so I’m suspecting I missed something.</p>
 <ul>
 <li>Am I missing something?</li>
@@ -51,7 +51,7 @@
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/postgresql.html">postgresql</a>, <a href="../tags/streaming.html">streaming</a>
+Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>, <a title="All pages tagged 'postgresql'." href="../tags/postgresql.html">postgresql</a>, <a title="All pages tagged 'streaming'." href="../tags/streaming.html">streaming</a>
 </div>
 
 

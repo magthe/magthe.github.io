@@ -41,27 +41,27 @@
 <li>an output function mapping a state and an input symbol to an output symbol</li>
 </ul>
 <p>If the transition and output functions are combined into a single function, and we don’t care about being able to reset a machine, it’s possible to use a representation as simple as this:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Machine</span> state event signal <span class="fu">=</span> <span class="dt">Machine</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">    {<span class="ot"> mCurState ::</span> state</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">    ,<span class="ot"> mTransFunction ::</span> state <span class="ot">-&gt;</span> event <span class="ot">-&gt;</span> (state, signal)</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">    }</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">data</span> <span class="dt">Machine</span> state event signal <span class="ot">=</span> <span class="dt">Machine</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a>    {<span class="ot"> mCurState ::</span> state</span>
+<span id="cb1-3"><a href="#cb1-3"></a>    ,<span class="ot"> mTransFunction ::</span> state <span class="ot">-&gt;</span> event <span class="ot">-&gt;</span> (state, signal)</span>
+<span id="cb1-4"><a href="#cb1-4"></a>    }</span></code></pre></div>
 <p>I’ve opted to call the input alphabet <em>event</em> and the output alphabet <em>signal</em>.</p>
 <p>Stepping a machine is then performed by passing the current state and an event to the combined function and updating the machine with the result. Of course the generated signal has to be dealt with too. Or in other words:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">stepMachine ::</span> <span class="dt">Machine</span> state event signal <span class="ot">-&gt;</span> event <span class="ot">-&gt;</span> (<span class="dt">Machine</span> state event signal, signal)</a>
-<a class="sourceLine" id="cb2-2" data-line-number="2">stepMachine machine event <span class="fu">=</span> (machine {mCurState <span class="fu">=</span> newState}, output)</a>
-<a class="sourceLine" id="cb2-3" data-line-number="3">    <span class="kw">where</span></a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">        curState <span class="fu">=</span> mCurState machine</a>
-<a class="sourceLine" id="cb2-5" data-line-number="5">        (newState, output) <span class="fu">=</span> mTransFunction machine curState event</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="ot">stepMachine ::</span> <span class="dt">Machine</span> state event signal <span class="ot">-&gt;</span> event <span class="ot">-&gt;</span> (<span class="dt">Machine</span> state event signal, signal)</span>
+<span id="cb2-2"><a href="#cb2-2"></a>stepMachine machine event <span class="ot">=</span> (machine {mCurState <span class="ot">=</span> newState}, output)</span>
+<span id="cb2-3"><a href="#cb2-3"></a>    <span class="kw">where</span></span>
+<span id="cb2-4"><a href="#cb2-4"></a>        curState <span class="ot">=</span> mCurState machine</span>
+<span id="cb2-5"><a href="#cb2-5"></a>        (newState, output) <span class="ot">=</span> mTransFunction machine curState event</span></code></pre></div>
 <p>I also decided to add a function for creating a machine given a start state and a function. With the definition above it becomes trivial:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">createMachine ::</span> state <span class="ot">-&gt;</span> (state <span class="ot">-&gt;</span> event <span class="ot">-&gt;</span> (state, signal)) <span class="ot">-&gt;</span> <span class="dt">Machine</span> state event signal</a>
-<a class="sourceLine" id="cb3-2" data-line-number="2">createMachine <span class="fu">=</span> <span class="dt">Machine</span></a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="ot">createMachine ::</span> state <span class="ot">-&gt;</span> (state <span class="ot">-&gt;</span> event <span class="ot">-&gt;</span> (state, signal)) <span class="ot">-&gt;</span> <span class="dt">Machine</span> state event signal</span>
+<span id="cb3-2"><a href="#cb3-2"></a>createMachine <span class="ot">=</span> <span class="dt">Machine</span></span></code></pre></div>
 <p>That’s it, really. Except of course that the actual transition function still has to be written. However, with the pattern matching of Haskell I’ve found that to be rather simple, but I’ll keep that for the next post.</p>
 
 
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/fsm.html">fsm</a>, <a href="../tags/transducer.html">transducer</a>, <a href="../tags/mealy.html">mealy</a>
+Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>, <a title="All pages tagged 'fsm'." href="../tags/fsm.html">fsm</a>, <a title="All pages tagged 'transducer'." href="../tags/transducer.html">transducer</a>, <a title="All pages tagged 'mealy'." href="../tags/mealy.html">mealy</a>
 </div>
 
 

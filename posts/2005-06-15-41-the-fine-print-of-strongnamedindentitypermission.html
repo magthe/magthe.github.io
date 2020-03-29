@@ -31,11 +31,11 @@
 
 <p>The benefits and limitations of using <code>StrongNameIdentityPermission</code> has been covered in several posts on the net:</p>
 <ul>
-<li><a href="http://www.morganskinner.com/Articles/StrongNameIdentityPermission/" class="uri">http://www.morganskinner.com/Articles/StrongNameIdentityPermission/</a></li>
-<li><a href="http://www.reliablesoftware.com/articles/SecurityAdmin.html" class="uri">http://www.reliablesoftware.com/articles/SecurityAdmin.html</a></li>
-<li><a href="http://www.reliablesoftware.com/articles/UnderstandingSecurityActions.html" class="uri">http://www.reliablesoftware.com/articles/UnderstandingSecurityActions.html</a></li>
-<li><a href="http://www.reliablesoftware.com/articles/PreventingElevationofPrivilegeAttacks.html" class="uri">http://www.reliablesoftware.com/articles/PreventingElevationofPrivilegeAttacks.html</a></li>
-<li><a href="http://blogs.msdn.com/tims/archive/2003/12/03/57463.aspx" class="uri">http://blogs.msdn.com/tims/archive/2003/12/03/57463.aspx</a></li>
+<li><a href="http://www.morganskinner.com/Articles/StrongNameIdentityPermission/">http://www.morganskinner.com/Articles/StrongNameIdentityPermission/</a></li>
+<li><a href="http://www.reliablesoftware.com/articles/SecurityAdmin.html">http://www.reliablesoftware.com/articles/SecurityAdmin.html</a></li>
+<li><a href="http://www.reliablesoftware.com/articles/UnderstandingSecurityActions.html">http://www.reliablesoftware.com/articles/UnderstandingSecurityActions.html</a></li>
+<li><a href="http://www.reliablesoftware.com/articles/PreventingElevationofPrivilegeAttacks.html">http://www.reliablesoftware.com/articles/PreventingElevationofPrivilegeAttacks.html</a></li>
+<li><a href="http://blogs.msdn.com/tims/archive/2003/12/03/57463.aspx">http://blogs.msdn.com/tims/archive/2003/12/03/57463.aspx</a></li>
 </ul>
 <p>One thing that they don’t mention, which most people might think is obvious, is that <code>StrongNameIdentityPermission</code> means nothing when calling the managed code from unmanaged code. Since umanaged code can’t be signed (at least not in the same meaning as managed code can) it isn’t too surprising. What is a bit surprising might be that the call into the assembly is permitted. I was hoping that the magic in the .Net framework would put a stop to it all. No such luck!</p>
 <p>This means that someone who wants to circumvent the access control doesn’t have to bother with delayed signing and extracting the public key from the ‘protected’ assembly. It also means that the ‘attacker’ doesn’t have to be able to write to the GAC, only read from it (something all users have permission to do). Writing unmanaged code that calls managed code isn’t too difficult.</p>
@@ -44,7 +44,7 @@
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/assembly.html">assembly</a>, <a href="../tags/dotNet.html">dotNet</a>, <a href="../tags/gac.html">gac</a>, <a href="../tags/managed%20code.html">managed code</a>, <a href="../tags/strongnameidentitypermission.html">strongnameidentitypermission</a>, <a href="../tags/unmanaged%20code.html">unmanaged code</a>
+Tags: <a title="All pages tagged 'assembly'." href="../tags/assembly.html">assembly</a>, <a title="All pages tagged 'dotNet'." href="../tags/dotNet.html">dotNet</a>, <a title="All pages tagged 'gac'." href="../tags/gac.html">gac</a>, <a title="All pages tagged 'managed code'." href="../tags/managed%20code.html">managed code</a>, <a title="All pages tagged 'strongnameidentitypermission'." href="../tags/strongnameidentitypermission.html">strongnameidentitypermission</a>, <a title="All pages tagged 'unmanaged code'." href="../tags/unmanaged%20code.html">unmanaged code</a>
 </div>
 
 

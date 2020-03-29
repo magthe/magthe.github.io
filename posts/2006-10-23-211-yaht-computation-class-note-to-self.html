@@ -36,11 +36,11 @@
 </ul>
 <p>Making <code>[]</code> and instance of <code>Computation</code> illustrates it the best. <code>Maybe</code> and <code>Failable</code> are a bit “funny” because the <code>combine</code> works like <code>or</code>, i.e. they take the first <code>success x</code> and run with it.</p>
 <p>Getting <code>searchAll</code> to work requires a type definition.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">searchAll ::</span> <span class="dt">Graph</span>  v e <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> [<span class="dt">Int</span>]</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="ot">searchAll ::</span> <span class="dt">Graph</span>  v e <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> [<span class="dt">Int</span>]</span></code></pre></div>
 <p>or</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">searchAll ::</span> <span class="dt">Graph</span>  v e <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Failable</span> [<span class="dt">Int</span>]</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="ot">searchAll ::</span> <span class="dt">Graph</span>  v e <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Failable</span> [<span class="dt">Int</span>]</span></code></pre></div>
 <p>or</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">searchAll ::</span> <span class="dt">Graph</span>  v e <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [[<span class="dt">Int</span>]]</a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="ot">searchAll ::</span> <span class="dt">Graph</span>  v e <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [[<span class="dt">Int</span>]]</span></code></pre></div>
 <p>How I think about <code>searchAll</code>:</p>
 <ol type="1">
 <li><code>src == dst</code> is a successful end state. The result is <code>[src]</code> wrapped in <code>success</code>.</li>
@@ -60,7 +60,7 @@
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/yaht.html">yaht</a>
+Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>, <a title="All pages tagged 'yaht'." href="../tags/yaht.html">yaht</a>
 </div>
 
 

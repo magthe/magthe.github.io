@@ -43,27 +43,27 @@
 <li>one <code>Sink</code> that writes its input into a <code>TMVar</code>.</li>
 </ol>
 <p>The latter of the two is the easiest one. Given a <code>TMVar</code> it just awaits input, stores it in the <code>TMVar</code> and then calls itself:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">sinkTMVar ::</span> <span class="dt">MonadIO</span> m <span class="ot">=&gt;</span> <span class="dt">TMVar</span> a <span class="ot">-&gt;</span> <span class="dt">Sink</span> a m ()</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">sinkTMVar tmv <span class="fu">=</span> forever <span class="fu">$</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">    v <span class="ot">&lt;-</span> await</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">    <span class="kw">case</span> v <span class="kw">of</span></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">        <span class="dt">Nothing</span> <span class="ot">-&gt;</span> return ()</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6">        <span class="dt">Just</span> v' <span class="ot">-&gt;</span> liftIO (atomically <span class="fu">$</span> putTMVar tmv v')</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="ot">sinkTMVar ::</span> <span class="dt">MonadIO</span> m <span class="ot">=&gt;</span> <span class="dt">TMVar</span> a <span class="ot">-&gt;</span> <span class="dt">Sink</span> a m ()</span>
+<span id="cb1-2"><a href="#cb1-2"></a>sinkTMVar tmv <span class="ot">=</span> forever <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a>    v <span class="ot">&lt;-</span> await</span>
+<span id="cb1-4"><a href="#cb1-4"></a>    <span class="kw">case</span> v <span class="kw">of</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a>        <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="fu">return</span> ()</span>
+<span id="cb1-6"><a href="#cb1-6"></a>        <span class="dt">Just</span> v' <span class="ot">-&gt;</span> liftIO (atomically <span class="op">$</span> putTMVar tmv v')</span></code></pre></div>
 <p>The other one is only slightly more involved:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">whyTMVar ::</span> <span class="dt">MonadIO</span> m <span class="ot">=&gt;</span> <span class="dt">Source</span> (<span class="dt">ResourceT</span> <span class="dt">IO</span>) a <span class="ot">-&gt;</span> <span class="dt">Source</span> (<span class="dt">ResourceT</span> <span class="dt">IO</span>) a <span class="ot">-&gt;</span> <span class="dt">Source</span> m a</a>
-<a class="sourceLine" id="cb2-2" data-line-number="2">whyTMVar src1 src2 <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-3" data-line-number="3">    t1 <span class="ot">&lt;-</span> liftIO newEmptyTMVarIO </a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">    t2 <span class="ot">&lt;-</span> liftIO newEmptyTMVarIO</a>
-<a class="sourceLine" id="cb2-5" data-line-number="5">    void <span class="fu">$</span> liftIO <span class="fu">$</span> async <span class="fu">$</span> fstProc t1</a>
-<a class="sourceLine" id="cb2-6" data-line-number="6">    void <span class="fu">$</span> liftIO <span class="fu">$</span> async <span class="fu">$</span> sndProc t2</a>
-<a class="sourceLine" id="cb2-7" data-line-number="7">    forever <span class="fu">$</span> liftIO (atomically <span class="fu">$</span> takeTMVar t1 <span class="ot">`orElse`</span> takeTMVar t2) <span class="fu">&gt;&gt;=</span> C.yield</a>
-<a class="sourceLine" id="cb2-8" data-line-number="8">    </a>
-<a class="sourceLine" id="cb2-9" data-line-number="9">    <span class="kw">where</span></a>
-<a class="sourceLine" id="cb2-10" data-line-number="10">        fstProc t <span class="fu">=</span> runResourceT <span class="fu">$</span> src1 <span class="fu">$$</span> sinkTMVar t</a>
-<a class="sourceLine" id="cb2-11" data-line-number="11">        sndProc t <span class="fu">=</span> runResourceT <span class="fu">$</span> src2 <span class="fu">$$</span> sinkTMVar t</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="ot">whyTMVar ::</span> <span class="dt">MonadIO</span> m <span class="ot">=&gt;</span> <span class="dt">Source</span> (<span class="dt">ResourceT</span> <span class="dt">IO</span>) a <span class="ot">-&gt;</span> <span class="dt">Source</span> (<span class="dt">ResourceT</span> <span class="dt">IO</span>) a <span class="ot">-&gt;</span> <span class="dt">Source</span> m a</span>
+<span id="cb2-2"><a href="#cb2-2"></a>whyTMVar src1 src2 <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb2-3"><a href="#cb2-3"></a>    t1 <span class="ot">&lt;-</span> liftIO newEmptyTMVarIO </span>
+<span id="cb2-4"><a href="#cb2-4"></a>    t2 <span class="ot">&lt;-</span> liftIO newEmptyTMVarIO</span>
+<span id="cb2-5"><a href="#cb2-5"></a>    void <span class="op">$</span> liftIO <span class="op">$</span> async <span class="op">$</span> fstProc t1</span>
+<span id="cb2-6"><a href="#cb2-6"></a>    void <span class="op">$</span> liftIO <span class="op">$</span> async <span class="op">$</span> sndProc t2</span>
+<span id="cb2-7"><a href="#cb2-7"></a>    forever <span class="op">$</span> liftIO (atomically <span class="op">$</span> takeTMVar t1 <span class="ot">`orElse`</span> takeTMVar t2) <span class="op">&gt;&gt;=</span> C.yield</span>
+<span id="cb2-8"><a href="#cb2-8"></a>    </span>
+<span id="cb2-9"><a href="#cb2-9"></a>    <span class="kw">where</span></span>
+<span id="cb2-10"><a href="#cb2-10"></a>        fstProc t <span class="ot">=</span> runResourceT <span class="op">$</span> src1 <span class="op">$$</span> sinkTMVar t</span>
+<span id="cb2-11"><a href="#cb2-11"></a>        sndProc t <span class="ot">=</span> runResourceT <span class="op">$</span> src2 <span class="op">$$</span> sinkTMVar t</span></code></pre></div>
 <p>Rather short and sweet I think. However, there are a few things that I’m not completely sure of yet.</p>
 <dl>
-<dt><code>forkIO</code> vs. <code>async</code> vs. <code>resourceForkIO</code></dt>
+<dt><code>forkIO</code> vs. <code>async</code> vs. <code>resourceForkIO</code></dt>
 <dd>There is a choice between at least three functions when it comes to creating the threads and I haven’t looked into which one is better to use. AFAIU there may be issues around exception handling and with resources. For now I’ve gone with <code>async</code> for no particular reason at all.
 </dd>
 <dt>Using <code>TMVar</code></dt>
@@ -79,7 +79,7 @@
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/conduit.html">conduit</a>, <a href="../tags/concurrent.html">concurrent</a>
+Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>, <a title="All pages tagged 'conduit'." href="../tags/conduit.html">conduit</a>, <a title="All pages tagged 'concurrent'." href="../tags/concurrent.html">concurrent</a>
 </div>
 
 

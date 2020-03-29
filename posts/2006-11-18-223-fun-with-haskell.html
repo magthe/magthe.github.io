@@ -32,40 +32,40 @@
 <p>What better way is there to spend a Saturday than playing with Haskell? I sure don’t know :-)</p>
 <p>I do have a goal in mind, but for now I’m mostly fooling around with some file-related stuff.</p>
 <p>First, I wanted to wanted to load an entire file and print it on <code>stdout</code>. Basically a primitive <code>cat</code>. I came up with the following <code>main</code>:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">main <span class="fu">=</span> liftM (<span class="fu">!!</span> <span class="dv">0</span>) getArgs <span class="fu">&gt;&gt;=</span> catFile <span class="fu">&gt;&gt;=</span> mapM_ putStrLn</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a>main <span class="ot">=</span> liftM (<span class="op">!!</span> <span class="dv">0</span>) getArgs <span class="op">&gt;&gt;=</span> catFile <span class="op">&gt;&gt;=</span> <span class="fu">mapM_</span> <span class="fu">putStrLn</span></span></code></pre></div>
 <p>As you can see I did spend some time thinking about Monads lately. Something that’s especially pressing if one wants to do IO in Haskell since the <code>IO</code> Monad can’t be escaped from. Next <code>catFile</code> (which based on the use above should have the type <code>FilePath -&gt; IO [String]</code>). I did some experimenting and searching in <a href="http://haskell.org/hoogle/">Hoogle</a> among the <code>System.IO</code> functions. I found <code>openFile</code>, <code>hGetContents</code> that would let me open and read the file. I played a bit with that:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">catFile fname <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-2" data-line-number="2">    hf <span class="ot">&lt;-</span> openFile fname <span class="dt">ReadMode</span></a>
-<a class="sourceLine" id="cb2-3" data-line-number="3">    conts <span class="ot">&lt;-</span> hGetContents hf</a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">    hClose hf</a>
-<a class="sourceLine" id="cb2-5" data-line-number="5">    return conts</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a>catFile fname <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a>    hf <span class="ot">&lt;-</span> openFile fname <span class="dt">ReadMode</span></span>
+<span id="cb2-3"><a href="#cb2-3"></a>    conts <span class="ot">&lt;-</span> hGetContents hf</span>
+<span id="cb2-4"><a href="#cb2-4"></a>    hClose hf</span>
+<span id="cb2-5"><a href="#cb2-5"></a>    <span class="fu">return</span> conts</span></code></pre></div>
 <p>That doesn’t have quite the required type, but that isn’t the only problem. The combination of <code>hGetContents</code> and <code>hClose</code> doesn’t quite work—the file is never read (laziness in action!). I removed the <code>hClose</code> (since the process isn’t very long-lived that doesn’t bother me so much) and I added a <code>lines</code>:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1">catFile fname <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb3-2" data-line-number="2">    hf <span class="ot">&lt;-</span> openFile fname <span class="dt">ReadMode</span></a>
-<a class="sourceLine" id="cb3-3" data-line-number="3">    conts <span class="ot">&lt;-</span> hGetContents hf</a>
-<a class="sourceLine" id="cb3-4" data-line-number="4">    return <span class="fu">$</span> lines conts</a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a>catFile fname <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a>    hf <span class="ot">&lt;-</span> openFile fname <span class="dt">ReadMode</span></span>
+<span id="cb3-3"><a href="#cb3-3"></a>    conts <span class="ot">&lt;-</span> hGetContents hf</span>
+<span id="cb3-4"><a href="#cb3-4"></a>    <span class="fu">return</span> <span class="op">$</span> <span class="fu">lines</span> conts</span></code></pre></div>
 <p>Then I stumbled on <code>readFile</code> and rewrote it as</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">catFile fname <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb4-2" data-line-number="2">    content <span class="ot">&lt;-</span> readFile fname</a>
-<a class="sourceLine" id="cb4-3" data-line-number="3">    return <span class="fu">$</span> lines content</a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a>catFile fname <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a>    content <span class="ot">&lt;-</span> <span class="fu">readFile</span> fname</span>
+<span id="cb4-3"><a href="#cb4-3"></a>    <span class="fu">return</span> <span class="op">$</span> <span class="fu">lines</span> content</span></code></pre></div>
 <p>which can be written even shorter as</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1">catFile fname <span class="fu">=</span> readFile fname <span class="fu">&gt;&gt;=</span> return <span class="fu">.</span> lines</a></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1"></a>catFile fname <span class="ot">=</span> <span class="fu">readFile</span> fname <span class="op">&gt;&gt;=</span> <span class="fu">return</span> <span class="op">.</span> <span class="fu">lines</span></span></code></pre></div>
 <p>I guess it’s time to explain the reason for returning <code>IO [String]</code> rather than <code>IO String</code>. The latter would have simplified both <code>catFile</code> and <code>main</code>. What I really wanted was to make each line of a file an item in a set. My first thought was to fold it:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1">catFile <span class="st">&quot;test_file&quot;</span> <span class="fu">&gt;&gt;=</span> (\l <span class="ot">-&gt;</span> return <span class="fu">$</span> foldr Set.insert Set.empty l)</a></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1"></a>catFile <span class="st">&quot;test_file&quot;</span> <span class="op">&gt;&gt;=</span> (\l <span class="ot">-&gt;</span> <span class="fu">return</span> <span class="op">$</span> <span class="fu">foldr</span> Set.insert Set.empty l)</span></code></pre></div>
 <p>Which can be re-written in point-free style (I hope I’ve gotten point-free right here):</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1">catFile <span class="st">&quot;test_file&quot;</span> <span class="fu">&gt;&gt;=</span> return <span class="fu">.</span> foldr Set.insert Set.empty</a></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1"></a>catFile <span class="st">&quot;test_file&quot;</span> <span class="op">&gt;&gt;=</span> <span class="fu">return</span> <span class="op">.</span> <span class="fu">foldr</span> Set.insert Set.empty</span></code></pre></div>
 <p>Then I decided to look into <code>Data.Set</code> and found <code>fromList</code>. My first naÃ¯ve attempt and my point-free:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1">catFile <span class="st">&quot;test_file&quot;</span> <span class="fu">&gt;&gt;=</span> (\l <span class="ot">-&gt;</span> return <span class="fu">$</span> Set.fromList l)</a>
-<a class="sourceLine" id="cb8-2" data-line-number="2">catFile <span class="st">&quot;test_file&quot;</span> <span class="fu">&gt;&gt;=</span> return <span class="fu">.</span> Set.fromList</a></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1"></a>catFile <span class="st">&quot;test_file&quot;</span> <span class="op">&gt;&gt;=</span> (\l <span class="ot">-&gt;</span> <span class="fu">return</span> <span class="op">$</span> Set.fromList l)</span>
+<span id="cb8-2"><a href="#cb8-2"></a>catFile <span class="st">&quot;test_file&quot;</span> <span class="op">&gt;&gt;=</span> <span class="fu">return</span> <span class="op">.</span> Set.fromList</span></code></pre></div>
 <p>Then I reversed my thinking and tried to lift the function into the monad instead:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1">liftM Set.fromList <span class="fu">$</span> catFile <span class="st">&quot;test_file&quot;</span></a></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1"></a>liftM Set.fromList <span class="op">$</span> catFile <span class="st">&quot;test_file&quot;</span></span></code></pre></div>
 <p>At that point I felt I had somewhat exhausted this particular little playground and went on to listing files and directories, but that’s a story for another post.</p>
 
 
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/hoogle.html">hoogle</a>
+Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>, <a title="All pages tagged 'hoogle'." href="../tags/hoogle.html">hoogle</a>
 </div>
 
 

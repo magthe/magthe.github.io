@@ -30,13 +30,13 @@
 </header>
 
 <p>I’ve finally found some time to play with <a href="http://www.cse.unsw.edu.au/~chak/haskell/c2hs/">c2hs</a> again. This time I had a quick look at passing pointers to C functions. Here’s what I found, in a rather short format:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="st">{# </span><span class="kw">fun</span><span class="st"> foo { alloca- </span><span class="dt">`Int'</span><span class="st"> peekIntConv* } -&gt; </span><span class="dt">`()'</span><span class="st"> #}</span> <span class="ot">=&gt; foo ::</span> <span class="dt">IO</span> <span class="dt">Int</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="st">{# </span><span class="kw">fun</span><span class="st"> foo { </span><span class="dt">`Int'</span><span class="st"> peekIntConv* } -&gt; </span><span class="dt">`()'</span><span class="st"> #}</span> <span class="ot">=&gt; foo ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> <span class="dt">Int</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="st">{# </span><span class="kw">fun</span><span class="st"> foo { alloca- </span><span class="dt">`Int'</span><span class="st"> peekIntConv* } -&gt; </span><span class="dt">`()'</span><span class="st"> #}</span> <span class="ot">=&gt; foo ::</span> <span class="dt">IO</span> <span class="dt">Int</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="st">{# </span><span class="kw">fun</span><span class="st"> foo { </span><span class="dt">`Int'</span><span class="st"> peekIntConv* } -&gt; </span><span class="dt">`()'</span><span class="st"> #}</span> <span class="ot">=&gt; foo ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> <span class="dt">Int</span></span></code></pre></div>
 <p>That is, the former is an <em>out</em> argument ((It seems it always receives a pointer to an integer instance containing the value 0.)) while the latter is an <em>inout</em> argument.</p>
 <p>A C function like this:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode c"><code class="sourceCode c"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="dt">int</span> foo(<span class="dt">int</span> *);</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb2-1"><a href="#cb2-1"></a><span class="dt">int</span> foo(<span class="dt">int</span> *);</span></code></pre></div>
 <p>which is defined like this in haskell</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="st">{# </span><span class="kw">fun</span><span class="st"> foo { </span><span class="dt">`Int'</span><span class="st"> peekIntConv* } -&gt; </span><span class="dt">`Int'</span><span class="st"> #}</span></a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="st">{# </span><span class="kw">fun</span><span class="st"> foo { </span><span class="dt">`Int'</span><span class="st"> peekIntConv* } -&gt; </span><span class="dt">`Int'</span><span class="st"> #}</span></span></code></pre></div>
 <p>will return a tuple of two integers, the first one is the returned value from <code>foo</code> the other is the <em>inout</em> argument to <code>foo</code>.</p>
 <p>This means that it’s fairly simple to deal with APIs that follow the convention that functions return an error code and that the last argument is the actual result of the function.</p>
 
@@ -44,7 +44,7 @@
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/c2hs.html">c2hs</a>, <a href="../tags/haskell.html">haskell</a>
+Tags: <a title="All pages tagged 'c2hs'." href="../tags/c2hs.html">c2hs</a>, <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>
 </div>
 
 

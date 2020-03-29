@@ -32,96 +32,96 @@
 <p>After reading the <a href="http://www.cs.cmu.edu/~rwh/introsml/techniques/optexccont.htm">chapter on options, exceptions, and failure continuations</a> from <a href="http://homepages.inf.ed.ac.uk/dts/fps/harper/online.pdf">Programming in Standard ML</a> I thought spending a few minutes on translating the code to Haskell might be fun.</p>
 <p>I should start with a disclaimer, I’ve <em>never</em> coded in SML, never even read any article or book about the language or even looked at code written in it. Nevertheless I seem to have produced runnable, and presumably correct, code in a fairly short amount of time. I’ve tried to stay as close to the original code as possible, there are undoubtably better and more effective way of writing the same code in Haskell. Feel free to provide comments with improvements :-)</p>
 <p>First the representation of the board:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Board</span> <span class="fu">=</span> <span class="dt">Board</span> <span class="dt">Int</span> <span class="dt">Int</span> <span class="dt">Int</span> [(<span class="dt">Int</span>, <span class="dt">Int</span>)]</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">    <span class="fu">|</span> <span class="dt">NoBoard</span></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">    <span class="kw">deriving</span> (<span class="dt">Show</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">data</span> <span class="dt">Board</span> <span class="ot">=</span> <span class="dt">Board</span> <span class="dt">Int</span> <span class="dt">Int</span> <span class="dt">Int</span> [(<span class="dt">Int</span>, <span class="dt">Int</span>)]</span>
+<span id="cb1-2"><a href="#cb1-2"></a>    <span class="op">|</span> <span class="dt">NoBoard</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a>    <span class="kw">deriving</span> (<span class="dt">Show</span>)</span></code></pre></div>
 <p>Then some functions to manipulate a board:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">new n <span class="fu">=</span> <span class="dt">Board</span> n <span class="dv">1</span> <span class="dv">0</span> []</a>
-<a class="sourceLine" id="cb2-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb2-3" data-line-number="3">size (<span class="dt">Board</span> n _ _ _) <span class="fu">=</span> n</a>
-<a class="sourceLine" id="cb2-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb2-5" data-line-number="5">complete (<span class="dt">Board</span> n _ k _) <span class="fu">=</span> k <span class="fu">==</span> n</a>
-<a class="sourceLine" id="cb2-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb2-7" data-line-number="7">positions (<span class="dt">Board</span> _ _ _ qs) <span class="fu">=</span> qs</a>
-<a class="sourceLine" id="cb2-8" data-line-number="8"></a>
-<a class="sourceLine" id="cb2-9" data-line-number="9">place (<span class="dt">Board</span> n i k qs) j <span class="fu">=</span> <span class="dt">Board</span> n (i <span class="fu">+</span> <span class="dv">1</span>) (k <span class="fu">+</span> <span class="dv">1</span>) ( (i, j) <span class="fu">:</span> qs)</a>
-<a class="sourceLine" id="cb2-10" data-line-number="10"></a>
-<a class="sourceLine" id="cb2-11" data-line-number="11">threatens (i, j) (i', j')</a>
-<a class="sourceLine" id="cb2-12" data-line-number="12">    <span class="fu">|</span> i <span class="fu">==</span> i' <span class="fu">=</span> <span class="dt">True</span></a>
-<a class="sourceLine" id="cb2-13" data-line-number="13">    <span class="fu">|</span> j <span class="fu">==</span> j' <span class="fu">=</span> <span class="dt">True</span></a>
-<a class="sourceLine" id="cb2-14" data-line-number="14">    <span class="fu">|</span> i <span class="fu">+</span> j <span class="fu">==</span> i' <span class="fu">+</span> j' <span class="fu">=</span> <span class="dt">True</span></a>
-<a class="sourceLine" id="cb2-15" data-line-number="15">    <span class="fu">|</span> i <span class="fu">-</span> j <span class="fu">==</span> i' <span class="fu">-</span> j' <span class="fu">=</span> <span class="dt">True</span></a>
-<a class="sourceLine" id="cb2-16" data-line-number="16">    <span class="fu">|</span> otherwise <span class="fu">=</span> <span class="dt">False</span></a>
-<a class="sourceLine" id="cb2-17" data-line-number="17"></a>
-<a class="sourceLine" id="cb2-18" data-line-number="18">conflicts q [] <span class="fu">=</span> <span class="dt">False</span></a>
-<a class="sourceLine" id="cb2-19" data-line-number="19">conflicts q (q'<span class="fu">:</span>qs) <span class="fu">=</span> threatens q q' <span class="fu">||</span> conflicts q qs</a>
-<a class="sourceLine" id="cb2-20" data-line-number="20"></a>
-<a class="sourceLine" id="cb2-21" data-line-number="21">safe (<span class="dt">Board</span> _ i _ qs) j <span class="fu">=</span> not <span class="fu">$</span> conflicts (i, j) qs</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a>new n <span class="ot">=</span> <span class="dt">Board</span> n <span class="dv">1</span> <span class="dv">0</span> []</span>
+<span id="cb2-2"><a href="#cb2-2"></a></span>
+<span id="cb2-3"><a href="#cb2-3"></a>size (<span class="dt">Board</span> n _ _ _) <span class="ot">=</span> n</span>
+<span id="cb2-4"><a href="#cb2-4"></a></span>
+<span id="cb2-5"><a href="#cb2-5"></a>complete (<span class="dt">Board</span> n _ k _) <span class="ot">=</span> k <span class="op">==</span> n</span>
+<span id="cb2-6"><a href="#cb2-6"></a></span>
+<span id="cb2-7"><a href="#cb2-7"></a>positions (<span class="dt">Board</span> _ _ _ qs) <span class="ot">=</span> qs</span>
+<span id="cb2-8"><a href="#cb2-8"></a></span>
+<span id="cb2-9"><a href="#cb2-9"></a>place (<span class="dt">Board</span> n i k qs) j <span class="ot">=</span> <span class="dt">Board</span> n (i <span class="op">+</span> <span class="dv">1</span>) (k <span class="op">+</span> <span class="dv">1</span>) ( (i, j) <span class="op">:</span> qs)</span>
+<span id="cb2-10"><a href="#cb2-10"></a></span>
+<span id="cb2-11"><a href="#cb2-11"></a>threatens (i, j) (i', j')</span>
+<span id="cb2-12"><a href="#cb2-12"></a>    <span class="op">|</span> i <span class="op">==</span> i' <span class="ot">=</span> <span class="dt">True</span></span>
+<span id="cb2-13"><a href="#cb2-13"></a>    <span class="op">|</span> j <span class="op">==</span> j' <span class="ot">=</span> <span class="dt">True</span></span>
+<span id="cb2-14"><a href="#cb2-14"></a>    <span class="op">|</span> i <span class="op">+</span> j <span class="op">==</span> i' <span class="op">+</span> j' <span class="ot">=</span> <span class="dt">True</span></span>
+<span id="cb2-15"><a href="#cb2-15"></a>    <span class="op">|</span> i <span class="op">-</span> j <span class="op">==</span> i' <span class="op">-</span> j' <span class="ot">=</span> <span class="dt">True</span></span>
+<span id="cb2-16"><a href="#cb2-16"></a>    <span class="op">|</span> <span class="fu">otherwise</span> <span class="ot">=</span> <span class="dt">False</span></span>
+<span id="cb2-17"><a href="#cb2-17"></a></span>
+<span id="cb2-18"><a href="#cb2-18"></a>conflicts q [] <span class="ot">=</span> <span class="dt">False</span></span>
+<span id="cb2-19"><a href="#cb2-19"></a>conflicts q (q'<span class="op">:</span>qs) <span class="ot">=</span> threatens q q' <span class="op">||</span> conflicts q qs</span>
+<span id="cb2-20"><a href="#cb2-20"></a></span>
+<span id="cb2-21"><a href="#cb2-21"></a>safe (<span class="dt">Board</span> _ i _ qs) j <span class="ot">=</span> <span class="fu">not</span> <span class="op">$</span> conflicts (i, j) qs</span></code></pre></div>
 <p>These are all straight-forward translations, within minimal “haskell-ifications”.</p>
 <p>The first solution using <code>Maybe</code> and explicit checks for failure:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1">addqueenM bd <span class="fu">=</span></a>
-<a class="sourceLine" id="cb3-2" data-line-number="2">    <span class="kw">let</span> try j <span class="fu">=</span> <span class="kw">if</span> j <span class="fu">&gt;</span> size bd</a>
-<a class="sourceLine" id="cb3-3" data-line-number="3">            <span class="kw">then</span> <span class="dt">Nothing</span></a>
-<a class="sourceLine" id="cb3-4" data-line-number="4">            <span class="kw">else</span> <span class="kw">if</span> safe bd j</a>
-<a class="sourceLine" id="cb3-5" data-line-number="5">                <span class="kw">then</span> <span class="kw">case</span> addqueenM (place bd j) <span class="kw">of</span></a>
-<a class="sourceLine" id="cb3-6" data-line-number="6">                    <span class="dt">Nothing</span> <span class="ot">-&gt;</span> try <span class="fu">$</span> j <span class="fu">+</span> <span class="dv">1</span></a>
-<a class="sourceLine" id="cb3-7" data-line-number="7">                    <span class="dt">Just</span> bd' <span class="ot">-&gt;</span> <span class="dt">Just</span> bd'</a>
-<a class="sourceLine" id="cb3-8" data-line-number="8">                <span class="kw">else</span> try <span class="fu">$</span> j <span class="fu">+</span> <span class="dv">1</span></a>
-<a class="sourceLine" id="cb3-9" data-line-number="9">    <span class="kw">in</span></a>
-<a class="sourceLine" id="cb3-10" data-line-number="10">        <span class="kw">if</span> complete bd</a>
-<a class="sourceLine" id="cb3-11" data-line-number="11">            <span class="kw">then</span> <span class="dt">Just</span> bd</a>
-<a class="sourceLine" id="cb3-12" data-line-number="12">            <span class="kw">else</span> try <span class="dv">1</span></a>
-<a class="sourceLine" id="cb3-13" data-line-number="13"></a>
-<a class="sourceLine" id="cb3-14" data-line-number="14">queensM <span class="fu">=</span> addqueenM <span class="fu">.</span> new</a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a>addqueenM bd <span class="ot">=</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a>    <span class="kw">let</span> try j <span class="ot">=</span> <span class="kw">if</span> j <span class="op">&gt;</span> size bd</span>
+<span id="cb3-3"><a href="#cb3-3"></a>            <span class="kw">then</span> <span class="dt">Nothing</span></span>
+<span id="cb3-4"><a href="#cb3-4"></a>            <span class="kw">else</span> <span class="kw">if</span> safe bd j</span>
+<span id="cb3-5"><a href="#cb3-5"></a>                <span class="kw">then</span> <span class="kw">case</span> addqueenM (place bd j) <span class="kw">of</span></span>
+<span id="cb3-6"><a href="#cb3-6"></a>                    <span class="dt">Nothing</span> <span class="ot">-&gt;</span> try <span class="op">$</span> j <span class="op">+</span> <span class="dv">1</span></span>
+<span id="cb3-7"><a href="#cb3-7"></a>                    <span class="dt">Just</span> bd' <span class="ot">-&gt;</span> <span class="dt">Just</span> bd'</span>
+<span id="cb3-8"><a href="#cb3-8"></a>                <span class="kw">else</span> try <span class="op">$</span> j <span class="op">+</span> <span class="dv">1</span></span>
+<span id="cb3-9"><a href="#cb3-9"></a>    <span class="kw">in</span></span>
+<span id="cb3-10"><a href="#cb3-10"></a>        <span class="kw">if</span> complete bd</span>
+<span id="cb3-11"><a href="#cb3-11"></a>            <span class="kw">then</span> <span class="dt">Just</span> bd</span>
+<span id="cb3-12"><a href="#cb3-12"></a>            <span class="kw">else</span> try <span class="dv">1</span></span>
+<span id="cb3-13"><a href="#cb3-13"></a></span>
+<span id="cb3-14"><a href="#cb3-14"></a>queensM <span class="ot">=</span> addqueenM <span class="op">.</span> new</span></code></pre></div>
 <p>The second uses exceptions to avoid the explicit check (note that I’ve imported <code>Control.Exception</code> as <code>CE</code> to avoid the clash with <code>Prelude</code>’s <code>catch</code>; see the documentation of <a href="http://haskell.org/ghc/docs/latest/html/libraries/base-3.0.0.0/Control-Exception.html#4">catch</a> if you don’t know why that’s necessary):</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">addqueenE bd <span class="fu">=</span></a>
-<a class="sourceLine" id="cb4-2" data-line-number="2">    <span class="kw">let</span> try j <span class="fu">=</span> <span class="kw">if</span> j <span class="fu">&gt;</span> size bd</a>
-<a class="sourceLine" id="cb4-3" data-line-number="3">            <span class="kw">then</span> error <span class="st">&quot;no more space on board&quot;</span></a>
-<a class="sourceLine" id="cb4-4" data-line-number="4">            <span class="kw">else</span> <span class="kw">if</span> safe bd j</a>
-<a class="sourceLine" id="cb4-5" data-line-number="5">                <span class="kw">then</span> CE.catch (addqueenE (place bd j)) (\ e <span class="ot">-&gt;</span> try <span class="fu">$</span> j <span class="fu">+</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb4-6" data-line-number="6">                <span class="kw">else</span> try <span class="fu">$</span> j <span class="fu">+</span> <span class="dv">1</span></a>
-<a class="sourceLine" id="cb4-7" data-line-number="7">    <span class="kw">in</span></a>
-<a class="sourceLine" id="cb4-8" data-line-number="8">        <span class="kw">if</span> complete bd</a>
-<a class="sourceLine" id="cb4-9" data-line-number="9">            <span class="kw">then</span> return bd</a>
-<a class="sourceLine" id="cb4-10" data-line-number="10">            <span class="kw">else</span> try <span class="dv">1</span></a>
-<a class="sourceLine" id="cb4-11" data-line-number="11"></a>
-<a class="sourceLine" id="cb4-12" data-line-number="12">queensE n <span class="fu">=</span> CE.catch (addqueenE <span class="fu">$</span> new n) (\ e <span class="ot">-&gt;</span> return <span class="dt">NoBoard</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a>addqueenE bd <span class="ot">=</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a>    <span class="kw">let</span> try j <span class="ot">=</span> <span class="kw">if</span> j <span class="op">&gt;</span> size bd</span>
+<span id="cb4-3"><a href="#cb4-3"></a>            <span class="kw">then</span> <span class="fu">error</span> <span class="st">&quot;no more space on board&quot;</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a>            <span class="kw">else</span> <span class="kw">if</span> safe bd j</span>
+<span id="cb4-5"><a href="#cb4-5"></a>                <span class="kw">then</span> CE.catch (addqueenE (place bd j)) (\ e <span class="ot">-&gt;</span> try <span class="op">$</span> j <span class="op">+</span> <span class="dv">1</span>)</span>
+<span id="cb4-6"><a href="#cb4-6"></a>                <span class="kw">else</span> try <span class="op">$</span> j <span class="op">+</span> <span class="dv">1</span></span>
+<span id="cb4-7"><a href="#cb4-7"></a>    <span class="kw">in</span></span>
+<span id="cb4-8"><a href="#cb4-8"></a>        <span class="kw">if</span> complete bd</span>
+<span id="cb4-9"><a href="#cb4-9"></a>            <span class="kw">then</span> <span class="fu">return</span> bd</span>
+<span id="cb4-10"><a href="#cb4-10"></a>            <span class="kw">else</span> try <span class="dv">1</span></span>
+<span id="cb4-11"><a href="#cb4-11"></a></span>
+<span id="cb4-12"><a href="#cb4-12"></a>queensE n <span class="ot">=</span> CE.catch (addqueenE <span class="op">$</span> new n) (\ e <span class="ot">-&gt;</span> <span class="fu">return</span> <span class="dt">NoBoard</span>)</span></code></pre></div>
 <p>The last translated version uses an explicit failure continuation to avoid both checking results and dealing with exceptions:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1">addqueenC bd fc <span class="fu">=</span></a>
-<a class="sourceLine" id="cb5-2" data-line-number="2">    <span class="kw">let</span> try j <span class="fu">=</span> <span class="kw">if</span> j <span class="fu">&gt;</span> size bd</a>
-<a class="sourceLine" id="cb5-3" data-line-number="3">            <span class="kw">then</span> fc</a>
-<a class="sourceLine" id="cb5-4" data-line-number="4">            <span class="kw">else</span> <span class="kw">if</span> safe bd j</a>
-<a class="sourceLine" id="cb5-5" data-line-number="5">                <span class="kw">then</span> addqueenC (place bd j) (try <span class="fu">$</span> j <span class="fu">+</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb5-6" data-line-number="6">                <span class="kw">else</span> try <span class="fu">$</span> j <span class="fu">+</span> <span class="dv">1</span></a>
-<a class="sourceLine" id="cb5-7" data-line-number="7">    <span class="kw">in</span></a>
-<a class="sourceLine" id="cb5-8" data-line-number="8">        <span class="kw">if</span> complete bd</a>
-<a class="sourceLine" id="cb5-9" data-line-number="9">            <span class="kw">then</span> <span class="dt">Just</span> bd</a>
-<a class="sourceLine" id="cb5-10" data-line-number="10">            <span class="kw">else</span> try <span class="dv">1</span></a>
-<a class="sourceLine" id="cb5-11" data-line-number="11"></a>
-<a class="sourceLine" id="cb5-12" data-line-number="12">queensC n <span class="fu">=</span> addqueenC (new n) <span class="dt">Nothing</span></a></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1"></a>addqueenC bd fc <span class="ot">=</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a>    <span class="kw">let</span> try j <span class="ot">=</span> <span class="kw">if</span> j <span class="op">&gt;</span> size bd</span>
+<span id="cb5-3"><a href="#cb5-3"></a>            <span class="kw">then</span> fc</span>
+<span id="cb5-4"><a href="#cb5-4"></a>            <span class="kw">else</span> <span class="kw">if</span> safe bd j</span>
+<span id="cb5-5"><a href="#cb5-5"></a>                <span class="kw">then</span> addqueenC (place bd j) (try <span class="op">$</span> j <span class="op">+</span> <span class="dv">1</span>)</span>
+<span id="cb5-6"><a href="#cb5-6"></a>                <span class="kw">else</span> try <span class="op">$</span> j <span class="op">+</span> <span class="dv">1</span></span>
+<span id="cb5-7"><a href="#cb5-7"></a>    <span class="kw">in</span></span>
+<span id="cb5-8"><a href="#cb5-8"></a>        <span class="kw">if</span> complete bd</span>
+<span id="cb5-9"><a href="#cb5-9"></a>            <span class="kw">then</span> <span class="dt">Just</span> bd</span>
+<span id="cb5-10"><a href="#cb5-10"></a>            <span class="kw">else</span> try <span class="dv">1</span></span>
+<span id="cb5-11"><a href="#cb5-11"></a></span>
+<span id="cb5-12"><a href="#cb5-12"></a>queensC n <span class="ot">=</span> addqueenC (new n) <span class="dt">Nothing</span></span></code></pre></div>
 <p>So far so good, but since this is Haskell, what about monads? :-) Minor changes results in the following somewhat general version of <code>addqueenX</code>:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1">addqueenH bd <span class="fu">=</span></a>
-<a class="sourceLine" id="cb6-2" data-line-number="2">    <span class="kw">let</span> try j <span class="fu">=</span> <span class="kw">if</span> j <span class="fu">&gt;</span> size bd</a>
-<a class="sourceLine" id="cb6-3" data-line-number="3">            <span class="kw">then</span> mzero</a>
-<a class="sourceLine" id="cb6-4" data-line-number="4">            <span class="kw">else</span> <span class="kw">if</span> safe bd j</a>
-<a class="sourceLine" id="cb6-5" data-line-number="5">                <span class="kw">then</span> addqueenH (place bd j) <span class="ot">`mplus`</span> (try <span class="fu">$</span> j <span class="fu">+</span> <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb6-6" data-line-number="6">                <span class="kw">else</span> try <span class="fu">$</span> j <span class="fu">+</span> <span class="dv">1</span></a>
-<a class="sourceLine" id="cb6-7" data-line-number="7">    <span class="kw">in</span></a>
-<a class="sourceLine" id="cb6-8" data-line-number="8">        <span class="kw">if</span> complete bd</a>
-<a class="sourceLine" id="cb6-9" data-line-number="9">            <span class="kw">then</span> return bd</a>
-<a class="sourceLine" id="cb6-10" data-line-number="10">            <span class="kw">else</span> try <span class="dv">1</span></a></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1"></a>addqueenH bd <span class="ot">=</span></span>
+<span id="cb6-2"><a href="#cb6-2"></a>    <span class="kw">let</span> try j <span class="ot">=</span> <span class="kw">if</span> j <span class="op">&gt;</span> size bd</span>
+<span id="cb6-3"><a href="#cb6-3"></a>            <span class="kw">then</span> mzero</span>
+<span id="cb6-4"><a href="#cb6-4"></a>            <span class="kw">else</span> <span class="kw">if</span> safe bd j</span>
+<span id="cb6-5"><a href="#cb6-5"></a>                <span class="kw">then</span> addqueenH (place bd j) <span class="ot">`mplus`</span> (try <span class="op">$</span> j <span class="op">+</span> <span class="dv">1</span>)</span>
+<span id="cb6-6"><a href="#cb6-6"></a>                <span class="kw">else</span> try <span class="op">$</span> j <span class="op">+</span> <span class="dv">1</span></span>
+<span id="cb6-7"><a href="#cb6-7"></a>    <span class="kw">in</span></span>
+<span id="cb6-8"><a href="#cb6-8"></a>        <span class="kw">if</span> complete bd</span>
+<span id="cb6-9"><a href="#cb6-9"></a>            <span class="kw">then</span> <span class="fu">return</span> bd</span>
+<span id="cb6-10"><a href="#cb6-10"></a>            <span class="kw">else</span> try <span class="dv">1</span></span></code></pre></div>
 <p>With that it’s possible to lean on the type system to get something that’s similar to <code>queenM</code> from above:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">queensHM ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Board</span></a>
-<a class="sourceLine" id="cb7-2" data-line-number="2">queensHM <span class="fu">=</span> addqueenH <span class="fu">.</span> new</a></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1"></a><span class="ot">queensHM ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Board</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a>queensHM <span class="ot">=</span> addqueenH <span class="op">.</span> new</span></code></pre></div>
 <p>It’s also easy to write a version that calculates <em>all</em> solutions given the size of the board:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">queensHL ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [<span class="dt">Board</span>]</a>
-<a class="sourceLine" id="cb8-2" data-line-number="2">queensHL <span class="fu">=</span> addqueenH <span class="fu">.</span> new</a></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1"></a><span class="ot">queensHL ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [<span class="dt">Board</span>]</span>
+<span id="cb8-2"><a href="#cb8-2"></a>queensHL <span class="ot">=</span> addqueenH <span class="op">.</span> new</span></code></pre></div>
 
 
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/haskell.html">haskell</a>
+Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>
 </div>
 
 
@@ -132,7 +132,7 @@ Tags: <a href="../tags/haskell.html">haskell</a>
     <p class="comment-date"><time pubdate="pubdate" datetime="2007-12-09">2007-12-09</time></p>
   </header>
 <p>You can implement threatens just like it is in the SML or just like you would in C-style languages.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">threatens (i, j) (i', j') <span class="fu">=</span> i <span class="fu">==</span> i' <span class="fu">||</span> j <span class="fu">==</span> j' <span class="fu">||</span> i<span class="fu">+</span>j <span class="fu">==</span> i'<span class="fu">+</span>j' <span class="fu">||</span> i<span class="fu">-</span>j <span class="fu">==</span> i'<span class="fu">-</span>j'</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a>threatens (i, j) (i', j') <span class="ot">=</span> i <span class="op">==</span> i' <span class="op">||</span> j <span class="op">==</span> j' <span class="op">||</span> i<span class="op">+</span>j <span class="op">==</span> i'<span class="op">+</span>j' <span class="op">||</span> i<span class="op">-</span>j <span class="op">==</span> i'<span class="op">-</span>j'</span></code></pre></div>
 </article>
 
 <article class="comment-body">
@@ -142,9 +142,9 @@ Tags: <a href="../tags/haskell.html">haskell</a>
     <p class="comment-date"><time pubdate="pubdate" datetime="2009-02-24">2009-02-24</time></p>
   </header>
 <p>try this: (147 bytes ^^)</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">h l n x <span class="fu">=</span> <span class="kw">if</span> x<span class="fu">==</span><span class="dv">0</span> <span class="kw">then</span> [l] <span class="kw">else</span> <span class="kw">do</span> y <span class="ot">&lt;-</span> [<span class="dv">1</span><span class="fu">..</span>n]; <span class="kw">if</span> null [<span class="dv">0</span> <span class="fu">|</span> (p,q) <span class="ot">&lt;-</span> l, or [q <span class="fu">==</span> y , p <span class="fu">+</span> q <span class="fu">==</span> x <span class="fu">+</span> y, p <span class="fu">-</span> q <span class="fu">==</span> q <span class="fu">-</span> y]] <span class="kw">then</span> h ((x,y)<span class="fu">:</span>l) n <span class="fu">$</span> x<span class="fu">-</span><span class="dv">1</span> <span class="kw">else</span> []</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">main <span class="fu">=</span> putStr <span class="fu">$</span> show <span class="fu">$</span> head <span class="fu">$</span> h [] <span class="dv">8</span> <span class="dv">8</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a>h l n x <span class="ot">=</span> <span class="kw">if</span> x<span class="op">==</span><span class="dv">0</span> <span class="kw">then</span> [l] <span class="kw">else</span> <span class="kw">do</span> y <span class="ot">&lt;-</span> [<span class="dv">1</span><span class="op">..</span>n]; <span class="kw">if</span> <span class="fu">null</span> [<span class="dv">0</span> <span class="op">|</span> (p,q) <span class="ot">&lt;-</span> l, <span class="fu">or</span> [q <span class="op">==</span> y , p <span class="op">+</span> q <span class="op">==</span> x <span class="op">+</span> y, p <span class="op">-</span> q <span class="op">==</span> q <span class="op">-</span> y]] <span class="kw">then</span> h ((x,y)<span class="op">:</span>l) n <span class="op">$</span> x<span class="op">-</span><span class="dv">1</span> <span class="kw">else</span> []</span>
+<span id="cb1-2"><a href="#cb1-2"></a></span>
+<span id="cb1-3"><a href="#cb1-3"></a>main <span class="ot">=</span> <span class="fu">putStr</span> <span class="op">$</span> <span class="fu">show</span> <span class="op">$</span> <span class="fu">head</span> <span class="op">$</span> h [] <span class="dv">8</span> <span class="dv">8</span></span></code></pre></div>
 </article>
 
 

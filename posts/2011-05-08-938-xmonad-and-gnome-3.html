@@ -50,7 +50,7 @@ Type=XSession</code></pre>
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/arch.html">arch</a>, <a href="../tags/gnome.html">gnome</a>, <a href="../tags/gnome3.html">gnome3</a>, <a href="../tags/xmonad.html">xmonad</a>
+Tags: <a title="All pages tagged 'arch'." href="../tags/arch.html">arch</a>, <a title="All pages tagged 'gnome'." href="../tags/gnome.html">gnome</a>, <a title="All pages tagged 'gnome3'." href="../tags/gnome3.html">gnome3</a>, <a title="All pages tagged 'xmonad'." href="../tags/xmonad.html">xmonad</a>
 </div>
 
 
@@ -141,7 +141,7 @@ Tags: <a href="../tags/arch.html">arch</a>, <a href="../tags/gnome.html">gnome</
     <p><b>Alex</b></p>
     <p class="comment-date"><time pubdate="pubdate" datetime="2011-10-17">2011-10-17</time></p>
   </header>
-<p>I was having the <code>failed to load session &quot;xmonad&quot;</code> issue. I fixed it by running “sudo apt-get install gnome-panel” and modifying the xmonad.session file as follows:</p>
+<p>I was having the <code>failed to load session "xmonad"</code> issue. I fixed it by running “sudo apt-get install gnome-panel” and modifying the xmonad.session file as follows:</p>
 <pre><code>/usr/share/gnome-session/sessions/xmonad.session
 [GNOME Session]
 Name=Xmonad session
@@ -157,7 +157,7 @@ DefaultProvider-windowmanager=xmonad</code></pre>
     <p><b>David</b></p>
     <p class="comment-date"><time pubdate="pubdate" datetime="2011-10-17">2011-10-17</time></p>
   </header>
-<p>I was getting <code>failed to load session &quot;xmonad&quot;</code> because I did not have the notification-daemon installed. To install the notification-daemon on Ubuntu 11.10 I used:</p>
+<p>I was getting <code>failed to load session "xmonad"</code> because I did not have the notification-daemon installed. To install the notification-daemon on Ubuntu 11.10 I used:</p>
 <pre><code>sudo apt-get install notification-daemon</code></pre>
 </article>
 
@@ -167,7 +167,7 @@ DefaultProvider-windowmanager=xmonad</code></pre>
     <p><b>Anshuman Bhaduri</b></p>
     <p class="comment-date"><time pubdate="pubdate" datetime="2011-12-08">2011-12-08</time></p>
   </header>
-<p>Like it says on the <a href="http://www.haskell.org/haskellwiki/Xmonad/Using_xmonad_in_Gnome#Setting_up_Gnome_to_use_Xmonad">Xmonad GNOME wiki page</a>, I also needed the <code>applications/xmonad.desktop</code> file. This made the <code>failed to load session &quot;xmonad&quot;</code> message disappear, however I’m still trying to get stuff to work just right.</p>
+<p>Like it says on the <a href="http://www.haskell.org/haskellwiki/Xmonad/Using_xmonad_in_Gnome#Setting_up_Gnome_to_use_Xmonad">Xmonad GNOME wiki page</a>, I also needed the <code>applications/xmonad.desktop</code> file. This made the <code>failed to load session "xmonad"</code> message disappear, however I’m still trying to get stuff to work just right.</p>
 <pre><code>$ cat /usr/share/applications/xmonad.desktop
 [Desktop Entry]
 Type=Application

@@ -43,26 +43,26 @@ call &quot;C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\vcvarsall.bat&
 start C:\Eclipse\Indigo\eclipse.exe
 endlocal</code></pre>
 <h3 id="creating-the-project">Creating the project</h3>
-<p>Creating a “makefile” project in Eclipse is fairly straight forward; one needs a <em>C/C++ project</em>, of the <em>makefile</em> type, and make it empty too so that there isn’t any cruft in the way. Then add a single source file, e.g. <code>main.cxx</code>:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></a>
-<a class="sourceLine" id="cb3-2" data-line-number="2"><span class="pp">#include </span><span class="im">&lt;Qt/QtGui&gt;</span></a>
-<a class="sourceLine" id="cb3-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb3-4" data-line-number="4"><span class="dt">int</span> main(<span class="dt">int</span> argc, <span class="dt">char</span> **argv)</a>
-<a class="sourceLine" id="cb3-5" data-line-number="5">{</a>
-<a class="sourceLine" id="cb3-6" data-line-number="6">    <span class="bu">std::</span>cout &lt;&lt; <span class="ot">__FUNCTION__</span> &lt;&lt; <span class="bu">std::</span>endl;</a>
-<a class="sourceLine" id="cb3-7" data-line-number="7">    <span class="ex">QApplication</span> app(argc, argv);</a>
-<a class="sourceLine" id="cb3-8" data-line-number="8">    <span class="cf">return</span>(app.exec());</a>
-<a class="sourceLine" id="cb3-9" data-line-number="9">}</a></code></pre></div>
-<p>And then a project file, e.g. <code>Test.pro</code>:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode makefile"><code class="sourceCode makefile"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="dt">TEMPLATE </span><span class="ch">=</span><span class="st"> app</span></a>
-<a class="sourceLine" id="cb4-2" data-line-number="2"><span class="dt">TARGET </span><span class="ch">=</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb4-3" data-line-number="3"><span class="dt">DEPENDPATH </span><span class="ch">+=</span><span class="st"> .</span></a>
-<a class="sourceLine" id="cb4-4" data-line-number="4"><span class="dt">INCLUDEPATH </span><span class="ch">+=</span><span class="st"> .</span></a>
-<a class="sourceLine" id="cb4-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb4-6" data-line-number="6"><span class="dt">CONFIG </span><span class="ch">+=</span><span class="st"> qt</span></a>
-<a class="sourceLine" id="cb4-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb4-8" data-line-number="8"><span class="dt">HEADERS </span><span class="ch">+=</span></a>
-<a class="sourceLine" id="cb4-9" data-line-number="9"><span class="dt">SOURCES </span><span class="ch">+=</span><span class="st"> main.cxx</span></a></code></pre></div>
+<p>Creating a “makefile” project in Eclipse is fairly straight forward; one needs a <em>C/C++ project</em>, of the <em>makefile</em> type, and make it empty too so that there isn’t any cruft in the way. Then add a single source file, e.g. <code>main.cxx</code>:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="pp">#include </span><span class="im">&lt;iostream&gt;</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a><span class="pp">#include </span><span class="im">&lt;Qt/QtGui&gt;</span></span>
+<span id="cb3-3"><a href="#cb3-3"></a></span>
+<span id="cb3-4"><a href="#cb3-4"></a><span class="dt">int</span> main(<span class="dt">int</span> argc, <span class="dt">char</span> **argv)</span>
+<span id="cb3-5"><a href="#cb3-5"></a>{</span>
+<span id="cb3-6"><a href="#cb3-6"></a>    <span class="bu">std::</span>cout &lt;&lt; <span class="ot">__FUNCTION__</span> &lt;&lt; <span class="bu">std::</span>endl;</span>
+<span id="cb3-7"><a href="#cb3-7"></a>    <span class="ex">QApplication</span> app(argc, argv);</span>
+<span id="cb3-8"><a href="#cb3-8"></a>    <span class="cf">return</span>(app.exec());</span>
+<span id="cb3-9"><a href="#cb3-9"></a>}</span></code></pre></div>
+<p>And then a project file, e.g. <code>Test.pro</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode makefile"><code class="sourceCode makefile"><span id="cb4-1"><a href="#cb4-1"></a><span class="dt">TEMPLATE </span><span class="ch">=</span><span class="st"> app</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a><span class="dt">TARGET </span><span class="ch">=</span><span class="st"> </span></span>
+<span id="cb4-3"><a href="#cb4-3"></a><span class="dt">DEPENDPATH </span><span class="ch">+=</span><span class="st"> .</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a><span class="dt">INCLUDEPATH </span><span class="ch">+=</span><span class="st"> .</span></span>
+<span id="cb4-5"><a href="#cb4-5"></a></span>
+<span id="cb4-6"><a href="#cb4-6"></a><span class="dt">CONFIG </span><span class="ch">+=</span><span class="st"> qt</span></span>
+<span id="cb4-7"><a href="#cb4-7"></a></span>
+<span id="cb4-8"><a href="#cb4-8"></a><span class="dt">HEADERS </span><span class="ch">+=</span></span>
+<span id="cb4-9"><a href="#cb4-9"></a><span class="dt">SOURCES </span><span class="ch">+=</span><span class="st"> main.cxx</span></span></code></pre></div>
 <p>After this use <code>qmake</code> to create the required makefile. I decided to use a subdirectory (<code>_build</code>) in the project, which <code>qmake</code> seems to have full support for:</p>
 <pre class="dos"><code>&gt; qmake ..\Test.pro</code></pre>
 <h3 id="setting-up-building-from-eclipse">Setting up building from Eclipse</h3>
@@ -87,7 +87,7 @@ endlocal</code></pre>
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/eclipse.html">eclipse</a>, <a href="../tags/qt.html">qt</a>, <a href="../tags/windows.html">windows</a>
+Tags: <a title="All pages tagged 'eclipse'." href="../tags/eclipse.html">eclipse</a>, <a title="All pages tagged 'qt'." href="../tags/qt.html">qt</a>, <a title="All pages tagged 'windows'." href="../tags/windows.html">windows</a>
 </div>
 
 

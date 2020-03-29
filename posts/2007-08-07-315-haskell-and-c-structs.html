@@ -31,78 +31,78 @@
 
 <p>When creating Haskell bindings for a C library one will sooner or later have to deal with ‘structs’. Let’s look at how it can be done using <a href="http://haskell.org/ghc/docs/latest/html/users_guide/hsc2hs.html">hsc2hs</a>.</p>
 <p>Here’s a somewhat silly struct that’ll do for this example:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode c"><code class="sourceCode c"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">typedef</span> <span class="kw">struct</span> {</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">    <span class="dt">int</span> a;</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">    <span class="dt">int</span> b;</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">} Foo;</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">typedef</span> <span class="kw">struct</span> {</span>
+<span id="cb1-2"><a href="#cb1-2"></a>    <span class="dt">int</span> a;</span>
+<span id="cb1-3"><a href="#cb1-3"></a>    <span class="dt">int</span> b;</span>
+<span id="cb1-4"><a href="#cb1-4"></a>} Foo;</span></code></pre></div>
 <p>It goes the file <em>foo.h</em>. I need some way of making sure that the data was passed properly from Haskell to C so here’s a declaration for a function to print an instance of <code>Foo</code>:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode c"><code class="sourceCode c"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="dt">void</span> print_foo(Foo *);</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb2-1"><a href="#cb2-1"></a><span class="dt">void</span> print_foo(Foo *);</span></code></pre></div>
 <p>The actual implementation of <code>print_foo</code> goes into <em>foo.c</em>:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode c"><code class="sourceCode c"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="dt">void</span></a>
-<a class="sourceLine" id="cb3-2" data-line-number="2">print_foo(Foo *f)</a>
-<a class="sourceLine" id="cb3-3" data-line-number="3">{</a>
-<a class="sourceLine" id="cb3-4" data-line-number="4">    printf(<span class="st">&quot;%s</span><span class="sc">\n</span><span class="st">&quot;</span>, __FUNCTION__);</a>
-<a class="sourceLine" id="cb3-5" data-line-number="5">    printf(<span class="st">&quot;f-&gt;a: %i</span><span class="sc">\n</span><span class="st">&quot;</span>, f-&gt;a);</a>
-<a class="sourceLine" id="cb3-6" data-line-number="6">    printf(<span class="st">&quot;f-&gt;b: %i</span><span class="sc">\n</span><span class="st">&quot;</span>, f-&gt;b);</a>
-<a class="sourceLine" id="cb3-7" data-line-number="7">}</a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb3-1"><a href="#cb3-1"></a><span class="dt">void</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a>print_foo(Foo *f)</span>
+<span id="cb3-3"><a href="#cb3-3"></a>{</span>
+<span id="cb3-4"><a href="#cb3-4"></a>    printf(<span class="st">&quot;%s</span><span class="sc">\n</span><span class="st">&quot;</span>, __FUNCTION__);</span>
+<span id="cb3-5"><a href="#cb3-5"></a>    printf(<span class="st">&quot;f-&gt;a: %i</span><span class="sc">\n</span><span class="st">&quot;</span>, f-&gt;a);</span>
+<span id="cb3-6"><a href="#cb3-6"></a>    printf(<span class="st">&quot;f-&gt;b: %i</span><span class="sc">\n</span><span class="st">&quot;</span>, f-&gt;b);</span>
+<span id="cb3-7"><a href="#cb3-7"></a>}</span></code></pre></div>
 <p>No surprises so far. Now onto the Haskell side of things. First some basic setup:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">{-# OPTIONS -ffi #-}</span></a>
-<a class="sourceLine" id="cb4-2" data-line-number="2"><span class="kw">module</span> <span class="dt">Main</span></a>
-<a class="sourceLine" id="cb4-3" data-line-number="3">    <span class="kw">where</span></a>
-<a class="sourceLine" id="cb4-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb4-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Foreign</span></a>
-<a class="sourceLine" id="cb4-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Foreign.C.Types</span></a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a><span class="ot">{-# OPTIONS -ffi #-}</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a><span class="kw">module</span> <span class="dt">Main</span></span>
+<span id="cb4-3"><a href="#cb4-3"></a>    <span class="kw">where</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a></span>
+<span id="cb4-5"><a href="#cb4-5"></a><span class="kw">import</span> <span class="dt">Foreign</span></span>
+<span id="cb4-6"><a href="#cb4-6"></a><span class="kw">import</span> <span class="dt">Foreign.C.Types</span></span></code></pre></div>
 <p>That makes sure I don’t forget to tell GHC that I’m using the foreign function interface (FFI) and imports everything I need for the rest. <em>hsc2hs</em> needs to know about the struct so I simply include the header file. I also need the Haskell representation of <code>Foo</code>, called <code>Bar</code> here, and for convenience I add a type for a pointer to <code>Bar</code>:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">#include &quot;foo.h&quot;</span></a>
-<a class="sourceLine" id="cb5-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb5-3" data-line-number="3"><span class="kw">data</span> <span class="dt">Bar</span> <span class="fu">=</span> <span class="dt">Bar</span> {<span class="ot"> a ::</span> <span class="dt">Int</span>,<span class="ot"> b ::</span> <span class="dt">Int</span> }</a>
-<a class="sourceLine" id="cb5-4" data-line-number="4"><span class="kw">type</span> <span class="dt">BarPtr</span> <span class="fu">=</span> <span class="dt">Ptr</span> (<span class="dt">Bar</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1"></a><span class="pp">#include &quot;foo.h&quot;</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a></span>
+<span id="cb5-3"><a href="#cb5-3"></a><span class="kw">data</span> <span class="dt">Bar</span> <span class="ot">=</span> <span class="dt">Bar</span> {<span class="ot"> a ::</span> <span class="dt">Int</span>,<span class="ot"> b ::</span> <span class="dt">Int</span> }</span>
+<span id="cb5-4"><a href="#cb5-4"></a><span class="kw">type</span> <span class="dt">BarPtr</span> <span class="ot">=</span> <span class="dt">Ptr</span> (<span class="dt">Bar</span>)</span></code></pre></div>
 <p>Now I’m ready to add the declaration of the “foreign” function:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1">foreign <span class="kw">import</span> ccall &quot;static foo.h print_foo&quot;</a>
-<a class="sourceLine" id="cb6-2" data-line-number="2"><span class="ot">    f_print_foo ::</span> <span class="dt">BarPtr</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1"></a>foreign <span class="kw">import</span> ccall &quot;static foo.h print_foo&quot;</span>
+<span id="cb6-2"><a href="#cb6-2"></a><span class="ot">    f_print_foo ::</span> <span class="dt">BarPtr</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span></code></pre></div>
 <p>Looking through the standard modules it isn’t completely obvious how to create a <code>BarPtr</code> for passing to <code>f_print_foo</code>. Whit the help of people on <code>#haskell</code> I found <code>with</code>, which has the type <em>Storable a =&gt; a -&gt; (Ptr a -&gt; IO b) -&gt; IO b</em>. That means I have to make <code>Bar</code> a <code>Storable</code>. According to the <a href="http://haskell.org/ghc/docs/latest/html/libraries/base/Foreign-Storable.html#t%3AStorable">documentation on Storable</a> and some experimentation I found that for this particular example I only need full implementations of <code>sizeOf</code>, <code>alignment</code> and <code>poke</code>:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Storable</span> <span class="dt">Bar</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb7-2" data-line-number="2">    sizeOf _ <span class="fu">=</span> (<span class="fu">#</span>size <span class="dt">Foo</span>)</a>
-<a class="sourceLine" id="cb7-3" data-line-number="3">    alignment _ <span class="fu">=</span> alignment (undefined<span class="ot"> ::</span> <span class="dt">CInt</span>)</a>
-<a class="sourceLine" id="cb7-4" data-line-number="4">    peek _ <span class="fu">=</span> error <span class="st">&quot;peek is not implemented&quot;</span></a>
-<a class="sourceLine" id="cb7-5" data-line-number="5">    poke ptr (<span class="dt">Bar</span> a' b') <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb7-6" data-line-number="6">        (<span class="fu">#</span>poke <span class="dt">Foo</span>, a) ptr a'</a>
-<a class="sourceLine" id="cb7-7" data-line-number="7">        (<span class="fu">#</span>poke <span class="dt">Foo</span>, b) ptr b'</a></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">instance</span> <span class="dt">Storable</span> <span class="dt">Bar</span> <span class="kw">where</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a>    sizeOf _ <span class="ot">=</span> (<span class="op">#</span>size <span class="dt">Foo</span>)</span>
+<span id="cb7-3"><a href="#cb7-3"></a>    alignment _ <span class="ot">=</span> alignment (<span class="fu">undefined</span><span class="ot"> ::</span> <span class="dt">CInt</span>)</span>
+<span id="cb7-4"><a href="#cb7-4"></a>    peek _ <span class="ot">=</span> <span class="fu">error</span> <span class="st">&quot;peek is not implemented&quot;</span></span>
+<span id="cb7-5"><a href="#cb7-5"></a>    poke ptr (<span class="dt">Bar</span> a' b') <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb7-6"><a href="#cb7-6"></a>        (<span class="op">#</span>poke <span class="dt">Foo</span>, a) ptr a'</span>
+<span id="cb7-7"><a href="#cb7-7"></a>        (<span class="op">#</span>poke <span class="dt">Foo</span>, b) ptr b'</span></code></pre></div>
 <p>([<em>Edited 09-08–2007 07:43 BST</em>] See DeeJay’s comment below for an explanation of the definition of <code>alignment</code>.)</p>
 <p>Using <code>with</code> every time I have to call <code>f_print_foo</code> will get tiring so here’s a function that’s a bit more convenient to use:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1">printFoo b <span class="fu">=</span> with b f_print_foo</a></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1"></a>printFoo b <span class="ot">=</span> with b f_print_foo</span></code></pre></div>
 <p>Now I can write a small main function to test it all:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1">main <span class="fu">=</span> printFoo <span class="fu">$</span> <span class="dt">Bar</span> { a<span class="fu">=</span><span class="dv">17</span>, b<span class="fu">=</span><span class="dv">47</span> }</a></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1"></a>main <span class="ot">=</span> printFoo <span class="op">$</span> <span class="dt">Bar</span> { a<span class="ot">=</span><span class="dv">17</span>, b<span class="ot">=</span><span class="dv">47</span> }</span></code></pre></div>
 <p>It works beautifully. However it’s very limited since it only covers the cases when a C function takes a pointer to a struct as a pure <em>in</em> argument. What about <em>inout</em>? (It’ll be easy to see how to deal with <em>out</em> arguments once the <em>inout</em> case is covered.) So, here’s a C function that adds 1 to one of the members in the struct:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode c"><code class="sourceCode c"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="dt">void</span></a>
-<a class="sourceLine" id="cb10-2" data-line-number="2">add_a(Foo *f)</a>
-<a class="sourceLine" id="cb10-3" data-line-number="3">{</a>
-<a class="sourceLine" id="cb10-4" data-line-number="4">    printf(<span class="st">&quot;%s</span><span class="sc">\n</span><span class="st">&quot;</span>, __FUNCTION__);</a>
-<a class="sourceLine" id="cb10-5" data-line-number="5">    f-&gt;a++;</a>
-<a class="sourceLine" id="cb10-6" data-line-number="6">}</a></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb10-1"><a href="#cb10-1"></a><span class="dt">void</span></span>
+<span id="cb10-2"><a href="#cb10-2"></a>add_a(Foo *f)</span>
+<span id="cb10-3"><a href="#cb10-3"></a>{</span>
+<span id="cb10-4"><a href="#cb10-4"></a>    printf(<span class="st">&quot;%s</span><span class="sc">\n</span><span class="st">&quot;</span>, __FUNCTION__);</span>
+<span id="cb10-5"><a href="#cb10-5"></a>    f-&gt;a++;</span>
+<span id="cb10-6"><a href="#cb10-6"></a>}</span></code></pre></div>
 <p>Of course a declaration in the header file is needed as well, but that’s pretty obvious so I’ll skip it here. The declaration of the foreign function is as simple as for <code>f_print_foo</code>:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1">foreign <span class="kw">import</span> ccall &quot;static foo.h add_a&quot;</a>
-<a class="sourceLine" id="cb11-2" data-line-number="2"><span class="ot">    f_add_a ::</span> <span class="dt">BarPtr</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1"></a>foreign <span class="kw">import</span> ccall &quot;static foo.h add_a&quot;</span>
+<span id="cb11-2"><a href="#cb11-2"></a><span class="ot">    f_add_a ::</span> <span class="dt">BarPtr</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span></code></pre></div>
 <p>Now comes the interesting part. Writing a convenience function for <code>f_add_a</code> isn’t as straight forward as for <code>f_print_foo</code>. I think something with the type <em>Bar -&gt; IO Bar</em> would be useful. <code>with</code> creates a temporary <code>BarPtr</code> for the duration of the call which means I have to have an inner function that takes the <code>Bar</code> part out of the <code>BarPtr</code> and returns it inside IO. Luckily <code>peek</code> does exactly that. Adding an implementation of it means that <code>Bar</code> as a <code>Storable</code> is implemented like this:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Storable</span> <span class="dt">Bar</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb12-2" data-line-number="2">    sizeOf _ <span class="fu">=</span> (<span class="fu">#</span>size <span class="dt">Foo</span>)</a>
-<a class="sourceLine" id="cb12-3" data-line-number="3">    alignment _ <span class="fu">=</span> <span class="dv">1</span> <span class="co">-- ???</span></a>
-<a class="sourceLine" id="cb12-4" data-line-number="4">    peek ptr <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb12-5" data-line-number="5">        a' <span class="ot">&lt;-</span> (<span class="fu">#</span>peek <span class="dt">Foo</span>, a) ptr</a>
-<a class="sourceLine" id="cb12-6" data-line-number="6">        b' <span class="ot">&lt;-</span> (<span class="fu">#</span>peek <span class="dt">Foo</span>, b) ptr</a>
-<a class="sourceLine" id="cb12-7" data-line-number="7">        return <span class="dt">Bar</span> { a<span class="fu">=</span>a', b<span class="fu">=</span>b' }</a>
-<a class="sourceLine" id="cb12-8" data-line-number="8">    poke ptr (<span class="dt">Bar</span> a' b') <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb12-9" data-line-number="9">        (<span class="fu">#</span>poke <span class="dt">Foo</span>, a) ptr a'</a>
-<a class="sourceLine" id="cb12-10" data-line-number="10">        (<span class="fu">#</span>poke <span class="dt">Foo</span>, b) ptr b'</a></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">instance</span> <span class="dt">Storable</span> <span class="dt">Bar</span> <span class="kw">where</span></span>
+<span id="cb12-2"><a href="#cb12-2"></a>    sizeOf _ <span class="ot">=</span> (<span class="op">#</span>size <span class="dt">Foo</span>)</span>
+<span id="cb12-3"><a href="#cb12-3"></a>    alignment _ <span class="ot">=</span> <span class="dv">1</span> <span class="co">-- ???</span></span>
+<span id="cb12-4"><a href="#cb12-4"></a>    peek ptr <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb12-5"><a href="#cb12-5"></a>        a' <span class="ot">&lt;-</span> (<span class="op">#</span>peek <span class="dt">Foo</span>, a) ptr</span>
+<span id="cb12-6"><a href="#cb12-6"></a>        b' <span class="ot">&lt;-</span> (<span class="op">#</span>peek <span class="dt">Foo</span>, b) ptr</span>
+<span id="cb12-7"><a href="#cb12-7"></a>        <span class="fu">return</span> <span class="dt">Bar</span> { a<span class="ot">=</span>a', b<span class="ot">=</span>b' }</span>
+<span id="cb12-8"><a href="#cb12-8"></a>    poke ptr (<span class="dt">Bar</span> a' b') <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb12-9"><a href="#cb12-9"></a>        (<span class="op">#</span>poke <span class="dt">Foo</span>, a) ptr a'</span>
+<span id="cb12-10"><a href="#cb12-10"></a>        (<span class="op">#</span>poke <span class="dt">Foo</span>, b) ptr b'</span></code></pre></div>
 <p>And the convenience function for <code>f_add_a</code> can be written like this:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1">addA b <span class="fu">=</span> with b <span class="fu">$</span> \ p <span class="ot">-&gt;</span> f_add_a p <span class="fu">&gt;&gt;</span> peek p</a></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1"></a>addA b <span class="ot">=</span> with b <span class="op">$</span> \ p <span class="ot">-&gt;</span> f_add_a p <span class="op">&gt;&gt;</span> peek p</span></code></pre></div>
 <p>Then I can modify the main function to test this as well:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1">main <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb14-2" data-line-number="2">    b <span class="ot">&lt;-</span> return <span class="fu">$</span> <span class="dt">Bar</span> { a<span class="fu">=</span><span class="dv">17</span>, b<span class="fu">=</span><span class="dv">47</span> }</a>
-<a class="sourceLine" id="cb14-3" data-line-number="3">    printFoo b</a>
-<a class="sourceLine" id="cb14-4" data-line-number="4">    d <span class="ot">&lt;-</span> addA b</a>
-<a class="sourceLine" id="cb14-5" data-line-number="5">    printFoo b</a>
-<a class="sourceLine" id="cb14-6" data-line-number="6">    printFoo d</a></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb14-2"><a href="#cb14-2"></a>    b <span class="ot">&lt;-</span> <span class="fu">return</span> <span class="op">$</span> <span class="dt">Bar</span> { a<span class="ot">=</span><span class="dv">17</span>, b<span class="ot">=</span><span class="dv">47</span> }</span>
+<span id="cb14-3"><a href="#cb14-3"></a>    printFoo b</span>
+<span id="cb14-4"><a href="#cb14-4"></a>    d <span class="ot">&lt;-</span> addA b</span>
+<span id="cb14-5"><a href="#cb14-5"></a>    printFoo b</span>
+<span id="cb14-6"><a href="#cb14-6"></a>    printFoo d</span></code></pre></div>
 <p>Indeed, produces the expected out put:</p>
 <pre><code>print_foo
 f-&gt;a: 17
@@ -120,7 +120,7 @@ f-&gt;b: 47</code></pre>
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/hsc2hs.html">hsc2hs</a>
+Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>, <a title="All pages tagged 'hsc2hs'." href="../tags/hsc2hs.html">hsc2hs</a>
 </div>
 
 
@@ -134,7 +134,7 @@ Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/hsc2hs.html">
 <p>So your implementation of <code>sizeOf</code>, <code>peek</code> and <code>poke</code> are fine, however defining <code>alignment</code> to be <code>1</code> is not! An incorrect alignment will work for x86 however a program will suffer a significant performance penalty and in other architectures it will raise an exception in the processor!</p>
 <p>Wikipedia has an entry on <a href="http://en.wikipedia.org/wiki/Data_structure_alignment">struct alignment</a> which references <a href="http://msdn2.microsoft.com/en-us/library/ms253949.aspx">a short definition and example</a> of alignment on MSDN, an article on IBM developerworks discussing the <a href="http://www-128.ibm.com/developerworks/library/pa-dalign/">performance issues with alignment</a> as well as a further <a href="http://www.eventhelix.com/RealtimeMantra/ByteAlignmentAndOrdering.htm">article about alignment</a>. In addition to its article, MSDN has a collection of <a href="http://msdn2.microsoft.com/en-us/library/71kf49f1.aspx">alignment examples</a>. As an aside here is an article discussing the <a href="http://www.goingware.com/tips/getting-started/alignment.html">implications of structure padding</a>.</p>
 <p>To summarize: Your particular struct should have an alignment of 4 not 1. An int (32bit) has a size of 4 bytes and an alignment of 4 (You can verify this with ghci). Therefore an int must be placed at a memory location which is divisible by 4. When an int is within a structure, the structure is padded to ensure that the int starts at a 4 byte boundary relative to the start of the structure. However if the structure were to be misaligned in memory the int would not aligned in the global sense. Therefore the structure should also have an alignment of 4. To correct your specific example:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">alignment _ <span class="fu">=</span> alignment (undefined<span class="ot">::</span><span class="dt">CInt</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a>alignment _ <span class="ot">=</span> alignment (<span class="fu">undefined</span><span class="ot">::</span><span class="dt">CInt</span>)</span></code></pre></div>
 <p>In general the struct should have the same alignment as the largest data type within the struct. So for example a double is 8 byte aligned on Windows and 4 byte aligned on Linux and OS X, so a struct with a double or a 64 bit integer is likely to be the largest data field and thus the struct will have a matching alignment. While all of the links above discuss structure padding rather than structure alignment explicitly, I believe my rule is correct and that the same logic holds for C unions.</p>
 <p>Finally, GCC has an <a href="http://gcc.gnu.org/onlinedocs/gcc/Alignment.html">extension</a> which allows one to programmatically query the alignment for data types. You can use this to experiment with more complex structs such as the examples that MSDN provide and verify my claims.</p>
 </article>
@@ -169,13 +169,13 @@ Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/hsc2hs.html">
     <p class="comment-date"><time pubdate="pubdate" datetime="2007-08-23">2007-08-23</time></p>
   </header>
 <p>I use this trick for computing the alignment:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">#include &lt;stddef.h&gt;</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="ot">#let alignment t = &quot;%lu&quot;, (unsigned long)offsetof(struct {char x__; t (y__); }, y__)</span></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="kw">instance</span> <span class="dt">Storable</span> <span class="dt">Foo</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">    sizeOf    _ <span class="fu">=</span> <span class="fu">#</span>size struct foo</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6">    alignment _ <span class="fu">=</span> <span class="fu">#</span>alignment struct foo</a>
-<a class="sourceLine" id="cb1-7" data-line-number="7">    <span class="co">{- ... -}</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="pp">#include &lt;stddef.h&gt;</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="pp">#let alignment t = &quot;%lu&quot;, (unsigned long)offsetof(struct {char x__; t (y__); }, y__)</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a></span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="kw">instance</span> <span class="dt">Storable</span> <span class="dt">Foo</span> <span class="kw">where</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a>    sizeOf    _ <span class="ot">=</span> <span class="op">#</span>size struct foo</span>
+<span id="cb1-6"><a href="#cb1-6"></a>    alignment _ <span class="ot">=</span> <span class="op">#</span>alignment struct foo</span>
+<span id="cb1-7"><a href="#cb1-7"></a>    <span class="co">{- ... -}</span></span></code></pre></div>
 </article>
 
 <article class="comment-body">

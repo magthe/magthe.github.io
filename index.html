@@ -65,40 +65,40 @@
 </header>
 
 <p>When using <code>ghcide</code> and LSP, as I wrote about in my post on <a href="./2019-09-19-000-haskell--ghcide--and-spacemacs.html">Haskell, ghcide, and Spacemacs</a>, I found myself ending up recompiling a little too often. This pushed me to finally start looking at <a href="https://nixos.org/nix/">Nix</a>. After a bit of a fight I managed to <a href="https://discourse.nixos.org/t/import-and-use-ghide-nix">get ghcide from Nix</a>, which brought me the issue of setting up Spacemacs. Inspired by <a href="https://gist.github.com/sevanspowell/23b0135dae2834e59904a502b8a0eb5d">a gist from Samuel Evans-Powell</a> and a guide to <a href="https://github.com/thalesmg/reflex-skeleton/blob/master/Readme.org#setting-up-editor-integration-with-emacs">setting up an environment for Reflex by Thales Macedo Garitezi</a> I ended up with the following setup:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode commonlisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb1-1" data-line-number="1">(<span class="kw">defun</span><span class="fu"> dotspacemacs/layers </span>()</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  (setq-default</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">   ...</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">   dotspacemacs-additional-packages</a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">   '(</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6">     nix-sandbox</a>
-<a class="sourceLine" id="cb1-7" data-line-number="7">     nix-haskell-mode</a>
-<a class="sourceLine" id="cb1-8" data-line-number="8">     ...</a>
-<a class="sourceLine" id="cb1-9" data-line-number="9">     )</a>
-<a class="sourceLine" id="cb1-10" data-line-number="10">   ...</a>
-<a class="sourceLine" id="cb1-11" data-line-number="11">   ))</a></code></pre></div>
-<div class="sourceCode" id="cb2"><pre class="sourceCode commonlisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb2-1" data-line-number="1">(<span class="kw">defun</span><span class="fu"> dotspacemacs/user-config </span>()</a>
-<a class="sourceLine" id="cb2-2" data-line-number="2">  ...</a>
-<a class="sourceLine" id="cb2-3" data-line-number="3">  (add-hook 'haskell-mode-hook #'lsp)</a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">  (add-hook 'haskell-mode-hook 'nix-haskell-mode)</a>
-<a class="sourceLine" id="cb2-5" data-line-number="5">  (add-hook 'haskell-mode-hook</a>
-<a class="sourceLine" id="cb2-6" data-line-number="6">            (<span class="kw">lambda</span> ()</a>
-<a class="sourceLine" id="cb2-7" data-line-number="7">              (setq-local flycheck-executable-find</a>
-<a class="sourceLine" id="cb2-8" data-line-number="8">                          (<span class="kw">lambda</span> (cmd)</a>
-<a class="sourceLine" id="cb2-9" data-line-number="9">                            (nix-executable-find (nix-current-sandbox) cmd)))</a>
-<a class="sourceLine" id="cb2-10" data-line-number="10">              (setq-local flycheck-command-wrapper-function</a>
-<a class="sourceLine" id="cb2-11" data-line-number="11">                          (<span class="kw">lambda</span> (argv)</a>
-<a class="sourceLine" id="cb2-12" data-line-number="12">                            (<span class="kw">apply</span> 'nix-shell-command (nix-current-sandbox) argv)))</a>
-<a class="sourceLine" id="cb2-13" data-line-number="13">              (setq-local haskell-process-wrapper-function</a>
-<a class="sourceLine" id="cb2-14" data-line-number="14">                          (<span class="kw">lambda</span> (argv)</a>
-<a class="sourceLine" id="cb2-15" data-line-number="15">                            (<span class="kw">apply</span> 'nix-shell-command (nix-current-sandbox) argv)))</a>
-<a class="sourceLine" id="cb2-16" data-line-number="16">              (setq-local lsp-haskell-process-wrapper-function</a>
-<a class="sourceLine" id="cb2-17" data-line-number="17">                          (<span class="kw">lambda</span> (argv)</a>
-<a class="sourceLine" id="cb2-18" data-line-number="18">                            `(<span class="st">&quot;nix-shell&quot;</span> <span class="st">&quot;-I&quot;</span> <span class="st">&quot;.&quot;</span> <span class="st">&quot;--command&quot;</span> <span class="st">&quot;ghcide --lsp&quot;</span> ,(nix-current-sandbox))))))</a>
-<a class="sourceLine" id="cb2-19" data-line-number="19">  (add-hook 'haskell-mode-hook</a>
-<a class="sourceLine" id="cb2-20" data-line-number="20">            (<span class="kw">lambda</span> ()</a>
-<a class="sourceLine" id="cb2-21" data-line-number="21">              (flycheck-add-next-checker 'lsp-ui '(<span class="kw">warning</span> . haskell-stack-ghc))))</a>
-<a class="sourceLine" id="cb2-22" data-line-number="22">  ...</a>
-<a class="sourceLine" id="cb2-23" data-line-number="23">  )</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode commonlisp"><code class="sourceCode commonlisp"><span id="cb1-1"><a href="#cb1-1"></a>(<span class="kw">defun</span><span class="fu"> dotspacemacs/layers </span>()</span>
+<span id="cb1-2"><a href="#cb1-2"></a>  (setq-default</span>
+<span id="cb1-3"><a href="#cb1-3"></a>   ...</span>
+<span id="cb1-4"><a href="#cb1-4"></a>   dotspacemacs-additional-packages</span>
+<span id="cb1-5"><a href="#cb1-5"></a>   '(</span>
+<span id="cb1-6"><a href="#cb1-6"></a>     nix-sandbox</span>
+<span id="cb1-7"><a href="#cb1-7"></a>     nix-haskell-mode</span>
+<span id="cb1-8"><a href="#cb1-8"></a>     ...</span>
+<span id="cb1-9"><a href="#cb1-9"></a>     )</span>
+<span id="cb1-10"><a href="#cb1-10"></a>   ...</span>
+<span id="cb1-11"><a href="#cb1-11"></a>   ))</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode commonlisp"><code class="sourceCode commonlisp"><span id="cb2-1"><a href="#cb2-1"></a>(<span class="kw">defun</span><span class="fu"> dotspacemacs/user-config </span>()</span>
+<span id="cb2-2"><a href="#cb2-2"></a>  ...</span>
+<span id="cb2-3"><a href="#cb2-3"></a>  (add-hook 'haskell-mode-hook #'lsp)</span>
+<span id="cb2-4"><a href="#cb2-4"></a>  (add-hook 'haskell-mode-hook 'nix-haskell-mode)</span>
+<span id="cb2-5"><a href="#cb2-5"></a>  (add-hook 'haskell-mode-hook</span>
+<span id="cb2-6"><a href="#cb2-6"></a>            (<span class="kw">lambda</span> ()</span>
+<span id="cb2-7"><a href="#cb2-7"></a>              (setq-local flycheck-executable-find</span>
+<span id="cb2-8"><a href="#cb2-8"></a>                          (<span class="kw">lambda</span> (cmd)</span>
+<span id="cb2-9"><a href="#cb2-9"></a>                            (nix-executable-find (nix-current-sandbox) cmd)))</span>
+<span id="cb2-10"><a href="#cb2-10"></a>              (setq-local flycheck-command-wrapper-function</span>
+<span id="cb2-11"><a href="#cb2-11"></a>                          (<span class="kw">lambda</span> (argv)</span>
+<span id="cb2-12"><a href="#cb2-12"></a>                            (<span class="kw">apply</span> 'nix-shell-command (nix-current-sandbox) argv)))</span>
+<span id="cb2-13"><a href="#cb2-13"></a>              (setq-local haskell-process-wrapper-function</span>
+<span id="cb2-14"><a href="#cb2-14"></a>                          (<span class="kw">lambda</span> (argv)</span>
+<span id="cb2-15"><a href="#cb2-15"></a>                            (<span class="kw">apply</span> 'nix-shell-command (nix-current-sandbox) argv)))</span>
+<span id="cb2-16"><a href="#cb2-16"></a>              (setq-local lsp-haskell-process-wrapper-function</span>
+<span id="cb2-17"><a href="#cb2-17"></a>                          (<span class="kw">lambda</span> (argv)</span>
+<span id="cb2-18"><a href="#cb2-18"></a>                            `(<span class="st">&quot;nix-shell&quot;</span> <span class="st">&quot;-I&quot;</span> <span class="st">&quot;.&quot;</span> <span class="st">&quot;--command&quot;</span> <span class="st">&quot;ghcide --lsp&quot;</span> ,(nix-current-sandbox))))))</span>
+<span id="cb2-19"><a href="#cb2-19"></a>  (add-hook 'haskell-mode-hook</span>
+<span id="cb2-20"><a href="#cb2-20"></a>            (<span class="kw">lambda</span> ()</span>
+<span id="cb2-21"><a href="#cb2-21"></a>              (flycheck-add-next-checker 'lsp-ui '(<span class="kw">warning</span> . haskell-stack-ghc))))</span>
+<span id="cb2-22"><a href="#cb2-22"></a>  ...</span>
+<span id="cb2-23"><a href="#cb2-23"></a>  )</span></code></pre></div>
 <p>It seems to work, but please let me know if you have suggestions for improvements.</p>
 
 
@@ -118,12 +118,12 @@
 
 <p>As I track the <em>develop</em> branch of <a href="https://github.com/syl20bnr/spacemacs/">Spacemacs</a> I occasionally clean out my cache of projects known to Projectile. Every time it takes a while before I’m back at a stage where I very rarely have to visit something that isn’t already in the cache.</p>
 <p>However, today I found the function <code>projectile-add-known-project</code>, which prompted me to write the following function that’ll help me quickly re-building the cache the next time I need to reset Spacemacs to a known state again.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb1-1" data-line-number="1">(<span class="kw">defun</span><span class="fu"> projectile-extra-add-projects-in-subfolders </span>(projects-root)</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  (interactive (<span class="kw">list</span> (read-directory-name <span class="st">&quot;Add to known projects: &quot;</span>)))</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">  (message <span class="st">&quot;Searching for projects in %s...&quot;</span> projects-root)</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">  (<span class="kw">let</span> ((dirs (seq-map 'file-name-directory (directory-files-recursively projects-root <span class="st">&quot;^.git$&quot;</span> <span class="kw">t</span>))))</a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">    (seq-do 'projectile-add-known-project dirs)</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6">    (message <span class="st">&quot;Added %d projects&quot;</span> (<span class="kw">length</span> dirs))))</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><span id="cb1-1"><a href="#cb1-1"></a>(<span class="kw">defun</span><span class="fu"> projectile-extra-add-projects-in-subfolders </span>(projects-root)</span>
+<span id="cb1-2"><a href="#cb1-2"></a>  (interactive (<span class="kw">list</span> (read-directory-name <span class="st">&quot;Add to known projects: &quot;</span>)))</span>
+<span id="cb1-3"><a href="#cb1-3"></a>  (message <span class="st">&quot;Searching for projects in %s...&quot;</span> projects-root)</span>
+<span id="cb1-4"><a href="#cb1-4"></a>  (<span class="kw">let</span> ((dirs (seq-map 'file-name-directory (directory-files-recursively projects-root <span class="st">&quot;^.git$&quot;</span> <span class="kw">t</span>))))</span>
+<span id="cb1-5"><a href="#cb1-5"></a>    (seq-do 'projectile-add-known-project dirs)</span>
+<span id="cb1-6"><a href="#cb1-6"></a>    (message <span class="st">&quot;Added %d projects&quot;</span> (<span class="kw">length</span> dirs))))</span></code></pre></div>
 
 
   </div>
@@ -144,13 +144,13 @@
 <p>Sweet! That is yet another argument for converting all our <code>README.md</code>s into <code>README.org</code>s at work.</p>
 <p><img src="https://media.giphy.com/media/xl5QdxfNonh3q/giphy.gif" title="Dr. Evil laughing" alt="Dr. Evil" /> </p>
 <p>The changes I made to my Spacemacs config are</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb1-1" data-line-number="1">(<span class="kw">defun</span><span class="fu"> dotspacemacs/user-config </span>()</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  ...</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">  (with-eval-after-load 'org</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">    ...</a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">    (add-to-list 'org-babel-load-languages '(ditaa . <span class="kw">t</span>))</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6">    (<span class="kw">setq</span> org-ditaa-jar-path <span class="st">&quot;/usr/share/java/ditaa/ditaa-0.11.jar&quot;</span>))</a>
-<a class="sourceLine" id="cb1-7" data-line-number="7">  ...)</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode lisp"><code class="sourceCode commonlisp"><span id="cb1-1"><a href="#cb1-1"></a>(<span class="kw">defun</span><span class="fu"> dotspacemacs/user-config </span>()</span>
+<span id="cb1-2"><a href="#cb1-2"></a>  ...</span>
+<span id="cb1-3"><a href="#cb1-3"></a>  (with-eval-after-load 'org</span>
+<span id="cb1-4"><a href="#cb1-4"></a>    ...</span>
+<span id="cb1-5"><a href="#cb1-5"></a>    (add-to-list 'org-babel-load-languages '(ditaa . <span class="kw">t</span>))</span>
+<span id="cb1-6"><a href="#cb1-6"></a>    (<span class="kw">setq</span> org-ditaa-jar-path <span class="st">&quot;/usr/share/java/ditaa/ditaa-0.11.jar&quot;</span>))</span>
+<span id="cb1-7"><a href="#cb1-7"></a>  ...)</span></code></pre></div>
 
 
   </div>
@@ -169,26 +169,26 @@
 
 <p>The other day I read Chris Penner’s post on <a href="https://chrispenner.ca/posts/hie-core">Haskell IDE Support</a> and thought I’d make an attempt to use it with Spacemacs.</p>
 <p>After running <code>stack build hie-bios ghcide haskell-lsp --copy-compiler-tool</code> I had a look at the <a href="https://github.com/haskell/haskell-ide-engine#using-hie-with-spacemacs">instructions on using <code>haskell-ide-engine</code> with Spacemacs</a>. After a bit of trial and error I came up with these changes to my <code>~/.spacemacs</code>:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode commonlisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb1-1" data-line-number="1">(<span class="kw">defun</span><span class="fu"> dotspacemacs/layers </span>()</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  (setq-default</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">   dotspacemacs-configuration-layers</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">   '(</a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">    ...</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6">    lsp</a>
-<a class="sourceLine" id="cb1-7" data-line-number="7">    (haskell :variables</a>
-<a class="sourceLine" id="cb1-8" data-line-number="8">             haskell-completion-backend 'lsp</a>
-<a class="sourceLine" id="cb1-9" data-line-number="9">             )</a>
-<a class="sourceLine" id="cb1-10" data-line-number="10">    ...)</a>
-<a class="sourceLine" id="cb1-11" data-line-number="11">  )</a>
-<a class="sourceLine" id="cb1-12" data-line-number="12">)</a></code></pre></div>
-<div class="sourceCode" id="cb2"><pre class="sourceCode commonlisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb2-1" data-line-number="1">(<span class="kw">defun</span><span class="fu"> dotspacemacs/user-config </span>()</a>
-<a class="sourceLine" id="cb2-2" data-line-number="2">  (<span class="kw">setq</span> lsp-haskell-process-args-hie '(<span class="st">&quot;exec&quot;</span> <span class="st">&quot;ghcide&quot;</span> <span class="st">&quot;--&quot;</span> <span class="st">&quot;--lsp&quot;</span>)</a>
-<a class="sourceLine" id="cb2-3" data-line-number="3">        lsp-haskell-process-path-hie <span class="st">&quot;stack&quot;</span></a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">        lsp-haskell-process-wrapper-function (<span class="kw">lambda</span> (argv) (<span class="kw">cons</span> (<span class="kw">car</span> argv) (<span class="kw">cddr</span> argv)))</a>
-<a class="sourceLine" id="cb2-5" data-line-number="5">        )</a>
-<a class="sourceLine" id="cb2-6" data-line-number="6">  (add-hook 'haskell-mode-hook</a>
-<a class="sourceLine" id="cb2-7" data-line-number="7">            #'lsp)</a>
-<a class="sourceLine" id="cb2-8" data-line-number="8">)</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode commonlisp"><code class="sourceCode commonlisp"><span id="cb1-1"><a href="#cb1-1"></a>(<span class="kw">defun</span><span class="fu"> dotspacemacs/layers </span>()</span>
+<span id="cb1-2"><a href="#cb1-2"></a>  (setq-default</span>
+<span id="cb1-3"><a href="#cb1-3"></a>   dotspacemacs-configuration-layers</span>
+<span id="cb1-4"><a href="#cb1-4"></a>   '(</span>
+<span id="cb1-5"><a href="#cb1-5"></a>    ...</span>
+<span id="cb1-6"><a href="#cb1-6"></a>    lsp</span>
+<span id="cb1-7"><a href="#cb1-7"></a>    (haskell :variables</span>
+<span id="cb1-8"><a href="#cb1-8"></a>             haskell-completion-backend 'lsp</span>
+<span id="cb1-9"><a href="#cb1-9"></a>             )</span>
+<span id="cb1-10"><a href="#cb1-10"></a>    ...)</span>
+<span id="cb1-11"><a href="#cb1-11"></a>  )</span>
+<span id="cb1-12"><a href="#cb1-12"></a>)</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode commonlisp"><code class="sourceCode commonlisp"><span id="cb2-1"><a href="#cb2-1"></a>(<span class="kw">defun</span><span class="fu"> dotspacemacs/user-config </span>()</span>
+<span id="cb2-2"><a href="#cb2-2"></a>  (<span class="kw">setq</span> lsp-haskell-process-args-hie '(<span class="st">&quot;exec&quot;</span> <span class="st">&quot;ghcide&quot;</span> <span class="st">&quot;--&quot;</span> <span class="st">&quot;--lsp&quot;</span>)</span>
+<span id="cb2-3"><a href="#cb2-3"></a>        lsp-haskell-process-path-hie <span class="st">&quot;stack&quot;</span></span>
+<span id="cb2-4"><a href="#cb2-4"></a>        lsp-haskell-process-wrapper-function (<span class="kw">lambda</span> (argv) (<span class="kw">cons</span> (<span class="kw">car</span> argv) (<span class="kw">cddr</span> argv)))</span>
+<span id="cb2-5"><a href="#cb2-5"></a>        )</span>
+<span id="cb2-6"><a href="#cb2-6"></a>  (add-hook 'haskell-mode-hook</span>
+<span id="cb2-7"><a href="#cb2-7"></a>            #'lsp)</span>
+<span id="cb2-8"><a href="#cb2-8"></a>)</span></code></pre></div>
 <p>The slightly weird looking <code>lsp-haskell-process-wrapper-function</code> is removing the pesky <code>--lsp</code> inserted by <a href="https://github.com/emacs-lsp/lsp-haskell/blob/64106be79350f9ce6903d22c66b29761dadb5001/lsp-haskell.el#L179">this line</a>.</p>
 <p>That seems to work. Though I have to say I’m not ready to switch from <a href="https://hackage.haskell.org/package/intero">intero</a> just yet. Two things in particular didn’t work with <code>ghcide</code>/LSP:</p>
 <ol type="1">
@@ -247,40 +247,40 @@ bind -T off F12 \
 <p>So, I set out to try to deal with that. I’m still using the simple API from the previous posts, but this time I’m pretending that I can’t build the ID into the model myself, or, put another way, I’m capturing the ID from the responses.</p>
 <h2 id="the-model-state">The model state</h2>
 <p>When capturing the ID it’s no longer possible to use a simple <code>Map Int Text</code> for the state, because I don’t actually have the ID until I have an HTTP response. However, the ID is playing an important role in the constructing of a sequence of actions. The trick is to use <code>Var Int v</code> instead of an ordinary <code>Int</code>. As I understand it, and I believe that’s a good enough understanding to make use of Hedgehog possible, is that this way the ID is an opaque blob in the construction phase, and it’s turned into a concrete value during execution. When in the opaque state it implements enough type classes to be useful for my purposes.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">newtype</span> <span class="dt">State</span> (<span class="ot">v ::</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span>)<span class="fu">=</span> <span class="dt">State</span> (<span class="dt">M.Map</span> (<span class="dt">Var</span> <span class="dt">Int</span> v) <span class="dt">Text</span>)</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">newtype</span> <span class="dt">State</span> (<span class="ot">v ::</span> <span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span>)<span class="ot">=</span> <span class="dt">State</span> (<span class="dt">M.Map</span> (<span class="dt">Var</span> <span class="dt">Int</span> v) <span class="dt">Text</span>)</span>
+<span id="cb1-2"><a href="#cb1-2"></a>  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span></code></pre></div>
 <h2 id="the-api-calls-add-user">The API calls: add user</h2>
 <p>When taking a closer look at the <a href="https://hackage.haskell.org/package/hedgehog-0.5.3/docs/Hedgehog.html#t:Callback"><code>Callback</code></a> type not all the callbacks will get the state in the same form, opaque or concrete, and one of them, <code>Update</code> actually receives the state in both states depending on the phase of execution. This has the most impact on the add user action. To deal with it there’s a need to rearrange the code a bit, to be specific, <code>commandExecute</code> can no longer return a tuple of both the ID and the status of the HTTP response because the update function can’t reach into the tuple, which it needs to update the state.</p>
 <p>That means the <code>commandExecute</code> function will have to do tests too. It <em>is</em> nice to keep all tests in the callbacks, but by sticking a <code>MonadTest m</code> constraint on the <code>commandExecute</code> it turns into a nice solution anyway.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">addUser ::</span> (<span class="dt">MonadGen</span> n, <span class="dt">MonadIO</span> m, <span class="dt">MonadTest</span> m) <span class="ot">=&gt;</span> <span class="dt">Command</span> n m <span class="dt">State</span></a>
-<a class="sourceLine" id="cb2-2" data-line-number="2">addUser <span class="fu">=</span> <span class="dt">Command</span> gen exec [ <span class="dt">Update</span> u</a>
-<a class="sourceLine" id="cb2-3" data-line-number="3">                           ]</a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb2-5" data-line-number="5">    gen _ <span class="fu">=</span> <span class="dt">Just</span> <span class="fu">$</span> <span class="dt">AddUser</span> <span class="fu">&lt;$&gt;</span> Gen.text (Range.linear <span class="dv">0</span> <span class="dv">42</span>) Gen.alpha</a>
-<a class="sourceLine" id="cb2-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb2-7" data-line-number="7">    exec (<span class="dt">AddUser</span> n) <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-8" data-line-number="8">      (s, ui) <span class="ot">&lt;-</span> liftIO <span class="fu">$</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-9" data-line-number="9">        mgr <span class="ot">&lt;-</span> newManager defaultManagerSettings</a>
-<a class="sourceLine" id="cb2-10" data-line-number="10">        addReq <span class="ot">&lt;-</span> parseRequest <span class="st">&quot;POST http://localhost:3000/users&quot;</span></a>
-<a class="sourceLine" id="cb2-11" data-line-number="11">        <span class="kw">let</span> addReq' <span class="fu">=</span> addReq { requestBody <span class="fu">=</span> <span class="dt">RequestBodyLBS</span> (encode <span class="fu">$</span> <span class="dt">User</span> <span class="dv">0</span> n)}</a>
-<a class="sourceLine" id="cb2-12" data-line-number="12">        addResp <span class="ot">&lt;-</span> httpLbs addReq' mgr</a>
-<a class="sourceLine" id="cb2-13" data-line-number="13">        <span class="kw">let</span> user <span class="fu">=</span> decode (responseBody addResp)<span class="ot"> ::</span> <span class="dt">Maybe</span> <span class="dt">User</span></a>
-<a class="sourceLine" id="cb2-14" data-line-number="14">        return (responseStatus addResp, user)</a>
-<a class="sourceLine" id="cb2-15" data-line-number="15">      status201 <span class="fu">===</span> s</a>
-<a class="sourceLine" id="cb2-16" data-line-number="16">      assert <span class="fu">$</span> isJust ui</a>
-<a class="sourceLine" id="cb2-17" data-line-number="17">      (userName <span class="fu">&lt;$&gt;</span> ui) <span class="fu">===</span> <span class="dt">Just</span> n</a>
-<a class="sourceLine" id="cb2-18" data-line-number="18">      return <span class="fu">$</span> userId <span class="fu">$</span> fromJust ui</a>
-<a class="sourceLine" id="cb2-19" data-line-number="19"></a>
-<a class="sourceLine" id="cb2-20" data-line-number="20">    u (<span class="dt">State</span> m) (<span class="dt">AddUser</span> n) o <span class="fu">=</span> <span class="dt">State</span> (M.insert o n m)</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="ot">addUser ::</span> (<span class="dt">MonadGen</span> n, <span class="dt">MonadIO</span> m, <span class="dt">MonadTest</span> m) <span class="ot">=&gt;</span> <span class="dt">Command</span> n m <span class="dt">State</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a>addUser <span class="ot">=</span> <span class="dt">Command</span> gen exec [ <span class="dt">Update</span> u</span>
+<span id="cb2-3"><a href="#cb2-3"></a>                           ]</span>
+<span id="cb2-4"><a href="#cb2-4"></a>  <span class="kw">where</span></span>
+<span id="cb2-5"><a href="#cb2-5"></a>    gen _ <span class="ot">=</span> <span class="dt">Just</span> <span class="op">$</span> <span class="dt">AddUser</span> <span class="op">&lt;$&gt;</span> Gen.text (Range.linear <span class="dv">0</span> <span class="dv">42</span>) Gen.alpha</span>
+<span id="cb2-6"><a href="#cb2-6"></a></span>
+<span id="cb2-7"><a href="#cb2-7"></a>    exec (<span class="dt">AddUser</span> n) <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb2-8"><a href="#cb2-8"></a>      (s, ui) <span class="ot">&lt;-</span> liftIO <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb2-9"><a href="#cb2-9"></a>        mgr <span class="ot">&lt;-</span> newManager defaultManagerSettings</span>
+<span id="cb2-10"><a href="#cb2-10"></a>        addReq <span class="ot">&lt;-</span> parseRequest <span class="st">&quot;POST http://localhost:3000/users&quot;</span></span>
+<span id="cb2-11"><a href="#cb2-11"></a>        <span class="kw">let</span> addReq' <span class="ot">=</span> addReq { requestBody <span class="ot">=</span> <span class="dt">RequestBodyLBS</span> (encode <span class="op">$</span> <span class="dt">User</span> <span class="dv">0</span> n)}</span>
+<span id="cb2-12"><a href="#cb2-12"></a>        addResp <span class="ot">&lt;-</span> httpLbs addReq' mgr</span>
+<span id="cb2-13"><a href="#cb2-13"></a>        <span class="kw">let</span> user <span class="ot">=</span> decode (responseBody addResp)<span class="ot"> ::</span> <span class="dt">Maybe</span> <span class="dt">User</span></span>
+<span id="cb2-14"><a href="#cb2-14"></a>        <span class="fu">return</span> (responseStatus addResp, user)</span>
+<span id="cb2-15"><a href="#cb2-15"></a>      status201 <span class="op">===</span> s</span>
+<span id="cb2-16"><a href="#cb2-16"></a>      assert <span class="op">$</span> isJust ui</span>
+<span id="cb2-17"><a href="#cb2-17"></a>      (userName <span class="op">&lt;$&gt;</span> ui) <span class="op">===</span> <span class="dt">Just</span> n</span>
+<span id="cb2-18"><a href="#cb2-18"></a>      <span class="fu">return</span> <span class="op">$</span> userId <span class="op">$</span> fromJust ui</span>
+<span id="cb2-19"><a href="#cb2-19"></a></span>
+<span id="cb2-20"><a href="#cb2-20"></a>    u (<span class="dt">State</span> m) (<span class="dt">AddUser</span> n) o <span class="ot">=</span> <span class="dt">State</span> (M.insert o n m)</span></code></pre></div>
 <p>I found that once I’d come around to folding the <code>Ensure</code> callback into the <code>commandExecute</code> function the rest fell out from the types.</p>
 <h2 id="the-api-calls-delete-user">The API calls: delete user</h2>
 <p>The other actions, deleting a user and getting a user, required only minor changes and the changes were rather similar in both cases.</p>
 <p>Not the type for the action needs to take a <code>Var Int v</code> instead of just a plain <code>Int</code>.</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">newtype</span> <span class="dt">DeleteUser</span> (<span class="ot">v ::</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span>) <span class="fu">=</span> <span class="dt">DeleteUser</span> (<span class="dt">Var</span> <span class="dt">Int</span> v)</a>
-<a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">newtype</span> <span class="dt">DeleteUser</span> (<span class="ot">v ::</span> <span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span>) <span class="ot">=</span> <span class="dt">DeleteUser</span> (<span class="dt">Var</span> <span class="dt">Int</span> v)</span>
+<span id="cb3-2"><a href="#cb3-2"></a>  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span></code></pre></div>
 <p>Which in turn affect the implementation of <code>HTraversable</code></p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">HTraversable</span> <span class="dt">DeleteUser</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb4-2" data-line-number="2">  htraverse f (<span class="dt">DeleteUser</span> vi) <span class="fu">=</span> <span class="dt">DeleteUser</span> <span class="fu">&lt;$&gt;</span> htraverse f vi</a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">instance</span> <span class="dt">HTraversable</span> <span class="dt">DeleteUser</span> <span class="kw">where</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a>  htraverse f (<span class="dt">DeleteUser</span> vi) <span class="ot">=</span> <span class="dt">DeleteUser</span> <span class="op">&lt;$&gt;</span> htraverse f vi</span></code></pre></div>
 <p>Then the changes to the <code>Command</code> mostly comprise use of <a href="https://hackage.haskell.org/package/hedgehog-0.5.3/docs/Hedgehog.html#v:concrete"><code>concrete</code></a> in places where the real ID is needed.</p>
 <pre class="haskll"><code>deleteUser :: (MonadGen n, MonadIO m) =&gt; Command n m State
 deleteUser = Command gen exec [ Update u
@@ -322,12 +322,12 @@ deleteUser = Command gen exec [ Update u
 </header>
 
 <p>Early this summer it was finally time to put this one service I’ve been working on into our sandbox environment. It’s been running without hickups so last week I turned it on for production as well. In this post I thought I’d document the how and why of the service in the hope that someone will find it useful.</p>
-<p>The service functions as an interface to external SMS-sending services, offering a single place to change if we find that we are unhappy with the service we’re using.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> This service replaces an older one, written in Ruby and no one really dares touch it. Hopefully the Haskell version will prove to be a joy to work with over time.</p>
+<p>The service functions as an interface to external SMS-sending services, offering a single place to change if we find that we are unhappy with the service we’re using.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> This service replaces an older one, written in Ruby and no one really dares touch it. Hopefully the Haskell version will prove to be a joy to work with over time.</p>
 <h2 id="overview-of-the-architecture">Overview of the architecture</h2>
 <p>The service is split into two parts, one web server using <a href="https://hackage.haskell.org/package/scotty">scotty</a>, and streaming data processing using <a href="https://hackage.haskell.org/package/conduit">conduit</a>. Persistent storage is provided by a <a href="https://www.postgresql.org/">PostgreSQL</a> database. The general idea is that events are picked up from the database, acted upon, which in turn results in other events which written to the database. Those are then picked up and round and round we go. The web service accepts requests, turns them into events and writes the to the database.</p>
 <p>Hopefully this crude diagram clarifies it somewhat.</p>
 <center>
-<img src="./imgs/2019-08-10-architecture.png" alt="Diagram of the service architecture" />
+<img src="./imgs/2019-08-10-architecture.png" title="fig:" alt="Diagram of the service architecture" />
 </center>
 <p>There are a few things that might need some explanation</p>
 <ul>
@@ -337,7 +337,7 @@ deleteUser = Command gen exec [ Update u
 <li><p>Successfully sending off a request to an external SMS service, getting status 200 back, doesn’t actually mean that the SMS has been sent, or even that it ever will be. Due to the nature of SMS messaging there are no guarantees of timeliness at all. Since we are interested in finding out whether an SMS actually is sent a delayed action is scheduled, which will fetch the status of a sent SMS after a certain time (currently 2 minutes). If an SMS hasn’t been sent after that time it might as well never be – it’s too slow for our end-users.</p>
 <p>This is what <em>report-fetcher</em> and <em>fetcher-func</em> do.</p></li>
 <li><p>The <em>queue sink</em> and <em>queue src</em> are actually <a href="https://hackage.haskell.org/package/stm-conduit-4.0.1/docs/Data-Conduit-TQueue.html#v:sourceTQueue"><code>sourceTQueue</code></a> and <a href="https://hackage.haskell.org/package/stm-conduit-4.0.1/docs/Data-Conduit-TQueue.html#v:sinkTQueue"><code>sinkTQueue</code></a>. Splitting the stream like that makes it trivial to push in events by using <a href="https://hackage.haskell.org/package/stm-2.5.0.0/docs/Control-Concurrent-STM-TQueue.html#v:writeTQueue"><code>writeTQueue</code></a>.</p></li>
-<li><p>I use <a href="https://hackage.haskell.org/package/conduit-1.3.1.1/docs/Data-Conduit.html#v:sequenceConduits"><code>sequenceConduits</code></a> in order to send a single event to multiple <code>Conduit</code>s and then combine all their results back into a single stream. The ease with which this can be done in <a href="https://hackage.haskell.org/package/conduit">conduit</a> is one of the main reasons why I choose to use it.<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a></p></li>
+<li><p>I use <a href="https://hackage.haskell.org/package/conduit-1.3.1.1/docs/Data-Conduit.html#v:sequenceConduits"><code>sequenceConduits</code></a> in order to send a single event to multiple <code>Conduit</code>s and then combine all their results back into a single stream. The ease with which this can be done in <a href="https://hackage.haskell.org/package/conduit">conduit</a> is one of the main reasons why I choose to use it.<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a></p></li>
 </ul>
 <h2 id="effects-and-tests">Effects and tests</h2>
 <p>I started out writing everything based on a type like <code>ReaderT &lt;my cfg type&gt; IO</code> and using <code>liftIO</code> for effects that needed lifting. This worked nicely while I was setting up the basic structure of the service, but as soon as I hooked in the database I really wanted to do some testing also of the effectful code.</p>
@@ -363,11 +363,11 @@ deleteUser = Command gen exec [ Update u
 <p>When I wrote about this earlier, <a href="http://magnus.therning.org/posts/2019-03-03-000-conduit-and-postgresql.html">Conduit and PostgreSQL</a> I got some really good feedback that made my solution more robust.</p>
 <h2 id="delayed-actions">Delayed actions</h2>
 <p>Some things in Haskell feel almost like cheating. The light-weight threading makes me confident that a <a href="https://hackage.haskell.org/package/base/docs/Control-Concurrent.html#v:forkIO"><code>forkIO</code></a> followed by a <a href="https://hackage.haskell.org/package/base/docs/Control-Concurrent.html#v:threadDelay"><code>threadDelay</code></a> (or in my case, the ones from <a href="https://hackage.haskell.org/package/unliftio">unliftio</a>) will suffice.</p>
-<section class="footnotes">
+<section class="footnotes" role="doc-endnotes">
 <hr />
 <ol>
-<li id="fn1"><p>It has happened in the past that we’ve changed SMS service after finding that they weren’t living up to our expectations.<a href="#fnref1" class="footnote-back">↩</a></p></li>
-<li id="fn2"><p>A while ago I was experimenting with other streaming libraries, but I gave up on getting re-combination to work – <a href="./posts/2018-10-16-000-zipping-streams.html">Zipping streams</a><a href="#fnref2" class="footnote-back">↩</a></p></li>
+<li id="fn1" role="doc-endnote"><p>It has happened in the past that we’ve changed SMS service after finding that they weren’t living up to our expectations.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2" role="doc-endnote"><p>A while ago I was experimenting with other streaming libraries, but I gave up on getting re-combination to work – <a href="./posts/2018-10-16-000-zipping-streams.html">Zipping streams</a><a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section>
 
@@ -388,47 +388,47 @@ deleteUser = Command gen exec [ Update u
 
 <p>The other day I added some more logging into a service at work, but not all logs appeared in Kibana. Some messages got lost between CloudWatch Logs and Elasticsearch. After turning up the logging in the Lambda shuffling log messages I was in for a bit of learning about Elasticsearch.</p>
 <p>Running the following in a Kibana console will show what the issue was</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode json"><code class="sourceCode json"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="er">PUT</span> <span class="er">idx-0/_doc/1</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="fu">{</span></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">  <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;John&quot;</span><span class="fu">,</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">  <span class="dt">&quot;full_name&quot;</span><span class="fu">:</span> <span class="st">&quot;John Doe&quot;</span></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="fu">}</span></a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="er">PUT</span> <span class="er">idx-0/_doc/2</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="fu">{</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9">  <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;Jane&quot;</span><span class="fu">,</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10">  <span class="dt">&quot;full_name&quot;</span><span class="fu">:</span> <span class="fu">{</span></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11">    <span class="dt">&quot;first&quot;</span><span class="fu">:</span> <span class="st">&quot;Jane&quot;</span><span class="fu">,</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12">    <span class="dt">&quot;last&quot;</span><span class="fu">:</span> <span class="st">&quot;Doe&quot;</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13">  <span class="fu">}</span></a>
-<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="fu">}</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb1-1"><a href="#cb1-1"></a><span class="er">PUT</span> <span class="er">idx-0/_doc/1</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="fu">{</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a>  <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;John&quot;</span><span class="fu">,</span></span>
+<span id="cb1-4"><a href="#cb1-4"></a>  <span class="dt">&quot;full_name&quot;</span><span class="fu">:</span> <span class="st">&quot;John Doe&quot;</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a><span class="fu">}</span></span>
+<span id="cb1-6"><a href="#cb1-6"></a></span>
+<span id="cb1-7"><a href="#cb1-7"></a><span class="er">PUT</span> <span class="er">idx-0/_doc/2</span></span>
+<span id="cb1-8"><a href="#cb1-8"></a><span class="fu">{</span></span>
+<span id="cb1-9"><a href="#cb1-9"></a>  <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;Jane&quot;</span><span class="fu">,</span></span>
+<span id="cb1-10"><a href="#cb1-10"></a>  <span class="dt">&quot;full_name&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb1-11"><a href="#cb1-11"></a>    <span class="dt">&quot;first&quot;</span><span class="fu">:</span> <span class="st">&quot;Jane&quot;</span><span class="fu">,</span></span>
+<span id="cb1-12"><a href="#cb1-12"></a>    <span class="dt">&quot;last&quot;</span><span class="fu">:</span> <span class="st">&quot;Doe&quot;</span></span>
+<span id="cb1-13"><a href="#cb1-13"></a>  <span class="fu">}</span></span>
+<span id="cb1-14"><a href="#cb1-14"></a><span class="fu">}</span></span></code></pre></div>
 <p>Executing them in order results in the following error on the second command</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode json"><code class="sourceCode json"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="fu">{</span></a>
-<a class="sourceLine" id="cb2-2" data-line-number="2">  <span class="dt">&quot;error&quot;</span><span class="fu">:</span> <span class="fu">{</span></a>
-<a class="sourceLine" id="cb2-3" data-line-number="3">    <span class="dt">&quot;root_cause&quot;</span><span class="fu">:</span> <span class="ot">[</span></a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">      <span class="fu">{</span></a>
-<a class="sourceLine" id="cb2-5" data-line-number="5">        <span class="dt">&quot;type&quot;</span><span class="fu">:</span> <span class="st">&quot;mapper_parsing_exception&quot;</span><span class="fu">,</span></a>
-<a class="sourceLine" id="cb2-6" data-line-number="6">        <span class="dt">&quot;reason&quot;</span><span class="fu">:</span> <span class="st">&quot;failed to parse field [full_name] of type [text]&quot;</span></a>
-<a class="sourceLine" id="cb2-7" data-line-number="7">      <span class="fu">}</span></a>
-<a class="sourceLine" id="cb2-8" data-line-number="8">    <span class="ot">]</span><span class="fu">,</span></a>
-<a class="sourceLine" id="cb2-9" data-line-number="9">    <span class="dt">&quot;type&quot;</span><span class="fu">:</span> <span class="st">&quot;mapper_parsing_exception&quot;</span><span class="fu">,</span></a>
-<a class="sourceLine" id="cb2-10" data-line-number="10">    <span class="dt">&quot;reason&quot;</span><span class="fu">:</span> <span class="st">&quot;failed to parse field [full_name] of type [text]&quot;</span><span class="fu">,</span></a>
-<a class="sourceLine" id="cb2-11" data-line-number="11">    <span class="dt">&quot;caused_by&quot;</span><span class="fu">:</span> <span class="fu">{</span></a>
-<a class="sourceLine" id="cb2-12" data-line-number="12">      <span class="dt">&quot;type&quot;</span><span class="fu">:</span> <span class="st">&quot;illegal_state_exception&quot;</span><span class="fu">,</span></a>
-<a class="sourceLine" id="cb2-13" data-line-number="13">      <span class="dt">&quot;reason&quot;</span><span class="fu">:</span> <span class="st">&quot;Can't get text on a START_OBJECT at 3:16&quot;</span></a>
-<a class="sourceLine" id="cb2-14" data-line-number="14">    <span class="fu">}</span></a>
-<a class="sourceLine" id="cb2-15" data-line-number="15">  <span class="fu">},</span></a>
-<a class="sourceLine" id="cb2-16" data-line-number="16">  <span class="dt">&quot;status&quot;</span><span class="fu">:</span> <span class="dv">400</span></a>
-<a class="sourceLine" id="cb2-17" data-line-number="17"><span class="fu">}</span></a></code></pre></div>
-<p>The reason for this is that a schema for the data is built up dynamically as documents are pushed in.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> It is possible to turn off dynamic schema building for an index using a <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/dynamic-mapping.html">mapping</a>. For the documents above it’d look something lik this</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode json"><code class="sourceCode json"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="er">PUT</span> <span class="er">idx-0</span></a>
-<a class="sourceLine" id="cb3-2" data-line-number="2"><span class="fu">{</span></a>
-<a class="sourceLine" id="cb3-3" data-line-number="3">  <span class="dt">&quot;mappings&quot;</span><span class="fu">:</span> <span class="fu">{</span></a>
-<a class="sourceLine" id="cb3-4" data-line-number="4">    <span class="dt">&quot;_doc&quot;</span><span class="fu">:</span> <span class="fu">{</span></a>
-<a class="sourceLine" id="cb3-5" data-line-number="5">      <span class="dt">&quot;dynamic&quot;</span><span class="fu">:</span> <span class="kw">false</span></a>
-<a class="sourceLine" id="cb3-6" data-line-number="6">    <span class="fu">}</span></a>
-<a class="sourceLine" id="cb3-7" data-line-number="7">  <span class="fu">}</span></a>
-<a class="sourceLine" id="cb3-8" data-line-number="8"><span class="fu">}</span></a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb2-1"><a href="#cb2-1"></a><span class="fu">{</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a>  <span class="dt">&quot;error&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb2-3"><a href="#cb2-3"></a>    <span class="dt">&quot;root_cause&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb2-4"><a href="#cb2-4"></a>      <span class="fu">{</span></span>
+<span id="cb2-5"><a href="#cb2-5"></a>        <span class="dt">&quot;type&quot;</span><span class="fu">:</span> <span class="st">&quot;mapper_parsing_exception&quot;</span><span class="fu">,</span></span>
+<span id="cb2-6"><a href="#cb2-6"></a>        <span class="dt">&quot;reason&quot;</span><span class="fu">:</span> <span class="st">&quot;failed to parse field [full_name] of type [text]&quot;</span></span>
+<span id="cb2-7"><a href="#cb2-7"></a>      <span class="fu">}</span></span>
+<span id="cb2-8"><a href="#cb2-8"></a>    <span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb2-9"><a href="#cb2-9"></a>    <span class="dt">&quot;type&quot;</span><span class="fu">:</span> <span class="st">&quot;mapper_parsing_exception&quot;</span><span class="fu">,</span></span>
+<span id="cb2-10"><a href="#cb2-10"></a>    <span class="dt">&quot;reason&quot;</span><span class="fu">:</span> <span class="st">&quot;failed to parse field [full_name] of type [text]&quot;</span><span class="fu">,</span></span>
+<span id="cb2-11"><a href="#cb2-11"></a>    <span class="dt">&quot;caused_by&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb2-12"><a href="#cb2-12"></a>      <span class="dt">&quot;type&quot;</span><span class="fu">:</span> <span class="st">&quot;illegal_state_exception&quot;</span><span class="fu">,</span></span>
+<span id="cb2-13"><a href="#cb2-13"></a>      <span class="dt">&quot;reason&quot;</span><span class="fu">:</span> <span class="st">&quot;Can't get text on a START_OBJECT at 3:16&quot;</span></span>
+<span id="cb2-14"><a href="#cb2-14"></a>    <span class="fu">}</span></span>
+<span id="cb2-15"><a href="#cb2-15"></a>  <span class="fu">},</span></span>
+<span id="cb2-16"><a href="#cb2-16"></a>  <span class="dt">&quot;status&quot;</span><span class="fu">:</span> <span class="dv">400</span></span>
+<span id="cb2-17"><a href="#cb2-17"></a><span class="fu">}</span></span></code></pre></div>
+<p>The reason for this is that a schema for the data is built up dynamically as documents are pushed in.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> It is possible to turn off dynamic schema building for an index using a <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/dynamic-mapping.html">mapping</a>. For the documents above it’d look something lik this</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb3-1"><a href="#cb3-1"></a><span class="er">PUT</span> <span class="er">idx-0</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a><span class="fu">{</span></span>
+<span id="cb3-3"><a href="#cb3-3"></a>  <span class="dt">&quot;mappings&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb3-4"><a href="#cb3-4"></a>    <span class="dt">&quot;_doc&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb3-5"><a href="#cb3-5"></a>      <span class="dt">&quot;dynamic&quot;</span><span class="fu">:</span> <span class="kw">false</span></span>
+<span id="cb3-6"><a href="#cb3-6"></a>    <span class="fu">}</span></span>
+<span id="cb3-7"><a href="#cb3-7"></a>  <span class="fu">}</span></span>
+<span id="cb3-8"><a href="#cb3-8"></a><span class="fu">}</span></span></code></pre></div>
 <p>Now it’s possible to push both documents, however searching is not possible, because, as the <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/dynamic.html">documentation for <code>dynamic</code></a> says:</p>
 <blockquote>
 <p>fields will not be indexed so will not be searchable but will still appear in the _source field of returned hits</p>
@@ -436,26 +436,26 @@ deleteUser = Command gen exec [ Update u
 <p>If there’s something that determines the value of logs it’s them being searchable.</p>
 <p>As far as I understand one solution to all of this would have been <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping.html#mapping-type">mapping types</a>, but that’s being removed (see <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/removal-of-types.html">removal of mapping types</a>) so isn’t a solution. I’m not sure if Elasticsearch offers any <em>good</em> solution to it nowadays. There’s however a workaround, more indices.</p>
 <p>Using two indices instead of one does work. So modifying the first commands to use separate indices works.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode json"><code class="sourceCode json"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="er">PUT</span> <span class="er">idx-0/_doc/1</span></a>
-<a class="sourceLine" id="cb4-2" data-line-number="2"><span class="fu">{</span></a>
-<a class="sourceLine" id="cb4-3" data-line-number="3">  <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;John&quot;</span><span class="fu">,</span></a>
-<a class="sourceLine" id="cb4-4" data-line-number="4">  <span class="dt">&quot;full_name&quot;</span><span class="fu">:</span> <span class="st">&quot;John Doe&quot;</span></a>
-<a class="sourceLine" id="cb4-5" data-line-number="5"><span class="fu">}</span></a>
-<a class="sourceLine" id="cb4-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb4-7" data-line-number="7"><span class="er">PUT</span> <span class="er">idx-1/_doc/1</span></a>
-<a class="sourceLine" id="cb4-8" data-line-number="8"><span class="fu">{</span></a>
-<a class="sourceLine" id="cb4-9" data-line-number="9">  <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;Jane&quot;</span><span class="fu">,</span></a>
-<a class="sourceLine" id="cb4-10" data-line-number="10">  <span class="dt">&quot;full_name&quot;</span><span class="fu">:</span> <span class="fu">{</span></a>
-<a class="sourceLine" id="cb4-11" data-line-number="11">    <span class="dt">&quot;first&quot;</span><span class="fu">:</span> <span class="st">&quot;Jane&quot;</span><span class="fu">,</span></a>
-<a class="sourceLine" id="cb4-12" data-line-number="12">    <span class="dt">&quot;last&quot;</span><span class="fu">:</span> <span class="st">&quot;Doe&quot;</span></a>
-<a class="sourceLine" id="cb4-13" data-line-number="13">  <span class="fu">}</span></a>
-<a class="sourceLine" id="cb4-14" data-line-number="14"><span class="fu">}</span></a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb4-1"><a href="#cb4-1"></a><span class="er">PUT</span> <span class="er">idx-0/_doc/1</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a><span class="fu">{</span></span>
+<span id="cb4-3"><a href="#cb4-3"></a>  <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;John&quot;</span><span class="fu">,</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a>  <span class="dt">&quot;full_name&quot;</span><span class="fu">:</span> <span class="st">&quot;John Doe&quot;</span></span>
+<span id="cb4-5"><a href="#cb4-5"></a><span class="fu">}</span></span>
+<span id="cb4-6"><a href="#cb4-6"></a></span>
+<span id="cb4-7"><a href="#cb4-7"></a><span class="er">PUT</span> <span class="er">idx-1/_doc/1</span></span>
+<span id="cb4-8"><a href="#cb4-8"></a><span class="fu">{</span></span>
+<span id="cb4-9"><a href="#cb4-9"></a>  <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;Jane&quot;</span><span class="fu">,</span></span>
+<span id="cb4-10"><a href="#cb4-10"></a>  <span class="dt">&quot;full_name&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb4-11"><a href="#cb4-11"></a>    <span class="dt">&quot;first&quot;</span><span class="fu">:</span> <span class="st">&quot;Jane&quot;</span><span class="fu">,</span></span>
+<span id="cb4-12"><a href="#cb4-12"></a>    <span class="dt">&quot;last&quot;</span><span class="fu">:</span> <span class="st">&quot;Doe&quot;</span></span>
+<span id="cb4-13"><a href="#cb4-13"></a>  <span class="fu">}</span></span>
+<span id="cb4-14"><a href="#cb4-14"></a><span class="fu">}</span></span></code></pre></div>
 <p>When creating an index pattern for <code>idx-*</code> there’s a warning about many analysis functions not working due to the type conflict. However, searching <em>does</em> work and that’s all I really care about in this case.</p>
 <p>When shuffling the logs from CloudWatch Logs to Elasticsearch we already use multiple indices. They’re constructed based on service name, deploy environment (<em>staging</em>, <em>production</em>) and date (a new index each day). To deal with these type conflicts I added a <em>log type</em> that’s taken out of the log message itself. It’s not an elegant solution – it puts the solution into the services themselves – but it’s acceptable.</p>
-<section class="footnotes">
+<section class="footnotes" role="doc-endnotes">
 <hr />
 <ol>
-<li id="fn1"><p>Something that makes me wonder what the definition of <em>schema-free</em> is. I sure didn’t expect there to ever be a type constraint preventing pushing a document into something that’s called schema-free (see the <a href="https://en.wikipedia.org/wiki/Elasticsearch">Wikipedia article</a>). (The initiated say it’s Lucene, not Elasticsearch, but to me that doesn’t make any difference at all.)<a href="#fnref1" class="footnote-back">↩</a></p></li>
+<li id="fn1" role="doc-endnote"><p>Something that makes me wonder what the definition of <em>schema-free</em> is. I sure didn’t expect there to ever be a type constraint preventing pushing a document into something that’s called schema-free (see the <a href="https://en.wikipedia.org/wiki/Elasticsearch">Wikipedia article</a>). (The initiated say it’s Lucene, not Elasticsearch, but to me that doesn’t make any difference at all.)<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section>
 
@@ -522,23 +522,23 @@ deleteUser = Command gen exec [ Update u
   
   ✗ 1 failed.</code></pre>
 <p>It’s easy to verify this using <a href="https://httpie.org/">httpie</a>:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb2-1" data-line-number="1">$ <span class="ex">http</span> -p b POST :3000/users userId:=0 <span class="st">&quot;userName=&quot;</span></a>
-<a class="sourceLine" id="cb2-2" data-line-number="2"><span class="kw">{</span></a>
-<a class="sourceLine" id="cb2-3" data-line-number="3">    <span class="st">&quot;userId&quot;</span>: <span class="ex">0</span>,</a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">    <span class="st">&quot;userName&quot;</span>: <span class="st">&quot;&quot;</span></a>
-<a class="sourceLine" id="cb2-5" data-line-number="5"><span class="kw">}</span></a>
-<a class="sourceLine" id="cb2-6" data-line-number="6">$ <span class="ex">http</span> -p b GET :3000/users/1</a>
-<a class="sourceLine" id="cb2-7" data-line-number="7">[]</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1"></a>$ <span class="ex">http</span> -p b POST :3000/users userId:=0 <span class="st">&quot;userName=&quot;</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a><span class="kw">{</span></span>
+<span id="cb2-3"><a href="#cb2-3"></a>    <span class="st">&quot;userId&quot;</span>: <span class="ex">0</span>,</span>
+<span id="cb2-4"><a href="#cb2-4"></a>    <span class="st">&quot;userName&quot;</span>: <span class="st">&quot;&quot;</span></span>
+<span id="cb2-5"><a href="#cb2-5"></a><span class="kw">}</span></span>
+<span id="cb2-6"><a href="#cb2-6"></a>$ <span class="ex">http</span> -p b GET :3000/users/1</span>
+<span id="cb2-7"><a href="#cb2-7"></a>[]</span></code></pre></div>
 <p>It’s clear that my assumption that <em>User ID</em> starts at 1 is wrong. Luckily fixing that isn’t too difficult. Instead of defining the update function for <code>addUser</code> as</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1">u (<span class="dt">State</span> m) (<span class="dt">AddUser</span> n) _o <span class="fu">=</span> <span class="dt">State</span> <span class="fu">$</span> M.insert k n m</a>
-<a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb3-3" data-line-number="3">    k <span class="fu">=</span> succ <span class="fu">$</span> foldl max <span class="dv">0</span> (M.keys m)</a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a>u (<span class="dt">State</span> m) (<span class="dt">AddUser</span> n) _o <span class="ot">=</span> <span class="dt">State</span> <span class="op">$</span> M.insert k n m</span>
+<span id="cb3-2"><a href="#cb3-2"></a>  <span class="kw">where</span></span>
+<span id="cb3-3"><a href="#cb3-3"></a>    k <span class="ot">=</span> <span class="fu">succ</span> <span class="op">$</span> <span class="fu">foldl</span> <span class="fu">max</span> <span class="dv">0</span> (M.keys m)</span></code></pre></div>
 <p>I define it as</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">u (<span class="dt">State</span> m) (<span class="dt">AddUser</span> n) _o <span class="fu">=</span> <span class="dt">State</span> <span class="fu">$</span> M.insert k n m</a>
-<a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb4-3" data-line-number="3">    k <span class="fu">=</span> <span class="kw">case</span> M.keys m <span class="kw">of</span></a>
-<a class="sourceLine" id="cb4-4" data-line-number="4">      [] <span class="ot">-&gt;</span> <span class="dv">0</span></a>
-<a class="sourceLine" id="cb4-5" data-line-number="5">      ks <span class="ot">-&gt;</span> succ <span class="fu">$</span> foldl max <span class="dv">0</span> ks</a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a>u (<span class="dt">State</span> m) (<span class="dt">AddUser</span> n) _o <span class="ot">=</span> <span class="dt">State</span> <span class="op">$</span> M.insert k n m</span>
+<span id="cb4-2"><a href="#cb4-2"></a>  <span class="kw">where</span></span>
+<span id="cb4-3"><a href="#cb4-3"></a>    k <span class="ot">=</span> <span class="kw">case</span> M.keys m <span class="kw">of</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a>      [] <span class="ot">-&gt;</span> <span class="dv">0</span></span>
+<span id="cb4-5"><a href="#cb4-5"></a>      ks <span class="ot">-&gt;</span> <span class="fu">succ</span> <span class="op">$</span> <span class="fu">foldl</span> <span class="fu">max</span> <span class="dv">0</span> ks</span></code></pre></div>
 <p>The complete code at this point can be found <a href="https://gist.github.com/8cbbfdb130a173bb51c317df0c00aa15">here</a>.</p>
 <h2 id="fixing-another-issue-with-the-model">Fixing another issue with the model</h2>
 <p>With that fix in place another issue with the model shows up</p>
@@ -589,26 +589,26 @@ deleteUser = Command gen exec [ Update u
   
   ✗ 1 failed.</code></pre>
 <p>Again, verifying this using <a href="https://httpie.org/">httpie</a> shows what the issue is</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb6-1" data-line-number="1">$ <span class="ex">http</span> -p b POST :3000/users userId:=0 <span class="st">&quot;userName=&quot;</span></a>
-<a class="sourceLine" id="cb6-2" data-line-number="2"><span class="kw">{</span></a>
-<a class="sourceLine" id="cb6-3" data-line-number="3">    <span class="st">&quot;userId&quot;</span>: <span class="ex">0</span>,</a>
-<a class="sourceLine" id="cb6-4" data-line-number="4">    <span class="st">&quot;userName&quot;</span>: <span class="st">&quot;&quot;</span></a>
-<a class="sourceLine" id="cb6-5" data-line-number="5"><span class="kw">}</span></a>
-<a class="sourceLine" id="cb6-6" data-line-number="6">$ <span class="ex">http</span> -p b DELETE :3000/users/0                  </a>
-<a class="sourceLine" id="cb6-7" data-line-number="7">$ <span class="ex">http</span> -p b POST :3000/users userId:=0 <span class="st">&quot;userName=&quot;</span></a>
-<a class="sourceLine" id="cb6-8" data-line-number="8"><span class="kw">{</span></a>
-<a class="sourceLine" id="cb6-9" data-line-number="9">    <span class="st">&quot;userId&quot;</span>: <span class="ex">1</span>,</a>
-<a class="sourceLine" id="cb6-10" data-line-number="10">    <span class="st">&quot;userName&quot;</span>: <span class="st">&quot;&quot;</span></a>
-<a class="sourceLine" id="cb6-11" data-line-number="11"><span class="kw">}</span></a>
-<a class="sourceLine" id="cb6-12" data-line-number="12">$ <span class="ex">http</span> -p b GET :3000/users/0</a>
-<a class="sourceLine" id="cb6-13" data-line-number="13">[]</a></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1"></a>$ <span class="ex">http</span> -p b POST :3000/users userId:=0 <span class="st">&quot;userName=&quot;</span></span>
+<span id="cb6-2"><a href="#cb6-2"></a><span class="kw">{</span></span>
+<span id="cb6-3"><a href="#cb6-3"></a>    <span class="st">&quot;userId&quot;</span>: <span class="ex">0</span>,</span>
+<span id="cb6-4"><a href="#cb6-4"></a>    <span class="st">&quot;userName&quot;</span>: <span class="st">&quot;&quot;</span></span>
+<span id="cb6-5"><a href="#cb6-5"></a><span class="kw">}</span></span>
+<span id="cb6-6"><a href="#cb6-6"></a>$ <span class="ex">http</span> -p b DELETE :3000/users/0                  </span>
+<span id="cb6-7"><a href="#cb6-7"></a>$ <span class="ex">http</span> -p b POST :3000/users userId:=0 <span class="st">&quot;userName=&quot;</span></span>
+<span id="cb6-8"><a href="#cb6-8"></a><span class="kw">{</span></span>
+<span id="cb6-9"><a href="#cb6-9"></a>    <span class="st">&quot;userId&quot;</span>: <span class="ex">1</span>,</span>
+<span id="cb6-10"><a href="#cb6-10"></a>    <span class="st">&quot;userName&quot;</span>: <span class="st">&quot;&quot;</span></span>
+<span id="cb6-11"><a href="#cb6-11"></a><span class="kw">}</span></span>
+<span id="cb6-12"><a href="#cb6-12"></a>$ <span class="ex">http</span> -p b GET :3000/users/0</span>
+<span id="cb6-13"><a href="#cb6-13"></a>[]</span></code></pre></div>
 <p>In other words, the model assumes that the 0 <em>User ID</em> get’s re-used.</p>
 <p>To fix this I need a bigger change. The central bit is that the state is changed to keep track of the index more explicitly. That is, it changes from</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="kw">newtype</span> <span class="dt">State</span> (<span class="ot">v ::</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span>)<span class="fu">=</span> <span class="dt">State</span> (<span class="dt">M.Map</span> <span class="dt">Int</span> <span class="dt">Text</span>)</a>
-<a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">newtype</span> <span class="dt">State</span> (<span class="ot">v ::</span> <span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span>)<span class="ot">=</span> <span class="dt">State</span> (<span class="dt">M.Map</span> <span class="dt">Int</span> <span class="dt">Text</span>)</span>
+<span id="cb7-2"><a href="#cb7-2"></a>  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span></code></pre></div>
 <p>to</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="kw">data</span> <span class="dt">State</span> (<span class="ot">v ::</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span>)<span class="fu">=</span> <span class="dt">State</span> <span class="dt">Int</span> (<span class="dt">M.Map</span> <span class="dt">Int</span> <span class="dt">Text</span>)</a>
-<a class="sourceLine" id="cb8-2" data-line-number="2">  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">data</span> <span class="dt">State</span> (<span class="ot">v ::</span> <span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span>)<span class="ot">=</span> <span class="dt">State</span> <span class="dt">Int</span> (<span class="dt">M.Map</span> <span class="dt">Int</span> <span class="dt">Text</span>)</span>
+<span id="cb8-2"><a href="#cb8-2"></a>  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span></code></pre></div>
 <p>That change does, quite obviously, require a bunch of other changes in the other functions dealing with the state. The complete file can be viewed <a href="https://gist.github.com/e3c3f4a3c35ab8a529045f90f9f4ba71">here</a>.</p>
 <h2 id="all-is-well-or-is-it">All is well, or is it?</h2>
 <p>After this the tests pass, so all is good in the world, right?</p>
@@ -673,11 +673,11 @@ deleteUser = Command gen exec [ Update u
   
   ✗ 1 failed.</code></pre>
 <p>That is, after inserting 16 users, we don’t see any user when trying to get that 16th user (<em>User ID</em> 15). That’s a proper bug in the server.</p>
-<p>As a matter of fact, this is the bug I put into the server and was hoping to find. In particular, I wanted <em>hedgehog</em> to find the minimal sequence leading to this bug.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> Which it clearly has!</p>
-<section class="footnotes">
+<p>As a matter of fact, this is the bug I put into the server and was hoping to find. In particular, I wanted <em>hedgehog</em> to find the minimal sequence leading to this bug.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> Which it clearly has!</p>
+<section class="footnotes" role="doc-endnotes">
 <hr />
 <ol>
-<li id="fn1"><p>If you recall from the <a href="./posts/2019-05-30-000-hedgehog-on-a-rest-api.html">previous post</a>, I was interested in the integrated shrinking offered by <em>hedgehog</em>.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+<li id="fn1" role="doc-endnote"><p>If you recall from the <a href="./posts/2019-05-30-000-hedgehog-on-a-rest-api.html">previous post</a>, I was interested in the integrated shrinking offered by <em>hedgehog</em>.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section>
 

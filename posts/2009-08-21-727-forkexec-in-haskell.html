@@ -30,41 +30,41 @@
 </header>
 
 <p>Here’s some simple code I put together. I’m mostly posting it so I won’t have any problems finding it in the future.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw">import</span> <span class="dt">Control.Monad</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="kw">import</span> <span class="dt">System.Exit</span></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">System.Posix.IO</span></a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">System.Posix.Process</span></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8">executeChild <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9">    mapM_ closeFd [stdInput, stdOutput, stdError]</a>
-<a class="sourceLine" id="cb1-10" data-line-number="10">    devnull <span class="ot">&lt;-</span> openFd <span class="st">&quot;/dev/null&quot;</span> <span class="dt">ReadWrite</span> <span class="dt">Nothing</span> defaultFileFlags</a>
-<a class="sourceLine" id="cb1-11" data-line-number="11">    dup devnull; dup devnull</a>
-<a class="sourceLine" id="cb1-12" data-line-number="12">    executeFile <span class="st">&quot;./Child&quot;</span> <span class="dt">False</span> [] <span class="dt">Nothing</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"></a>
-<a class="sourceLine" id="cb1-14" data-line-number="14">main <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb1-15" data-line-number="15">    child <span class="ot">&lt;-</span> forkProcess executeChild</a>
-<a class="sourceLine" id="cb1-16" data-line-number="16">    putStrLn <span class="st">&quot;ForkExec: main - forked, going to wait&quot;</span></a>
-<a class="sourceLine" id="cb1-17" data-line-number="17">    s <span class="ot">&lt;-</span> getProcessStatus <span class="dt">True</span> <span class="dt">True</span> child</a>
-<a class="sourceLine" id="cb1-18" data-line-number="18">    <span class="kw">case</span> s <span class="kw">of</span></a>
-<a class="sourceLine" id="cb1-19" data-line-number="19">        <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="co">-- this shouldn't happen, ever</span></a>
-<a class="sourceLine" id="cb1-20" data-line-number="20">            print s <span class="fu">&gt;&gt;</span>  exitFailure</a>
-<a class="sourceLine" id="cb1-21" data-line-number="21">        <span class="dt">Just</span> s <span class="ot">-&gt;</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb1-22" data-line-number="22">            print s</a>
-<a class="sourceLine" id="cb1-23" data-line-number="23">            <span class="kw">case</span> s <span class="kw">of</span></a>
-<a class="sourceLine" id="cb1-24" data-line-number="24">                <span class="dt">Exited</span> _ <span class="ot">-&gt;</span> putStrLn <span class="st">&quot;Child exited properly, though possibly unsuccessfully&quot;</span></a>
-<a class="sourceLine" id="cb1-25" data-line-number="25">                <span class="dt">Terminated</span> _ <span class="ot">-&gt;</span> putStrLn <span class="st">&quot;Terminated!&quot;</span></a>
-<a class="sourceLine" id="cb1-26" data-line-number="26">                <span class="dt">Stopped</span> _ <span class="ot">-&gt;</span> putStrLn <span class="st">&quot;Stopped (only SIGSTOP?)&quot;</span></a>
-<a class="sourceLine" id="cb1-27" data-line-number="27">            exitSuccess</a>
-<a class="sourceLine" id="cb1-28" data-line-number="28">    exitFailure</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a></span>
+<span id="cb1-3"><a href="#cb1-3"></a><span class="kw">import</span> <span class="dt">Control.Monad</span></span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="kw">import</span> <span class="dt">System.Exit</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a><span class="kw">import</span> <span class="dt">System.Posix.IO</span></span>
+<span id="cb1-6"><a href="#cb1-6"></a><span class="kw">import</span> <span class="dt">System.Posix.Process</span></span>
+<span id="cb1-7"><a href="#cb1-7"></a></span>
+<span id="cb1-8"><a href="#cb1-8"></a>executeChild <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb1-9"><a href="#cb1-9"></a>    <span class="fu">mapM_</span> closeFd [stdInput, stdOutput, stdError]</span>
+<span id="cb1-10"><a href="#cb1-10"></a>    devnull <span class="ot">&lt;-</span> openFd <span class="st">&quot;/dev/null&quot;</span> <span class="dt">ReadWrite</span> <span class="dt">Nothing</span> defaultFileFlags</span>
+<span id="cb1-11"><a href="#cb1-11"></a>    dup devnull; dup devnull</span>
+<span id="cb1-12"><a href="#cb1-12"></a>    executeFile <span class="st">&quot;./Child&quot;</span> <span class="dt">False</span> [] <span class="dt">Nothing</span></span>
+<span id="cb1-13"><a href="#cb1-13"></a></span>
+<span id="cb1-14"><a href="#cb1-14"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb1-15"><a href="#cb1-15"></a>    child <span class="ot">&lt;-</span> forkProcess executeChild</span>
+<span id="cb1-16"><a href="#cb1-16"></a>    <span class="fu">putStrLn</span> <span class="st">&quot;ForkExec: main - forked, going to wait&quot;</span></span>
+<span id="cb1-17"><a href="#cb1-17"></a>    s <span class="ot">&lt;-</span> getProcessStatus <span class="dt">True</span> <span class="dt">True</span> child</span>
+<span id="cb1-18"><a href="#cb1-18"></a>    <span class="kw">case</span> s <span class="kw">of</span></span>
+<span id="cb1-19"><a href="#cb1-19"></a>        <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="co">-- this shouldn't happen, ever</span></span>
+<span id="cb1-20"><a href="#cb1-20"></a>            <span class="fu">print</span> s <span class="op">&gt;&gt;</span>  exitFailure</span>
+<span id="cb1-21"><a href="#cb1-21"></a>        <span class="dt">Just</span> s <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb1-22"><a href="#cb1-22"></a>            <span class="fu">print</span> s</span>
+<span id="cb1-23"><a href="#cb1-23"></a>            <span class="kw">case</span> s <span class="kw">of</span></span>
+<span id="cb1-24"><a href="#cb1-24"></a>                <span class="dt">Exited</span> _ <span class="ot">-&gt;</span> <span class="fu">putStrLn</span> <span class="st">&quot;Child exited properly, though possibly unsuccessfully&quot;</span></span>
+<span id="cb1-25"><a href="#cb1-25"></a>                <span class="dt">Terminated</span> _ <span class="ot">-&gt;</span> <span class="fu">putStrLn</span> <span class="st">&quot;Terminated!&quot;</span></span>
+<span id="cb1-26"><a href="#cb1-26"></a>                <span class="dt">Stopped</span> _ <span class="ot">-&gt;</span> <span class="fu">putStrLn</span> <span class="st">&quot;Stopped (only SIGSTOP?)&quot;</span></span>
+<span id="cb1-27"><a href="#cb1-27"></a>            exitSuccess</span>
+<span id="cb1-28"><a href="#cb1-28"></a>    exitFailure</span></code></pre></div>
 <p>It’d be really nice to be able to, after the fork, close <em>all</em> open file descriptors in the child. But how can I find all the open file descriptors in a process? Ideally it should be fairly portable, though portability to major Unix/Linux systems is enough for me.</p>
 
 
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/exec.html">exec</a>, <a href="../tags/fork.html">fork</a>, <a href="../tags/haskell.html">haskell</a>
+Tags: <a title="All pages tagged 'exec'." href="../tags/exec.html">exec</a>, <a title="All pages tagged 'fork'." href="../tags/fork.html">fork</a>, <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>
 </div>
 
 

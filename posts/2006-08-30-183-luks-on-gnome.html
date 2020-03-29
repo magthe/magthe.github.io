@@ -30,17 +30,17 @@
 </header>
 
 <p>Erik, <a href="http://blog.drinsama.de/erich/en/linux/debian/2006082901-bashisms.html">it just works for me</a>. I have LUKS on a partition on a USB stick. When inserted I get a dialogue box asking for the LUKS password. I had to configure <code>hal</code> a little to give the desktop icon a good name:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">&lt;device&gt;</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  <span class="kw">&lt;match</span><span class="ot"> key=</span><span class="st">&quot;volume.uuid&quot;</span><span class="ot"> string=</span><span class="st">&quot;d23647f8-22be-4a8c-86f8-8f59975e9e61&quot;</span><span class="kw">&gt;</span></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">    <span class="kw">&lt;merge</span><span class="ot"> key=</span><span class="st">&quot;volume.label&quot;</span><span class="ot"> type=</span><span class="st">&quot;string&quot;</span><span class="kw">&gt;</span>StickSecret<span class="kw">&lt;/merge&gt;</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">  <span class="kw">&lt;/match&gt;</span></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">&lt;/device&gt;</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode html"><code class="sourceCode html"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">&lt;device&gt;</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a>  <span class="kw">&lt;match</span><span class="ot"> key=</span><span class="st">&quot;volume.uuid&quot;</span><span class="ot"> string=</span><span class="st">&quot;d23647f8-22be-4a8c-86f8-8f59975e9e61&quot;</span><span class="kw">&gt;</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a>    <span class="kw">&lt;merge</span><span class="ot"> key=</span><span class="st">&quot;volume.label&quot;</span><span class="ot"> type=</span><span class="st">&quot;string&quot;</span><span class="kw">&gt;</span>StickSecret<span class="kw">&lt;/merge&gt;</span></span>
+<span id="cb1-4"><a href="#cb1-4"></a>  <span class="kw">&lt;/match&gt;</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a><span class="kw">&lt;/device&gt;</span></span></code></pre></div>
 
 
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/hal.html">hal</a>, <a href="../tags/luks.html">luks</a>, <a href="../tags/usb.html">usb</a>
+Tags: <a title="All pages tagged 'hal'." href="../tags/hal.html">hal</a>, <a title="All pages tagged 'luks'." href="../tags/luks.html">luks</a>, <a title="All pages tagged 'usb'." href="../tags/usb.html">usb</a>
 </div>
 
 

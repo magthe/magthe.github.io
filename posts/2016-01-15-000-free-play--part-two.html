@@ -33,40 +33,40 @@
 <div class="line-block">Moreover, not only do algebras compose (that is, if you have algebras f and g, you can compose them into a composite algebra Coproduct f g for some suitable definition of Coproduct), but interpreters also compose — both horizontally and vertically.</div>
 <p>And a little bit later he offers a few types and some details, but not <em>all</em> details. How could something like that look in Haskell?</p>
 <p>Starting from the code in the previous post I first created a new type for a logging action</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">data</span> <span class="dt">LogF</span> a <span class="fu">=</span> <span class="dt">Log</span> <span class="dt">String</span> a</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">data</span> <span class="dt">LogF</span> a <span class="ot">=</span> <span class="dt">Log</span> <span class="dt">String</span> a</span></code></pre></div>
 <p>This type has to be a <code>Functor</code></p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Functor</span> <span class="dt">LogF</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb2-2" data-line-number="2">  fmap f (<span class="dt">Log</span> s a) <span class="fu">=</span> <span class="dt">Log</span> s (f a)</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">instance</span> <span class="dt">Functor</span> <span class="dt">LogF</span> <span class="kw">where</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a>  <span class="fu">fmap</span> f (<span class="dt">Log</span> s a) <span class="ot">=</span> <span class="dt">Log</span> s (f a)</span></code></pre></div>
 <p>The logging should basically decorate a <code>SimpleFileF a</code> action, so I need a function to map one into a <code>Free LogF a</code></p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">logSimpleFileI ::</span> <span class="dt">SimpleFileF</span> a <span class="ot">-&gt;</span> <span class="dt">Free</span> <span class="dt">LogF</span> ()</a>
-<a class="sourceLine" id="cb3-2" data-line-number="2">logSimpleFileI (<span class="dt">LoadFile</span> fp _) <span class="fu">=</span> liftF <span class="fu">$</span> <span class="dt">Log</span> (<span class="st">&quot;** load file &quot;</span> <span class="fu">++</span> fp) ()</a>
-<a class="sourceLine" id="cb3-3" data-line-number="3">logSimpleFileI (<span class="dt">SaveFile</span> fp _ _) <span class="fu">=</span> liftF <span class="fu">$</span> <span class="dt">Log</span> (<span class="st">&quot;** save file &quot;</span> <span class="fu">++</span> fp) ()</a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="ot">logSimpleFileI ::</span> <span class="dt">SimpleFileF</span> a <span class="ot">-&gt;</span> <span class="dt">Free</span> <span class="dt">LogF</span> ()</span>
+<span id="cb3-2"><a href="#cb3-2"></a>logSimpleFileI (<span class="dt">LoadFile</span> fp _) <span class="ot">=</span> liftF <span class="op">$</span> <span class="dt">Log</span> (<span class="st">&quot;** load file &quot;</span> <span class="op">++</span> fp) ()</span>
+<span id="cb3-3"><a href="#cb3-3"></a>logSimpleFileI (<span class="dt">SaveFile</span> fp _ _) <span class="ot">=</span> liftF <span class="op">$</span> <span class="dt">Log</span> (<span class="st">&quot;** save file &quot;</span> <span class="op">++</span> fp) ()</span></code></pre></div>
 <p>Now I needed a <code>Coproduct</code> for <code>Functor</code>. Searching <a href="http://hackage.haskell.org/">hackage</a> only offered up one for <code>Monoid</code> (in <a href="http://hackage.haskell.org/package/monoid-extras">monoid-extras</a>) so I first translated one from PureScript, but later I got some help via Twitter and was pointed to two in Haskell, <a href="http://hackage.haskell.org/package/comonad-4.2.7.2/docs/Data-Functor-Coproduct.html"><code>Data.Functor.Coproduct</code></a> from comonad and <a href="http://hackage.haskell.org/package/transformers-0.5.0.0/docs/Data-Functor-Sum.html"><code>Data.Functor.Sum</code></a> from transformers, I decided on the one from transformers because of its shorter name and the fact that it was very different from my translated-from-PureScript version.</p>
 <p>Following John’s example I use <code>Applicative</code> to combine the logging with the file action</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">loggingSimpleFileI ::</span> <span class="dt">SimpleFileF</span> a <span class="ot">-&gt;</span> <span class="dt">Free</span> (<span class="dt">Sum</span> <span class="dt">LogF</span> <span class="dt">SimpleFileF</span>) a</a>
-<a class="sourceLine" id="cb4-2" data-line-number="2">loggingSimpleFileI op <span class="fu">=</span> toLeft (logSimpleFileI op) <span class="fu">*&gt;</span> toRight (liftF op)</a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a><span class="ot">loggingSimpleFileI ::</span> <span class="dt">SimpleFileF</span> a <span class="ot">-&gt;</span> <span class="dt">Free</span> (<span class="dt">Sum</span> <span class="dt">LogF</span> <span class="dt">SimpleFileF</span>) a</span>
+<span id="cb4-2"><a href="#cb4-2"></a>loggingSimpleFileI op <span class="ot">=</span> toLeft (logSimpleFileI op) <span class="op">*&gt;</span> toRight (liftF op)</span></code></pre></div>
 <p>with <code>toLeft</code> and <code>toRight</code> defined like this</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">toLeft ::</span> (<span class="dt">Functor</span> f, <span class="dt">Functor</span> g) <span class="ot">=&gt;</span> <span class="dt">Free</span> f a <span class="ot">-&gt;</span> <span class="dt">Free</span> (<span class="dt">Sum</span> f g) a</a>
-<a class="sourceLine" id="cb5-2" data-line-number="2">toLeft <span class="fu">=</span> hoistFree <span class="dt">InL</span></a>
-<a class="sourceLine" id="cb5-3" data-line-number="3"><span class="ot">toRight ::</span> (<span class="dt">Functor</span> f, <span class="dt">Functor</span> g) <span class="ot">=&gt;</span> <span class="dt">Free</span> g a <span class="ot">-&gt;</span> <span class="dt">Free</span> (<span class="dt">Sum</span> f g) a</a>
-<a class="sourceLine" id="cb5-4" data-line-number="4">toRight <span class="fu">=</span> hoistFree <span class="dt">InR</span></a></code></pre></div>
-<p>With all of this in place I can decorate the program from the last post like this <code>foldFree loggingSimpleFileI (withSimpleF toUpper &quot;FreePlay.hs&quot;)</code>. What’s left is a way to run it. The function for that is a natural extension of <code>runsimpleFile</code></p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"></a>
-<a class="sourceLine" id="cb6-2" data-line-number="2"><span class="ot">runLogging ::</span> <span class="dt">Free</span> (<span class="dt">Sum</span> <span class="dt">LogF</span> <span class="dt">SimpleFileF</span>) a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</a>
-<a class="sourceLine" id="cb6-3" data-line-number="3">runLogging <span class="fu">=</span> foldFree f</a>
-<a class="sourceLine" id="cb6-4" data-line-number="4">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb6-5" data-line-number="5"><span class="ot">    f ::</span> (<span class="dt">Sum</span> <span class="dt">LogF</span> <span class="dt">SimpleFileF</span>) a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</a>
-<a class="sourceLine" id="cb6-6" data-line-number="6">    f (<span class="dt">InL</span> op) <span class="fu">=</span> g op</a>
-<a class="sourceLine" id="cb6-7" data-line-number="7">    f (<span class="dt">InR</span> op) <span class="fu">=</span> h op</a>
-<a class="sourceLine" id="cb6-8" data-line-number="8"></a>
-<a class="sourceLine" id="cb6-9" data-line-number="9"><span class="ot">    g ::</span> <span class="dt">LogF</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</a>
-<a class="sourceLine" id="cb6-10" data-line-number="10">    g (<span class="dt">Log</span> s a)<span class="fu">=</span> putStrLn s <span class="fu">&gt;&gt;</span> return a</a>
-<a class="sourceLine" id="cb6-11" data-line-number="11"></a>
-<a class="sourceLine" id="cb6-12" data-line-number="12"><span class="ot">    h ::</span> <span class="dt">SimpleFileF</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</a>
-<a class="sourceLine" id="cb6-13" data-line-number="13">    h (<span class="dt">LoadFile</span> fp f') <span class="fu">=</span> liftM f' <span class="fu">$</span> readFile fp</a>
-<a class="sourceLine" id="cb6-14" data-line-number="14">    h (<span class="dt">SaveFile</span> fp d r) <span class="fu">=</span> writeFile fp d <span class="fu">&gt;&gt;</span> return r</a></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1"></a><span class="ot">toLeft ::</span> (<span class="dt">Functor</span> f, <span class="dt">Functor</span> g) <span class="ot">=&gt;</span> <span class="dt">Free</span> f a <span class="ot">-&gt;</span> <span class="dt">Free</span> (<span class="dt">Sum</span> f g) a</span>
+<span id="cb5-2"><a href="#cb5-2"></a>toLeft <span class="ot">=</span> hoistFree <span class="dt">InL</span></span>
+<span id="cb5-3"><a href="#cb5-3"></a><span class="ot">toRight ::</span> (<span class="dt">Functor</span> f, <span class="dt">Functor</span> g) <span class="ot">=&gt;</span> <span class="dt">Free</span> g a <span class="ot">-&gt;</span> <span class="dt">Free</span> (<span class="dt">Sum</span> f g) a</span>
+<span id="cb5-4"><a href="#cb5-4"></a>toRight <span class="ot">=</span> hoistFree <span class="dt">InR</span></span></code></pre></div>
+<p>With all of this in place I can decorate the program from the last post like this <code>foldFree loggingSimpleFileI (withSimpleF toUpper "FreePlay.hs")</code>. What’s left is a way to run it. The function for that is a natural extension of <code>runsimpleFile</code></p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1"></a></span>
+<span id="cb6-2"><a href="#cb6-2"></a><span class="ot">runLogging ::</span> <span class="dt">Free</span> (<span class="dt">Sum</span> <span class="dt">LogF</span> <span class="dt">SimpleFileF</span>) a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span>
+<span id="cb6-3"><a href="#cb6-3"></a>runLogging <span class="ot">=</span> foldFree f</span>
+<span id="cb6-4"><a href="#cb6-4"></a>  <span class="kw">where</span></span>
+<span id="cb6-5"><a href="#cb6-5"></a><span class="ot">    f ::</span> (<span class="dt">Sum</span> <span class="dt">LogF</span> <span class="dt">SimpleFileF</span>) a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span>
+<span id="cb6-6"><a href="#cb6-6"></a>    f (<span class="dt">InL</span> op) <span class="ot">=</span> g op</span>
+<span id="cb6-7"><a href="#cb6-7"></a>    f (<span class="dt">InR</span> op) <span class="ot">=</span> h op</span>
+<span id="cb6-8"><a href="#cb6-8"></a></span>
+<span id="cb6-9"><a href="#cb6-9"></a><span class="ot">    g ::</span> <span class="dt">LogF</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span>
+<span id="cb6-10"><a href="#cb6-10"></a>    g (<span class="dt">Log</span> s a)<span class="ot">=</span> <span class="fu">putStrLn</span> s <span class="op">&gt;&gt;</span> <span class="fu">return</span> a</span>
+<span id="cb6-11"><a href="#cb6-11"></a></span>
+<span id="cb6-12"><a href="#cb6-12"></a><span class="ot">    h ::</span> <span class="dt">SimpleFileF</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span>
+<span id="cb6-13"><a href="#cb6-13"></a>    h (<span class="dt">LoadFile</span> fp f') <span class="ot">=</span> liftM f' <span class="op">$</span> <span class="fu">readFile</span> fp</span>
+<span id="cb6-14"><a href="#cb6-14"></a>    h (<span class="dt">SaveFile</span> fp d r) <span class="ot">=</span> <span class="fu">writeFile</span> fp d <span class="op">&gt;&gt;</span> <span class="fu">return</span> r</span></code></pre></div>
 <p>Running the decorated program</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1">runLogging <span class="fu">$</span> foldFree loggingSimpleFileI (withSimpleF toUpper <span class="st">&quot;FreePlay.hs&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1"></a>runLogging <span class="op">$</span> foldFree loggingSimpleFileI (withSimpleF <span class="fu">toUpper</span> <span class="st">&quot;FreePlay.hs&quot;</span>)</span></code></pre></div>
 <p>does indeed result in the expected output</p>
 <pre><code>** load file FreePlay.hs
 ** save file FreePlay.hs_new</code></pre>
@@ -79,7 +79,7 @@
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/free.html">free</a>, <a href="../tags/haskell.html">haskell</a>, <a href="../tags/monad.html">monad</a>
+Tags: <a title="All pages tagged 'free'." href="../tags/free.html">free</a>, <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>, <a title="All pages tagged 'monad'." href="../tags/monad.html">monad</a>
 </div>
 
 

@@ -60,8 +60,8 @@
 <tr class="odd">
 <td style="text-align: left;"><code>POST</code></td>
 <td style="text-align: left;"><code>/users</code></td>
-<td style="text-align: left;"><code>{&quot;userId&quot;: 0, &quot;userName&quot;: &quot;Yogi Berra&quot;}</code></td>
-<td style="text-align: left;"><code>{&quot;userId&quot;: 42, &quot;userName&quot;: &quot;Yogi Berra&quot;}</code></td>
+<td style="text-align: left;"><code>{"userId": 0, "userName": "Yogi Berra"}</code></td>
+<td style="text-align: left;"><code>{"userId": 42, "userName": "Yogi Berra"}</code></td>
 </tr>
 <tr class="even">
 <td style="text-align: left;"><code>DELETE</code></td>
@@ -92,7 +92,7 @@
 <td style="text-align: left;"><code>GET</code></td>
 <td style="text-align: left;"><code>/users/:id</code></td>
 <td style="text-align: left;"></td>
-<td style="text-align: left;"><code>{&quot;userId&quot;: 42, &quot;userName&quot;: &quot;Yogi Berra&quot;}</code></td>
+<td style="text-align: left;"><code>{"userId": 42, "userName": "Yogi Berra"}</code></td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;"><code>POST</code></td>
@@ -104,67 +104,67 @@
 </table>
 <h2 id="representing-api-calls">Representing API calls</h2>
 <p>Given the information about the API above it seems the following is enough to represent the two calls of interest together with a constructor representing the end of a program</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">data</span> <span class="dt">ApiCall</span> <span class="fu">=</span> <span class="dt">AddUser</span> <span class="dt">Text</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">             <span class="fu">|</span> <span class="dt">DeleteUser</span> <span class="dt">Int</span></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">             <span class="fu">|</span> <span class="dt">EndProgram</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">             <span class="kw">deriving</span> (<span class="dt">Show</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">data</span> <span class="dt">ApiCall</span> <span class="ot">=</span> <span class="dt">AddUser</span> <span class="dt">Text</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a>             <span class="op">|</span> <span class="dt">DeleteUser</span> <span class="dt">Int</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a>             <span class="op">|</span> <span class="dt">EndProgram</span></span>
+<span id="cb1-4"><a href="#cb1-4"></a>             <span class="kw">deriving</span> (<span class="dt">Show</span>)</span></code></pre></div>
 <p>and a program is just a sequence of calls, so list of <code>ApiCall</code> will do. However, since I want to generate sequences of calls, i.e. implement <code>Arbitrary</code>, I’ll wrap it in a <code>newtype</code></p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">newtype</span> <span class="dt">Program</span> <span class="fu">=</span> <span class="dt">Prog</span> [<span class="dt">ApiCall</span>]</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">newtype</span> <span class="dt">Program</span> <span class="ot">=</span> <span class="dt">Prog</span> [<span class="dt">ApiCall</span>]</span></code></pre></div>
 <h2 id="running-against-a-model-simulation">Running against a model (simulation)</h2>
 <p>First of all I need to decide what model to use. Based on the part of the API I’m using I’ll use an ordinary dictionary of <code>Int</code> and <code>Text</code></p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">type</span> <span class="dt">Model</span> <span class="fu">=</span> <span class="dt">M.Map</span> <span class="dt">Int</span> <span class="dt">Text</span></a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">type</span> <span class="dt">Model</span> <span class="ot">=</span> <span class="dt">M.Map</span> <span class="dt">Int</span> <span class="dt">Text</span></span></code></pre></div>
 <p>Simulating execution of a program is simulating each call against a model that’s updated with each step. I expect the final model to correspond to the state of the real service after the program is run for real. The simulation begins with an empty dictionary.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">simulateProgram ::</span> <span class="dt">Program</span> <span class="ot">-&gt;</span> <span class="dt">Model</span></a>
-<a class="sourceLine" id="cb4-2" data-line-number="2">simulateProgram (<span class="dt">Prog</span> cs) <span class="fu">=</span> foldl simulateCall M.empty cs</a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a><span class="ot">simulateProgram ::</span> <span class="dt">Program</span> <span class="ot">-&gt;</span> <span class="dt">Model</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a>simulateProgram (<span class="dt">Prog</span> cs) <span class="ot">=</span> <span class="fu">foldl</span> simulateCall M.empty cs</span></code></pre></div>
 <p>The simulation of the API calls must then be a function taking a model and a call, returning an updated model</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">simulateCall ::</span> <span class="dt">Model</span> <span class="ot">-&gt;</span> <span class="dt">ApiCall</span> <span class="ot">-&gt;</span> <span class="dt">Model</span></a>
-<a class="sourceLine" id="cb5-2" data-line-number="2">simulateCall m (<span class="dt">AddUser</span> t) <span class="fu">=</span> M.insert k t m</a>
-<a class="sourceLine" id="cb5-3" data-line-number="3">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb5-4" data-line-number="4">    k <span class="fu">=</span> succ <span class="fu">$</span> foldl max <span class="dv">0</span> (M.keys m)</a>
-<a class="sourceLine" id="cb5-5" data-line-number="5">simulateCall m (<span class="dt">DeleteUser</span> k) <span class="fu">=</span> M.delete k m</a>
-<a class="sourceLine" id="cb5-6" data-line-number="6">simulateCall m <span class="dt">EndProgram</span> <span class="fu">=</span> m</a></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1"></a><span class="ot">simulateCall ::</span> <span class="dt">Model</span> <span class="ot">-&gt;</span> <span class="dt">ApiCall</span> <span class="ot">-&gt;</span> <span class="dt">Model</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a>simulateCall m (<span class="dt">AddUser</span> t) <span class="ot">=</span> M.insert k t m</span>
+<span id="cb5-3"><a href="#cb5-3"></a>  <span class="kw">where</span></span>
+<span id="cb5-4"><a href="#cb5-4"></a>    k <span class="ot">=</span> <span class="fu">succ</span> <span class="op">$</span> <span class="fu">foldl</span> <span class="fu">max</span> <span class="dv">0</span> (M.keys m)</span>
+<span id="cb5-5"><a href="#cb5-5"></a>simulateCall m (<span class="dt">DeleteUser</span> k) <span class="ot">=</span> M.delete k m</span>
+<span id="cb5-6"><a href="#cb5-6"></a>simulateCall m <span class="dt">EndProgram</span> <span class="ot">=</span> m</span></code></pre></div>
 <p>Here I have to make a few assumptions. First, I assume the indeces for the users start on <code>1</code>. Second, that the next index used always is the successor of highest currently used index. We’ll see how well this holds up to reality later on.</p>
 <h2 id="running-against-the-web-service">Running against the web service</h2>
-<p>Running the program against the actual web service follows the same pattern, but here I’m dealing with the real world, so it’s a little more messy, i.e. <code>IO</code> is involved. First the running of a single call</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">runCall ::</span> <span class="dt">Manager</span> <span class="ot">-&gt;</span> <span class="dt">ApiCall</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb6-2" data-line-number="2">runCall mgr (<span class="dt">AddUser</span> t) <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb6-3" data-line-number="3">  ireq <span class="ot">&lt;-</span> parseRequest <span class="st">&quot;POST http://localhost:3000/users&quot;</span></a>
-<a class="sourceLine" id="cb6-4" data-line-number="4">  <span class="kw">let</span> req <span class="fu">=</span> ireq { requestBody <span class="fu">=</span> <span class="dt">RequestBodyLBS</span> (encode <span class="fu">$</span> <span class="dt">User</span> <span class="dv">0</span> t)}</a>
-<a class="sourceLine" id="cb6-5" data-line-number="5">  resp <span class="ot">&lt;-</span> httpLbs req mgr</a>
-<a class="sourceLine" id="cb6-6" data-line-number="6">  guard (status201 <span class="fu">==</span> responseStatus resp)</a>
-<a class="sourceLine" id="cb6-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb6-8" data-line-number="8">runCall mgr (<span class="dt">DeleteUser</span> k) <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb6-9" data-line-number="9">  req <span class="ot">&lt;-</span> parseRequest <span class="fu">$</span> <span class="st">&quot;DELETE http://localhost:3000/users/&quot;</span> <span class="fu">++</span> show k</a>
-<a class="sourceLine" id="cb6-10" data-line-number="10">  resp <span class="ot">&lt;-</span> httpNoBody req mgr</a>
-<a class="sourceLine" id="cb6-11" data-line-number="11">  guard (status200 <span class="fu">==</span> responseStatus resp)</a>
-<a class="sourceLine" id="cb6-12" data-line-number="12"></a>
-<a class="sourceLine" id="cb6-13" data-line-number="13">runCall _ <span class="dt">EndProgram</span> <span class="fu">=</span> return ()</a></code></pre></div>
+<p>Running the program against the actual web service follows the same pattern, but here I’m dealing with the real world, so it’s a little more messy, i.e. <code>IO</code> is involved. First the running of a single call</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1"></a><span class="ot">runCall ::</span> <span class="dt">Manager</span> <span class="ot">-&gt;</span> <span class="dt">ApiCall</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
+<span id="cb6-2"><a href="#cb6-2"></a>runCall mgr (<span class="dt">AddUser</span> t) <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb6-3"><a href="#cb6-3"></a>  ireq <span class="ot">&lt;-</span> parseRequest <span class="st">&quot;POST http://localhost:3000/users&quot;</span></span>
+<span id="cb6-4"><a href="#cb6-4"></a>  <span class="kw">let</span> req <span class="ot">=</span> ireq { requestBody <span class="ot">=</span> <span class="dt">RequestBodyLBS</span> (encode <span class="op">$</span> <span class="dt">User</span> <span class="dv">0</span> t)}</span>
+<span id="cb6-5"><a href="#cb6-5"></a>  resp <span class="ot">&lt;-</span> httpLbs req mgr</span>
+<span id="cb6-6"><a href="#cb6-6"></a>  guard (status201 <span class="op">==</span> responseStatus resp)</span>
+<span id="cb6-7"><a href="#cb6-7"></a></span>
+<span id="cb6-8"><a href="#cb6-8"></a>runCall mgr (<span class="dt">DeleteUser</span> k) <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb6-9"><a href="#cb6-9"></a>  req <span class="ot">&lt;-</span> parseRequest <span class="op">$</span> <span class="st">&quot;DELETE http://localhost:3000/users/&quot;</span> <span class="op">++</span> <span class="fu">show</span> k</span>
+<span id="cb6-10"><a href="#cb6-10"></a>  resp <span class="ot">&lt;-</span> httpNoBody req mgr</span>
+<span id="cb6-11"><a href="#cb6-11"></a>  guard (status200 <span class="op">==</span> responseStatus resp)</span>
+<span id="cb6-12"><a href="#cb6-12"></a></span>
+<span id="cb6-13"><a href="#cb6-13"></a>runCall _ <span class="dt">EndProgram</span> <span class="ot">=</span> <span class="fu">return</span> ()</span></code></pre></div>
 <p>The running of a program is slightly more involved. Of course I have to set up the <code>Manager</code> needed for the HTTP calls, but I also need to</p>
 <ol type="1">
 <li>ensure that the web service is in a well-known state before starting, and</li>
 <li>extract the state of the web service after running the program, so I can compare it to the model</li>
 </ol>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">runProgram ::</span> <span class="dt">Program</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> <span class="dt">Model</span></a>
-<a class="sourceLine" id="cb7-2" data-line-number="2">runProgram (<span class="dt">Prog</span> cs) <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb7-3" data-line-number="3">  mgr <span class="ot">&lt;-</span> newManager defaultManagerSettings</a>
-<a class="sourceLine" id="cb7-4" data-line-number="4">  resetReq <span class="ot">&lt;-</span> parseRequest <span class="st">&quot;POST http://localhost:3000/reset&quot;</span></a>
-<a class="sourceLine" id="cb7-5" data-line-number="5">  httpNoBody resetReq mgr</a>
-<a class="sourceLine" id="cb7-6" data-line-number="6">  mapM_ (runCall mgr) cs</a>
-<a class="sourceLine" id="cb7-7" data-line-number="7">  model <span class="ot">&lt;-</span> extractModel mgr</a>
-<a class="sourceLine" id="cb7-8" data-line-number="8">  return model</a></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1"></a><span class="ot">runProgram ::</span> <span class="dt">Program</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> <span class="dt">Model</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a>runProgram (<span class="dt">Prog</span> cs) <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb7-3"><a href="#cb7-3"></a>  mgr <span class="ot">&lt;-</span> newManager defaultManagerSettings</span>
+<span id="cb7-4"><a href="#cb7-4"></a>  resetReq <span class="ot">&lt;-</span> parseRequest <span class="st">&quot;POST http://localhost:3000/reset&quot;</span></span>
+<span id="cb7-5"><a href="#cb7-5"></a>  httpNoBody resetReq mgr</span>
+<span id="cb7-6"><a href="#cb7-6"></a>  <span class="fu">mapM_</span> (runCall mgr) cs</span>
+<span id="cb7-7"><a href="#cb7-7"></a>  model <span class="ot">&lt;-</span> extractModel mgr</span>
+<span id="cb7-8"><a href="#cb7-8"></a>  <span class="fu">return</span> model</span></code></pre></div>
 <p>The call to <code>POST /reset</code> resets the web service. I would have liked to simply restart the service completely, but I failed in automating it. I think I’ll have to take a closer look at the implementation of <a href="http://hackage.haskell.org/package/scotty">scotty</a> to find a way.</p>
 <p>Extracting the web service state and packaging it in a <code>Model</code> is a matter of calling <code>GET /users</code> and then repeatedly calling <code>GET /users/:id</code> with each <code>id</code> gotten from the first call</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">extractModel ::</span> <span class="dt">Manager</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> <span class="dt">Model</span></a>
-<a class="sourceLine" id="cb8-2" data-line-number="2">extractModel mgr <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb8-3" data-line-number="3">  req <span class="ot">&lt;-</span> parseRequest <span class="st">&quot;http://localhost:3000/users&quot;</span></a>
-<a class="sourceLine" id="cb8-4" data-line-number="4">  resp <span class="ot">&lt;-</span> httpLbs req mgr</a>
-<a class="sourceLine" id="cb8-5" data-line-number="5">  <span class="kw">let</span> (<span class="dt">Just</span> ids) <span class="fu">=</span> decode (responseBody resp)<span class="ot"> ::</span> <span class="dt">Maybe</span> [<span class="dt">Int</span>]</a>
-<a class="sourceLine" id="cb8-6" data-line-number="6">  users <span class="ot">&lt;-</span> forM ids <span class="fu">$</span> \ id <span class="ot">-&gt;</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb8-7" data-line-number="7">    req <span class="ot">&lt;-</span> parseRequest <span class="fu">$</span> <span class="st">&quot;http://localhost:3000/users/&quot;</span> <span class="fu">++</span> show id</a>
-<a class="sourceLine" id="cb8-8" data-line-number="8">    resp <span class="ot">&lt;-</span> httpLbs req mgr</a>
-<a class="sourceLine" id="cb8-9" data-line-number="9">    <span class="kw">let</span> (<span class="dt">Just</span> (user<span class="fu">:</span>_)) <span class="fu">=</span> decode (responseBody resp)<span class="ot"> ::</span> <span class="dt">Maybe</span> [<span class="dt">User</span>]</a>
-<a class="sourceLine" id="cb8-10" data-line-number="10">    return user</a>
-<a class="sourceLine" id="cb8-11" data-line-number="11">  return <span class="fu">$</span> foldl (\ map (<span class="dt">User</span> id name) <span class="ot">-&gt;</span> M.insert id name map) M.empty users</a></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1"></a><span class="ot">extractModel ::</span> <span class="dt">Manager</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> <span class="dt">Model</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a>extractModel mgr <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb8-3"><a href="#cb8-3"></a>  req <span class="ot">&lt;-</span> parseRequest <span class="st">&quot;http://localhost:3000/users&quot;</span></span>
+<span id="cb8-4"><a href="#cb8-4"></a>  resp <span class="ot">&lt;-</span> httpLbs req mgr</span>
+<span id="cb8-5"><a href="#cb8-5"></a>  <span class="kw">let</span> (<span class="dt">Just</span> ids) <span class="ot">=</span> decode (responseBody resp)<span class="ot"> ::</span> <span class="dt">Maybe</span> [<span class="dt">Int</span>]</span>
+<span id="cb8-6"><a href="#cb8-6"></a>  users <span class="ot">&lt;-</span> forM ids <span class="op">$</span> \ <span class="fu">id</span> <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb8-7"><a href="#cb8-7"></a>    req <span class="ot">&lt;-</span> parseRequest <span class="op">$</span> <span class="st">&quot;http://localhost:3000/users/&quot;</span> <span class="op">++</span> <span class="fu">show</span> <span class="fu">id</span></span>
+<span id="cb8-8"><a href="#cb8-8"></a>    resp <span class="ot">&lt;-</span> httpLbs req mgr</span>
+<span id="cb8-9"><a href="#cb8-9"></a>    <span class="kw">let</span> (<span class="dt">Just</span> (user<span class="op">:</span>_)) <span class="ot">=</span> decode (responseBody resp)<span class="ot"> ::</span> <span class="dt">Maybe</span> [<span class="dt">User</span>]</span>
+<span id="cb8-10"><a href="#cb8-10"></a>    <span class="fu">return</span> user</span>
+<span id="cb8-11"><a href="#cb8-11"></a>  <span class="fu">return</span> <span class="op">$</span> <span class="fu">foldl</span> (\ <span class="fu">map</span> (<span class="dt">User</span> <span class="fu">id</span> name) <span class="ot">-&gt;</span> M.insert <span class="fu">id</span> name <span class="fu">map</span>) M.empty users</span></code></pre></div>
 <h2 id="generating-programs">Generating programs</h2>
 <p>My approach to generating a program is based on the idea that given a certain state there is only a limited number of possible calls that make sense. Given a model <code>m</code> it makes sense to make one of the following calls:</p>
 <ul>
@@ -173,31 +173,31 @@
 <li>end the program</li>
 </ul>
 <p>Based on this writing <code>genProgram</code> is rather straight forward</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">genProgram ::</span> <span class="dt">Gen</span> <span class="dt">Program</span></a>
-<a class="sourceLine" id="cb9-2" data-line-number="2">genProgram <span class="fu">=</span> <span class="dt">Prog</span> <span class="fu">&lt;$&gt;</span> go M.empty</a>
-<a class="sourceLine" id="cb9-3" data-line-number="3">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb9-4" data-line-number="4">    possibleAddUser _ <span class="fu">=</span> [<span class="dt">AddUser</span> <span class="fu">&lt;$&gt;</span> arbitrary]</a>
-<a class="sourceLine" id="cb9-5" data-line-number="5">    possibleDeleteUser m <span class="fu">=</span> map (return <span class="fu">.</span> <span class="dt">DeleteUser</span>) (M.keys m)</a>
-<a class="sourceLine" id="cb9-6" data-line-number="6">    possibleEndProgram _ <span class="fu">=</span> [return <span class="dt">EndProgram</span>]</a>
-<a class="sourceLine" id="cb9-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb9-8" data-line-number="8">    go m <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb9-9" data-line-number="9">      <span class="kw">let</span> possibles <span class="fu">=</span> possibleDeleteUser m <span class="fu">++</span> possibleAddUser m <span class="fu">++</span> possibleEndProgram m</a>
-<a class="sourceLine" id="cb9-10" data-line-number="10">      s <span class="ot">&lt;-</span> oneof possibles</a>
-<a class="sourceLine" id="cb9-11" data-line-number="11">      <span class="kw">let</span> m' <span class="fu">=</span> simulateCall m s</a>
-<a class="sourceLine" id="cb9-12" data-line-number="12">      <span class="kw">case</span> s <span class="kw">of</span></a>
-<a class="sourceLine" id="cb9-13" data-line-number="13">        <span class="dt">EndProgram</span> <span class="ot">-&gt;</span> return []</a>
-<a class="sourceLine" id="cb9-14" data-line-number="14">        _ <span class="ot">-&gt;</span> (s<span class="fu">:</span>) <span class="fu">&lt;$&gt;</span> go m'</a></code></pre></div>
-<p>Armed with that the <code>Arbitrary</code> instance for <code>Program</code> can be implemented as<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a></p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Arbitrary</span> <span class="dt">Program</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb10-2" data-line-number="2">  arbitrary <span class="fu">=</span> genProgram</a>
-<a class="sourceLine" id="cb10-3" data-line-number="3">  shrink p <span class="fu">=</span> []</a></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1"></a><span class="ot">genProgram ::</span> <span class="dt">Gen</span> <span class="dt">Program</span></span>
+<span id="cb9-2"><a href="#cb9-2"></a>genProgram <span class="ot">=</span> <span class="dt">Prog</span> <span class="op">&lt;$&gt;</span> go M.empty</span>
+<span id="cb9-3"><a href="#cb9-3"></a>  <span class="kw">where</span></span>
+<span id="cb9-4"><a href="#cb9-4"></a>    possibleAddUser _ <span class="ot">=</span> [<span class="dt">AddUser</span> <span class="op">&lt;$&gt;</span> arbitrary]</span>
+<span id="cb9-5"><a href="#cb9-5"></a>    possibleDeleteUser m <span class="ot">=</span> <span class="fu">map</span> (<span class="fu">return</span> <span class="op">.</span> <span class="dt">DeleteUser</span>) (M.keys m)</span>
+<span id="cb9-6"><a href="#cb9-6"></a>    possibleEndProgram _ <span class="ot">=</span> [<span class="fu">return</span> <span class="dt">EndProgram</span>]</span>
+<span id="cb9-7"><a href="#cb9-7"></a></span>
+<span id="cb9-8"><a href="#cb9-8"></a>    go m <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb9-9"><a href="#cb9-9"></a>      <span class="kw">let</span> possibles <span class="ot">=</span> possibleDeleteUser m <span class="op">++</span> possibleAddUser m <span class="op">++</span> possibleEndProgram m</span>
+<span id="cb9-10"><a href="#cb9-10"></a>      s <span class="ot">&lt;-</span> oneof possibles</span>
+<span id="cb9-11"><a href="#cb9-11"></a>      <span class="kw">let</span> m' <span class="ot">=</span> simulateCall m s</span>
+<span id="cb9-12"><a href="#cb9-12"></a>      <span class="kw">case</span> s <span class="kw">of</span></span>
+<span id="cb9-13"><a href="#cb9-13"></a>        <span class="dt">EndProgram</span> <span class="ot">-&gt;</span> <span class="fu">return</span> []</span>
+<span id="cb9-14"><a href="#cb9-14"></a>        _ <span class="ot">-&gt;</span> (s<span class="op">:</span>) <span class="op">&lt;$&gt;</span> go m'</span></code></pre></div>
+<p>Armed with that the <code>Arbitrary</code> instance for <code>Program</code> can be implemented as<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1"></a><span class="kw">instance</span> <span class="dt">Arbitrary</span> <span class="dt">Program</span> <span class="kw">where</span></span>
+<span id="cb10-2"><a href="#cb10-2"></a>  arbitrary <span class="ot">=</span> genProgram</span>
+<span id="cb10-3"><a href="#cb10-3"></a>  shrink p <span class="ot">=</span> []</span></code></pre></div>
 <h2 id="the-property-of-an-api">The property of an API</h2>
 <p>The steps in the <a href="#the-goal-and-how-to-reach-it">first section</a> can be used as a recipe for writing the property</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ot">prop_progCorrectness ::</span> <span class="dt">Program</span> <span class="ot">-&gt;</span> <span class="dt">Property</span></a>
-<a class="sourceLine" id="cb11-2" data-line-number="2">prop_progCorrectness program <span class="fu">=</span> monadicIO <span class="fu">$</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb11-3" data-line-number="3">  <span class="kw">let</span> simulatedModel <span class="fu">=</span> simulateProgram program</a>
-<a class="sourceLine" id="cb11-4" data-line-number="4">  runModel <span class="ot">&lt;-</span> run <span class="fu">$</span> runProgram program</a>
-<a class="sourceLine" id="cb11-5" data-line-number="5">  assert <span class="fu">$</span> simulatedModel <span class="fu">==</span> runModel</a></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1"></a><span class="ot">prop_progCorrectness ::</span> <span class="dt">Program</span> <span class="ot">-&gt;</span> <span class="dt">Property</span></span>
+<span id="cb11-2"><a href="#cb11-2"></a>prop_progCorrectness program <span class="ot">=</span> monadicIO <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb11-3"><a href="#cb11-3"></a>  <span class="kw">let</span> simulatedModel <span class="ot">=</span> simulateProgram program</span>
+<span id="cb11-4"><a href="#cb11-4"></a>  runModel <span class="ot">&lt;-</span> run <span class="op">$</span> runProgram program</span>
+<span id="cb11-5"><a href="#cb11-5"></a>  assert <span class="op">$</span> simulatedModel <span class="op">==</span> runModel</span></code></pre></div>
 <h2 id="what-next">What next?</h2>
 <p>There are some improvements that I’d like to make:</p>
 <ul>
@@ -205,10 +205,10 @@
 <li>Write an implementation of <code>shrink</code> for <code>Program</code>. With longer programs it’s of course more important to actually implement <code>shrink</code>.</li>
 </ul>
 <p>I’d love to hear if others are using <a href="https://hackage.haskell.org/package/QuickCheck">QuickCheck</a> to test REST APIs in some way, if anyone has suggestions for improvements, and of course ideas for how to implement <code>shrink</code> in a nice way.</p>
-<section class="footnotes">
+<section class="footnotes" role="doc-endnotes">
 <hr />
 <ol>
-<li id="fn1"><p>Yes, I completely skip the issue of shrinking programs at this point. This is OK at this point though, because the generated <code>Programs</code>s do end up to be very short indeed.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+<li id="fn1" role="doc-endnote"><p>Yes, I completely skip the issue of shrinking programs at this point. This is OK at this point though, because the generated <code>Programs</code>s do end up to be very short indeed.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section>
 
@@ -216,7 +216,7 @@
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/testing.html">testing</a>, <a href="../tags/quickcheck.html">quickcheck</a>
+Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>, <a title="All pages tagged 'testing'." href="../tags/testing.html">testing</a>, <a title="All pages tagged 'quickcheck'." href="../tags/quickcheck.html">quickcheck</a>
 </div>
 
 

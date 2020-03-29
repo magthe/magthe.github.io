@@ -40,11 +40,11 @@
 </ul>
 <p>we now have</p>
 <ul>
-<li>a (simplified) script to start the app<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a></li>
+<li>a (simplified) script to start the app<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></li>
 <li>a service unit (<code>app.service</code>) for the app</li>
 <li>a timer unit (<code>app-sync.timer</code>) to trigger the resync of the app against the S3 bucket</li>
 <li>a oneshot service unit (<code>app-sync.service</code>), triggered by the timer, to perform the sync of the app with the latest build, i.e. call <code>aws s3 sync</code></li>
-<li>a path unit (<code>app-restart.path</code>) to monitor one of the build artifacts, i.e. to pick up that a new version has arrived</li>
+<li>a path unit (<code>app-restart.path</code>) to monitor one of the build artifacts, i.e. to pick up that a new version has arrived</li>
 <li>a oneshot service unit (<code>app-restart.service</code>), triggered by the path unit, calling <code>systemctl restart app.service</code></li>
 </ul>
 <p>There’s one more piece to the setup, but</p>
@@ -54,10 +54,10 @@
 <li>responsibility is cleanly separated leading to a solution that’s easier to understand (as long as you know a bit about systemd of course)</li>
 </ul>
 <p>so I think it’s a net improvement.</p>
-<section class="footnotes">
+<section class="footnotes" role="doc-endnotes">
 <hr />
 <ol>
-<li id="fn1"><p>All it does is set a bunch of environment variables and then start the app, so I’m planning on moving the environment variables into a separate file and put the start command the service unit file instead.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+<li id="fn1" role="doc-endnote"><p>All it does is set a bunch of environment variables and then start the app, so I’m planning on moving the environment variables into a separate file and put the start command the service unit file instead.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section>
 
@@ -65,7 +65,7 @@
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/systemd.html">systemd</a>
+Tags: <a title="All pages tagged 'systemd'." href="../tags/systemd.html">systemd</a>
 </div>
 
 

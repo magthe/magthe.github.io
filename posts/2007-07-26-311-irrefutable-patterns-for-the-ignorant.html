@@ -30,22 +30,22 @@
 </header>
 
 <p>A few days ago was the first time I ever saw some code like this:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="fu">~</span>[arg] <span class="ot">&lt;-</span> getArgs</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="op">~</span>[arg] <span class="ot">&lt;-</span> getArgs</span></code></pre></div>
 <p>I hadn’t come across <a href="http://www.haskell.org/tutorial/patterns.html#sect4.4">irrefutable patterns</a> (also called lazy patterns) in Haskell before and was of course curious. This is an attempt at illustrating the difference between lazy and non-lazy pattern matching. Here’s some code not using lazy pattern matching:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">main <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-2" data-line-number="2">    putStrLn <span class="st">&quot;Before&quot;</span></a>
-<a class="sourceLine" id="cb2-3" data-line-number="3">    [arg1] <span class="ot">&lt;-</span> getArgs</a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">    putStrLn <span class="st">&quot;After&quot;</span></a>
-<a class="sourceLine" id="cb2-5" data-line-number="5">    putStrLn arg1</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a>    <span class="fu">putStrLn</span> <span class="st">&quot;Before&quot;</span></span>
+<span id="cb2-3"><a href="#cb2-3"></a>    [arg1] <span class="ot">&lt;-</span> getArgs</span>
+<span id="cb2-4"><a href="#cb2-4"></a>    <span class="fu">putStrLn</span> <span class="st">&quot;After&quot;</span></span>
+<span id="cb2-5"><a href="#cb2-5"></a>    <span class="fu">putStrLn</span> arg1</span></code></pre></div>
 <p>Running it, without giving it any argument, results in:</p>
 <pre><code>Before
 pattern: user error (Pattern match failure in do expression at pattern.hs:9:4-9)</code></pre>
 <p>Here’s almost the same code, but with lazy pattern matching:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">main <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb4-2" data-line-number="2">    putStrLn <span class="st">&quot;Before&quot;</span></a>
-<a class="sourceLine" id="cb4-3" data-line-number="3">    <span class="fu">~</span>[arg1] <span class="ot">&lt;-</span> getArgs</a>
-<a class="sourceLine" id="cb4-4" data-line-number="4">    putStrLn <span class="st">&quot;After&quot;</span></a>
-<a class="sourceLine" id="cb4-5" data-line-number="5">    putStrLn arg1</a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a>    <span class="fu">putStrLn</span> <span class="st">&quot;Before&quot;</span></span>
+<span id="cb4-3"><a href="#cb4-3"></a>    <span class="op">~</span>[arg1] <span class="ot">&lt;-</span> getArgs</span>
+<span id="cb4-4"><a href="#cb4-4"></a>    <span class="fu">putStrLn</span> <span class="st">&quot;After&quot;</span></span>
+<span id="cb4-5"><a href="#cb4-5"></a>    <span class="fu">putStrLn</span> arg1</span></code></pre></div>
 <p>Running it, again without providing any argument, results in:</p>
 <pre><code>Before
 After
@@ -55,7 +55,7 @@ pattern: pattern.hs:(7,7)-(11,16): Irrefutable pattern failed for pattern [arg1]
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/haskell.html">haskell</a>
+Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>
 </div>
 
 

@@ -30,12 +30,12 @@
 </header>
 
 <p>Early this summer it was finally time to put this one service I’ve been working on into our sandbox environment. It’s been running without hickups so last week I turned it on for production as well. In this post I thought I’d document the how and why of the service in the hope that someone will find it useful.</p>
-<p>The service functions as an interface to external SMS-sending services, offering a single place to change if we find that we are unhappy with the service we’re using.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> This service replaces an older one, written in Ruby and no one really dares touch it. Hopefully the Haskell version will prove to be a joy to work with over time.</p>
+<p>The service functions as an interface to external SMS-sending services, offering a single place to change if we find that we are unhappy with the service we’re using.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> This service replaces an older one, written in Ruby and no one really dares touch it. Hopefully the Haskell version will prove to be a joy to work with over time.</p>
 <h2 id="overview-of-the-architecture">Overview of the architecture</h2>
 <p>The service is split into two parts, one web server using <a href="https://hackage.haskell.org/package/scotty">scotty</a>, and streaming data processing using <a href="https://hackage.haskell.org/package/conduit">conduit</a>. Persistent storage is provided by a <a href="https://www.postgresql.org/">PostgreSQL</a> database. The general idea is that events are picked up from the database, acted upon, which in turn results in other events which written to the database. Those are then picked up and round and round we go. The web service accepts requests, turns them into events and writes the to the database.</p>
 <p>Hopefully this crude diagram clarifies it somewhat.</p>
 <center>
-<img src="../imgs/2019-08-10-architecture.png" alt="Diagram of the service architecture" />
+<img src="../imgs/2019-08-10-architecture.png" title="fig:" alt="Diagram of the service architecture" />
 </center>
 <p>There are a few things that might need some explanation</p>
 <ul>
@@ -45,7 +45,7 @@
 <li><p>Successfully sending off a request to an external SMS service, getting status 200 back, doesn’t actually mean that the SMS has been sent, or even that it ever will be. Due to the nature of SMS messaging there are no guarantees of timeliness at all. Since we are interested in finding out whether an SMS actually is sent a delayed action is scheduled, which will fetch the status of a sent SMS after a certain time (currently 2 minutes). If an SMS hasn’t been sent after that time it might as well never be – it’s too slow for our end-users.</p>
 <p>This is what <em>report-fetcher</em> and <em>fetcher-func</em> do.</p></li>
 <li><p>The <em>queue sink</em> and <em>queue src</em> are actually <a href="https://hackage.haskell.org/package/stm-conduit-4.0.1/docs/Data-Conduit-TQueue.html#v:sourceTQueue"><code>sourceTQueue</code></a> and <a href="https://hackage.haskell.org/package/stm-conduit-4.0.1/docs/Data-Conduit-TQueue.html#v:sinkTQueue"><code>sinkTQueue</code></a>. Splitting the stream like that makes it trivial to push in events by using <a href="https://hackage.haskell.org/package/stm-2.5.0.0/docs/Control-Concurrent-STM-TQueue.html#v:writeTQueue"><code>writeTQueue</code></a>.</p></li>
-<li><p>I use <a href="https://hackage.haskell.org/package/conduit-1.3.1.1/docs/Data-Conduit.html#v:sequenceConduits"><code>sequenceConduits</code></a> in order to send a single event to multiple <code>Conduit</code>s and then combine all their results back into a single stream. The ease with which this can be done in <a href="https://hackage.haskell.org/package/conduit">conduit</a> is one of the main reasons why I choose to use it.<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a></p></li>
+<li><p>I use <a href="https://hackage.haskell.org/package/conduit-1.3.1.1/docs/Data-Conduit.html#v:sequenceConduits"><code>sequenceConduits</code></a> in order to send a single event to multiple <code>Conduit</code>s and then combine all their results back into a single stream. The ease with which this can be done in <a href="https://hackage.haskell.org/package/conduit">conduit</a> is one of the main reasons why I choose to use it.<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a></p></li>
 </ul>
 <h2 id="effects-and-tests">Effects and tests</h2>
 <p>I started out writing everything based on a type like <code>ReaderT &lt;my cfg type&gt; IO</code> and using <code>liftIO</code> for effects that needed lifting. This worked nicely while I was setting up the basic structure of the service, but as soon as I hooked in the database I really wanted to do some testing also of the effectful code.</p>
@@ -71,11 +71,11 @@
 <p>When I wrote about this earlier, <a href="http://magnus.therning.org/posts/2019-03-03-000-conduit-and-postgresql.html">Conduit and PostgreSQL</a> I got some really good feedback that made my solution more robust.</p>
 <h2 id="delayed-actions">Delayed actions</h2>
 <p>Some things in Haskell feel almost like cheating. The light-weight threading makes me confident that a <a href="https://hackage.haskell.org/package/base/docs/Control-Concurrent.html#v:forkIO"><code>forkIO</code></a> followed by a <a href="https://hackage.haskell.org/package/base/docs/Control-Concurrent.html#v:threadDelay"><code>threadDelay</code></a> (or in my case, the ones from <a href="https://hackage.haskell.org/package/unliftio">unliftio</a>) will suffice.</p>
-<section class="footnotes">
+<section class="footnotes" role="doc-endnotes">
 <hr />
 <ol>
-<li id="fn1"><p>It has happened in the past that we’ve changed SMS service after finding that they weren’t living up to our expectations.<a href="#fnref1" class="footnote-back">↩</a></p></li>
-<li id="fn2"><p>A while ago I was experimenting with other streaming libraries, but I gave up on getting re-combination to work – <a href="../posts/2018-10-16-000-zipping-streams.html">Zipping streams</a><a href="#fnref2" class="footnote-back">↩</a></p></li>
+<li id="fn1" role="doc-endnote"><p>It has happened in the past that we’ve changed SMS service after finding that they weren’t living up to our expectations.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2" role="doc-endnote"><p>A while ago I was experimenting with other streaming libraries, but I gave up on getting re-combination to work – <a href="../posts/2018-10-16-000-zipping-streams.html">Zipping streams</a><a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section>
 
@@ -83,7 +83,7 @@
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/conduit.html">conduit</a>, <a href="../tags/scotty.html">scotty</a>, <a href="../tags/postgresql.html">postgresql</a>, <a href="../tags/tagless%20final.html">tagless final</a>
+Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>, <a title="All pages tagged 'conduit'." href="../tags/conduit.html">conduit</a>, <a title="All pages tagged 'scotty'." href="../tags/scotty.html">scotty</a>, <a title="All pages tagged 'postgresql'." href="../tags/postgresql.html">postgresql</a>, <a title="All pages tagged 'tagless final'." href="../tags/tagless%20final.html">tagless final</a>
 </div>
 
 

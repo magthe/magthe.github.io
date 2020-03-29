@@ -35,21 +35,21 @@
 <p>I decided to use atom since it’s a standard. Yeah, not more to write about that I suppose.</p>
 <h2 id="code-changes">Code changes</h2>
 <p>The first thing to do was to add a feed configuration. It’s a simple adaption on what’s found in the tutorial.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">postFeedConfig ::</span> <span class="dt">FeedConfiguration</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">postFeedConfig <span class="fu">=</span> <span class="dt">FeedConfiguration</span></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">    { feedTitle <span class="fu">=</span> <span class="st">&quot;Magnus web site&quot;</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">    , feedDescription <span class="fu">=</span> <span class="st">&quot;Random stuff&quot;</span></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">    , feedAuthorName <span class="fu">=</span> <span class="st">&quot;Magnus Therning&quot;</span></a>
-<a class="sourceLine" id="cb1-6" data-line-number="6">    , feedAuthorEmail <span class="fu">=</span> <span class="st">&quot;magnus@therning.org&quot;</span></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7">    , feedRoot <span class="fu">=</span> <span class="st">&quot;http://magthe.github.io&quot;</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8">    }</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="ot">postFeedConfig ::</span> <span class="dt">FeedConfiguration</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a>postFeedConfig <span class="ot">=</span> <span class="dt">FeedConfiguration</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a>    { feedTitle <span class="ot">=</span> <span class="st">&quot;Magnus web site&quot;</span></span>
+<span id="cb1-4"><a href="#cb1-4"></a>    , feedDescription <span class="ot">=</span> <span class="st">&quot;Random stuff&quot;</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a>    , feedAuthorName <span class="ot">=</span> <span class="st">&quot;Magnus Therning&quot;</span></span>
+<span id="cb1-6"><a href="#cb1-6"></a>    , feedAuthorEmail <span class="ot">=</span> <span class="st">&quot;magnus@therning.org&quot;</span></span>
+<span id="cb1-7"><a href="#cb1-7"></a>    , feedRoot <span class="ot">=</span> <span class="st">&quot;http://magthe.github.io&quot;</span></span>
+<span id="cb1-8"><a href="#cb1-8"></a>    }</span></code></pre></div>
 <p>Then the build logic has to be extended with a rule for making <code>atom.xml</code>. This is also a straight forward adaptation of the information found in the tutorial.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">    create [<span class="st">&quot;atom.xml&quot;</span>] <span class="fu">$</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-2" data-line-number="2">        route idRoute</a>
-<a class="sourceLine" id="cb2-3" data-line-number="3">        compile <span class="fu">$</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">            posts <span class="ot">&lt;-</span> fmap (take <span class="dv">50</span>) <span class="fu">.</span> recentFirst <span class="fu">=&lt;&lt;</span> loadAllSnapshots <span class="st">&quot;posts/*&quot;</span> <span class="st">&quot;posts-content&quot;</span></a>
-<a class="sourceLine" id="cb2-5" data-line-number="5">            <span class="kw">let</span> feedCtx <span class="fu">=</span> baseCtx <span class="fu">&lt;&gt;</span> bodyField <span class="st">&quot;description&quot;</span></a>
-<a class="sourceLine" id="cb2-6" data-line-number="6">            renderAtom postFeedConfig feedCtx posts</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a>    create [<span class="st">&quot;atom.xml&quot;</span>] <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a>        route idRoute</span>
+<span id="cb2-3"><a href="#cb2-3"></a>        compile <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb2-4"><a href="#cb2-4"></a>            posts <span class="ot">&lt;-</span> <span class="fu">fmap</span> (<span class="fu">take</span> <span class="dv">50</span>) <span class="op">.</span> recentFirst <span class="op">=&lt;&lt;</span> loadAllSnapshots <span class="st">&quot;posts/*&quot;</span> <span class="st">&quot;posts-content&quot;</span></span>
+<span id="cb2-5"><a href="#cb2-5"></a>            <span class="kw">let</span> feedCtx <span class="ot">=</span> baseCtx <span class="op">&lt;&gt;</span> bodyField <span class="st">&quot;description&quot;</span></span>
+<span id="cb2-6"><a href="#cb2-6"></a>            renderAtom postFeedConfig feedCtx posts</span></code></pre></div>
 <p>Once again the snapshot of the posts comes in handy. Since the old WordPress site limited the feed to the 50 latest posts I decided to do that in the new one too. Maybe it’s a bit excessive, 10-20 ought to be enough, but I’ll leave it for now. The feed-specific context is a little nice details, also from the tutorial. The feed builder requires the presence of a <code>description</code> for each post, but to avoid having to remember to add one to all posts I just add a <code>description</code> field containing the <code>body</code> of the post.</p>
 <p>The generated feed is available at <a href="../atom.xml">./atom.xml</a></p>
 
@@ -57,7 +57,7 @@
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/atom.html">atom</a>, <a href="../tags/hakyll.html">hakyll</a>, <a href="../tags/haskell.html">haskell</a>
+Tags: <a title="All pages tagged 'atom'." href="../tags/atom.html">atom</a>, <a title="All pages tagged 'hakyll'." href="../tags/hakyll.html">hakyll</a>, <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>
 </div>
 
 

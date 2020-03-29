@@ -29,27 +29,27 @@
 <p class="post-date"><time pubdate="pubdate" datetime="2009-02-24">2009-02-24</time> - Magnus Therning</p>
 </header>
 
-<p>This is going to be a silly post, simply because it is so amazingly simple to do some basic parsing of Cabal files. It turns out to be true even for old versions of Cabal, the code below is for 1.2.3.0 since that’s the version still found in Debian Unstable.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a></p>
+<p>This is going to be a silly post, simply because it is so amazingly simple to do some basic parsing of Cabal files. It turns out to be true even for old versions of Cabal, the code below is for 1.2.3.0 since that’s the version still found in Debian Unstable.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
 <p>First import the required modules:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">import</span> <span class="dt">Distribution.PackageDescription</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">import</span> <span class="dt">Data.Version</span></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw">import</span> <span class="dt">Distribution.Verbosity</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="kw">import</span> <span class="dt">Distribution.Version</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">import</span> <span class="dt">Distribution.PackageDescription</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="kw">import</span> <span class="dt">Data.Version</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a><span class="kw">import</span> <span class="dt">Distribution.Verbosity</span></span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="kw">import</span> <span class="dt">Distribution.Version</span></span></code></pre></div>
 <p>The a simplistic shortcut, I don’t care about setting flags or pretty much anything else</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">finPkgDesc <span class="fu">=</span> finalizePackageDescription [] <span class="dt">Nothing</span> <span class="st">&quot;Linux&quot;</span> <span class="st">&quot;X86_64&quot;</span> (<span class="st">&quot;GHC&quot;</span>, <span class="dt">Version</span> [<span class="dv">6</span>, <span class="dv">8</span>, <span class="dv">2</span>] [])</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a>finPkgDesc <span class="ot">=</span> finalizePackageDescription [] <span class="dt">Nothing</span> <span class="st">&quot;Linux&quot;</span> <span class="st">&quot;X86_64&quot;</span> (<span class="st">&quot;GHC&quot;</span>, <span class="dt">Version</span> [<span class="dv">6</span>, <span class="dv">8</span>, <span class="dv">2</span>] [])</span></code></pre></div>
 <p>and I’m only interested in listing the package names of dependencies</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1">getPackageName (<span class="dt">Dependency</span> name _) <span class="fu">=</span> name</a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a>getPackageName (<span class="dt">Dependency</span> name _) <span class="ot">=</span> name</span></code></pre></div>
 <p>After this it’s possible to do the following in <code>ghci</code> (<code>ex01.cabal</code> is a copy of the Cabal file for <a href="http://hackage.haskell.org/cgi-bin/hackage-scripts/package/dataenc">dataenc</a>):</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="fu">&gt;</span> gpd <span class="ot">&lt;-</span> readPackageDescription silent <span class="st">&quot;ex01.cabal&quot;</span></a>
-<a class="sourceLine" id="cb4-2" data-line-number="2"><span class="fu">...</span></a>
-<a class="sourceLine" id="cb4-3" data-line-number="3"><span class="fu">&gt;</span> <span class="kw">let</span> pd <span class="fu">=</span> finPkgDesc gpd</a>
-<a class="sourceLine" id="cb4-4" data-line-number="4"><span class="fu">&gt;</span> <span class="kw">let</span> deps <span class="fu">=</span> either (\_ <span class="ot">-&gt;</span> []) (\ (p, _) <span class="ot">-&gt;</span> buildDepends p) pd</a>
-<a class="sourceLine" id="cb4-5" data-line-number="5"><span class="fu">&gt;</span> map getPackageName deps</a>
-<a class="sourceLine" id="cb4-6" data-line-number="6">[<span class="st">&quot;array&quot;</span>,<span class="st">&quot;base&quot;</span>,<span class="st">&quot;containers&quot;</span>]</a></code></pre></div>
-<section class="footnotes">
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a><span class="op">&gt;</span> gpd <span class="ot">&lt;-</span> readPackageDescription silent <span class="st">&quot;ex01.cabal&quot;</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a><span class="op">...</span></span>
+<span id="cb4-3"><a href="#cb4-3"></a><span class="op">&gt;</span> <span class="kw">let</span> pd <span class="ot">=</span> finPkgDesc gpd</span>
+<span id="cb4-4"><a href="#cb4-4"></a><span class="op">&gt;</span> <span class="kw">let</span> deps <span class="ot">=</span> <span class="fu">either</span> (\_ <span class="ot">-&gt;</span> []) (\ (p, _) <span class="ot">-&gt;</span> buildDepends p) pd</span>
+<span id="cb4-5"><a href="#cb4-5"></a><span class="op">&gt;</span> <span class="fu">map</span> getPackageName deps</span>
+<span id="cb4-6"><a href="#cb4-6"></a>[<span class="st">&quot;array&quot;</span>,<span class="st">&quot;base&quot;</span>,<span class="st">&quot;containers&quot;</span>]</span></code></pre></div>
+<section class="footnotes" role="doc-endnotes">
 <hr />
 <ol>
-<li id="fn1"><p>That’ll change when GHC 6.10 makes it onto my system. It’s already in Debian, just not on my system since some Xmonad-related packages haven’t been rebuilt yet.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+<li id="fn1" role="doc-endnote"><p>That’ll change when GHC 6.10 makes it onto my system. It’s already in Debian, just not on my system since some Xmonad-related packages haven’t been rebuilt yet.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section>
 
@@ -57,7 +57,7 @@
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/cabal.html">cabal</a>, <a href="../tags/haskell.html">haskell</a>
+Tags: <a title="All pages tagged 'cabal'." href="../tags/cabal.html">cabal</a>, <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>
 </div>
 
 

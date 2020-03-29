@@ -32,17 +32,17 @@
 <p>A little while ago I wanted to launch an OGG file attached to an email. Since I read email in Mutt and it does such an excellent job of delegating unknown MIME types to external applications I simply pressed <code>v</code> (to see the attachments), selected the OGG attachment and pressed <code>enter</code>. Realplayer launched! Imagine my surprise.</p>
 <p>After purging Realplayer from my system I had an idea. Mutt uses <code>mailcap</code> to determine how to deal with MIME types it can’t display, but since I’m using GNOME and it has a different system to deal with MIME types I frequently am surprised when viewing attachments in Mutt. Isn’t there some way of combining the two? Well, I frequently use <code>gnome-open</code> to launch viewers from the command line. But it forks off a new process for the viewer so it can’t be used in <code>mailcap</code> ((It seems Mutt removes the temporary file as soon as the viewer returns, so if <code>gnome-open</code> forks and exits Mutt will delete the file before the actual viewer gets to load it. Bugger.)). I spent some time looking into the inner workings of <code>gnome-open</code> and it might be possible to hack it to add a command line option to make it wait for the viewer to exit. However my quick test using Python suggests that it’d require changes in the underlying libraries ((I traced it down to a call to <code>g_spawn_async</code> that should be changed to <code>g_spawn_sync</code>, but that’s deep down in the underbelly of GNOME-VFS.)).</p>
 <p>From what I learned looking through the implementation of <code>gnome-open</code> I hacked together the following short Python script:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="co">#! /usr/bin/env python</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="im">import</span> gnomevfs</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="im">import</span> os</a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="im">import</span> sys</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7">mime_type <span class="op">=</span> gnomevfs.get_mime_type(sys.argv[<span class="dv">1</span>])</a>
-<a class="sourceLine" id="cb1-8" data-line-number="8">mime_app <span class="op">=</span> gnomevfs.mime_get_default_application(mime_type)</a>
-<a class="sourceLine" id="cb1-9" data-line-number="9">application <span class="op">=</span> os.popen(<span class="st">'whereis </span><span class="sc">%s</span><span class="st">'</span> <span class="op">%</span> mime_app[<span class="dv">2</span>]).readline().split(<span class="st">' '</span>)[<span class="dv">1</span>]</a>
-<a class="sourceLine" id="cb1-10" data-line-number="10"></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11">os.execl(application, application, sys.argv[<span class="dv">1</span>])</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a><span class="co">#! /usr/bin/env python</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a></span>
+<span id="cb1-3"><a href="#cb1-3"></a><span class="im">import</span> gnomevfs</span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="im">import</span> os</span>
+<span id="cb1-5"><a href="#cb1-5"></a><span class="im">import</span> sys</span>
+<span id="cb1-6"><a href="#cb1-6"></a></span>
+<span id="cb1-7"><a href="#cb1-7"></a>mime_type <span class="op">=</span> gnomevfs.get_mime_type(sys.argv[<span class="dv">1</span>])</span>
+<span id="cb1-8"><a href="#cb1-8"></a>mime_app <span class="op">=</span> gnomevfs.mime_get_default_application(mime_type)</span>
+<span id="cb1-9"><a href="#cb1-9"></a>application <span class="op">=</span> os.popen(<span class="st">'whereis </span><span class="sc">%s</span><span class="st">'</span> <span class="op">%</span> mime_app[<span class="dv">2</span>]).readline().split(<span class="st">' '</span>)[<span class="dv">1</span>]</span>
+<span id="cb1-10"><a href="#cb1-10"></a></span>
+<span id="cb1-11"><a href="#cb1-11"></a>os.execl(application, application, sys.argv[<span class="dv">1</span>])</span></code></pre></div>
 <p>Then I added a line to the top of <code>~/.mailcap</code>:</p>
 <pre><code>application/*; ${HOME}/bin/gnopen '%s'; test=test -n &quot;$DISPLAY&quot;</code></pre>
 <p>Works like a charm, but of course suggestions/improvement are welcome!</p>
@@ -51,7 +51,7 @@
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/gnome.html">gnome</a>, <a href="../tags/mailcap.html">mailcap</a>, <a href="../tags/mime%20types.html">mime types</a>, <a href="../tags/mutt.html">mutt</a>, <a href="../tags/muttng.html">muttng</a>
+Tags: <a title="All pages tagged 'gnome'." href="../tags/gnome.html">gnome</a>, <a title="All pages tagged 'mailcap'." href="../tags/mailcap.html">mailcap</a>, <a title="All pages tagged 'mime types'." href="../tags/mime%20types.html">mime types</a>, <a title="All pages tagged 'mutt'." href="../tags/mutt.html">mutt</a>, <a title="All pages tagged 'muttng'." href="../tags/muttng.html">muttng</a>
 </div>
 
 

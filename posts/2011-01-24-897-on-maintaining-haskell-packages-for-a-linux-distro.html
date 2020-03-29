@@ -39,60 +39,60 @@
 <p>Of course it ought to be possible to make this a lot easier with the help of a tool. The last few days I’ve been writing such a tool. This is how I’ve been using it so far.</p>
 <h2 id="building-the-initial-database">Building the initial database</h2>
 <p>GHC in ArchLinux ships with a few Haskell libraries and ArchLinux also has a few Haskell packages in its base repositories. Since I don’t need to maintain any of those packages I decided to treat these as a sort of base. Adding those is as simple as this:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ex">%</span> head base-pkgs</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="ex">base</span>,4.2.0.2</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="ex">array</span>,0.3.0.1</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="ex">bytestring</span>,0.9.1.7</a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="ex">Cabal</span>,1.8.0.6</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="ex">containers</span>,0.3.0.0</a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="ex">directory</span>,1.0.1.1</a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="ex">extensible-exceptions</span>,0.1.1.1</a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="ex">filepath</span>,1.1.0.4</a>
-<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="ex">haskell98</span>,1.0.1.1</a>
-<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="ex">hpc</span>,0.5.0.5</a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="ex">%</span> cblrepo addbasepkg <span class="va">$(</span><span class="fu">cat</span> base-pkgs<span class="va">)</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="ex">Success</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1"></a><span class="ex">%</span> head base-pkgs</span>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="ex">base</span>,4.2.0.2</span>
+<span id="cb1-3"><a href="#cb1-3"></a><span class="ex">array</span>,0.3.0.1</span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="ex">bytestring</span>,0.9.1.7</span>
+<span id="cb1-5"><a href="#cb1-5"></a><span class="ex">Cabal</span>,1.8.0.6</span>
+<span id="cb1-6"><a href="#cb1-6"></a><span class="ex">containers</span>,0.3.0.0</span>
+<span id="cb1-7"><a href="#cb1-7"></a><span class="ex">directory</span>,1.0.1.1</span>
+<span id="cb1-8"><a href="#cb1-8"></a><span class="ex">extensible-exceptions</span>,0.1.1.1</span>
+<span id="cb1-9"><a href="#cb1-9"></a><span class="ex">filepath</span>,1.1.0.4</span>
+<span id="cb1-10"><a href="#cb1-10"></a><span class="ex">haskell98</span>,1.0.1.1</span>
+<span id="cb1-11"><a href="#cb1-11"></a><span class="ex">hpc</span>,0.5.0.5</span>
+<span id="cb1-12"><a href="#cb1-12"></a><span class="ex">%</span> cblrepo addbasepkg <span class="va">$(</span><span class="fu">cat</span> base-pkgs<span class="va">)</span></span>
+<span id="cb1-13"><a href="#cb1-13"></a><span class="ex">Success</span></span></code></pre></div>
 <p>Then I need to add the packages of the binary repo provided by ArchHaskell. I wrote a little script that extracts the package name and version from the ArchHaskell HABS tree (<code>get-ah-cabals</code>):</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="co">#! /bin/bash</span></a>
-<a class="sourceLine" id="cb2-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb2-3" data-line-number="3"><span class="va">habsdir=$1</span></a>
-<a class="sourceLine" id="cb2-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb2-5" data-line-number="5"><span class="kw">for</span> <span class="ex">d</span> in <span class="va">${habsdir}</span>/habs/*<span class="kw">;</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-6" data-line-number="6">    <span class="bu">.</span> <span class="va">${d}</span><span class="ex">/PKGBUILD</span></a>
-<a class="sourceLine" id="cb2-7" data-line-number="7">    <span class="kw">case</span> <span class="va">$_hkgname</span><span class="kw"> in</span></a>
-<a class="sourceLine" id="cb2-8" data-line-number="8">        <span class="kw">(</span>datetime<span class="kw">|</span>haskell-platform<span class="kw">)</span></a>
-<a class="sourceLine" id="cb2-9" data-line-number="9">            <span class="kw">;;</span></a>
-<a class="sourceLine" id="cb2-10" data-line-number="10">        <span class="kw">(</span>*<span class="kw">)</span></a>
-<a class="sourceLine" id="cb2-11" data-line-number="11">            <span class="bu">echo</span> <span class="va">${_hkgname}</span>,<span class="va">${pkgver}</span></a>
-<a class="sourceLine" id="cb2-12" data-line-number="12">            <span class="kw">;;</span></a>
-<a class="sourceLine" id="cb2-13" data-line-number="13">    <span class="kw">esac</span></a>
-<a class="sourceLine" id="cb2-14" data-line-number="14"><span class="kw">done</span></a>
-<a class="sourceLine" id="cb2-15" data-line-number="15"></a>
-<a class="sourceLine" id="cb2-16" data-line-number="16"><span class="bu">echo</span> http://hackage.haskell.org/platform/2010.2.0.0/haskell-platform.cabal</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1"></a><span class="co">#! /bin/bash</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a></span>
+<span id="cb2-3"><a href="#cb2-3"></a><span class="va">habsdir=$1</span></span>
+<span id="cb2-4"><a href="#cb2-4"></a></span>
+<span id="cb2-5"><a href="#cb2-5"></a><span class="kw">for</span> <span class="ex">d</span> in <span class="va">${habsdir}</span>/habs/*<span class="kw">;</span> <span class="kw">do</span></span>
+<span id="cb2-6"><a href="#cb2-6"></a>    <span class="bu">.</span> <span class="va">${d}</span><span class="ex">/PKGBUILD</span></span>
+<span id="cb2-7"><a href="#cb2-7"></a>    <span class="kw">case</span> <span class="va">$_hkgname</span><span class="kw"> in</span></span>
+<span id="cb2-8"><a href="#cb2-8"></a>        <span class="kw">(</span>datetime<span class="kw">|</span>haskell-platform<span class="kw">)</span></span>
+<span id="cb2-9"><a href="#cb2-9"></a>            <span class="kw">;;</span></span>
+<span id="cb2-10"><a href="#cb2-10"></a>        <span class="kw">(</span>*<span class="kw">)</span></span>
+<span id="cb2-11"><a href="#cb2-11"></a>            <span class="bu">echo</span> <span class="va">${_hkgname}</span>,<span class="va">${pkgver}</span></span>
+<span id="cb2-12"><a href="#cb2-12"></a>            <span class="kw">;;</span></span>
+<span id="cb2-13"><a href="#cb2-13"></a>    <span class="kw">esac</span></span>
+<span id="cb2-14"><a href="#cb2-14"></a><span class="kw">done</span></span>
+<span id="cb2-15"><a href="#cb2-15"></a></span>
+<span id="cb2-16"><a href="#cb2-16"></a><span class="bu">echo</span> http://hackage.haskell.org/platform/2010.2.0.0/haskell-platform.cabal</span></code></pre></div>
 <p>Since <code>haskell-platform</code> isn’t on Hackage it requires special handling. The reason why <code>datetime</code> is excluded is slightly different. It’s the only package that requires old <code>base</code> (version <code>&lt;4</code>). <code>GHC</code> in Arch does whip with both old and new <code>base</code> so <code>datetime</code> can be built, but <code>cblrepo</code> can’t deal with two versions of the same package. This is a limitation, but I’m not sure it’s worth fixing it since <code>base</code> is the only library that comes in two versions, and <code>datetime</code> is the only package that hasn’t been updated to use new <code>base</code>.</p>
 <p>Knowing this it’s easy to add all the ArchHaskell packages to the database:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ex">%</span> cblrepo idxupdate</a>
-<a class="sourceLine" id="cb3-2" data-line-number="2"><span class="ex">%</span> cblrepo add <span class="va">$(</span><span class="ex">get-ah-cabals</span> path/to/habs<span class="va">)</span></a>
-<a class="sourceLine" id="cb3-3" data-line-number="3"><span class="ex">Success</span></a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1"></a><span class="ex">%</span> cblrepo idxupdate</span>
+<span id="cb3-2"><a href="#cb3-2"></a><span class="ex">%</span> cblrepo add <span class="va">$(</span><span class="ex">get-ah-cabals</span> path/to/habs<span class="va">)</span></span>
+<span id="cb3-3"><a href="#cb3-3"></a><span class="ex">Success</span></span></code></pre></div>
 <h2 id="attempting-an-update">Attempting an update</h2>
 <p>Now it’s possible to attempt to attempt an update:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ex">%</span> cblrepo add neither,0.2.0</a>
-<a class="sourceLine" id="cb4-2" data-line-number="2"><span class="ex">Failed</span> to satisfy the following dependencies for neither:</a>
-<a class="sourceLine" id="cb4-3" data-line-number="3">  <span class="ex">monad-peel</span> <span class="op">&gt;</span>=0.1 <span class="kw">&amp;&amp;</span> <span class="op">&lt;</span><span class="ex">0.2</span></a>
-<a class="sourceLine" id="cb4-4" data-line-number="4"><span class="ex">Adding</span> neither 0.2.0 would break:</a>
-<a class="sourceLine" id="cb4-5" data-line-number="5">  <span class="ex">yesod</span> : neither <span class="op">&gt;</span>=0.1.0 <span class="kw">&amp;&amp;</span> <span class="op">&lt;</span><span class="ex">0.2</span></a>
-<a class="sourceLine" id="cb4-6" data-line-number="6">  <span class="ex">persistent</span> : neither <span class="op">&gt;</span>=0.1 <span class="kw">&amp;&amp;</span> <span class="op">&lt;</span><span class="ex">0.2</span></a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1"></a><span class="ex">%</span> cblrepo add neither,0.2.0</span>
+<span id="cb4-2"><a href="#cb4-2"></a><span class="ex">Failed</span> to satisfy the following dependencies for neither:</span>
+<span id="cb4-3"><a href="#cb4-3"></a>  <span class="ex">monad-peel</span> <span class="op">&gt;</span>=0.1 <span class="kw">&amp;&amp;</span> <span class="op">&lt;</span><span class="ex">0.2</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a><span class="ex">Adding</span> neither 0.2.0 would break:</span>
+<span id="cb4-5"><a href="#cb4-5"></a>  <span class="ex">yesod</span> : neither <span class="op">&gt;</span>=0.1.0 <span class="kw">&amp;&amp;</span> <span class="op">&lt;</span><span class="ex">0.2</span></span>
+<span id="cb4-6"><a href="#cb4-6"></a>  <span class="ex">persistent</span> : neither <span class="op">&gt;</span>=0.1 <span class="kw">&amp;&amp;</span> <span class="op">&lt;</span><span class="ex">0.2</span></span></code></pre></div>
 <p>The way to read this is that there first of all is a missing dependency to satisfy for <code>neither</code> itself, and second there are two packages, <code>yesod</code> and <code>persistent</code>, that wouldn’t be buildable if <code>neither</code> were updated.</p>
 <p>Now if it were possible to update <code>neither</code>, what packages would require a bump?</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ex">%</span> cblrepo bump neither     </a>
-<a class="sourceLine" id="cb5-2" data-line-number="2"><span class="ex">persistent</span></a>
-<a class="sourceLine" id="cb5-3" data-line-number="3"><span class="ex">yesod</span></a></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1"></a><span class="ex">%</span> cblrepo bump neither     </span>
+<span id="cb5-2"><a href="#cb5-2"></a><span class="ex">persistent</span></span>
+<span id="cb5-3"><a href="#cb5-3"></a><span class="ex">yesod</span></span></code></pre></div>
 
 
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/arch.html">arch</a>, <a href="../tags/cabal.html">cabal</a>, <a href="../tags/haskell.html">haskell</a>
+Tags: <a title="All pages tagged 'arch'." href="../tags/arch.html">arch</a>, <a title="All pages tagged 'cabal'." href="../tags/cabal.html">cabal</a>, <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>
 </div>
 
 

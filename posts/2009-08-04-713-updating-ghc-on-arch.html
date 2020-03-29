@@ -32,61 +32,61 @@
 <p>Arch is somewhat of a hybrid distribution in the sense that if you have any sort of ‘peculiar’ needs then you are likely to have to build packages from source. As expected developing in Haskell is a “peculiar need” :-)</p>
 <p>After every upgrade of GHC I find myself in the situation where the system (pacman) and GHC have different views of what packages are available. What is needed then is somehow finding out the difference, and this is how I found that difference after the recent 6.10.3 -&gt; 6.10.4 upgrade of GHC. Once I know what packages are missing from GHC’s view of the world I can use <code>pacman</code> to first remove and then <code>yaourt</code> to rebuild the packages.</p>
 <p>First I noted that the old <code>package.conf</code> file wasn’t deleted during the upgrade, apparently <code>pacman</code> noted the changes that installing packages resulted in and saved the file as <code>package.conf.pacsave</code>. Finding the name of all the ‘missing’ packages was then as simple as loading both <code>/usr/lib/ghc-6.10.3/package.conf.pacsave</code> and <code>/usr/lib/ghc-6.10.4/package.conf</code>, filter out the package names and take the difference:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">printMissingPackages <span class="fu">=</span> <span class="kw">let</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">        pkgNameStr <span class="fu">=</span> <span class="dt">PackageName</span> <span class="fu">.</span> display <span class="fu">.</span> packageName</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">    <span class="kw">in</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">        oldPackConf <span class="ot">&lt;-</span> readFile <span class="st">&quot;/usr/lib/ghc-6.10.3/package.conf.pacsave&quot;</span></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">        curPackConf <span class="ot">&lt;-</span> readFile <span class="st">&quot;/usr/lib/ghc-6.10.4/package.conf&quot;</span></a>
-<a class="sourceLine" id="cb1-6" data-line-number="6">        <span class="kw">let</span> oldPacks <span class="fu">=</span> (read oldPackConf)<span class="ot"> ::</span> [<span class="dt">InstalledPackageInfo_</span> <span class="dt">String</span>]</a>
-<a class="sourceLine" id="cb1-7" data-line-number="7">        <span class="kw">let</span> curPacks <span class="fu">=</span> (read curPackConf)<span class="ot"> ::</span> [<span class="dt">InstalledPackageInfo_</span> <span class="dt">String</span>]</a>
-<a class="sourceLine" id="cb1-8" data-line-number="8">        <span class="kw">let</span> gonePacks <span class="fu">=</span> (map pkgNameStr oldPacks) \\ (map pkgNameStr curPacks)</a>
-<a class="sourceLine" id="cb1-9" data-line-number="9">        putStrLn <span class="st">&quot;Missing packages:&quot;</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10">        mapM_ (putStrLn <span class="fu">.</span> display) gonePacks</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a>printMissingPackages <span class="ot">=</span> <span class="kw">let</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a>        pkgNameStr <span class="ot">=</span> <span class="dt">PackageName</span> <span class="op">.</span> display <span class="op">.</span> packageName</span>
+<span id="cb1-3"><a href="#cb1-3"></a>    <span class="kw">in</span> <span class="kw">do</span></span>
+<span id="cb1-4"><a href="#cb1-4"></a>        oldPackConf <span class="ot">&lt;-</span> <span class="fu">readFile</span> <span class="st">&quot;/usr/lib/ghc-6.10.3/package.conf.pacsave&quot;</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a>        curPackConf <span class="ot">&lt;-</span> <span class="fu">readFile</span> <span class="st">&quot;/usr/lib/ghc-6.10.4/package.conf&quot;</span></span>
+<span id="cb1-6"><a href="#cb1-6"></a>        <span class="kw">let</span> oldPacks <span class="ot">=</span> (<span class="fu">read</span> oldPackConf)<span class="ot"> ::</span> [<span class="dt">InstalledPackageInfo_</span> <span class="dt">String</span>]</span>
+<span id="cb1-7"><a href="#cb1-7"></a>        <span class="kw">let</span> curPacks <span class="ot">=</span> (<span class="fu">read</span> curPackConf)<span class="ot"> ::</span> [<span class="dt">InstalledPackageInfo_</span> <span class="dt">String</span>]</span>
+<span id="cb1-8"><a href="#cb1-8"></a>        <span class="kw">let</span> gonePacks <span class="ot">=</span> (<span class="fu">map</span> pkgNameStr oldPacks) \\ (<span class="fu">map</span> pkgNameStr curPacks)</span>
+<span id="cb1-9"><a href="#cb1-9"></a>        <span class="fu">putStrLn</span> <span class="st">&quot;Missing packages:&quot;</span></span>
+<span id="cb1-10"><a href="#cb1-10"></a>        <span class="fu">mapM_</span> (<span class="fu">putStrLn</span> <span class="op">.</span> display) gonePacks</span></code></pre></div>
 <p>That isn’t the most useful output however, so I decided to modify it to print out the name of the Arch package that needed re-compilation. The following functions generates the name of the <code>.hi</code> of the first module in the Haskell package, it then uses <code>pacman</code> to look up the owner of the file:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">ghcPkg2ArchPkg pkg <span class="fu">=</span> <span class="kw">let</span></a>
-<a class="sourceLine" id="cb2-2" data-line-number="2">        hsFileLoc <span class="fu">=</span> head <span class="fu">$</span> libraryDirs pkg</a>
-<a class="sourceLine" id="cb2-3" data-line-number="3">        hsFile <span class="fu">=</span> map (\ c <span class="ot">-&gt;</span> <span class="kw">if</span> c <span class="fu">==</span> <span class="ch">'.'</span> <span class="kw">then</span> <span class="ch">'/'</span> <span class="kw">else</span> c) <span class="fu">$</span> head <span class="fu">$</span> exposedModules pkg</a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">        hsFullFile <span class="fu">=</span> hsFileLoc <span class="fu">&lt;/&gt;</span> hsFile <span class="fu">&lt;.&gt;</span> <span class="st">&quot;hi&quot;</span></a>
-<a class="sourceLine" id="cb2-5" data-line-number="5">    <span class="kw">in</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-6" data-line-number="6">        exists <span class="ot">&lt;-</span> doesDirectoryExist hsFullFile</a>
-<a class="sourceLine" id="cb2-7" data-line-number="7">        <span class="kw">if</span> exists</a>
-<a class="sourceLine" id="cb2-8" data-line-number="8">            <span class="kw">then</span> liftM <span class="dt">Just</span> <span class="fu">$</span> archOwnerOfFile hsFullFile</a>
-<a class="sourceLine" id="cb2-9" data-line-number="9">            <span class="kw">else</span> return <span class="dt">Nothing</span></a>
-<a class="sourceLine" id="cb2-10" data-line-number="10"></a>
-<a class="sourceLine" id="cb2-11" data-line-number="11">archOwnerOfFile fn <span class="fu">=</span> <span class="kw">let</span></a>
-<a class="sourceLine" id="cb2-12" data-line-number="12">        pkgFromPacmanOutput <span class="fu">=</span> head <span class="fu">.</span> tail <span class="fu">.</span> reverse <span class="fu">.</span> words</a>
-<a class="sourceLine" id="cb2-13" data-line-number="13">    <span class="kw">in</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-14" data-line-number="14">        res <span class="ot">&lt;-</span> rawSystemStdout silent <span class="st">&quot;/usr/bin/pacman&quot;</span> [<span class="st">&quot;-Qo&quot;</span>, fn]</a>
-<a class="sourceLine" id="cb2-15" data-line-number="15">        return <span class="fu">$</span> pkgFromPacmanOutput res</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a>ghcPkg2ArchPkg pkg <span class="ot">=</span> <span class="kw">let</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a>        hsFileLoc <span class="ot">=</span> <span class="fu">head</span> <span class="op">$</span> libraryDirs pkg</span>
+<span id="cb2-3"><a href="#cb2-3"></a>        hsFile <span class="ot">=</span> <span class="fu">map</span> (\ c <span class="ot">-&gt;</span> <span class="kw">if</span> c <span class="op">==</span> <span class="ch">'.'</span> <span class="kw">then</span> <span class="ch">'/'</span> <span class="kw">else</span> c) <span class="op">$</span> <span class="fu">head</span> <span class="op">$</span> exposedModules pkg</span>
+<span id="cb2-4"><a href="#cb2-4"></a>        hsFullFile <span class="ot">=</span> hsFileLoc <span class="op">&lt;/&gt;</span> hsFile <span class="op">&lt;.&gt;</span> <span class="st">&quot;hi&quot;</span></span>
+<span id="cb2-5"><a href="#cb2-5"></a>    <span class="kw">in</span> <span class="kw">do</span></span>
+<span id="cb2-6"><a href="#cb2-6"></a>        exists <span class="ot">&lt;-</span> doesDirectoryExist hsFullFile</span>
+<span id="cb2-7"><a href="#cb2-7"></a>        <span class="kw">if</span> exists</span>
+<span id="cb2-8"><a href="#cb2-8"></a>            <span class="kw">then</span> liftM <span class="dt">Just</span> <span class="op">$</span> archOwnerOfFile hsFullFile</span>
+<span id="cb2-9"><a href="#cb2-9"></a>            <span class="kw">else</span> <span class="fu">return</span> <span class="dt">Nothing</span></span>
+<span id="cb2-10"><a href="#cb2-10"></a></span>
+<span id="cb2-11"><a href="#cb2-11"></a>archOwnerOfFile fn <span class="ot">=</span> <span class="kw">let</span></span>
+<span id="cb2-12"><a href="#cb2-12"></a>        pkgFromPacmanOutput <span class="ot">=</span> <span class="fu">head</span> <span class="op">.</span> <span class="fu">tail</span> <span class="op">.</span> <span class="fu">reverse</span> <span class="op">.</span> <span class="fu">words</span></span>
+<span id="cb2-13"><a href="#cb2-13"></a>    <span class="kw">in</span> <span class="kw">do</span></span>
+<span id="cb2-14"><a href="#cb2-14"></a>        res <span class="ot">&lt;-</span> rawSystemStdout silent <span class="st">&quot;/usr/bin/pacman&quot;</span> [<span class="st">&quot;-Qo&quot;</span>, fn]</span>
+<span id="cb2-15"><a href="#cb2-15"></a>        <span class="fu">return</span> <span class="op">$</span> pkgFromPacmanOutput res</span></code></pre></div>
 <p>Now I can find the list of Arch packages that aren’t known to the new version of GHC by mapping <code>ghcPkg2ArchPkg</code> over <code>gonePkgs</code>. In other words that is the list of packages that need to be removed, but that can be different from the list of packages that needs to be rebuilt with <code>yaourt</code> (basically I only want to tell it to build and install the ‘top-level’ packages, i.e. packages that aren’t dependencies of any other packages. It’s of course possible to build that second list from the first one, with the help of <code>pacman</code>.</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1">archGetRequiredBy pkg <span class="fu">=</span> <span class="kw">let</span></a>
-<a class="sourceLine" id="cb3-2" data-line-number="2">        extractPkgs pkgDesc <span class="fu">=</span> <span class="kw">let</span></a>
-<a class="sourceLine" id="cb3-3" data-line-number="3">                deps <span class="fu">=</span> (drop <span class="dv">3</span> <span class="fu">.</span> words <span class="fu">.</span> head <span class="fu">.</span> filter (isPrefixOf <span class="st">&quot;Required By&quot;</span>) <span class="fu">.</span> lines) pkgDesc</a>
-<a class="sourceLine" id="cb3-4" data-line-number="4">            <span class="kw">in</span></a>
-<a class="sourceLine" id="cb3-5" data-line-number="5">                <span class="kw">if</span> deps <span class="fu">==</span> [<span class="st">&quot;None&quot;</span>]</a>
-<a class="sourceLine" id="cb3-6" data-line-number="6">                    <span class="kw">then</span> []</a>
-<a class="sourceLine" id="cb3-7" data-line-number="7">                    <span class="kw">else</span> deps</a>
-<a class="sourceLine" id="cb3-8" data-line-number="8">    <span class="kw">in</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb3-9" data-line-number="9">        res <span class="ot">&lt;-</span> rawSystemStdout silent <span class="st">&quot;/usr/bin/pacman&quot;</span> [<span class="st">&quot;-Qi&quot;</span>, pkg]</a>
-<a class="sourceLine" id="cb3-10" data-line-number="10">        return <span class="fu">$</span> extractPkgs res</a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a>archGetRequiredBy pkg <span class="ot">=</span> <span class="kw">let</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a>        extractPkgs pkgDesc <span class="ot">=</span> <span class="kw">let</span></span>
+<span id="cb3-3"><a href="#cb3-3"></a>                deps <span class="ot">=</span> (<span class="fu">drop</span> <span class="dv">3</span> <span class="op">.</span> <span class="fu">words</span> <span class="op">.</span> <span class="fu">head</span> <span class="op">.</span> <span class="fu">filter</span> (isPrefixOf <span class="st">&quot;Required By&quot;</span>) <span class="op">.</span> <span class="fu">lines</span>) pkgDesc</span>
+<span id="cb3-4"><a href="#cb3-4"></a>            <span class="kw">in</span></span>
+<span id="cb3-5"><a href="#cb3-5"></a>                <span class="kw">if</span> deps <span class="op">==</span> [<span class="st">&quot;None&quot;</span>]</span>
+<span id="cb3-6"><a href="#cb3-6"></a>                    <span class="kw">then</span> []</span>
+<span id="cb3-7"><a href="#cb3-7"></a>                    <span class="kw">else</span> deps</span>
+<span id="cb3-8"><a href="#cb3-8"></a>    <span class="kw">in</span> <span class="kw">do</span></span>
+<span id="cb3-9"><a href="#cb3-9"></a>        res <span class="ot">&lt;-</span> rawSystemStdout silent <span class="st">&quot;/usr/bin/pacman&quot;</span> [<span class="st">&quot;-Qi&quot;</span>, pkg]</span>
+<span id="cb3-10"><a href="#cb3-10"></a>        <span class="fu">return</span> <span class="op">$</span> extractPkgs res</span></code></pre></div>
 <p>Now I can modify <code>printMissingPackages</code> to print some more useful information. This is the full function:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">printMissingPackages <span class="fu">=</span> <span class="kw">let</span></a>
-<a class="sourceLine" id="cb4-2" data-line-number="2">        pkgNameStr <span class="fu">=</span> <span class="dt">PackageName</span> <span class="fu">.</span> display <span class="fu">.</span> packageName</a>
-<a class="sourceLine" id="cb4-3" data-line-number="3">    <span class="kw">in</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb4-4" data-line-number="4">        oldPackConf <span class="ot">&lt;-</span> readFile <span class="st">&quot;/usr/lib/ghc-6.10.3/package.conf.pacsave&quot;</span></a>
-<a class="sourceLine" id="cb4-5" data-line-number="5">        curPackConf <span class="ot">&lt;-</span> readFile <span class="st">&quot;/usr/lib/ghc-6.10.4/package.conf&quot;</span></a>
-<a class="sourceLine" id="cb4-6" data-line-number="6">        <span class="kw">let</span> oldPacks <span class="fu">=</span> (read oldPackConf)<span class="ot"> ::</span> [<span class="dt">InstalledPackageInfo_</span> <span class="dt">String</span>]</a>
-<a class="sourceLine" id="cb4-7" data-line-number="7">        <span class="kw">let</span> curPacks <span class="fu">=</span> (read curPackConf)<span class="ot"> ::</span> [<span class="dt">InstalledPackageInfo_</span> <span class="dt">String</span>]</a>
-<a class="sourceLine" id="cb4-8" data-line-number="8">        <span class="kw">let</span> gonePacks <span class="fu">=</span> (map pkgNameStr oldPacks) \\ (map pkgNameStr curPacks)</a>
-<a class="sourceLine" id="cb4-9" data-line-number="9">        putStrLn <span class="st">&quot;Missing packages:&quot;</span></a>
-<a class="sourceLine" id="cb4-10" data-line-number="10">        mapM_ (putStrLn <span class="fu">.</span> display) gonePackprints</a>
-<a class="sourceLine" id="cb4-11" data-line-number="11">        <span class="kw">let</span> gonePkgs <span class="fu">=</span> filter (\ p <span class="ot">-&gt;</span> pkgNameStr p <span class="ot">`elem`</span> gonePacks) oldPacks</a>
-<a class="sourceLine" id="cb4-12" data-line-number="12">        archPkgs <span class="ot">&lt;-</span> liftM catMaybes <span class="fu">$</span> mapM ghcPkg2ArchPkg gonePkgs</a>
-<a class="sourceLine" id="cb4-13" data-line-number="13">        putStrLn <span class="st">&quot;Packages to remove:&quot;</span></a>
-<a class="sourceLine" id="cb4-14" data-line-number="14">        mapM_ putStrLn archPkgs</a>
-<a class="sourceLine" id="cb4-15" data-line-number="15">        archTopPkgs <span class="ot">&lt;-</span> filterM (liftM ([] <span class="fu">==</span>) <span class="fu">.</span> archGetRequiredBy) archPkgs</a>
-<a class="sourceLine" id="cb4-16" data-line-number="16">        putStrLn <span class="st">&quot;\nPackages to install:&quot;</span></a>
-<a class="sourceLine" id="cb4-17" data-line-number="17">        mapM_ putStrLn archTopPkgs</a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a>printMissingPackages <span class="ot">=</span> <span class="kw">let</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a>        pkgNameStr <span class="ot">=</span> <span class="dt">PackageName</span> <span class="op">.</span> display <span class="op">.</span> packageName</span>
+<span id="cb4-3"><a href="#cb4-3"></a>    <span class="kw">in</span> <span class="kw">do</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a>        oldPackConf <span class="ot">&lt;-</span> <span class="fu">readFile</span> <span class="st">&quot;/usr/lib/ghc-6.10.3/package.conf.pacsave&quot;</span></span>
+<span id="cb4-5"><a href="#cb4-5"></a>        curPackConf <span class="ot">&lt;-</span> <span class="fu">readFile</span> <span class="st">&quot;/usr/lib/ghc-6.10.4/package.conf&quot;</span></span>
+<span id="cb4-6"><a href="#cb4-6"></a>        <span class="kw">let</span> oldPacks <span class="ot">=</span> (<span class="fu">read</span> oldPackConf)<span class="ot"> ::</span> [<span class="dt">InstalledPackageInfo_</span> <span class="dt">String</span>]</span>
+<span id="cb4-7"><a href="#cb4-7"></a>        <span class="kw">let</span> curPacks <span class="ot">=</span> (<span class="fu">read</span> curPackConf)<span class="ot"> ::</span> [<span class="dt">InstalledPackageInfo_</span> <span class="dt">String</span>]</span>
+<span id="cb4-8"><a href="#cb4-8"></a>        <span class="kw">let</span> gonePacks <span class="ot">=</span> (<span class="fu">map</span> pkgNameStr oldPacks) \\ (<span class="fu">map</span> pkgNameStr curPacks)</span>
+<span id="cb4-9"><a href="#cb4-9"></a>        <span class="fu">putStrLn</span> <span class="st">&quot;Missing packages:&quot;</span></span>
+<span id="cb4-10"><a href="#cb4-10"></a>        <span class="fu">mapM_</span> (<span class="fu">putStrLn</span> <span class="op">.</span> display) gonePackprints</span>
+<span id="cb4-11"><a href="#cb4-11"></a>        <span class="kw">let</span> gonePkgs <span class="ot">=</span> <span class="fu">filter</span> (\ p <span class="ot">-&gt;</span> pkgNameStr p <span class="ot">`elem`</span> gonePacks) oldPacks</span>
+<span id="cb4-12"><a href="#cb4-12"></a>        archPkgs <span class="ot">&lt;-</span> liftM catMaybes <span class="op">$</span> <span class="fu">mapM</span> ghcPkg2ArchPkg gonePkgs</span>
+<span id="cb4-13"><a href="#cb4-13"></a>        <span class="fu">putStrLn</span> <span class="st">&quot;Packages to remove:&quot;</span></span>
+<span id="cb4-14"><a href="#cb4-14"></a>        <span class="fu">mapM_</span> <span class="fu">putStrLn</span> archPkgs</span>
+<span id="cb4-15"><a href="#cb4-15"></a>        archTopPkgs <span class="ot">&lt;-</span> filterM (liftM ([] <span class="op">==</span>) <span class="op">.</span> archGetRequiredBy) archPkgs</span>
+<span id="cb4-16"><a href="#cb4-16"></a>        <span class="fu">putStrLn</span> <span class="st">&quot;\nPackages to install:&quot;</span></span>
+<span id="cb4-17"><a href="#cb4-17"></a>        <span class="fu">mapM_</span> <span class="fu">putStrLn</span> archTopPkgs</span></code></pre></div>
 <p>On my system it produced the following output:</p>
 <pre><code>Missing packages:
 terminfo
@@ -111,7 +111,7 @@ Packages to install:</code></pre>
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/arch.html">arch</a>, <a href="../tags/ghc.html">ghc</a>, <a href="../tags/haskell.html">haskell</a>
+Tags: <a title="All pages tagged 'arch'." href="../tags/arch.html">arch</a>, <a title="All pages tagged 'ghc'." href="../tags/ghc.html">ghc</a>, <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>
 </div>
 
 

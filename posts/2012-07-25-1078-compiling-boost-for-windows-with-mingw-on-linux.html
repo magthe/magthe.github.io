@@ -32,7 +32,7 @@
 <p>Just in case you see the utter logic in developing for Windows on Linux :)</p>
 <p>In the root of the unpacked Boost:</p>
 <ul>
-<li>Run <code>./bootstrap.sh --with-python=$(which python2) --prefix=${HOME}/opt/boost-win --without-icu</code></li>
+<li><p>Run <code>./bootstrap.sh --with-python=$(which python2) --prefix=${HOME}/opt/boost-win --without-icu</code></p></li>
 <li><p>Modify <code>project-config.jam</code> like this:</p>
 <pre><code> # file.
  if ! gcc in [ feature.values &lt;toolset&gt; ]
@@ -44,13 +44,13 @@
  project : default-build &lt;toolset&gt;gcc ;</code></pre></li>
 <li><p>Compile and install by running <code>./bjam --layout=system variant=release threading=multi link=shared runtime-link=shared toolset=gcc target-os=windows threadapi=win32 install</code></p></li>
 </ul>
-<p>Limit what is built by adding e.g. <code>--with-program_options</code> to that last command.</p>
+<p>Limit what is built by adding e.g. <code>--with-program_options</code> to that last command.</p>
 
 
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/boost.html">boost</a>, <a href="../tags/linux.html">linux</a>, <a href="../tags/mingw.html">mingw</a>, <a href="../tags/windows.html">windows</a>
+Tags: <a title="All pages tagged 'boost'." href="../tags/boost.html">boost</a>, <a title="All pages tagged 'linux'." href="../tags/linux.html">linux</a>, <a title="All pages tagged 'mingw'." href="../tags/mingw.html">mingw</a>, <a title="All pages tagged 'windows'." href="../tags/windows.html">windows</a>
 </div>
 
 

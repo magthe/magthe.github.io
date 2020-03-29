@@ -29,11 +29,11 @@
 <p class="post-date"><time pubdate="pubdate" datetime="2019-02-10">2019-02-10</time> - Magnus Therning</p>
 </header>
 
-<p>Recently I bumped into <a href="https://github.com/brendanhay/amazonka/issues/517">a bug in <em>amazonka</em></a>.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> I can’t really sit around waiting for Amazon to fix it, and then for <em>amazonka</em> to use the fixed documentation to generate the code and make another release.</p>
+<p>Recently I bumped into <a href="https://github.com/brendanhay/amazonka/issues/517">a bug in <em>amazonka</em></a>.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> I can’t really sit around waiting for Amazon to fix it, and then for <em>amazonka</em> to use the fixed documentation to generate the code and make another release.</p>
 <p>Luckily <a href="https://docs.haskellstack.org/en/stable/README/"><code>stack</code></a> contains features that make it fairly simple to work around this bug until it’s properly fixed. Here’s how.</p>
 <ol type="1">
-<li>Put the upstream code in a git repository of your own. In my case I simply forked the <a href="https://github.com/brendanhay/amazonka"><em>amazonka</em> repository on github</a> (my fork is <a href="https://github.com/magthe/amazonka">here</a>).</li>
-<li>Fix the bug and commit the change. <a href="https://github.com/magthe/amazonka/commit/1543b65e3a8b692aa9038ada68aaed9967752983">My change to <em>amazonka-codepipeline</em></a> was simply to remove the missing fields – it was easier than trying to make them optional (i.e. wrapping them in <code>Maybe</code>s).</li>
+<li><p>Put the upstream code in a git repository of your own. In my case I simply forked the <a href="https://github.com/brendanhay/amazonka"><em>amazonka</em> repository on github</a> (my fork is <a href="https://github.com/magthe/amazonka">here</a>).</p></li>
+<li><p>Fix the bug and commit the change. <a href="https://github.com/magthe/amazonka/commit/1543b65e3a8b692aa9038ada68aaed9967752983">My change to <em>amazonka-codepipeline</em></a> was simply to remove the missing fields – it was easier than trying to make them optional (i.e. wrapping them in <code>Maybe</code>s).</p></li>
 <li><p>Tell <code>slack</code> to use the code from your modified git repository. In my case I added the following to my <code>slack.yaml</code>:</p>
 <pre><code> extra-deps:
    - github: magthe/amazonka
@@ -42,10 +42,10 @@
        - amazonka-codepipeline</code></pre></li>
 </ol>
 <p>That’s it!</p>
-<section class="footnotes">
+<section class="footnotes" role="doc-endnotes">
 <hr />
 <ol>
-<li id="fn1"><p>The guilty party is Amazon, not <em>amazonka</em>, though I was a little surprised that there doesn’t seem to be any established way to modify the Amazon API documentation before it’s used to autogenerate the Haskell code.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+<li id="fn1" role="doc-endnote"><p>The guilty party is Amazon, not <em>amazonka</em>, though I was a little surprised that there doesn’t seem to be any established way to modify the Amazon API documentation before it’s used to autogenerate the Haskell code.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section>
 
@@ -53,7 +53,7 @@
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/amazonka.html">amazonka</a>, <a href="../tags/haskell.html">haskell</a>, <a href="../tags/stack.html">stack</a>
+Tags: <a title="All pages tagged 'amazonka'." href="../tags/amazonka.html">amazonka</a>, <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>, <a title="All pages tagged 'stack'." href="../tags/stack.html">stack</a>
 </div>
 
 

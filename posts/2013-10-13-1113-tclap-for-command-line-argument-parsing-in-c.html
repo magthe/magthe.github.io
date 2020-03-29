@@ -34,47 +34,47 @@
 <p>The basic idea is to create a central instance of <code>TCLAP::CmdLine</code> that can be used to register options with in the program and the pluggable modules. By declaring the option instances as top-level variables in compilation units it will be enough to just load a pluggable to the constructors run, and by passing the central <code>TCLAP::CmdLine</code> to the constructors they will register themselves properly. This seems to be same idea used in gflags.</p>
 <h2 id="registering-a-command-line-option">Registering a command line option</h2>
 <p>The following code is the code my pluggable module used to register an option:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode numberSource cpp numberLines"><code class="sourceCode cpp"><a class="sourceLine" id="cb1-1" data-line-number="1">TCLAP::ValueArg&lt;<span class="dt">int</span>&gt; value(<span class="st">&quot;v&quot;</span>,</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">                           <span class="st">&quot;value&quot;</span>,</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">                           <span class="st">&quot;ONE: the value to return&quot;</span>,</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">                           <span class="kw">false</span>,</a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">                           <span class="dv">42</span>,</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6">                           <span class="st">&quot;integer&quot;</span>,</a>
-<a class="sourceLine" id="cb1-7" data-line-number="7">                           argparse::argparser);</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode numberSource cpp numberLines"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a>TCLAP::ValueArg&lt;<span class="dt">int</span>&gt; value(<span class="st">&quot;v&quot;</span>,</span>
+<span id="cb1-2"><a href="#cb1-2"></a>                           <span class="st">&quot;value&quot;</span>,</span>
+<span id="cb1-3"><a href="#cb1-3"></a>                           <span class="st">&quot;ONE: the value to return&quot;</span>,</span>
+<span id="cb1-4"><a href="#cb1-4"></a>                           <span class="kw">false</span>,</span>
+<span id="cb1-5"><a href="#cb1-5"></a>                           <span class="dv">42</span>,</span>
+<span id="cb1-6"><a href="#cb1-6"></a>                           <span class="st">&quot;integer&quot;</span>,</span>
+<span id="cb1-7"><a href="#cb1-7"></a>                           argparse::argparser);</span></code></pre></div>
 <h2 id="the-parser">The parser</h2>
 <p>I put the parser in its own namespace, and due to the API of <code>TCLAP::CmdLine</code> I found that I needed to subclass it.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode numberSource cpp numberLines"><code class="sourceCode cpp"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="pp">#include </span><span class="im">&lt;tclap/CmdLine.h&gt;</span></a>
-<a class="sourceLine" id="cb2-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb2-3" data-line-number="3"><span class="kw">namespace</span> argparse {</a>
-<a class="sourceLine" id="cb2-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb2-5" data-line-number="5"><span class="kw">class</span> ArgParser : <span class="kw">public</span> TCLAP::CmdLine {</a>
-<a class="sourceLine" id="cb2-6" data-line-number="6"><span class="kw">public</span>:</a>
-<a class="sourceLine" id="cb2-7" data-line-number="7">    ArgParser() : TCLAP::CmdLine(<span class="st">&quot;No message set.&quot;</span>, <span class="ch">' '</span>, <span class="st">&quot;No version set.&quot;</span>) {}</a>
-<a class="sourceLine" id="cb2-8" data-line-number="8"></a>
-<a class="sourceLine" id="cb2-9" data-line-number="9">    <span class="dt">void</span> setMessage(<span class="bu">std::</span>string msg) { _message = msg; }</a>
-<a class="sourceLine" id="cb2-10" data-line-number="10">    <span class="dt">void</span> setVersion(<span class="bu">std::</span>string version) { _version = version; }</a>
-<a class="sourceLine" id="cb2-11" data-line-number="11">};</a>
-<a class="sourceLine" id="cb2-12" data-line-number="12"></a>
-<a class="sourceLine" id="cb2-13" data-line-number="13"><span class="at">extern</span> ArgParser argparser;</a>
-<a class="sourceLine" id="cb2-14" data-line-number="14"></a>
-<a class="sourceLine" id="cb2-15" data-line-number="15">}</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode numberSource cpp numberLines"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="pp">#include </span><span class="im">&lt;tclap/CmdLine.h&gt;</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a></span>
+<span id="cb2-3"><a href="#cb2-3"></a><span class="kw">namespace</span> argparse {</span>
+<span id="cb2-4"><a href="#cb2-4"></a></span>
+<span id="cb2-5"><a href="#cb2-5"></a><span class="kw">class</span> ArgParser : <span class="kw">public</span> TCLAP::CmdLine {</span>
+<span id="cb2-6"><a href="#cb2-6"></a><span class="kw">public</span>:</span>
+<span id="cb2-7"><a href="#cb2-7"></a>    ArgParser() : TCLAP::CmdLine(<span class="st">&quot;No message set.&quot;</span>, <span class="ch">' '</span>, <span class="st">&quot;No version set.&quot;</span>) {}</span>
+<span id="cb2-8"><a href="#cb2-8"></a></span>
+<span id="cb2-9"><a href="#cb2-9"></a>    <span class="dt">void</span> setMessage(<span class="bu">std::</span>string msg) { _message = msg; }</span>
+<span id="cb2-10"><a href="#cb2-10"></a>    <span class="dt">void</span> setVersion(<span class="bu">std::</span>string version) { _version = version; }</span>
+<span id="cb2-11"><a href="#cb2-11"></a>};</span>
+<span id="cb2-12"><a href="#cb2-12"></a></span>
+<span id="cb2-13"><a href="#cb2-13"></a><span class="at">extern</span> ArgParser argparser;</span>
+<span id="cb2-14"><a href="#cb2-14"></a></span>
+<span id="cb2-15"><a href="#cb2-15"></a>}</span></code></pre></div>
 <h2 id="the-main-function">The <code>main</code> function</h2>
 <p>After this I just need to instantiate the central parser instance and set it up.</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode numberSource cpp numberLines"><code class="sourceCode cpp"><a class="sourceLine" id="cb3-1" data-line-number="1">argparse::ArgParser argparse::argparser;</a>
-<a class="sourceLine" id="cb3-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb3-3" data-line-number="3"><span class="dt">int</span> main(<span class="dt">int</span> ac, <span class="dt">char</span> **av)</a>
-<a class="sourceLine" id="cb3-4" data-line-number="4">{</a>
-<a class="sourceLine" id="cb3-5" data-line-number="5">    argparse::argparser.setMessage(<span class="st">&quot;The message.&quot;</span>);</a>
-<a class="sourceLine" id="cb3-6" data-line-number="6">    argparse::argparser.setVersion(<span class="st">&quot;0.0.0&quot;</span>);</a>
-<a class="sourceLine" id="cb3-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb3-8" data-line-number="8">    <span class="co">// load the the plugin modules</span></a>
-<a class="sourceLine" id="cb3-9" data-line-number="9"></a>
-<a class="sourceLine" id="cb3-10" data-line-number="10">    argparse::argparser.parse(ac, av);</a>
-<a class="sourceLine" id="cb3-11" data-line-number="11"></a>
-<a class="sourceLine" id="cb3-12" data-line-number="12">    <span class="co">// do the work</span></a>
-<a class="sourceLine" id="cb3-13" data-line-number="13"></a>
-<a class="sourceLine" id="cb3-14" data-line-number="14">    <span class="cf">return</span> <span class="dv">0</span>;</a>
-<a class="sourceLine" id="cb3-15" data-line-number="15">}</a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode numberSource cpp numberLines"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a>argparse::ArgParser argparse::argparser;</span>
+<span id="cb3-2"><a href="#cb3-2"></a></span>
+<span id="cb3-3"><a href="#cb3-3"></a><span class="dt">int</span> main(<span class="dt">int</span> ac, <span class="dt">char</span> **av)</span>
+<span id="cb3-4"><a href="#cb3-4"></a>{</span>
+<span id="cb3-5"><a href="#cb3-5"></a>    argparse::argparser.setMessage(<span class="st">&quot;The message.&quot;</span>);</span>
+<span id="cb3-6"><a href="#cb3-6"></a>    argparse::argparser.setVersion(<span class="st">&quot;0.0.0&quot;</span>);</span>
+<span id="cb3-7"><a href="#cb3-7"></a></span>
+<span id="cb3-8"><a href="#cb3-8"></a>    <span class="co">// load the the plugin modules</span></span>
+<span id="cb3-9"><a href="#cb3-9"></a></span>
+<span id="cb3-10"><a href="#cb3-10"></a>    argparse::argparser.parse(ac, av);</span>
+<span id="cb3-11"><a href="#cb3-11"></a></span>
+<span id="cb3-12"><a href="#cb3-12"></a>    <span class="co">// do the work</span></span>
+<span id="cb3-13"><a href="#cb3-13"></a></span>
+<span id="cb3-14"><a href="#cb3-14"></a>    <span class="cf">return</span> <span class="dv">0</span>;</span>
+<span id="cb3-15"><a href="#cb3-15"></a>}</span></code></pre></div>
 <h2 id="limitations">Limitations</h2>
 <p>The main limitation I can see with this approach, and AFAICS that would be true with gflags as well, is that it’s not very easy to find the plugin modules to load by passing them on the command line. If the TCLAP API allowed parsing without acting on <code>--help</code> and <code>--version</code>, as well as be forgiving with arguments it didn’t know how to handle, it would be possible to use an option in the main application to find the modules, load them, and then re-parse the command line. In my particular case it doesn’t matter much, the plugin modules will all be found in a well-known place and all available modules should be loaded every time. It does make testing a bit more cumbersome though.</p>
 
@@ -82,7 +82,7 @@
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/cpp.html">cpp</a>, <a href="../tags/tclap.html">tclap</a>
+Tags: <a title="All pages tagged 'cpp'." href="../tags/cpp.html">cpp</a>, <a title="All pages tagged 'tclap'." href="../tags/tclap.html">tclap</a>
 </div>
 
 

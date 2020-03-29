@@ -33,50 +33,50 @@
 <p>I found a simple introduction to it in Nicholas Piël’s post <a href="http://nichol.as/zeromq-an-introduction">ZeroMQ an introduction</a>. The only issue was that it was based on Python, and Python2 at that. So here are my attempts at translating two of the clients to Haskell (using <a href="http://hackage.haskell.org/package/zeromq-haskell">zeromq-haskell</a>).</p>
 <h2 id="req-rep">req-rep</h2>
 <p>Here’s the client in Python3 first:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python lineNumbers"><code class="sourceCode python"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="im">import</span> zmq</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">ctx <span class="op">=</span> zmq.Context()</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">socket <span class="op">=</span> ctx.socket(zmq.REQ)</a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">socket.<span class="ex">connect</span>(<span class="st">'tcp://127.0.0.1:5000'</span>)</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">10</span>):</a>
-<a class="sourceLine" id="cb1-8" data-line-number="8">    msg <span class="op">=</span> <span class="st">&quot;msg </span><span class="sc">%s</span><span class="st">&quot;</span> <span class="op">%</span> i</a>
-<a class="sourceLine" id="cb1-9" data-line-number="9">    socket.send_unicode(msg)</a>
-<a class="sourceLine" id="cb1-10" data-line-number="10">    <span class="bu">print</span>(<span class="st">'Sending'</span>, msg)</a>
-<a class="sourceLine" id="cb1-11" data-line-number="11">    msg_in <span class="op">=</span> socket.recv()</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python lineNumbers"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a><span class="im">import</span> zmq</span>
+<span id="cb1-2"><a href="#cb1-2"></a></span>
+<span id="cb1-3"><a href="#cb1-3"></a>ctx <span class="op">=</span> zmq.Context()</span>
+<span id="cb1-4"><a href="#cb1-4"></a>socket <span class="op">=</span> ctx.socket(zmq.REQ)</span>
+<span id="cb1-5"><a href="#cb1-5"></a>socket.<span class="ex">connect</span>(<span class="st">'tcp://127.0.0.1:5000'</span>)</span>
+<span id="cb1-6"><a href="#cb1-6"></a></span>
+<span id="cb1-7"><a href="#cb1-7"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">10</span>):</span>
+<span id="cb1-8"><a href="#cb1-8"></a>    msg <span class="op">=</span> <span class="st">&quot;msg </span><span class="sc">%s</span><span class="st">&quot;</span> <span class="op">%</span> i</span>
+<span id="cb1-9"><a href="#cb1-9"></a>    socket.send_unicode(msg)</span>
+<span id="cb1-10"><a href="#cb1-10"></a>    <span class="bu">print</span>(<span class="st">'Sending'</span>, msg)</span>
+<span id="cb1-11"><a href="#cb1-11"></a>    msg_in <span class="op">=</span> socket.recv()</span></code></pre></div>
 <p>And here in Haskell:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell lineNumbers"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">import</span> <span class="dt">System.ZMQ</span></a>
-<a class="sourceLine" id="cb2-2" data-line-number="2"><span class="kw">import</span> <span class="dt">Data.ByteString.Char8</span> <span class="kw">as</span> <span class="dt">CBS</span></a>
-<a class="sourceLine" id="cb2-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">main <span class="fu">=</span> withContext <span class="dv">1</span> <span class="fu">$</span> \ ctx <span class="ot">-&gt;</span> withSocket ctx <span class="dt">Req</span> <span class="fu">$</span> \ soc <span class="ot">-&gt;</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-5" data-line-number="5">    connect soc <span class="st">&quot;tcp://127.0.0.1:5000&quot;</span></a>
-<a class="sourceLine" id="cb2-6" data-line-number="6">    <span class="kw">let</span> msgs <span class="fu">=</span> [pack (<span class="st">&quot;msg &quot;</span> <span class="fu">++</span> show i) <span class="fu">|</span> i <span class="ot">&lt;-</span> [<span class="dv">0</span><span class="fu">..</span><span class="dv">9</span>]]</a>
-<a class="sourceLine" id="cb2-7" data-line-number="7">    flip mapM_ msgs <span class="fu">$</span> \ msg <span class="ot">-&gt;</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-8" data-line-number="8">        send soc msg []</a>
-<a class="sourceLine" id="cb2-9" data-line-number="9">        CBS.putStrLn msg</a>
-<a class="sourceLine" id="cb2-10" data-line-number="10">        receive soc []</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell lineNumbers"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">import</span> <span class="dt">System.ZMQ</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a><span class="kw">import</span> <span class="dt">Data.ByteString.Char8</span> <span class="kw">as</span> <span class="dt">CBS</span></span>
+<span id="cb2-3"><a href="#cb2-3"></a></span>
+<span id="cb2-4"><a href="#cb2-4"></a>main <span class="ot">=</span> withContext <span class="dv">1</span> <span class="op">$</span> \ ctx <span class="ot">-&gt;</span> withSocket ctx <span class="dt">Req</span> <span class="op">$</span> \ soc <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb2-5"><a href="#cb2-5"></a>    connect soc <span class="st">&quot;tcp://127.0.0.1:5000&quot;</span></span>
+<span id="cb2-6"><a href="#cb2-6"></a>    <span class="kw">let</span> msgs <span class="ot">=</span> [<span class="fu">pack</span> (<span class="st">&quot;msg &quot;</span> <span class="op">++</span> <span class="fu">show</span> i) <span class="op">|</span> i <span class="ot">&lt;-</span> [<span class="dv">0</span><span class="op">..</span><span class="dv">9</span>]]</span>
+<span id="cb2-7"><a href="#cb2-7"></a>    <span class="fu">flip</span> <span class="fu">mapM_</span> msgs <span class="op">$</span> \ msg <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb2-8"><a href="#cb2-8"></a>        send soc msg []</span>
+<span id="cb2-9"><a href="#cb2-9"></a>        CBS.putStrLn msg</span>
+<span id="cb2-10"><a href="#cb2-10"></a>        receive soc []</span></code></pre></div>
 <h2 id="pub-sub">pub-sub</h2>
 <p>In Python3:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python lineNumbers"><code class="sourceCode python"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="im">import</span> zmq</a>
-<a class="sourceLine" id="cb3-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb3-3" data-line-number="3">ctx <span class="op">=</span> zmq.Context()</a>
-<a class="sourceLine" id="cb3-4" data-line-number="4">socket <span class="op">=</span> ctx.socket(zmq.SUB)</a>
-<a class="sourceLine" id="cb3-5" data-line-number="5">socket.<span class="ex">connect</span>(<span class="st">'tcp://127.0.0.1:5000'</span>)</a>
-<a class="sourceLine" id="cb3-6" data-line-number="6">socket.setsockopt(zmq.SUBSCRIBE, b<span class="st">'sweden'</span>)</a>
-<a class="sourceLine" id="cb3-7" data-line-number="7">socket.setsockopt(zmq.SUBSCRIBE, b<span class="st">'denmark'</span>)</a>
-<a class="sourceLine" id="cb3-8" data-line-number="8"></a>
-<a class="sourceLine" id="cb3-9" data-line-number="9"><span class="cf">while</span> <span class="va">True</span>:</a>
-<a class="sourceLine" id="cb3-10" data-line-number="10">    <span class="bu">print</span>(socket.recv())</a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python lineNumbers"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1"></a><span class="im">import</span> zmq</span>
+<span id="cb3-2"><a href="#cb3-2"></a></span>
+<span id="cb3-3"><a href="#cb3-3"></a>ctx <span class="op">=</span> zmq.Context()</span>
+<span id="cb3-4"><a href="#cb3-4"></a>socket <span class="op">=</span> ctx.socket(zmq.SUB)</span>
+<span id="cb3-5"><a href="#cb3-5"></a>socket.<span class="ex">connect</span>(<span class="st">'tcp://127.0.0.1:5000'</span>)</span>
+<span id="cb3-6"><a href="#cb3-6"></a>socket.setsockopt(zmq.SUBSCRIBE, b<span class="st">'sweden'</span>)</span>
+<span id="cb3-7"><a href="#cb3-7"></a>socket.setsockopt(zmq.SUBSCRIBE, b<span class="st">'denmark'</span>)</span>
+<span id="cb3-8"><a href="#cb3-8"></a></span>
+<span id="cb3-9"><a href="#cb3-9"></a><span class="cf">while</span> <span class="va">True</span>:</span>
+<span id="cb3-10"><a href="#cb3-10"></a>    <span class="bu">print</span>(socket.recv())</span></code></pre></div>
 <p>Haskell:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell lineNumbers"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="kw">import</span> <span class="dt">System.ZMQ</span></a>
-<a class="sourceLine" id="cb4-2" data-line-number="2"><span class="kw">import</span> <span class="dt">Control.Monad</span></a>
-<a class="sourceLine" id="cb4-3" data-line-number="3"><span class="kw">import</span> <span class="dt">Data.ByteString.Char8</span> <span class="kw">as</span> <span class="dt">CBS</span></a>
-<a class="sourceLine" id="cb4-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb4-5" data-line-number="5">main <span class="fu">=</span> withContext <span class="dv">1</span> <span class="fu">$</span> \ ctx <span class="ot">-&gt;</span> withSocket ctx <span class="dt">Sub</span> <span class="fu">$</span> \ soc <span class="ot">-&gt;</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb4-6" data-line-number="6">    connect soc <span class="st">&quot;tcp://127.0.0.1:5000&quot;</span></a>
-<a class="sourceLine" id="cb4-7" data-line-number="7">    subscribe soc <span class="st">&quot;sweden&quot;</span></a>
-<a class="sourceLine" id="cb4-8" data-line-number="8">    subscribe soc <span class="st">&quot;denmark&quot;</span></a>
-<a class="sourceLine" id="cb4-9" data-line-number="9">    forever <span class="fu">$</span> receive soc [] <span class="fu">&gt;&gt;=</span> CBS.putStrLn</a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell lineNumbers"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">import</span> <span class="dt">System.ZMQ</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a><span class="kw">import</span> <span class="dt">Control.Monad</span></span>
+<span id="cb4-3"><a href="#cb4-3"></a><span class="kw">import</span> <span class="dt">Data.ByteString.Char8</span> <span class="kw">as</span> <span class="dt">CBS</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a></span>
+<span id="cb4-5"><a href="#cb4-5"></a>main <span class="ot">=</span> withContext <span class="dv">1</span> <span class="op">$</span> \ ctx <span class="ot">-&gt;</span> withSocket ctx <span class="dt">Sub</span> <span class="op">$</span> \ soc <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb4-6"><a href="#cb4-6"></a>    connect soc <span class="st">&quot;tcp://127.0.0.1:5000&quot;</span></span>
+<span id="cb4-7"><a href="#cb4-7"></a>    subscribe soc <span class="st">&quot;sweden&quot;</span></span>
+<span id="cb4-8"><a href="#cb4-8"></a>    subscribe soc <span class="st">&quot;denmark&quot;</span></span>
+<span id="cb4-9"><a href="#cb4-9"></a>    forever <span class="op">$</span> receive soc [] <span class="op">&gt;&gt;=</span> CBS.putStrLn</span></code></pre></div>
 <p>Two comments on the Haskell code here:</p>
 <ul>
 <li>I’m not sure why, but the Haskell client dies after receiving just a few messages (they are properly filtered though).</li>
@@ -87,7 +87,7 @@
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/0mq.html">0mq</a>, <a href="../tags/haskell.html">haskell</a>, <a href="../tags/zeromq.html">zeromq</a>
+Tags: <a title="All pages tagged '0mq'." href="../tags/0mq.html">0mq</a>, <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>, <a title="All pages tagged 'zeromq'." href="../tags/zeromq.html">zeromq</a>
 </div>
 
 

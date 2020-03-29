@@ -73,7 +73,7 @@ main = let
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/google.html">google</a>, <a href="../tags/haskell.html">haskell</a>, <a href="../tags/treasure%20hunt.html">treasure hunt</a>
+Tags: <a title="All pages tagged 'google'." href="../tags/google.html">google</a>, <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>, <a title="All pages tagged 'treasure hunt'." href="../tags/treasure%20hunt.html">treasure hunt</a>
 </div>
 
 
@@ -84,8 +84,8 @@ Tags: <a href="../tags/google.html">google</a>, <a href="../tags/haskell.html">h
     <p class="comment-date"><time pubdate="pubdate" datetime="2008-06-08">2008-06-08</time></p>
   </header>
 <p>The following looks nicer to me:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">sumN <span class="dv">1</span> <span class="fu">=</span> primes</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">sumN n <span class="fu">=</span> [x<span class="fu">+</span>y <span class="fu">|</span> (x, y) <span class="ot">&lt;-</span> zip (tail <span class="fu">$</span> sumN (n<span class="fu">-</span><span class="dv">1</span>)) primes]</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a>sumN <span class="dv">1</span> <span class="ot">=</span> primes</span>
+<span id="cb1-2"><a href="#cb1-2"></a>sumN n <span class="ot">=</span> [x<span class="op">+</span>y <span class="op">|</span> (x, y) <span class="ot">&lt;-</span> <span class="fu">zip</span> (<span class="fu">tail</span> <span class="op">$</span> sumN (n<span class="op">-</span><span class="dv">1</span>)) primes]</span></code></pre></div>
 </article>
 
 <article class="comment-body">
@@ -96,14 +96,14 @@ Tags: <a href="../tags/google.html">google</a>, <a href="../tags/haskell.html">h
   </header>
 <p>Ah, I see. My problem was the naive implementation of the sieve. The optimized version runs much faster. :-)</p>
 <p>My intersection-function is similar, although it finds elements which are in each passed (infinite) list. Here’s my implementation:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">intersect ::</span> (<span class="dt">Eq</span> a, <span class="dt">Ord</span> a) <span class="ot">=&gt;</span> [[a]] <span class="ot">-&gt;</span> [a]</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">intersect [] <span class="fu">=</span> []</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">intersect xs <span class="fu">|</span> or (map null xs) <span class="fu">=</span> []</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">             <span class="fu">|</span> and <span class="fu">$</span> map ((<span class="fu">==</span> x) <span class="fu">.</span> head) xs <span class="fu">=</span> x <span class="fu">:</span> (intersect <span class="fu">$</span> map tail xs)</a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">             <span class="fu">|</span> otherwise <span class="fu">=</span> intersect <span class="fu">$</span> map (dropWhile (<span class="fu">&lt;</span> max)) xs</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6">   <span class="kw">where</span> max <span class="fu">=</span> <span class="kw">let</span> comp (x<span class="fu">:</span>_) (y<span class="fu">:</span>_) <span class="fu">=</span> compare x y</a>
-<a class="sourceLine" id="cb1-7" data-line-number="7">               <span class="kw">in</span>  head <span class="fu">$</span> maximumBy comp xs</a>
-<a class="sourceLine" id="cb1-8" data-line-number="8">         x   <span class="fu">=</span> head <span class="fu">$</span> head xs</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="ot">intersect ::</span> (<span class="dt">Eq</span> a, <span class="dt">Ord</span> a) <span class="ot">=&gt;</span> [[a]] <span class="ot">-&gt;</span> [a]</span>
+<span id="cb1-2"><a href="#cb1-2"></a>intersect [] <span class="ot">=</span> []</span>
+<span id="cb1-3"><a href="#cb1-3"></a>intersect xs <span class="op">|</span> <span class="fu">or</span> (<span class="fu">map</span> <span class="fu">null</span> xs) <span class="ot">=</span> []</span>
+<span id="cb1-4"><a href="#cb1-4"></a>             <span class="op">|</span> <span class="fu">and</span> <span class="op">$</span> <span class="fu">map</span> ((<span class="op">==</span> x) <span class="op">.</span> <span class="fu">head</span>) xs <span class="ot">=</span> x <span class="op">:</span> (intersect <span class="op">$</span> <span class="fu">map</span> <span class="fu">tail</span> xs)</span>
+<span id="cb1-5"><a href="#cb1-5"></a>             <span class="op">|</span> <span class="fu">otherwise</span> <span class="ot">=</span> intersect <span class="op">$</span> <span class="fu">map</span> (<span class="fu">dropWhile</span> (<span class="op">&lt;</span> <span class="fu">max</span>)) xs</span>
+<span id="cb1-6"><a href="#cb1-6"></a>   <span class="kw">where</span> <span class="fu">max</span> <span class="ot">=</span> <span class="kw">let</span> comp (x<span class="op">:</span>_) (y<span class="op">:</span>_) <span class="ot">=</span> <span class="fu">compare</span> x y</span>
+<span id="cb1-7"><a href="#cb1-7"></a>               <span class="kw">in</span>  <span class="fu">head</span> <span class="op">$</span> maximumBy comp xs</span>
+<span id="cb1-8"><a href="#cb1-8"></a>         x   <span class="ot">=</span> <span class="fu">head</span> <span class="op">$</span> <span class="fu">head</span> xs</span></code></pre></div>
 <p>(Sorry for the formatting.)</p>
 <p>Therefore I’ve a more general function for finding the prime which fulfills the required conditions: ~~~ { .haskell } prime :: [Int] -&gt; Integer prime = head . intersect . (primes:) . map (<code>calc</code> primes) ~~~</p>
 <p>Whereas calc is semantically equivalent to your sumN-function.</p>
@@ -128,10 +128,10 @@ Tags: <a href="../tags/google.html">google</a>, <a href="../tags/haskell.html">h
 Thanks for showing us what you did!
 </p>
 <p>I really like foobar’s definition of sumN – much better than the one I came up with – although I’d have used zipWith, like this:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">sumN <span class="dv">1</span> <span class="fu">=</span> primes</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">sumN (n<span class="fu">+</span><span class="dv">1</span>) <span class="fu">=</span> zipWith (<span class="fu">+</span>) primes <span class="fu">$</span> tail <span class="fu">$</span> sumN n</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a>sumN <span class="dv">1</span> <span class="ot">=</span> primes</span>
+<span id="cb1-2"><a href="#cb1-2"></a>sumN (n<span class="op">+</span><span class="dv">1</span>) <span class="ot">=</span> <span class="fu">zipWith</span> (<span class="op">+</span>) primes <span class="op">$</span> <span class="fu">tail</span> <span class="op">$</span> sumN n</span></code></pre></div>
 <p>For extra prettiness, notice that primes == sumN 1 and that Andre’s version of intersect can be derived from Magnus’ version of intersect using foldl1:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">main <span class="fu">=</span> print <span class="fu">$</span> head <span class="fu">$</span> foldl1 intersect [sumN n primes <span class="fu">|</span> n <span class="fu">&amp;</span>lt;<span class="fu">-</span> [<span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">29</span>, <span class="dv">373</span>, <span class="dv">665</span>]]</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a>main <span class="ot">=</span> <span class="fu">print</span> <span class="op">$</span> <span class="fu">head</span> <span class="op">$</span> <span class="fu">foldl1</span> intersect [sumN n primes <span class="op">|</span> n <span class="op">&amp;</span>lt;<span class="op">-</span> [<span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">29</span>, <span class="dv">373</span>, <span class="dv">665</span>]]</span></code></pre></div>
 <p>:-)</p>
 </article>
 
@@ -142,7 +142,7 @@ Thanks for showing us what you did!
     <p class="comment-date"><time pubdate="pubdate" datetime="2008-06-09">2008-06-09</time></p>
   </header>
 <p>Oops. There’s a typo in my previous comment. It should be:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">main <span class="fu">=</span> print <span class="fu">$</span> head <span class="fu">$</span> foldl1 intersect [sumN n <span class="fu">|</span> n <span class="fu">&amp;</span>lt;<span class="fu">-</span> [<span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">29</span>, <span class="dv">373</span>, <span class="dv">665</span>]]</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a>main <span class="ot">=</span> <span class="fu">print</span> <span class="op">$</span> <span class="fu">head</span> <span class="op">$</span> <span class="fu">foldl1</span> intersect [sumN n <span class="op">|</span> n <span class="op">&amp;</span>lt;<span class="op">-</span> [<span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">29</span>, <span class="dv">373</span>, <span class="dv">665</span>]]</span></code></pre></div>
 </article>
 
 <article class="comment-body">
@@ -165,11 +165,11 @@ Thanks for showing us what you did!
   </header>
 <p>Interesting how we all used pretty much the same solution. :)</p>
 <p>I used the following definition of sumN (equivalent to Russel’s function). Should be much faster, since it doesn’t need to iterate through 665 primes for each element.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">sumN n <span class="fu">=</span> sumN' primes (drop n primes) (sum <span class="fu">$</span> take n primes)</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">sumN' (x<span class="fu">:</span>xs) (y<span class="fu">:</span>ys) accum <span class="fu">=</span> accum<span class="fu">:</span>sumN' xs ys (accum<span class="fu">+</span>y<span class="fu">-</span>x)</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a>sumN n <span class="ot">=</span> sumN' primes (<span class="fu">drop</span> n primes) (<span class="fu">sum</span> <span class="op">$</span> <span class="fu">take</span> n primes)</span>
+<span id="cb1-2"><a href="#cb1-2"></a>sumN' (x<span class="op">:</span>xs) (y<span class="op">:</span>ys) accum <span class="ot">=</span> accum<span class="op">:</span>sumN' xs ys (accum<span class="op">+</span>y<span class="op">-</span>x)</span></code></pre></div>
 <p>My definition of primes, btw, is the following. Slower than the fastest one on the quoted page, but still pretty fast and elegant.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">primes <span class="fu">=</span> <span class="dv">2</span><span class="fu">:</span>[x <span class="fu">|</span> x <span class="fu">&amp;</span>lt;<span class="fu">-</span> [<span class="dv">3</span>,<span class="dv">5</span><span class="fu">..</span>], is_prime x]</a>
-<a class="sourceLine" id="cb2-2" data-line-number="2">is_prime n <span class="fu">=</span> all (<span class="fu">/=</span> <span class="dv">0</span>) [n <span class="ot">`mod`</span> x <span class="fu">|</span> x <span class="fu">&amp;</span>lt;<span class="fu">-</span> takeWhile ((<span class="fu">&amp;</span>lt;<span class="fu">=</span>n)<span class="fu">.</span>(<span class="fu">^</span><span class="dv">2</span>)) primes]</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a>primes <span class="ot">=</span> <span class="dv">2</span><span class="op">:</span>[x <span class="op">|</span> x <span class="op">&amp;</span>lt;<span class="op">-</span> [<span class="dv">3</span>,<span class="dv">5</span><span class="op">..</span>], is_prime x]</span>
+<span id="cb2-2"><a href="#cb2-2"></a>is_prime n <span class="ot">=</span> <span class="fu">all</span> (<span class="op">/=</span> <span class="dv">0</span>) [n <span class="ot">`mod`</span> x <span class="op">|</span> x <span class="op">&amp;</span>lt;<span class="op">-</span> <span class="fu">takeWhile</span> ((<span class="op">&amp;</span>lt;<span class="ot">=</span>n)<span class="op">.</span>(<span class="op">^</span><span class="dv">2</span>)) primes]</span></code></pre></div>
 </article>
 
 <article class="comment-body">
@@ -179,14 +179,14 @@ Thanks for showing us what you did!
     <p class="comment-date"><time pubdate="pubdate" datetime="2008-06-10">2008-06-10</time></p>
   </header>
 <p>I’ve used such definition of sums with stream-fusion:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">sprimesS ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Stream</span> <span class="dt">Integer</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">sprimesS n <span class="fu">|</span> n <span class="fu">==</span> <span class="dv">1</span> <span class="fu">=</span> stream primes</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">                 <span class="fu">|</span> n <span class="fu">&gt;</span> <span class="dv">1</span> <span class="fu">=</span> <span class="dt">Stream</span> next (<span class="dt">L</span> (sum h,primes,t))</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">    <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">        (h,t) <span class="fu">=</span> splitAt n primes</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6">        next (<span class="dt">L</span> (s,(x<span class="fu">:</span>xs),(y<span class="fu">:</span>ys))) <span class="fu">=</span> <span class="dt">Yield</span> s (<span class="dt">L</span> (s<span class="fu">-</span>x<span class="fu">+</span>y,xs,ys))</a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8">sprimes <span class="fu">=</span> unstream <span class="fu">.</span> sprimesS</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="ot">sprimesS ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Stream</span> <span class="dt">Integer</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a>sprimesS n <span class="op">|</span> n <span class="op">==</span> <span class="dv">1</span> <span class="ot">=</span> stream primes</span>
+<span id="cb1-3"><a href="#cb1-3"></a>                 <span class="op">|</span> n <span class="op">&gt;</span> <span class="dv">1</span> <span class="ot">=</span> <span class="dt">Stream</span> next (<span class="dt">L</span> (<span class="fu">sum</span> h,primes,t))</span>
+<span id="cb1-4"><a href="#cb1-4"></a>    <span class="kw">where</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a>        (h,t) <span class="ot">=</span> <span class="fu">splitAt</span> n primes</span>
+<span id="cb1-6"><a href="#cb1-6"></a>        next (<span class="dt">L</span> (s,(x<span class="op">:</span>xs),(y<span class="op">:</span>ys))) <span class="ot">=</span> <span class="dt">Yield</span> s (<span class="dt">L</span> (s<span class="op">-</span>x<span class="op">+</span>y,xs,ys))</span>
+<span id="cb1-7"><a href="#cb1-7"></a></span>
+<span id="cb1-8"><a href="#cb1-8"></a>sprimes <span class="ot">=</span> unstream <span class="op">.</span> sprimesS</span></code></pre></div>
 <p>That should prevent much GC, because all we need is primes list, all other is shifting sums.</p>
 </article>
 

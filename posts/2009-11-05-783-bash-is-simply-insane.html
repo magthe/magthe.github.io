@@ -30,36 +30,36 @@
 </header>
 
 <p>What do you think the following script ((The script is somewhat artificial, who would ever use the construct <code>true | while ...</code>? I’ve used this just to show the point while keeping the examples short. Feel free to replace that part with something more useful, like <code>cat myfile | while read ...</code>.)) will print?</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="fu">foo()</span> <span class="kw">{</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">    <span class="fu">true</span> <span class="kw">|</span> <span class="kw">while</span> <span class="fu">true</span><span class="kw">;</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">        <span class="fu">false</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">        <span class="va">rc=$?</span></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">        <span class="kw">if</span><span class="bu"> [</span> <span class="va">$rc</span> <span class="ot">-eq</span> 1<span class="bu"> ]</span>; <span class="kw">then</span></a>
-<a class="sourceLine" id="cb1-6" data-line-number="6">            <span class="bu">return</span> 1</a>
-<a class="sourceLine" id="cb1-7" data-line-number="7">        <span class="kw">fi</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8">    <span class="kw">done</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9">    <span class="bu">echo</span> <span class="va">$?</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10">    <span class="bu">return</span> 0</a>
-<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">}</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="ex">foo</span> <span class="kw">||</span> <span class="bu">echo</span> <span class="st">&quot;Failed foo&quot;</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1"></a><span class="fu">foo()</span> <span class="kw">{</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a>    <span class="fu">true</span> <span class="kw">|</span> <span class="kw">while</span> <span class="fu">true</span><span class="kw">;</span> <span class="kw">do</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a>        <span class="fu">false</span></span>
+<span id="cb1-4"><a href="#cb1-4"></a>        <span class="va">rc=$?</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a>        <span class="kw">if</span><span class="bu"> [</span> <span class="va">$rc</span> <span class="ot">-eq</span> 1<span class="bu"> ]</span>; <span class="kw">then</span></span>
+<span id="cb1-6"><a href="#cb1-6"></a>            <span class="bu">return</span> 1</span>
+<span id="cb1-7"><a href="#cb1-7"></a>        <span class="kw">fi</span></span>
+<span id="cb1-8"><a href="#cb1-8"></a>    <span class="kw">done</span></span>
+<span id="cb1-9"><a href="#cb1-9"></a>    <span class="bu">echo</span> <span class="va">$?</span></span>
+<span id="cb1-10"><a href="#cb1-10"></a>    <span class="bu">return</span> 0</span>
+<span id="cb1-11"><a href="#cb1-11"></a><span class="kw">}</span></span>
+<span id="cb1-12"><a href="#cb1-12"></a></span>
+<span id="cb1-13"><a href="#cb1-13"></a><span class="ex">foo</span> <span class="kw">||</span> <span class="bu">echo</span> <span class="st">&quot;Failed foo&quot;</span></span></code></pre></div>
 <p>Run it and see. I suspect everyone but the script gurus out there will be surprised.</p>
 <p>What about this script then?</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="fu">bar ()</span> <span class="kw">{</span></a>
-<a class="sourceLine" id="cb2-2" data-line-number="2">    <span class="bu">local</span> <span class="va">rc=</span>0</a>
-<a class="sourceLine" id="cb2-3" data-line-number="3">    <span class="fu">true</span> <span class="kw">|</span> <span class="kw">while</span> <span class="fu">true</span><span class="kw">;</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">        <span class="fu">false</span></a>
-<a class="sourceLine" id="cb2-5" data-line-number="5">        <span class="va">rc=$?</span></a>
-<a class="sourceLine" id="cb2-6" data-line-number="6">        <span class="kw">if</span><span class="bu"> [</span> <span class="va">$rc</span> <span class="ot">-eq</span> 1<span class="bu"> ]</span>; <span class="kw">then</span></a>
-<a class="sourceLine" id="cb2-7" data-line-number="7">            <span class="bu">return</span> 1</a>
-<a class="sourceLine" id="cb2-8" data-line-number="8">        <span class="kw">fi</span></a>
-<a class="sourceLine" id="cb2-9" data-line-number="9">    <span class="kw">done</span></a>
-<a class="sourceLine" id="cb2-10" data-line-number="10">    <span class="bu">echo</span> <span class="va">$?</span></a>
-<a class="sourceLine" id="cb2-11" data-line-number="11">    <span class="bu">echo</span> <span class="va">$rc</span></a>
-<a class="sourceLine" id="cb2-12" data-line-number="12">    <span class="bu">return</span> 0</a>
-<a class="sourceLine" id="cb2-13" data-line-number="13"><span class="kw">}</span></a>
-<a class="sourceLine" id="cb2-14" data-line-number="14"></a>
-<a class="sourceLine" id="cb2-15" data-line-number="15"><span class="ex">bar</span></a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1"></a><span class="fu">bar ()</span> <span class="kw">{</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a>    <span class="bu">local</span> <span class="va">rc=</span>0</span>
+<span id="cb2-3"><a href="#cb2-3"></a>    <span class="fu">true</span> <span class="kw">|</span> <span class="kw">while</span> <span class="fu">true</span><span class="kw">;</span> <span class="kw">do</span></span>
+<span id="cb2-4"><a href="#cb2-4"></a>        <span class="fu">false</span></span>
+<span id="cb2-5"><a href="#cb2-5"></a>        <span class="va">rc=$?</span></span>
+<span id="cb2-6"><a href="#cb2-6"></a>        <span class="kw">if</span><span class="bu"> [</span> <span class="va">$rc</span> <span class="ot">-eq</span> 1<span class="bu"> ]</span>; <span class="kw">then</span></span>
+<span id="cb2-7"><a href="#cb2-7"></a>            <span class="bu">return</span> 1</span>
+<span id="cb2-8"><a href="#cb2-8"></a>        <span class="kw">fi</span></span>
+<span id="cb2-9"><a href="#cb2-9"></a>    <span class="kw">done</span></span>
+<span id="cb2-10"><a href="#cb2-10"></a>    <span class="bu">echo</span> <span class="va">$?</span></span>
+<span id="cb2-11"><a href="#cb2-11"></a>    <span class="bu">echo</span> <span class="va">$rc</span></span>
+<span id="cb2-12"><a href="#cb2-12"></a>    <span class="bu">return</span> 0</span>
+<span id="cb2-13"><a href="#cb2-13"></a><span class="kw">}</span></span>
+<span id="cb2-14"><a href="#cb2-14"></a></span>
+<span id="cb2-15"><a href="#cb2-15"></a><span class="ex">bar</span></span></code></pre></div>
 <p>Surprised again?</p>
 <p>I guess this means that scoping in bash is somewhat more complicated then I would have ever guessed.</p>
 
@@ -67,7 +67,7 @@
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/bash.html">bash</a>, <a href="../tags/scoping.html">scoping</a>
+Tags: <a title="All pages tagged 'bash'." href="../tags/bash.html">bash</a>, <a title="All pages tagged 'scoping'." href="../tags/scoping.html">scoping</a>
 </div>
 
 
@@ -106,7 +106,7 @@ Tags: <a href="../tags/bash.html">bash</a>, <a href="../tags/scoping.html">scopi
   </header>
 <p>It’s not just Bash, it’s all Bourne-like shells. I knew what was going to happen, but probably I’ve been doing too much shell programming ;)</p>
 <p>The explanation is actually pretty simple. There’s two things at play here: pipes force subshells, and pipe’s return status is the tail’s return status.</p>
-<p>i.e. “echo | while read; do :; done” == “echo | (while read; do :; done)” and “false | true” returns 0, “true | false” returns 1.</p>
+<p>i.e. “echo | while read; do :; done” == “echo | (while read; do :; done)” and “false | true” returns 0, “true | false” returns 1.</p>
 </article>
 
 <article class="comment-body">

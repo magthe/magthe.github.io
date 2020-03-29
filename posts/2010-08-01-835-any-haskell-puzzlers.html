@@ -29,70 +29,70 @@
 <p class="post-date"><time pubdate="pubdate" datetime="2010-08-01">2010-08-01</time> - Magnus Therning</p>
 </header>
 
-<p>I just watched Joshua Block’s talk <a href="http://www.youtube.com/watch?v=V1vQf4qyMXg">Effective Java - Still Effective After All These Years</a>. I’m not a Java developer<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> but I still found the talk very interesting. Mr Block offers tips and tricks to deal effectively with a few aspects of Java, and I’m sure many a Java developer out there would find that part very interesting. For me however, the most interesting part was the appetizers and the dessert :-)</p>
+<p>I just watched Joshua Block’s talk <a href="http://www.youtube.com/watch?v=V1vQf4qyMXg">Effective Java - Still Effective After All These Years</a>. I’m not a Java developer<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> but I still found the talk very interesting. Mr Block offers tips and tricks to deal effectively with a few aspects of Java, and I’m sure many a Java developer out there would find that part very interesting. For me however, the most interesting part was the appetizers and the dessert :-)</p>
 <p>The appetizer and dessert consisted of three puzzlers. A puzzler is a piece of code that high-lights some peculiarity of the language or standard libraries. The puzzlers in this talk were are follows:</p>
 <h3 id="simple-question">Simple question</h3>
 <p>What is printed by the following code, and why?</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode java"><code class="sourceCode java"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">public</span> <span class="kw">class</span> SimpleQuestion {</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  <span class="dt">static</span> <span class="dt">boolean</span> <span class="fu">yesOrNo</span>(<span class="bu">String</span> s) {</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">    s = s.<span class="fu">toLowerCase</span>();</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">    <span class="kw">if</span>(s.<span class="fu">equals</span>(<span class="st">&quot;yes&quot;</span>) || s.<span class="fu">equals</span>(<span class="st">&quot;t&quot;</span>) || s.<span class="fu">equals</span>(<span class="st">&quot;y&quot;</span>))</a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">      s = <span class="st">&quot;true&quot;</span>;</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6">    <span class="kw">return</span> <span class="bu">Boolean</span>.<span class="fu">getBoolean</span>(s);</a>
-<a class="sourceLine" id="cb1-7" data-line-number="7">  }</a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9">  <span class="kw">public</span> <span class="dt">static</span> <span class="dt">void</span> <span class="fu">main</span>(<span class="bu">String</span>[] args) {</a>
-<a class="sourceLine" id="cb1-10" data-line-number="10">    <span class="bu">System</span>.<span class="fu">out</span>.<span class="fu">println</span>(<span class="fu">yesOrNo</span>(<span class="st">&quot;true&quot;</span>) + <span class="st">&quot; &quot;</span> + <span class="fu">yesOrNo</span>(<span class="st">&quot;YeS&quot;</span>));</a>
-<a class="sourceLine" id="cb1-11" data-line-number="11">  }</a>
-<a class="sourceLine" id="cb1-12" data-line-number="12">}</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">public</span> <span class="kw">class</span> SimpleQuestion {</span>
+<span id="cb1-2"><a href="#cb1-2"></a>  <span class="dt">static</span> <span class="dt">boolean</span> <span class="fu">yesOrNo</span>(<span class="bu">String</span> s) {</span>
+<span id="cb1-3"><a href="#cb1-3"></a>    s = s.<span class="fu">toLowerCase</span>();</span>
+<span id="cb1-4"><a href="#cb1-4"></a>    <span class="kw">if</span>(s.<span class="fu">equals</span>(<span class="st">&quot;yes&quot;</span>) || s.<span class="fu">equals</span>(<span class="st">&quot;t&quot;</span>) || s.<span class="fu">equals</span>(<span class="st">&quot;y&quot;</span>))</span>
+<span id="cb1-5"><a href="#cb1-5"></a>      s = <span class="st">&quot;true&quot;</span>;</span>
+<span id="cb1-6"><a href="#cb1-6"></a>    <span class="kw">return</span> <span class="bu">Boolean</span>.<span class="fu">getBoolean</span>(s);</span>
+<span id="cb1-7"><a href="#cb1-7"></a>  }</span>
+<span id="cb1-8"><a href="#cb1-8"></a></span>
+<span id="cb1-9"><a href="#cb1-9"></a>  <span class="kw">public</span> <span class="dt">static</span> <span class="dt">void</span> <span class="fu">main</span>(<span class="bu">String</span>[] args) {</span>
+<span id="cb1-10"><a href="#cb1-10"></a>    <span class="bu">System</span>.<span class="fu">out</span>.<span class="fu">println</span>(<span class="fu">yesOrNo</span>(<span class="st">&quot;true&quot;</span>) + <span class="st">&quot; &quot;</span> + <span class="fu">yesOrNo</span>(<span class="st">&quot;YeS&quot;</span>));</span>
+<span id="cb1-11"><a href="#cb1-11"></a>  }</span>
+<span id="cb1-12"><a href="#cb1-12"></a>}</span></code></pre></div>
 <h3 id="searching">Searching</h3>
 <p>What is the result of the following code, and why?</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode java"><code class="sourceCode java"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">import</span><span class="im"> java.util.*;</span></a>
-<a class="sourceLine" id="cb2-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb2-3" data-line-number="3"><span class="kw">public</span> <span class="kw">class</span> Searching {</a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">  <span class="kw">public</span> <span class="dt">static</span> <span class="dt">void</span> <span class="fu">main</span>(<span class="bu">String</span>[] args) {</a>
-<a class="sourceLine" id="cb2-5" data-line-number="5">    <span class="bu">String</span>[] strs = { <span class="st">&quot;0&quot;</span>, <span class="st">&quot;1&quot;</span>, <span class="st">&quot;2&quot;</span>, <span class="st">&quot;3&quot;</span>, <span class="st">&quot;4&quot;</span>, <span class="st">&quot;5&quot;</span> };</a>
-<a class="sourceLine" id="cb2-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb2-7" data-line-number="7">    <span class="co">// Translate string array into list of integer</span></a>
-<a class="sourceLine" id="cb2-8" data-line-number="8">    <span class="bu">List</span>&lt;<span class="bu">Integer</span>&gt; ints = <span class="kw">new</span> <span class="bu">ArrayList</span>&lt;<span class="bu">Integer</span>&gt;();</a>
-<a class="sourceLine" id="cb2-9" data-line-number="9">    <span class="kw">for</span>(<span class="bu">String</span> s : strs)</a>
-<a class="sourceLine" id="cb2-10" data-line-number="10">      ints.<span class="fu">add</span>(<span class="bu">Integer</span>.<span class="fu">valueOf</span>(s));</a>
-<a class="sourceLine" id="cb2-11" data-line-number="11"></a>
-<a class="sourceLine" id="cb2-12" data-line-number="12">    <span class="bu">System</span>.<span class="fu">out</span>.<span class="fu">println</span>(<span class="bu">Collections</span>.<span class="fu">binarySearch</span>(ints, <span class="dv">1</span>, cmp));</a>
-<a class="sourceLine" id="cb2-13" data-line-number="13">  }</a>
-<a class="sourceLine" id="cb2-14" data-line-number="14"></a>
-<a class="sourceLine" id="cb2-15" data-line-number="15">  <span class="dt">static</span> <span class="bu">Comparator</span>&lt;<span class="bu">Integer</span>&gt; cmp = <span class="kw">new</span> <span class="bu">Comparator</span>&lt;<span class="bu">Integer</span>&gt;() {</a>
-<a class="sourceLine" id="cb2-16" data-line-number="16">    <span class="kw">public</span> <span class="dt">int</span> <span class="fu">compare</span>(<span class="bu">Integer</span> i, <span class="bu">Integer</span> j) {</a>
-<a class="sourceLine" id="cb2-17" data-line-number="17">      <span class="kw">return</span> i &lt; j ? <span class="dv">-1</span> : (i == j ? <span class="dv">0</span> : <span class="dv">1</span>);</a>
-<a class="sourceLine" id="cb2-18" data-line-number="18">    }</a>
-<a class="sourceLine" id="cb2-19" data-line-number="19">  };</a>
-<a class="sourceLine" id="cb2-20" data-line-number="20">}</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">import</span><span class="im"> java.util.*;</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a></span>
+<span id="cb2-3"><a href="#cb2-3"></a><span class="kw">public</span> <span class="kw">class</span> Searching {</span>
+<span id="cb2-4"><a href="#cb2-4"></a>  <span class="kw">public</span> <span class="dt">static</span> <span class="dt">void</span> <span class="fu">main</span>(<span class="bu">String</span>[] args) {</span>
+<span id="cb2-5"><a href="#cb2-5"></a>    <span class="bu">String</span>[] strs = { <span class="st">&quot;0&quot;</span>, <span class="st">&quot;1&quot;</span>, <span class="st">&quot;2&quot;</span>, <span class="st">&quot;3&quot;</span>, <span class="st">&quot;4&quot;</span>, <span class="st">&quot;5&quot;</span> };</span>
+<span id="cb2-6"><a href="#cb2-6"></a></span>
+<span id="cb2-7"><a href="#cb2-7"></a>    <span class="co">// Translate string array into list of integer</span></span>
+<span id="cb2-8"><a href="#cb2-8"></a>    <span class="bu">List</span>&lt;<span class="bu">Integer</span>&gt; ints = <span class="kw">new</span> <span class="bu">ArrayList</span>&lt;<span class="bu">Integer</span>&gt;();</span>
+<span id="cb2-9"><a href="#cb2-9"></a>    <span class="kw">for</span>(<span class="bu">String</span> s : strs)</span>
+<span id="cb2-10"><a href="#cb2-10"></a>      ints.<span class="fu">add</span>(<span class="bu">Integer</span>.<span class="fu">valueOf</span>(s));</span>
+<span id="cb2-11"><a href="#cb2-11"></a></span>
+<span id="cb2-12"><a href="#cb2-12"></a>    <span class="bu">System</span>.<span class="fu">out</span>.<span class="fu">println</span>(<span class="bu">Collections</span>.<span class="fu">binarySearch</span>(ints, <span class="dv">1</span>, cmp));</span>
+<span id="cb2-13"><a href="#cb2-13"></a>  }</span>
+<span id="cb2-14"><a href="#cb2-14"></a></span>
+<span id="cb2-15"><a href="#cb2-15"></a>  <span class="dt">static</span> <span class="bu">Comparator</span>&lt;<span class="bu">Integer</span>&gt; cmp = <span class="kw">new</span> <span class="bu">Comparator</span>&lt;<span class="bu">Integer</span>&gt;() {</span>
+<span id="cb2-16"><a href="#cb2-16"></a>    <span class="kw">public</span> <span class="dt">int</span> <span class="fu">compare</span>(<span class="bu">Integer</span> i, <span class="bu">Integer</span> j) {</span>
+<span id="cb2-17"><a href="#cb2-17"></a>      <span class="kw">return</span> i &lt; j ? -<span class="dv">1</span> : (i == j ? <span class="dv">0</span> : <span class="dv">1</span>);</span>
+<span id="cb2-18"><a href="#cb2-18"></a>    }</span>
+<span id="cb2-19"><a href="#cb2-19"></a>  };</span>
+<span id="cb2-20"><a href="#cb2-20"></a>}</span></code></pre></div>
 <h3 id="printwords">PrintWords</h3>
 <p>This one consists of two classes, which are compiled together:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode java"><code class="sourceCode java"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">public</span> <span class="kw">class</span> PrintWords {</a>
-<a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="kw">public</span> <span class="dt">static</span> <span class="dt">void</span> <span class="fu">main</span>(<span class="bu">String</span>[] args) {</a>
-<a class="sourceLine" id="cb3-3" data-line-number="3">    <span class="bu">System</span>.<span class="fu">out</span>.<span class="fu">println</span>(Words.<span class="fu">FIRST</span> + <span class="st">&quot; &quot;</span> + Words.<span class="fu">SECOND</span> + <span class="st">&quot; &quot;</span> + Words.<span class="fu">THIRD</span>);</a>
-<a class="sourceLine" id="cb3-4" data-line-number="4">  }</a>
-<a class="sourceLine" id="cb3-5" data-line-number="5">}</a></code></pre></div>
-<div class="sourceCode" id="cb4"><pre class="sourceCode java"><code class="sourceCode java"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="kw">public</span> <span class="kw">class</span> Words {</a>
-<a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="kw">public</span> <span class="dt">static</span> <span class="dt">final</span> <span class="bu">String</span> FIRST = <span class="st">&quot;the&quot;</span>;</a>
-<a class="sourceLine" id="cb4-3" data-line-number="3">  <span class="kw">public</span> <span class="dt">static</span> <span class="dt">final</span> <span class="bu">String</span> SECOND = <span class="kw">null</span>;</a>
-<a class="sourceLine" id="cb4-4" data-line-number="4">  <span class="kw">public</span> <span class="dt">static</span> <span class="dt">final</span> <span class="bu">String</span> THIRD = <span class="st">&quot;set&quot;</span>;</a>
-<a class="sourceLine" id="cb4-5" data-line-number="5">}</a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">public</span> <span class="kw">class</span> PrintWords {</span>
+<span id="cb3-2"><a href="#cb3-2"></a>  <span class="kw">public</span> <span class="dt">static</span> <span class="dt">void</span> <span class="fu">main</span>(<span class="bu">String</span>[] args) {</span>
+<span id="cb3-3"><a href="#cb3-3"></a>    <span class="bu">System</span>.<span class="fu">out</span>.<span class="fu">println</span>(Words.<span class="fu">FIRST</span> + <span class="st">&quot; &quot;</span> + Words.<span class="fu">SECOND</span> + <span class="st">&quot; &quot;</span> + Words.<span class="fu">THIRD</span>);</span>
+<span id="cb3-4"><a href="#cb3-4"></a>  }</span>
+<span id="cb3-5"><a href="#cb3-5"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">public</span> <span class="kw">class</span> Words {</span>
+<span id="cb4-2"><a href="#cb4-2"></a>  <span class="kw">public</span> <span class="dt">static</span> <span class="dt">final</span> <span class="bu">String</span> FIRST = <span class="st">&quot;the&quot;</span>;</span>
+<span id="cb4-3"><a href="#cb4-3"></a>  <span class="kw">public</span> <span class="dt">static</span> <span class="dt">final</span> <span class="bu">String</span> SECOND = <span class="kw">null</span>;</span>
+<span id="cb4-4"><a href="#cb4-4"></a>  <span class="kw">public</span> <span class="dt">static</span> <span class="dt">final</span> <span class="bu">String</span> THIRD = <span class="st">&quot;set&quot;</span>;</span>
+<span id="cb4-5"><a href="#cb4-5"></a>}</span></code></pre></div>
 <p>Now modify the latter like this:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode java"><code class="sourceCode java"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="kw">public</span> <span class="kw">class</span> Words {</a>
-<a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="kw">public</span> <span class="dt">static</span> <span class="dt">final</span> <span class="bu">String</span> FIRST = <span class="st">&quot;physics&quot;</span>;</a>
-<a class="sourceLine" id="cb5-3" data-line-number="3">  <span class="kw">public</span> <span class="dt">static</span> <span class="dt">final</span> <span class="bu">String</span> SECOND = <span class="st">&quot;chemistry&quot;</span>;</a>
-<a class="sourceLine" id="cb5-4" data-line-number="4">  <span class="kw">public</span> <span class="dt">static</span> <span class="dt">final</span> <span class="bu">String</span> THIRD = <span class="st">&quot;biology&quot;</span>;</a>
-<a class="sourceLine" id="cb5-5" data-line-number="5">}</a></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">public</span> <span class="kw">class</span> Words {</span>
+<span id="cb5-2"><a href="#cb5-2"></a>  <span class="kw">public</span> <span class="dt">static</span> <span class="dt">final</span> <span class="bu">String</span> FIRST = <span class="st">&quot;physics&quot;</span>;</span>
+<span id="cb5-3"><a href="#cb5-3"></a>  <span class="kw">public</span> <span class="dt">static</span> <span class="dt">final</span> <span class="bu">String</span> SECOND = <span class="st">&quot;chemistry&quot;</span>;</span>
+<span id="cb5-4"><a href="#cb5-4"></a>  <span class="kw">public</span> <span class="dt">static</span> <span class="dt">final</span> <span class="bu">String</span> THIRD = <span class="st">&quot;biology&quot;</span>;</span>
+<span id="cb5-5"><a href="#cb5-5"></a>}</span></code></pre></div>
 <p>Compile the second version of <code>Words.java</code> alone and then run <code>PrintWords</code>, what is the result and why?</p>
 <h3 id="any-puzzlers-for-haskell">Any puzzlers for Haskell?</h3>
 <p>Of course I couldn’t help but wonder what puzzlers there are for Haskell. Do note though that puzzlers aren’t just obfuscated code; they are readable code that you think does one thing but in reality it does something else. I’d really like to read any Haskell puzzlers you can come up with. Post them on your own blogs, or as comments to this post.</p>
 <p><strong>NB</strong> I should probably mention that I <em>really</em> don’t want answers to the puzzlers. I’ve watched Josh Bloch’s presentation, and I think anyone interested in finding out should watch it for themselves.</p>
-<section class="footnotes">
+<section class="footnotes" role="doc-endnotes">
 <hr />
 <ol>
-<li id="fn1"><p>If I ever find myself in a situation that calls for Java I’m very likely to spend some time looking at Scala :-)<a href="#fnref1" class="footnote-back">↩</a></p></li>
+<li id="fn1" role="doc-endnote"><p>If I ever find myself in a situation that calls for Java I’m very likely to spend some time looking at Scala :-)<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section>
 
@@ -100,7 +100,7 @@
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/java.html">java</a>, <a href="../tags/puzzler.html">puzzler</a>
+Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>, <a title="All pages tagged 'java'." href="../tags/java.html">java</a>, <a title="All pages tagged 'puzzler'." href="../tags/puzzler.html">puzzler</a>
 </div>
 
 
@@ -111,9 +111,9 @@ Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/java.html">ja
     <p class="comment-date"><time pubdate="pubdate" datetime="2010-08-02">2010-08-02</time></p>
   </header>
 <p>What are the values of the following expressions?</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">let</span> ( (w, x), (y, z)) <span class="fu">=</span> ((<span class="dv">1</span>, <span class="dv">2</span>),    (<span class="dv">3</span>, <span class="dv">4</span>)) <span class="kw">in</span> y</a></code></pre></div>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">let</span> ( (w, x), (y, z)) <span class="fu">=</span> (undefined, (<span class="dv">3</span>, <span class="dv">4</span>)) <span class="kw">in</span> y</a></code></pre></div>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">let</span> (<span class="fu">~</span>(w, x), (y, z)) <span class="fu">=</span> (undefined, (<span class="dv">3</span>, <span class="dv">4</span>)) <span class="kw">in</span> y</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">let</span> ( (w, x), (y, z)) <span class="ot">=</span> ((<span class="dv">1</span>, <span class="dv">2</span>),    (<span class="dv">3</span>, <span class="dv">4</span>)) <span class="kw">in</span> y</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">let</span> ( (w, x), (y, z)) <span class="ot">=</span> (<span class="fu">undefined</span>, (<span class="dv">3</span>, <span class="dv">4</span>)) <span class="kw">in</span> y</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">let</span> (<span class="op">~</span>(w, x), (y, z)) <span class="ot">=</span> (<span class="fu">undefined</span>, (<span class="dv">3</span>, <span class="dv">4</span>)) <span class="kw">in</span> y</span></code></pre></div>
 </article>
 
 <article class="comment-body">
@@ -131,7 +131,7 @@ Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/java.html">ja
     <p><b>solrize</b></p>
     <p class="comment-date"><time pubdate="pubdate" datetime="2010-08-03">2010-08-03</time></p>
   </header>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">let</span> <span class="dv">1</span> <span class="fu">=</span> <span class="dv">2</span> <span class="kw">in</span> print <span class="dv">1</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">let</span> <span class="dv">1</span> <span class="ot">=</span> <span class="dv">2</span> <span class="kw">in</span> <span class="fu">print</span> <span class="dv">1</span></span></code></pre></div>
 </article>
 
 <article class="comment-body">
@@ -149,10 +149,10 @@ Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/java.html">ja
     <p><b>Axio</b></p>
     <p class="comment-date"><time pubdate="pubdate" datetime="2010-08-05">2010-08-05</time></p>
   </header>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">f (n<span class="fu">+</span><span class="dv">1</span>) <span class="fu">=</span> n</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">main <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">  putStrLn <span class="fu">.</span> show <span class="fu">$</span> f <span class="dv">1</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">  putStrLn <span class="fu">.</span> show <span class="fu">$</span> f <span class="dv">0</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a>f (n<span class="op">+</span><span class="dv">1</span>) <span class="ot">=</span> n</span>
+<span id="cb1-2"><a href="#cb1-2"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a>  <span class="fu">putStrLn</span> <span class="op">.</span> <span class="fu">show</span> <span class="op">$</span> f <span class="dv">1</span></span>
+<span id="cb1-4"><a href="#cb1-4"></a>  <span class="fu">putStrLn</span> <span class="op">.</span> <span class="fu">show</span> <span class="op">$</span> f <span class="dv">0</span></span></code></pre></div>
 </article>
 
 <article class="comment-body">

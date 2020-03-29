@@ -30,20 +30,20 @@
 </header>
 
 <p>Following on the <a href="../posts/2009-07-03-685-making-a-choice-from-a-list-in-haskell-vty-part-1.html">previous part</a> is another baby step. This just changes the options from a list of strings to a list of objects (the only requirement that they implement <code>Pretty</code>):</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Option</span> <span class="fu">=</span> <span class="dt">Option</span> {<span class="ot"> optionValue::</span><span class="dt">String</span> }</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">    <span class="kw">deriving</span> (<span class="dt">Show</span>)</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="kw">instance</span> <span class="dt">Pretty</span> <span class="dt">Option</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">    pretty (<span class="dt">Option</span> s) <span class="fu">=</span> string s</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">data</span> <span class="dt">Option</span> <span class="ot">=</span> <span class="dt">Option</span> {<span class="ot"> optionValue::</span><span class="dt">String</span> }</span>
+<span id="cb1-2"><a href="#cb1-2"></a>    <span class="kw">deriving</span> (<span class="dt">Show</span>)</span>
+<span id="cb1-3"><a href="#cb1-3"></a></span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="kw">instance</span> <span class="dt">Pretty</span> <span class="dt">Option</span> <span class="kw">where</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a>    pretty (<span class="dt">Option</span> s) <span class="ot">=</span> string s</span></code></pre></div>
 <p>After this it’s an easy step to replace the list of strings with a list of <code>Option</code>:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">options <span class="fu">=</span> [<span class="dt">Option</span> ((show i) <span class="fu">++</span> <span class="st">&quot; Foo&quot;</span>) <span class="fu">|</span> i <span class="ot">&lt;-</span> [<span class="dv">0</span><span class="fu">..</span><span class="dv">99</span>]]</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a>options <span class="ot">=</span> [<span class="dt">Option</span> ((<span class="fu">show</span> i) <span class="op">++</span> <span class="st">&quot; Foo&quot;</span>) <span class="op">|</span> i <span class="ot">&lt;-</span> [<span class="dv">0</span><span class="op">..</span><span class="dv">99</span>]]</span></code></pre></div>
 <p>That’s it! Yes, yet another ridiculously short post, but I promise the next one will be considerably longer.</p>
 
 
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/vty.html">vty</a>
+Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>, <a title="All pages tagged 'vty'." href="../tags/vty.html">vty</a>
 </div>
 
 

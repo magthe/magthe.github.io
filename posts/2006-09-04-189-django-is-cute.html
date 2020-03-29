@@ -31,25 +31,25 @@
 
 <p>I’ve been playing around a bit more with django, and writing simple web services in it. I have to say it’s cute!</p>
 <p>Building on my <a href="http://therning.org/magnus/archives/181">simple authentication middleware</a> I added a second decorator that extract argument out of the URL and passes them to the function as regular arguments:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">def</span> extract_arguments(required, optional):</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">    <span class="kw">def</span> _wrapper(func):</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">        <span class="kw">def</span> _iwrapper(request):</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">            kwargs <span class="op">=</span> {}</a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">            <span class="cf">try</span>:</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6">                <span class="cf">for</span> r <span class="kw">in</span> required:</a>
-<a class="sourceLine" id="cb1-7" data-line-number="7">                    kwargs[r] <span class="op">=</span> request.GET[r]</a>
-<a class="sourceLine" id="cb1-8" data-line-number="8">            <span class="cf">except</span> MultiValueDictKeyError, e:</a>
-<a class="sourceLine" id="cb1-9" data-line-number="9">                <span class="cf">return</span> HttpResponse(<span class="st">'Failure'</span>)</a>
-<a class="sourceLine" id="cb1-10" data-line-number="10">            <span class="cf">for</span> o <span class="kw">in</span> optional:</a>
-<a class="sourceLine" id="cb1-11" data-line-number="11">                <span class="cf">if</span> request.GET.get(o, <span class="st">''</span>):</a>
-<a class="sourceLine" id="cb1-12" data-line-number="12">                    kwargs[o] <span class="op">=</span> request.GET[o]</a>
-<a class="sourceLine" id="cb1-13" data-line-number="13">            <span class="cf">return</span> func(request, <span class="op">**</span>kwargs)</a>
-<a class="sourceLine" id="cb1-14" data-line-number="14">        <span class="cf">return</span> _iwrapper</a>
-<a class="sourceLine" id="cb1-15" data-line-number="15">    <span class="cf">return</span> _wrapper</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">def</span> extract_arguments(required, optional):</span>
+<span id="cb1-2"><a href="#cb1-2"></a>    <span class="kw">def</span> _wrapper(func):</span>
+<span id="cb1-3"><a href="#cb1-3"></a>        <span class="kw">def</span> _iwrapper(request):</span>
+<span id="cb1-4"><a href="#cb1-4"></a>            kwargs <span class="op">=</span> {}</span>
+<span id="cb1-5"><a href="#cb1-5"></a>            <span class="cf">try</span>:</span>
+<span id="cb1-6"><a href="#cb1-6"></a>                <span class="cf">for</span> r <span class="kw">in</span> required:</span>
+<span id="cb1-7"><a href="#cb1-7"></a>                    kwargs[r] <span class="op">=</span> request.GET[r]</span>
+<span id="cb1-8"><a href="#cb1-8"></a>            <span class="cf">except</span> MultiValueDictKeyError, e:</span>
+<span id="cb1-9"><a href="#cb1-9"></a>                <span class="cf">return</span> HttpResponse(<span class="st">'Failure'</span>)</span>
+<span id="cb1-10"><a href="#cb1-10"></a>            <span class="cf">for</span> o <span class="kw">in</span> optional:</span>
+<span id="cb1-11"><a href="#cb1-11"></a>                <span class="cf">if</span> request.GET.get(o, <span class="st">''</span>):</span>
+<span id="cb1-12"><a href="#cb1-12"></a>                    kwargs[o] <span class="op">=</span> request.GET[o]</span>
+<span id="cb1-13"><a href="#cb1-13"></a>            <span class="cf">return</span> func(request, <span class="op">**</span>kwargs)</span>
+<span id="cb1-14"><a href="#cb1-14"></a>        <span class="cf">return</span> _iwrapper</span>
+<span id="cb1-15"><a href="#cb1-15"></a>    <span class="cf">return</span> _wrapper</span></code></pre></div>
 <p>This allows me to write functions like this</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="at">@extract_arguments</span>([<span class="st">'req1'</span>, <span class="st">'req2'</span>], [<span class="st">'opt1'</span>, <span class="st">'opt2'</span>])</a>
-<a class="sourceLine" id="cb2-2" data-line-number="2"><span class="kw">def</span> exposed_func(req1, req2, opt1<span class="op">=</span><span class="st">'default'</span>, opt2<span class="op">=</span><span class="st">''</span>):</a>
-<a class="sourceLine" id="cb2-3" data-line-number="3">    <span class="co"># perform magic</span></a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1"></a><span class="at">@extract_arguments</span>([<span class="st">'req1'</span>, <span class="st">'req2'</span>], [<span class="st">'opt1'</span>, <span class="st">'opt2'</span>])</span>
+<span id="cb2-2"><a href="#cb2-2"></a><span class="kw">def</span> exposed_func(req1, req2, opt1<span class="op">=</span><span class="st">'default'</span>, opt2<span class="op">=</span><span class="st">''</span>):</span>
+<span id="cb2-3"><a href="#cb2-3"></a>    <span class="co"># perform magic</span></span></code></pre></div>
 <p>Yes it’s lacking in type information, but it shouldn’t be too difficult to add that if the need arises. For now string are enough.</p>
 <p>I’m also impressed with the documentation. It didn’t take me long to dig out <a href="http://www.djangoproject.com/documentation/model_api/#unique-together"><code>unique_together</code></a> in the <a href="http://www.djangoproject.com/documentation/model_api/">model reference</a>. I have to admit I was stuck at the thought of a generic <code>unique_for</code> field option, luckily I scrolled down and read through the meta options as well.</p>
 
@@ -57,7 +57,7 @@
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/django.html">django</a>, <a href="../tags/python.html">python</a>, <a href="../tags/web%20service.html">web service</a>
+Tags: <a title="All pages tagged 'django'." href="../tags/django.html">django</a>, <a title="All pages tagged 'python'." href="../tags/python.html">python</a>, <a title="All pages tagged 'web service'." href="../tags/web%20service.html">web service</a>
 </div>
 
 

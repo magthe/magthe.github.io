@@ -32,17 +32,17 @@
 <p>We’ve had a <em>very</em> poor organisation of our photos. Sometimes I’ve copied the photos off the camera into folders named after when the pictures were taken, sometimes I’ve just copied them into a folder based on the date I did the copying. Yet other times I couldn’t even be bothered to create a new folder, or rename any of the folders I copied off the camera. My wife has been using Yahoo Photos and for that we’ve sometimes created specific folders with <em>copies of photos</em> for uploading into albums. Well, it was a right mess.</p>
 <p>With Yahoo’s purchase of <a href="http://www.flickr.com/">Flickr</a> they are now closing down Yahoo Photos so this would be an excellent opportunity to not only move the albums but also organise all the photos locally and maybe even back them up. After reading <a href="http://changelog.complete.org/">John Goerzen</a>’s <a href="http://changelog.complete.org/posts/622-Review-of-Flickr.html">review of Flickr</a> I decided that Flickr was the way to go. I started with looking at some photo management software. Reading reviews gave me the feeling that what I wanted wasn’t so much a flashy GUI tool for playing around with our photos; what I wanted was a tool that would organise them for me into a hierarchy of folders. <a href="http://f-spot.org/">F-spot</a> can do that but it kept on crashing on me. Luckily I came across <a href="http://ui3.info/d/proj/photoname.html">photoname</a>, it’s a simple command line tool that does <em>exactly</em> what I want–copy photos into a folder hierarchy based on the EXIF data. Due to our terrible organisation we had several copies of the same photo in different places so it required a lot of manual labour to get all photos in order.</p>
 <p>Once that was done I started looking into how to upload everything to Flickr. I had already seen <a href="http://manishrjain.googlepages.com/flickrfs">flickrfs</a> but I had never tried. Irritatingly it adds the tag <code>flickrfs</code> to all pictures one uploads, thank goodness it’s FOSS; I made a <a href="http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=435661">patch</a>. I decided to tag all photos with year, month and date for now. Due to the hierarchy created by <em>photoname</em> I ended up running the following little shell/python snippet in each “year folder”:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">for</span> <span class="ex">d</span> in *<span class="kw">;</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">    <span class="fu">cp</span> --verbose <span class="va">${d}</span>/* ~/tmp/flickrfs/stream:<span class="va">$(</span><span class="ex">python</span> -c \</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">    <span class="st">&quot;print ':'.join(map(''.join, zip(['Y', 'M', 'D'], '</span><span class="va">${d}</span><span class="st">'.split('-'))))&quot;</span><span class="va">)</span>/</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="kw">done</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">for</span> <span class="ex">d</span> in *<span class="kw">;</span> <span class="kw">do</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a>    <span class="fu">cp</span> --verbose <span class="va">${d}</span>/* ~/tmp/flickrfs/stream:<span class="va">$(</span><span class="ex">python</span> -c \</span>
+<span id="cb1-3"><a href="#cb1-3"></a>    <span class="st">&quot;print ':'.join(map(''.join, zip(['Y', 'M', 'D'], '</span><span class="va">${d}</span><span class="st">'.split('-'))))&quot;</span><span class="va">)</span>/</span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="kw">done</span></span></code></pre></div>
 <p>After quite a long wait I now have almost all the pictures uploaded to Flickr.</p>
 
 
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/flickr.html">flickr</a>, <a href="../tags/flickrfs.html">flickrfs</a>, <a href="../tags/photoname.html">photoname</a>
+Tags: <a title="All pages tagged 'flickr'." href="../tags/flickr.html">flickr</a>, <a title="All pages tagged 'flickrfs'." href="../tags/flickrfs.html">flickrfs</a>, <a title="All pages tagged 'photoname'." href="../tags/photoname.html">photoname</a>
 </div>
 
 

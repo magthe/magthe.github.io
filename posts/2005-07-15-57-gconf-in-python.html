@@ -32,33 +32,33 @@
 <p>It just didn’t feel right to have <a href="../magnus/computer/keysafe/">KeySafe (defunct link)</a> use a Windows-style INI file for its configuration so I started looking into using GConf instead.</p>
 <p>There are good introductions to GConf <a href="http://developer.gnome.org/feature/archive/gconf/gconf.html">here</a> and <a href="http://developer.imendio.com/wiki/Introduction_to_GConf_and_GnomeVFS">here</a>. Translating it all to Python is simple thanks to the brilliant people who gave us Gnome-Python.</p>
 <p>I wrote this code for viewing the setting of the desktop background’s filename:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="co">#! /usr/bin/python</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="im">import</span> gtk</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="im">import</span> gtk.glade</a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="im">import</span> gconf</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">class</span> GConfViewer:</a>
-<a class="sourceLine" id="cb1-8" data-line-number="8">    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>):</a>
-<a class="sourceLine" id="cb1-9" data-line-number="9">        gui <span class="op">=</span> gtk.glade.XML(<span class="st">'Viewer/viewer.glade'</span>)</a>
-<a class="sourceLine" id="cb1-10" data-line-number="10">        <span class="va">self</span>.entry <span class="op">=</span> gui.get_widget(<span class="st">'entry'</span>)</a>
-<a class="sourceLine" id="cb1-11" data-line-number="11"></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12">        client <span class="op">=</span> gconf.client_get_default()</a>
-<a class="sourceLine" id="cb1-13" data-line-number="13">        client.add_dir(<span class="st">'/desktop/gnome/background'</span>,</a>
-<a class="sourceLine" id="cb1-14" data-line-number="14">                gconf.CLIENT_PRELOAD_NONE)</a>
-<a class="sourceLine" id="cb1-15" data-line-number="15">        client.notify_add(<span class="st">'/desktop/gnome/background/picture_filename'</span>,</a>
-<a class="sourceLine" id="cb1-16" data-line-number="16">                <span class="va">self</span>.new_background)</a>
-<a class="sourceLine" id="cb1-17" data-line-number="17">        <span class="va">self</span>.new_background(client)</a>
-<a class="sourceLine" id="cb1-18" data-line-number="18">        gui.get_widget(<span class="st">'window'</span>).show_all()</a>
-<a class="sourceLine" id="cb1-19" data-line-number="19"></a>
-<a class="sourceLine" id="cb1-20" data-line-number="20">    <span class="kw">def</span> new_background(<span class="va">self</span>, client, <span class="op">*</span>args, <span class="op">**</span>kwargs):</a>
-<a class="sourceLine" id="cb1-21" data-line-number="21">        filename <span class="op">=</span> client.get_string(</a>
-<a class="sourceLine" id="cb1-22" data-line-number="22">                <span class="st">'/desktop/gnome/background/picture_filename'</span>)</a>
-<a class="sourceLine" id="cb1-23" data-line-number="23">        <span class="va">self</span>.entry.set_text(filename)</a>
-<a class="sourceLine" id="cb1-24" data-line-number="24"></a>
-<a class="sourceLine" id="cb1-25" data-line-number="25"><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">'__main__'</span>:</a>
-<a class="sourceLine" id="cb1-26" data-line-number="26">    GConfViewer()</a>
-<a class="sourceLine" id="cb1-27" data-line-number="27">    gtk.main()</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a><span class="co">#! /usr/bin/python</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a></span>
+<span id="cb1-3"><a href="#cb1-3"></a><span class="im">import</span> gtk</span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="im">import</span> gtk.glade</span>
+<span id="cb1-5"><a href="#cb1-5"></a><span class="im">import</span> gconf</span>
+<span id="cb1-6"><a href="#cb1-6"></a></span>
+<span id="cb1-7"><a href="#cb1-7"></a><span class="kw">class</span> GConfViewer:</span>
+<span id="cb1-8"><a href="#cb1-8"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>):</span>
+<span id="cb1-9"><a href="#cb1-9"></a>        gui <span class="op">=</span> gtk.glade.XML(<span class="st">'Viewer/viewer.glade'</span>)</span>
+<span id="cb1-10"><a href="#cb1-10"></a>        <span class="va">self</span>.entry <span class="op">=</span> gui.get_widget(<span class="st">'entry'</span>)</span>
+<span id="cb1-11"><a href="#cb1-11"></a></span>
+<span id="cb1-12"><a href="#cb1-12"></a>        client <span class="op">=</span> gconf.client_get_default()</span>
+<span id="cb1-13"><a href="#cb1-13"></a>        client.add_dir(<span class="st">'/desktop/gnome/background'</span>,</span>
+<span id="cb1-14"><a href="#cb1-14"></a>                gconf.CLIENT_PRELOAD_NONE)</span>
+<span id="cb1-15"><a href="#cb1-15"></a>        client.notify_add(<span class="st">'/desktop/gnome/background/picture_filename'</span>,</span>
+<span id="cb1-16"><a href="#cb1-16"></a>                <span class="va">self</span>.new_background)</span>
+<span id="cb1-17"><a href="#cb1-17"></a>        <span class="va">self</span>.new_background(client)</span>
+<span id="cb1-18"><a href="#cb1-18"></a>        gui.get_widget(<span class="st">'window'</span>).show_all()</span>
+<span id="cb1-19"><a href="#cb1-19"></a></span>
+<span id="cb1-20"><a href="#cb1-20"></a>    <span class="kw">def</span> new_background(<span class="va">self</span>, client, <span class="op">*</span>args, <span class="op">**</span>kwargs):</span>
+<span id="cb1-21"><a href="#cb1-21"></a>        filename <span class="op">=</span> client.get_string(</span>
+<span id="cb1-22"><a href="#cb1-22"></a>                <span class="st">'/desktop/gnome/background/picture_filename'</span>)</span>
+<span id="cb1-23"><a href="#cb1-23"></a>        <span class="va">self</span>.entry.set_text(filename)</span>
+<span id="cb1-24"><a href="#cb1-24"></a></span>
+<span id="cb1-25"><a href="#cb1-25"></a><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">'__main__'</span>:</span>
+<span id="cb1-26"><a href="#cb1-26"></a>    GConfViewer()</span>
+<span id="cb1-27"><a href="#cb1-27"></a>    gtk.main()</span></code></pre></div>
 <p>I really like the client-server nature of it. A short explanation:</p>
 <ol type="1">
 <li>Get the default GConf client.</li>
@@ -67,16 +67,16 @@
 <li>Define the callback method.</li>
 </ol>
 <p>I also wrote code to change the value of a key:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="co">#! /usr/bin/python</span></a>
-<a class="sourceLine" id="cb2-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb2-3" data-line-number="3"><span class="im">import</span> gconf</a>
-<a class="sourceLine" id="cb2-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb2-5" data-line-number="5"><span class="kw">def</span> set_bool_key(key):</a>
-<a class="sourceLine" id="cb2-6" data-line-number="6">    client <span class="op">=</span> gconf.client_get_default()</a>
-<a class="sourceLine" id="cb2-7" data-line-number="7">    client.set_bool(key, <span class="dv">1</span>)</a>
-<a class="sourceLine" id="cb2-8" data-line-number="8"></a>
-<a class="sourceLine" id="cb2-9" data-line-number="9"><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">'__main__'</span>:</a>
-<a class="sourceLine" id="cb2-10" data-line-number="10">    set_bool_key(<span class="st">'/desktop/gnome/background/draw_background'</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1"></a><span class="co">#! /usr/bin/python</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a></span>
+<span id="cb2-3"><a href="#cb2-3"></a><span class="im">import</span> gconf</span>
+<span id="cb2-4"><a href="#cb2-4"></a></span>
+<span id="cb2-5"><a href="#cb2-5"></a><span class="kw">def</span> set_bool_key(key):</span>
+<span id="cb2-6"><a href="#cb2-6"></a>    client <span class="op">=</span> gconf.client_get_default()</span>
+<span id="cb2-7"><a href="#cb2-7"></a>    client.set_bool(key, <span class="dv">1</span>)</span>
+<span id="cb2-8"><a href="#cb2-8"></a></span>
+<span id="cb2-9"><a href="#cb2-9"></a><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">'__main__'</span>:</span>
+<span id="cb2-10"><a href="#cb2-10"></a>    set_bool_key(<span class="st">'/desktop/gnome/background/draw_background'</span>)</span></code></pre></div>
 <p>Quite self-explanatory, isn’t it?</p>
 <p>The next step in development would be to create a schema for the keys. Both introductions above contain pointers on how to write schemas, for more pointers just take a look in <code>/usr/share/gconf/schemas/</code>. The only problem I ran into was registering the schema. The following commandline does the trick:</p>
 <pre><code>GCONF_CONFIG_SOURCE=$(gconftool-2 --get-default-source) \
@@ -87,7 +87,7 @@ gconftool-2 --makefile-install-rule keysafe.schemas</code></pre>
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/gconf.html">gconf</a>, <a href="../tags/keysafe.html">keysafe</a>, <a href="../tags/pygtk.html">pygtk</a>, <a href="../tags/python.html">python</a>
+Tags: <a title="All pages tagged 'gconf'." href="../tags/gconf.html">gconf</a>, <a title="All pages tagged 'keysafe'." href="../tags/keysafe.html">keysafe</a>, <a title="All pages tagged 'pygtk'." href="../tags/pygtk.html">pygtk</a>, <a title="All pages tagged 'python'." href="../tags/python.html">python</a>
 </div>
 
 

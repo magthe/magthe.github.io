@@ -44,33 +44,33 @@
 <pre><code> joinFN p1 p2 = joinPath [p1, p2]</code></pre></li>
 </ol>
 <p>Putting it all together I ended up with the following:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">listFilesR ::</span> FilePath <span class="ot">-&gt;</span> <span class="dt">IO</span> [FilePath]</a>
-<a class="sourceLine" id="cb4-2" data-line-number="2">listFilesR path <span class="fu">=</span> <span class="kw">let</span></a>
-<a class="sourceLine" id="cb4-3" data-line-number="3"><span class="ot">    isDODD ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
-<a class="sourceLine" id="cb4-4" data-line-number="4">    isDODD f <span class="fu">=</span> not <span class="fu">$</span> (endswith <span class="st">&quot;/.&quot;</span> f) <span class="fu">||</span> (endswith <span class="st">&quot;/..&quot;</span> f)</a>
-<a class="sourceLine" id="cb4-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb4-6" data-line-number="6"><span class="ot">    listDirs ::</span> [FilePath] <span class="ot">-&gt;</span> <span class="dt">IO</span> [FilePath]</a>
-<a class="sourceLine" id="cb4-7" data-line-number="7">    listDirs <span class="fu">=</span> filterM doesDirectoryExist</a>
-<a class="sourceLine" id="cb4-8" data-line-number="8"></a>
-<a class="sourceLine" id="cb4-9" data-line-number="9"><span class="ot">    listFiles ::</span> [FilePath] <span class="ot">-&gt;</span> <span class="dt">IO</span> [FilePath]</a>
-<a class="sourceLine" id="cb4-10" data-line-number="10">    listFiles <span class="fu">=</span> filterM doesFileExist</a>
-<a class="sourceLine" id="cb4-11" data-line-number="11"></a>
-<a class="sourceLine" id="cb4-12" data-line-number="12"><span class="ot">    joinFN ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> FilePath</a>
-<a class="sourceLine" id="cb4-13" data-line-number="13">    joinFN p1 p2 <span class="fu">=</span> joinPath [p1, p2]</a>
-<a class="sourceLine" id="cb4-14" data-line-number="14"></a>
-<a class="sourceLine" id="cb4-15" data-line-number="15">    <span class="kw">in</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb4-16" data-line-number="16">        allfiles <span class="ot">&lt;-</span> getDirectoryContents path</a>
-<a class="sourceLine" id="cb4-17" data-line-number="17">        no_dots <span class="ot">&lt;-</span> filterM (return <span class="fu">.</span> isDODD) (map (joinFN path) allfiles)</a>
-<a class="sourceLine" id="cb4-18" data-line-number="18">        dirs <span class="ot">&lt;-</span> listDirs no_dots</a>
-<a class="sourceLine" id="cb4-19" data-line-number="19">        subdirfiles <span class="ot">&lt;-</span> (mapM listFilesR dirs <span class="fu">&gt;&gt;=</span> return <span class="fu">.</span> concat)</a>
-<a class="sourceLine" id="cb4-20" data-line-number="20">        files <span class="ot">&lt;-</span> listFiles no_dots</a>
-<a class="sourceLine" id="cb4-21" data-line-number="21">        return <span class="fu">$</span> files <span class="fu">++</span> subdirfiles</a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a><span class="ot">listFilesR ::</span> <span class="dt">FilePath</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> [<span class="dt">FilePath</span>]</span>
+<span id="cb4-2"><a href="#cb4-2"></a>listFilesR path <span class="ot">=</span> <span class="kw">let</span></span>
+<span id="cb4-3"><a href="#cb4-3"></a><span class="ot">    isDODD ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a>    isDODD f <span class="ot">=</span> <span class="fu">not</span> <span class="op">$</span> (endswith <span class="st">&quot;/.&quot;</span> f) <span class="op">||</span> (endswith <span class="st">&quot;/..&quot;</span> f)</span>
+<span id="cb4-5"><a href="#cb4-5"></a></span>
+<span id="cb4-6"><a href="#cb4-6"></a><span class="ot">    listDirs ::</span> [<span class="dt">FilePath</span>] <span class="ot">-&gt;</span> <span class="dt">IO</span> [<span class="dt">FilePath</span>]</span>
+<span id="cb4-7"><a href="#cb4-7"></a>    listDirs <span class="ot">=</span> filterM doesDirectoryExist</span>
+<span id="cb4-8"><a href="#cb4-8"></a></span>
+<span id="cb4-9"><a href="#cb4-9"></a><span class="ot">    listFiles ::</span> [<span class="dt">FilePath</span>] <span class="ot">-&gt;</span> <span class="dt">IO</span> [<span class="dt">FilePath</span>]</span>
+<span id="cb4-10"><a href="#cb4-10"></a>    listFiles <span class="ot">=</span> filterM doesFileExist</span>
+<span id="cb4-11"><a href="#cb4-11"></a></span>
+<span id="cb4-12"><a href="#cb4-12"></a><span class="ot">    joinFN ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">FilePath</span></span>
+<span id="cb4-13"><a href="#cb4-13"></a>    joinFN p1 p2 <span class="ot">=</span> joinPath [p1, p2]</span>
+<span id="cb4-14"><a href="#cb4-14"></a></span>
+<span id="cb4-15"><a href="#cb4-15"></a>    <span class="kw">in</span> <span class="kw">do</span></span>
+<span id="cb4-16"><a href="#cb4-16"></a>        allfiles <span class="ot">&lt;-</span> getDirectoryContents path</span>
+<span id="cb4-17"><a href="#cb4-17"></a>        no_dots <span class="ot">&lt;-</span> filterM (<span class="fu">return</span> <span class="op">.</span> isDODD) (<span class="fu">map</span> (joinFN path) allfiles)</span>
+<span id="cb4-18"><a href="#cb4-18"></a>        dirs <span class="ot">&lt;-</span> listDirs no_dots</span>
+<span id="cb4-19"><a href="#cb4-19"></a>        subdirfiles <span class="ot">&lt;-</span> (<span class="fu">mapM</span> listFilesR dirs <span class="op">&gt;&gt;=</span> <span class="fu">return</span> <span class="op">.</span> <span class="fu">concat</span>)</span>
+<span id="cb4-20"><a href="#cb4-20"></a>        files <span class="ot">&lt;-</span> listFiles no_dots</span>
+<span id="cb4-21"><a href="#cb4-21"></a>        <span class="fu">return</span> <span class="op">$</span> files <span class="op">++</span> subdirfiles</span></code></pre></div>
 
 
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/haskell.html">haskell</a>
+Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>
 </div>
 
 
@@ -99,11 +99,11 @@ Tags: <a href="../tags/haskell.html">haskell</a>
     <p class="comment-date"><time pubdate="pubdate" datetime="2006-12-09">2006-12-09</time></p>
   </header>
 <p>Taking Greg’s excellent advise I’ve now replaced my hand-crafted function from my original post with the following:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">listFilesR ::</span> FilePath <span class="ot">-&gt;</span> <span class="dt">IO</span> [FilePath]</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">listFilesR path <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">    cur_path <span class="ot">&lt;-</span> getCurrentDirectory</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">    files <span class="ot">&lt;-</span> recurseDir <span class="dt">SystemFS</span> <span class="fu">$</span> normalise <span class="fu">$</span> combine cur_path path</a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">    filterM doesFileExist files</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="ot">listFilesR ::</span> <span class="dt">FilePath</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> [<span class="dt">FilePath</span>]</span>
+<span id="cb1-2"><a href="#cb1-2"></a>listFilesR path <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a>    cur_path <span class="ot">&lt;-</span> getCurrentDirectory</span>
+<span id="cb1-4"><a href="#cb1-4"></a>    files <span class="ot">&lt;-</span> recurseDir <span class="dt">SystemFS</span> <span class="op">$</span> normalise <span class="op">$</span> combine cur_path path</span>
+<span id="cb1-5"><a href="#cb1-5"></a>    filterM doesFileExist files</span></code></pre></div>
 <p>A lot shorter and nicer :-)</p>
 </article>
 

@@ -40,7 +40,7 @@
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/thoughts.html">thoughts</a>
+Tags: <a title="All pages tagged 'thoughts'." href="../tags/thoughts.html">thoughts</a>
 </div>
 
 
@@ -53,16 +53,16 @@ Tags: <a href="../tags/thoughts.html">thoughts</a>
 <p>A space leak is different than a memory leak, so it’s not a bug in the garbage collector.</p>
 <p>Essentially, a space leak is when your algorithm uses asymptotically (or, perhaps just significantly) more space than you think it should, usually due to the sharing involved in lazy evaluation preventing the garbage collector from claiming intermediate values that might otherwise be discarded.</p>
 <p>The classic example is probably the powerset function:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1">pset []     <span class="fu">=</span> [[]]</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">pset (x<span class="fu">:</span>xs) <span class="fu">=</span> pset xs <span class="fu">++</span> map (x<span class="fu">:</span>) (pset xs)</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">pset'leak [] <span class="fu">=</span> [[]]</a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">pset'leak (x<span class="fu">:</span>xs) <span class="fu">=</span> pxs <span class="fu">++</span> map (x<span class="fu">:</span>) pxs</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"> <span class="kw">where</span> pxs <span class="fu">=</span> pset'leak xs</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a>pset []     <span class="ot">=</span> [[]]</span>
+<span id="cb1-2"><a href="#cb1-2"></a>pset (x<span class="op">:</span>xs) <span class="ot">=</span> pset xs <span class="op">++</span> <span class="fu">map</span> (x<span class="op">:</span>) (pset xs)</span>
+<span id="cb1-3"><a href="#cb1-3"></a></span>
+<span id="cb1-4"><a href="#cb1-4"></a>pset'leak [] <span class="ot">=</span> [[]]</span>
+<span id="cb1-5"><a href="#cb1-5"></a>pset'leak (x<span class="op">:</span>xs) <span class="ot">=</span> pxs <span class="op">++</span> <span class="fu">map</span> (x<span class="op">:</span>) pxs</span>
+<span id="cb1-6"><a href="#cb1-6"></a> <span class="kw">where</span> pxs <span class="ot">=</span> pset'leak xs</span></code></pre></div>
 <p>So, if you do something like:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">length (pset [<span class="dv">1</span><span class="fu">..</span>n])</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="fu">length</span> (pset [<span class="dv">1</span><span class="op">..</span>n])</span></code></pre></div>
 <p>It will run in constant space. However:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1">length (pset'leak [<span class="dv">1</span><span class="fu">..</span>n])</a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="fu">length</span> (pset'leak [<span class="dv">1</span><span class="op">..</span>n])</span></code></pre></div>
 <p>Runs in O(2^n) space (I think).</p>
 <p>The reason for this is that in <code>pset'leak</code>, <code>pxs</code> is shared between the first and second halves of the list, whereas in <code>pset</code>, they are distinct lists. So, in <code>pset</code>, once length gets past an element in the first half of the list, the garbage collector can reclaim that portion of the list. However, in pset’leak, it <em>cannot</em> claim bits of <code>pxs</code> until we’ve used them in the <em>second</em> half of the list, because under lazy evaluation, shared values are supposed to be memoized on their first use until all references to them go out of scope. This means that we have a memoized list of size 2^(n-1) or so sitting around in memory at some point.</p>
 <p>Of course, it’s not always that easy to see why space leaks occur.</p>

@@ -31,8 +31,8 @@
 
 <p>Since the Python extensions to Epiphany have been removed from the repository I thought it was high time to start playing with what seems to be the replacement to Python extensions: <a href="http://live.gnome.org/Seed/">Seed</a> extensions. The first step is of course to get a version of Epiphany that supports Seed extensions. After a few emails on the mailing list I’ve come to a recipe (I’ve done this twice now on different machines to I’m fairly confident it works). I should probably preface this by saying that I run an up-to-date <a href="http://www.archlinux.org/">Arch</a> system, if you run something else you might need to do a bit more, or less if you’re lucky :-)</p>
 <ol type="1">
-<li>Make sure the following packages are installed ((You might need a few more packages depending on what desktop environment you use. Those were the packages I needed to add to my machine where I run Gnome and do regular non-Gnome development)): <code>libsoup</code>, <code>libwebkit</code>, <code>gnome-common</code>, <code>intltool</code>, <code>libffi</code></li>
-<li>Clone the following Git repositories from <a href="http://git.gnome.org/">git.gnome.org</a>: <code>epiphany-extensions</code>, <code>epiphany</code>, <code>seed</code>, <code>gobject-inspection</code>, <code>gnome-js-common</code>, <code>gir-repository</code></li>
+<li><p>Make sure the following packages are installed ((You might need a few more packages depending on what desktop environment you use. Those were the packages I needed to add to my machine where I run Gnome and do regular non-Gnome development)): <code>libsoup</code>, <code>libwebkit</code>, <code>gnome-common</code>, <code>intltool</code>, <code>libffi</code></p></li>
+<li><p>Clone the following Git repositories from <a href="http://git.gnome.org/">git.gnome.org</a>: <code>epiphany-extensions</code>, <code>epiphany</code>, <code>seed</code>, <code>gobject-inspection</code>, <code>gnome-js-common</code>, <code>gir-repository</code></p></li>
 <li><p>Decide on a <code>$prefix</code>, i.e. where you want it all installed (I use <code>~/opt/gnome-trunk</code>). Then export the following environment variables:</p>
 <pre><code> export PATH=$prefix/bin:$PATH
  export PKG_CONFIG_PATH=$prefix/lib/pkgconfig</code></pre></li>
@@ -53,7 +53,7 @@
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/epiphany.html">epiphany</a>, <a href="../tags/gnome.html">gnome</a>, <a href="../tags/seed.html">seed</a>
+Tags: <a title="All pages tagged 'epiphany'." href="../tags/epiphany.html">epiphany</a>, <a title="All pages tagged 'gnome'." href="../tags/gnome.html">gnome</a>, <a title="All pages tagged 'seed'." href="../tags/seed.html">seed</a>
 </div>
 
 

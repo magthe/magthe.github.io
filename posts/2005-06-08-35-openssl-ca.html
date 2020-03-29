@@ -67,7 +67,7 @@ writing new private key to './private/ca-key.pem'
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/certification%20authority.html">certification authority</a>, <a href="../tags/openssl.html">openssl</a>
+Tags: <a title="All pages tagged 'certification authority'." href="../tags/certification%20authority.html">certification authority</a>, <a title="All pages tagged 'openssl'." href="../tags/openssl.html">openssl</a>
 </div>
 
 
@@ -79,10 +79,10 @@ Tags: <a href="../tags/certification%20authority.html">certification authority</
   </header>
 <p>The following commands are useful at times:</p>
 <p>To remove the passphrase on the private key:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ex">%</span> openssl rsa -in svc01_priv.pem -out svc01_priv_nopp.pem</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1"></a><span class="ex">%</span> openssl rsa -in svc01_priv.pem -out svc01_priv_nopp.pem</span></code></pre></div>
 <p>To combine the private key and certificate into one file (e.g. to use with stunnel):</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ex">%</span> cp svc01_priv_nopp.pem svc01_full.pem</a>
-<a class="sourceLine" id="cb2-2" data-line-number="2"><span class="ex">%</span> openssl x509 -in svc01.pem <span class="op">&gt;&gt;</span> svc01_full.pem</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1"></a><span class="ex">%</span> cp svc01_priv_nopp.pem svc01_full.pem</span>
+<span id="cb2-2"><a href="#cb2-2"></a><span class="ex">%</span> openssl x509 -in svc01.pem <span class="op">&gt;&gt;</span> svc01_full.pem</span></code></pre></div>
 </article>
 
 

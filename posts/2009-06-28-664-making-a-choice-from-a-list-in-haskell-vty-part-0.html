@@ -33,52 +33,52 @@
 <p>Anyway, over the last few weeks I’ve slowly expanded it in a direction that would be useful if I ever get around to work on yet another of those projects that so far only exist in my head :-)</p>
 <p>I’ve kept the transformations in a stack of patches using <a href="http://savannah.nongnu.org/projects/quilt">quilt</a>, and I thought I’d write a little about them. Not because I think they are extremely useful or even good in any way, but more because I really need to get back to writing some blog posts ;-)</p>
 <p>This is the zeroth post containing the version I put together when I first came across <code>Vty</code>. It is an executable program so it starts with the familiar</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></span></code></pre></div>
 <p>Next comes a few modules that have to be imported:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">import</span> <span class="dt">Data.Maybe</span></a>
-<a class="sourceLine" id="cb2-2" data-line-number="2"><span class="kw">import</span> <span class="dt">Graphics.Vty</span></a>
-<a class="sourceLine" id="cb2-3" data-line-number="3"><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Data.ByteString.Char8</span> <span class="kw">as</span> <span class="dt">B</span></a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">import</span> <span class="dt">Data.Maybe</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a><span class="kw">import</span> <span class="dt">Graphics.Vty</span></span>
+<span id="cb2-3"><a href="#cb2-3"></a><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Data.ByteString.Char8</span> <span class="kw">as</span> <span class="dt">B</span></span></code></pre></div>
 <p>The options are, in this version, represented as a list of strings. For now it’s enough to have a nonsensical list of unique strings.</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1">options <span class="fu">=</span> [ (show i) <span class="fu">++</span> <span class="st">&quot; Foo&quot;</span> <span class="fu">|</span> i <span class="ot">&lt;-</span> [<span class="dv">0</span><span class="fu">..</span><span class="dv">59</span>]]</a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a>options <span class="ot">=</span> [ (<span class="fu">show</span> i) <span class="op">++</span> <span class="st">&quot; Foo&quot;</span> <span class="op">|</span> i <span class="ot">&lt;-</span> [<span class="dv">0</span><span class="op">..</span><span class="dv">59</span>]]</span></code></pre></div>
 <p>The <code>main</code> function is as small as possible, two rows, the first creating an instance of <code>Vty</code> and the second getting the choice and feeding it into <code>print</code>.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">main <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb4-2" data-line-number="2">    vt <span class="ot">&lt;-</span> mkVty</a>
-<a class="sourceLine" id="cb4-3" data-line-number="3">    getChoice vt options <span class="fu">&gt;&gt;=</span> print</a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a>    vt <span class="ot">&lt;-</span> mkVty</span>
+<span id="cb4-3"><a href="#cb4-3"></a>    getChoice vt options <span class="op">&gt;&gt;=</span> <span class="fu">print</span></span></code></pre></div>
 <p>Of course one would think that <code>geChoice</code> would be the meat of the code, but it is also short. After getting the size of the terminal it calls <code>_getChoice</code>, which <em>is</em> the meat of the code. The reason for this split is the handling of resize events.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1">getChoice vt opts <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb5-2" data-line-number="2">    (sx, sy) <span class="ot">&lt;-</span> getSize vt</a>
-<a class="sourceLine" id="cb5-3" data-line-number="3">    _getChoice vt opts <span class="dv">0</span> sx sy</a></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1"></a>getChoice vt opts <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a>    (sx, sy) <span class="ot">&lt;-</span> getSize vt</span>
+<span id="cb5-3"><a href="#cb5-3"></a>    _getChoice vt opts <span class="dv">0</span> sx sy</span></code></pre></div>
 <p>The main part of <code>_getChoice</code> is straight forward, first update the terminal, then wait for an event, and finally handle the event. Unless the user wants to exit (pressing enter choses an item, pressing escape exits without a choice) a recursive call is made to <code>_getChoice</code> with slightly modified arguments.</p>
 <p>Probably the most complicated part is the calculation of the top of the list of visible items. The idea is that if the list has more items than there are lines in the terminal then the <em>cursor</em> moves down until the middle line, once there any down movement will result in the list scrolling up. This continues until the end of the list is visible, at that point the <em>cursor</em> moves down towards the last line in the terminal. I doubt that explanation makes sense, hopefully it’ll be clear to anyone who bothers running the code.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1">_getChoice vt opts idx sx sy <span class="fu">=</span></a>
-<a class="sourceLine" id="cb6-2" data-line-number="2">    <span class="kw">let</span></a>
-<a class="sourceLine" id="cb6-3" data-line-number="3">        _calcTop winHeight listLength idx <span class="fu">=</span> max <span class="dv">0</span> ((min listLength ((max <span class="dv">0</span> (idx <span class="fu">-</span> winHeight <span class="ot">`div`</span> <span class="dv">2</span>)) <span class="fu">+</span> winHeight)) <span class="fu">-</span> winHeight)</a>
-<a class="sourceLine" id="cb6-4" data-line-number="4">        _top <span class="fu">=</span> _calcTop sy (length opts) idx</a>
-<a class="sourceLine" id="cb6-5" data-line-number="5">        _visible_opts <span class="fu">=</span> take sy (drop _top opts)</a>
-<a class="sourceLine" id="cb6-6" data-line-number="6">    <span class="kw">in</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb6-7" data-line-number="7">        update vt (render _visible_opts (idx <span class="fu">-</span> _top) sx)</a>
-<a class="sourceLine" id="cb6-8" data-line-number="8">        k <span class="ot">&lt;-</span> getEvent vt</a>
-<a class="sourceLine" id="cb6-9" data-line-number="9">        <span class="kw">case</span> k <span class="kw">of</span></a>
-<a class="sourceLine" id="cb6-10" data-line-number="10">            <span class="dt">EvKey</span> <span class="dt">KDown</span> [] <span class="ot">-&gt;</span> _getChoice vt opts (min (length opts <span class="fu">-</span> <span class="dv">1</span>) (idx <span class="fu">+</span> <span class="dv">1</span>)) sx sy</a>
-<a class="sourceLine" id="cb6-11" data-line-number="11">            <span class="dt">EvKey</span> <span class="dt">KUp</span> [] <span class="ot">-&gt;</span> _getChoice vt opts (max <span class="dv">0</span> (idx <span class="fu">-</span> <span class="dv">1</span>)) sx sy</a>
-<a class="sourceLine" id="cb6-12" data-line-number="12">            <span class="dt">EvKey</span> <span class="dt">KEsc</span> [] <span class="ot">-&gt;</span> shutdown vt <span class="fu">&gt;&gt;</span> return <span class="dt">Nothing</span></a>
-<a class="sourceLine" id="cb6-13" data-line-number="13">            <span class="dt">EvKey</span> <span class="dt">KEnter</span> [] <span class="ot">-&gt;</span> shutdown vt <span class="fu">&gt;&gt;</span> return (<span class="dt">Just</span> <span class="fu">$</span> (idx, opts <span class="fu">!!</span> idx))</a>
-<a class="sourceLine" id="cb6-14" data-line-number="14">            <span class="dt">EvResize</span> nx ny <span class="ot">-&gt;</span> _getChoice vt opts idx nx ny</a>
-<a class="sourceLine" id="cb6-15" data-line-number="15">            _ <span class="ot">-&gt;</span> _getChoice vt opts idx sx sy</a></code></pre></div>
-<p>The final piece is the code that renders the list. The items of the list are zipped together with a list of integers. Each such tuple is then rendered into a line,<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> where the line of the cursor is highlighted. The resulting list of rendered lines is then folded into a full image.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1">render opts idx sx <span class="fu">=</span> pic {</a>
-<a class="sourceLine" id="cb7-2" data-line-number="2">    pImage <span class="fu">=</span> foldr1 (<span class="ot">&lt;-</span><span class="fu">&gt;</span>) <span class="fu">$</span> map _render1 <span class="fu">$</span> zip [<span class="dv">0</span><span class="fu">..</span>] opts</a>
-<a class="sourceLine" id="cb7-3" data-line-number="3">    }</a>
-<a class="sourceLine" id="cb7-4" data-line-number="4">    <span class="kw">where</span></a>
-<a class="sourceLine" id="cb7-5" data-line-number="5">        _render1 (i, o) <span class="fu">=</span> renderHFill attr <span class="ch">' '</span> <span class="dv">5</span> <span class="fu">&lt;|&gt;</span> renderBS (_attr i) (B.pack o) <span class="fu">&lt;|&gt;</span> renderHFill attr <span class="ch">' '</span> (sx <span class="fu">-</span> <span class="dv">5</span> <span class="fu">-</span> length o)</a>
-<a class="sourceLine" id="cb7-6" data-line-number="6">        _attr i <span class="fu">=</span> <span class="kw">if</span> i <span class="fu">/=</span> idx</a>
-<a class="sourceLine" id="cb7-7" data-line-number="7">            <span class="kw">then</span> attr</a>
-<a class="sourceLine" id="cb7-8" data-line-number="8">            <span class="kw">else</span> setRV attr</a></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1"></a>_getChoice vt opts idx sx sy <span class="ot">=</span></span>
+<span id="cb6-2"><a href="#cb6-2"></a>    <span class="kw">let</span></span>
+<span id="cb6-3"><a href="#cb6-3"></a>        _calcTop winHeight listLength idx <span class="ot">=</span> <span class="fu">max</span> <span class="dv">0</span> ((<span class="fu">min</span> listLength ((<span class="fu">max</span> <span class="dv">0</span> (idx <span class="op">-</span> winHeight <span class="ot">`div`</span> <span class="dv">2</span>)) <span class="op">+</span> winHeight)) <span class="op">-</span> winHeight)</span>
+<span id="cb6-4"><a href="#cb6-4"></a>        _top <span class="ot">=</span> _calcTop sy (<span class="fu">length</span> opts) idx</span>
+<span id="cb6-5"><a href="#cb6-5"></a>        _visible_opts <span class="ot">=</span> <span class="fu">take</span> sy (<span class="fu">drop</span> _top opts)</span>
+<span id="cb6-6"><a href="#cb6-6"></a>    <span class="kw">in</span> <span class="kw">do</span></span>
+<span id="cb6-7"><a href="#cb6-7"></a>        update vt (render _visible_opts (idx <span class="op">-</span> _top) sx)</span>
+<span id="cb6-8"><a href="#cb6-8"></a>        k <span class="ot">&lt;-</span> getEvent vt</span>
+<span id="cb6-9"><a href="#cb6-9"></a>        <span class="kw">case</span> k <span class="kw">of</span></span>
+<span id="cb6-10"><a href="#cb6-10"></a>            <span class="dt">EvKey</span> <span class="dt">KDown</span> [] <span class="ot">-&gt;</span> _getChoice vt opts (<span class="fu">min</span> (<span class="fu">length</span> opts <span class="op">-</span> <span class="dv">1</span>) (idx <span class="op">+</span> <span class="dv">1</span>)) sx sy</span>
+<span id="cb6-11"><a href="#cb6-11"></a>            <span class="dt">EvKey</span> <span class="dt">KUp</span> [] <span class="ot">-&gt;</span> _getChoice vt opts (<span class="fu">max</span> <span class="dv">0</span> (idx <span class="op">-</span> <span class="dv">1</span>)) sx sy</span>
+<span id="cb6-12"><a href="#cb6-12"></a>            <span class="dt">EvKey</span> <span class="dt">KEsc</span> [] <span class="ot">-&gt;</span> shutdown vt <span class="op">&gt;&gt;</span> <span class="fu">return</span> <span class="dt">Nothing</span></span>
+<span id="cb6-13"><a href="#cb6-13"></a>            <span class="dt">EvKey</span> <span class="dt">KEnter</span> [] <span class="ot">-&gt;</span> shutdown vt <span class="op">&gt;&gt;</span> <span class="fu">return</span> (<span class="dt">Just</span> <span class="op">$</span> (idx, opts <span class="op">!!</span> idx))</span>
+<span id="cb6-14"><a href="#cb6-14"></a>            <span class="dt">EvResize</span> nx ny <span class="ot">-&gt;</span> _getChoice vt opts idx nx ny</span>
+<span id="cb6-15"><a href="#cb6-15"></a>            _ <span class="ot">-&gt;</span> _getChoice vt opts idx sx sy</span></code></pre></div>
+<p>The final piece is the code that renders the list. The items of the list are zipped together with a list of integers. Each such tuple is then rendered into a line,<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> where the line of the cursor is highlighted. The resulting list of rendered lines is then folded into a full image.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1"></a>render opts idx sx <span class="ot">=</span> pic {</span>
+<span id="cb7-2"><a href="#cb7-2"></a>    pImage <span class="ot">=</span> <span class="fu">foldr1</span> (<span class="op">&lt;-&gt;</span>) <span class="op">$</span> <span class="fu">map</span> _render1 <span class="op">$</span> <span class="fu">zip</span> [<span class="dv">0</span><span class="op">..</span>] opts</span>
+<span id="cb7-3"><a href="#cb7-3"></a>    }</span>
+<span id="cb7-4"><a href="#cb7-4"></a>    <span class="kw">where</span></span>
+<span id="cb7-5"><a href="#cb7-5"></a>        _render1 (i, o) <span class="ot">=</span> renderHFill attr <span class="ch">' '</span> <span class="dv">5</span> <span class="op">&lt;|&gt;</span> renderBS (_attr i) (B.pack o) <span class="op">&lt;|&gt;</span> renderHFill attr <span class="ch">' '</span> (sx <span class="op">-</span> <span class="dv">5</span> <span class="op">-</span> <span class="fu">length</span> o)</span>
+<span id="cb7-6"><a href="#cb7-6"></a>        _attr i <span class="ot">=</span> <span class="kw">if</span> i <span class="op">/=</span> idx</span>
+<span id="cb7-7"><a href="#cb7-7"></a>            <span class="kw">then</span> attr</span>
+<span id="cb7-8"><a href="#cb7-8"></a>            <span class="kw">else</span> setRV attr</span></code></pre></div>
 <p>That’s it, that’s the starting point. It’s also likely to be the longest post in this planned series. :-)</p>
-<section class="footnotes">
+<section class="footnotes" role="doc-endnotes">
 <hr />
 <ol>
-<li id="fn1"><p>The reason for the line rendering looking so complicated is that <code>Vty</code> requires each line to be of equal length.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+<li id="fn1" role="doc-endnote"><p>The reason for the line rendering looking so complicated is that <code>Vty</code> requires each line to be of equal length.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section>
 
@@ -86,7 +86,7 @@
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/vty.html">vty</a>
+Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>, <a title="All pages tagged 'vty'." href="../tags/vty.html">vty</a>
 </div>
 
 

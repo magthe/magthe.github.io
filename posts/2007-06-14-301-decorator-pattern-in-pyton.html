@@ -31,36 +31,36 @@
 
 <p>The other day I was talking to a mate and former colleague of mine, he’s been doing a lot of Java and C# before but recently he got hired by a small company to do Python work. Anyway he related a funny part of the interview where he said he’d done design patterns and they asked him to explain one that he’s used. He chose <a href="http://home.earthlink.net/~huston2/dp/decorator.html">Decorator</a>. After he was done explaining the interviewer commented that surely he meant <a href="http://home.earthlink.net/~huston2/dp/proxy.html">Proxy</a>. The interviewer was wrong and my mate suspects this might be something that’s common in the Python world due to the built-in support for function/method decorators in the language. I suspect he’s right. Anyway, he showed me what he was playing with and I couldn’t help but play a bit on my own afterwards.</p>
 <p>Here’s the class of the core object, a simple self-explanatory piece of code:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">class</span> Writer(<span class="bu">object</span>):</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">    <span class="kw">def</span> write(<span class="va">self</span>, s):</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">        <span class="bu">print</span> s</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">class</span> Writer(<span class="bu">object</span>):</span>
+<span id="cb1-2"><a href="#cb1-2"></a>    <span class="kw">def</span> write(<span class="va">self</span>, s):</span>
+<span id="cb1-3"><a href="#cb1-3"></a>        <span class="bu">print</span> s</span></code></pre></div>
 <p>Here’s a not very exciting example of using it:</p>
 <pre><code>&gt; w = Writer()
 &gt; w.write('hello')
 hello</code></pre>
 <p>We want to decorate it by modifying the string passed to <code>write</code> in different ways. First here’s a base decorator class:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">class</span> WriterDecorator(<span class="bu">object</span>):</a>
-<a class="sourceLine" id="cb3-2" data-line-number="2">    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, wrappee):</a>
-<a class="sourceLine" id="cb3-3" data-line-number="3">        <span class="va">self</span>.wrappee <span class="op">=</span> wrappee</a>
-<a class="sourceLine" id="cb3-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb3-5" data-line-number="5">    <span class="kw">def</span> write(<span class="va">self</span>, s):</a>
-<a class="sourceLine" id="cb3-6" data-line-number="6">        <span class="va">self</span>.wrappee.write(s)</a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">class</span> WriterDecorator(<span class="bu">object</span>):</span>
+<span id="cb3-2"><a href="#cb3-2"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, wrappee):</span>
+<span id="cb3-3"><a href="#cb3-3"></a>        <span class="va">self</span>.wrappee <span class="op">=</span> wrappee</span>
+<span id="cb3-4"><a href="#cb3-4"></a></span>
+<span id="cb3-5"><a href="#cb3-5"></a>    <span class="kw">def</span> write(<span class="va">self</span>, s):</span>
+<span id="cb3-6"><a href="#cb3-6"></a>        <span class="va">self</span>.wrappee.write(s)</span></code></pre></div>
 <p>Using it is straight forward, and still not very exciting:</p>
 <pre><code>&gt; wd = WriterDecorator(w)
 &gt; wd.write('hello')
 hello</code></pre>
 <p>The constructor requires a wrappee object and the implementation of <code>write</code> is straight forward. Strictly speaking this class is unnecessary, but it’s convenient once we implement “real” decorators. Here’s the first one, it converts the string to upper case before passing it on down the chain:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="kw">class</span> UpperWriter(WriterDecorator):</a>
-<a class="sourceLine" id="cb5-2" data-line-number="2">    <span class="kw">def</span> write(<span class="va">self</span>, s):</a>
-<a class="sourceLine" id="cb5-3" data-line-number="3">        <span class="va">self</span>.wrappee.write(s.upper())</a></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">class</span> UpperWriter(WriterDecorator):</span>
+<span id="cb5-2"><a href="#cb5-2"></a>    <span class="kw">def</span> write(<span class="va">self</span>, s):</span>
+<span id="cb5-3"><a href="#cb5-3"></a>        <span class="va">self</span>.wrappee.write(s.upper())</span></code></pre></div>
 <p>This is where it gets a little more exciting, not much though:</p>
 <pre><code>&gt; uw = UpperWriter(w)
 &gt; uw.write('hello')
 HELLO</code></pre>
 <p>Here’s a nice detail about Python that I’ve never reflected over myself—constructors are inherited in Python. Here’s another decorator, one that makes the string “shouty”:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="kw">class</span> ShoutWriter(WriterDecorator):</a>
-<a class="sourceLine" id="cb7-2" data-line-number="2">    <span class="kw">def</span> write(<span class="va">self</span>, s):</a>
-<a class="sourceLine" id="cb7-3" data-line-number="3">        <span class="va">self</span>.wrappee.write(<span class="st">'!'</span>.join([t <span class="cf">for</span> t <span class="kw">in</span> s.split(<span class="st">' '</span>) <span class="cf">if</span> t]) <span class="op">+</span> <span class="st">'!'</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">class</span> ShoutWriter(WriterDecorator):</span>
+<span id="cb7-2"><a href="#cb7-2"></a>    <span class="kw">def</span> write(<span class="va">self</span>, s):</span>
+<span id="cb7-3"><a href="#cb7-3"></a>        <span class="va">self</span>.wrappee.write(<span class="st">'!'</span>.join([t <span class="cf">for</span> t <span class="kw">in</span> s.split(<span class="st">' '</span>) <span class="cf">if</span> t]) <span class="op">+</span> <span class="st">'!'</span>)</span></code></pre></div>
 <p>Now it’s getting a little more interesting, because the decorators can be combined:</p>
 <pre><code>&gt; sw1 = ShoutWriter(w)
 &gt; sw1.write('hello again')
@@ -69,25 +69,25 @@ hello!again!
 &gt; sw2.write('hello again')
 HELLO!AGAIN!</code></pre>
 <p>Some of these combinations are more useful than others, and if they’re used very often then it might be worth creating a convenience class for them. Here’s one that I imagine could be useful if you’re a writer for <a href="http://www.theregister.co.uk/">The Register</a>:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="kw">class</span> YahooWriter(WriterDecorator):</a>
-<a class="sourceLine" id="cb9-2" data-line-number="2">    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, wrappee):</a>
-<a class="sourceLine" id="cb9-3" data-line-number="3">        <span class="va">self</span>.wrappee <span class="op">=</span> UpperWriter(ShoutWriter(wrappee))</a></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">class</span> YahooWriter(WriterDecorator):</span>
+<span id="cb9-2"><a href="#cb9-2"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, wrappee):</span>
+<span id="cb9-3"><a href="#cb9-3"></a>        <span class="va">self</span>.wrappee <span class="op">=</span> UpperWriter(ShoutWriter(wrappee))</span></code></pre></div>
 <p>Using it is simple:</p>
 <pre><code>&gt; yw = YahooWriter(w)
 &gt; yw.write('hello again')
 HELLO!AGAIN!</code></pre>
 <p>Well, so far it’s been child’s play and I wouldn’t have bothered writing about this unless I took this a little further. I thought something was familiar about how the convenience class worked. I vaguely remembered reading something about <a href="http://fuhm.net/super-harmful/">super being harmful</a> and there seemed to be similarities between behaviour described there and the desired behaviour when nesting decorators. Rewriting the basic decorator classes using <code>super</code> like this retains their behaviour:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="kw">class</span> UpperWriter(WriterDecorator):</a>
-<a class="sourceLine" id="cb11-2" data-line-number="2">    <span class="kw">def</span> write(<span class="va">self</span>, s):</a>
-<a class="sourceLine" id="cb11-3" data-line-number="3">        <span class="bu">super</span>(UpperWriter, <span class="va">self</span>).write(s.upper())</a>
-<a class="sourceLine" id="cb11-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb11-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb11-6" data-line-number="6"><span class="kw">class</span> ShoutWriter(WriterDecorator):</a>
-<a class="sourceLine" id="cb11-7" data-line-number="7">    <span class="kw">def</span> write(<span class="va">self</span>, s):</a>
-<a class="sourceLine" id="cb11-8" data-line-number="8">        <span class="bu">super</span>(ShoutWriter, <span class="va">self</span>).write(<span class="st">'!'</span>.join([t <span class="cf">for</span> t <span class="kw">in</span> s.split(<span class="st">' '</span>) <span class="cf">if</span> t]) <span class="op">+</span> <span class="st">'!'</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1"></a><span class="kw">class</span> UpperWriter(WriterDecorator):</span>
+<span id="cb11-2"><a href="#cb11-2"></a>    <span class="kw">def</span> write(<span class="va">self</span>, s):</span>
+<span id="cb11-3"><a href="#cb11-3"></a>        <span class="bu">super</span>(UpperWriter, <span class="va">self</span>).write(s.upper())</span>
+<span id="cb11-4"><a href="#cb11-4"></a></span>
+<span id="cb11-5"><a href="#cb11-5"></a></span>
+<span id="cb11-6"><a href="#cb11-6"></a><span class="kw">class</span> ShoutWriter(WriterDecorator):</span>
+<span id="cb11-7"><a href="#cb11-7"></a>    <span class="kw">def</span> write(<span class="va">self</span>, s):</span>
+<span id="cb11-8"><a href="#cb11-8"></a>        <span class="bu">super</span>(ShoutWriter, <span class="va">self</span>).write(<span class="st">'!'</span>.join([t <span class="cf">for</span> t <span class="kw">in</span> s.split(<span class="st">' '</span>) <span class="cf">if</span> t]) <span class="op">+</span> <span class="st">'!'</span>)</span></code></pre></div>
 <p>What this does though is allow implementing <code>YahooWriter</code> like this:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="kw">class</span> YahooWriter(UpperWriter, ShoutWriter):</a>
-<a class="sourceLine" id="cb12-2" data-line-number="2">    <span class="cf">pass</span></a></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">class</span> YahooWriter(UpperWriter, ShoutWriter):</span>
+<span id="cb12-2"><a href="#cb12-2"></a>    <span class="cf">pass</span></span></code></pre></div>
 <p>I think that’s pretty cute.</p>
 <p>Here’s where I have to stop though. I don’t know if this is even useful, is it? Maybe it has some serious draw-backs my inexperience and ignorance prevents me from seeing, does it? Has <code>super</code> been used like this somewhere? I’d love pointers to that code :-)</p>
 <p><em>[Edited 16-06-2007 00:34 BST]</em> Bloody hell, can’t believe I had a spelling error in the title all this time. Embarrassing really!</p>
@@ -96,7 +96,7 @@ HELLO!AGAIN!</code></pre>
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/design%20patterns.html">design patterns</a>, <a href="../tags/python.html">python</a>
+Tags: <a title="All pages tagged 'design patterns'." href="../tags/design%20patterns.html">design patterns</a>, <a title="All pages tagged 'python'." href="../tags/python.html">python</a>
 </div>
 
 
@@ -107,8 +107,8 @@ Tags: <a href="../tags/design%20patterns.html">design patterns</a>, <a href="../
     <p class="comment-date"><time pubdate="pubdate" datetime="2007-06-15">2007-06-15</time></p>
   </header>
 <p>IIRC, the decorator uses the @ syntax before the method to decorate, like the following:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="at">@decorate</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">def</span> method: <span class="cf">pass</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a><span class="at">@decorate</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="kw">def</span> method: <span class="cf">pass</span></span></code></pre></div>
 <p>Also, I think super is not used anymore. Should have been baseclass.method .</p>
 </article>
 

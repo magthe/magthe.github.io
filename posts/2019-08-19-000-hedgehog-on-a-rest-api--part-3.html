@@ -33,40 +33,40 @@
 <p>So, I set out to try to deal with that. I’m still using the simple API from the previous posts, but this time I’m pretending that I can’t build the ID into the model myself, or, put another way, I’m capturing the ID from the responses.</p>
 <h2 id="the-model-state">The model state</h2>
 <p>When capturing the ID it’s no longer possible to use a simple <code>Map Int Text</code> for the state, because I don’t actually have the ID until I have an HTTP response. However, the ID is playing an important role in the constructing of a sequence of actions. The trick is to use <code>Var Int v</code> instead of an ordinary <code>Int</code>. As I understand it, and I believe that’s a good enough understanding to make use of Hedgehog possible, is that this way the ID is an opaque blob in the construction phase, and it’s turned into a concrete value during execution. When in the opaque state it implements enough type classes to be useful for my purposes.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">newtype</span> <span class="dt">State</span> (<span class="ot">v ::</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span>)<span class="fu">=</span> <span class="dt">State</span> (<span class="dt">M.Map</span> (<span class="dt">Var</span> <span class="dt">Int</span> v) <span class="dt">Text</span>)</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">newtype</span> <span class="dt">State</span> (<span class="ot">v ::</span> <span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span>)<span class="ot">=</span> <span class="dt">State</span> (<span class="dt">M.Map</span> (<span class="dt">Var</span> <span class="dt">Int</span> v) <span class="dt">Text</span>)</span>
+<span id="cb1-2"><a href="#cb1-2"></a>  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span></code></pre></div>
 <h2 id="the-api-calls-add-user">The API calls: add user</h2>
 <p>When taking a closer look at the <a href="https://hackage.haskell.org/package/hedgehog-0.5.3/docs/Hedgehog.html#t:Callback"><code>Callback</code></a> type not all the callbacks will get the state in the same form, opaque or concrete, and one of them, <code>Update</code> actually receives the state in both states depending on the phase of execution. This has the most impact on the add user action. To deal with it there’s a need to rearrange the code a bit, to be specific, <code>commandExecute</code> can no longer return a tuple of both the ID and the status of the HTTP response because the update function can’t reach into the tuple, which it needs to update the state.</p>
 <p>That means the <code>commandExecute</code> function will have to do tests too. It <em>is</em> nice to keep all tests in the callbacks, but by sticking a <code>MonadTest m</code> constraint on the <code>commandExecute</code> it turns into a nice solution anyway.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">addUser ::</span> (<span class="dt">MonadGen</span> n, <span class="dt">MonadIO</span> m, <span class="dt">MonadTest</span> m) <span class="ot">=&gt;</span> <span class="dt">Command</span> n m <span class="dt">State</span></a>
-<a class="sourceLine" id="cb2-2" data-line-number="2">addUser <span class="fu">=</span> <span class="dt">Command</span> gen exec [ <span class="dt">Update</span> u</a>
-<a class="sourceLine" id="cb2-3" data-line-number="3">                           ]</a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb2-5" data-line-number="5">    gen _ <span class="fu">=</span> <span class="dt">Just</span> <span class="fu">$</span> <span class="dt">AddUser</span> <span class="fu">&lt;$&gt;</span> Gen.text (Range.linear <span class="dv">0</span> <span class="dv">42</span>) Gen.alpha</a>
-<a class="sourceLine" id="cb2-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb2-7" data-line-number="7">    exec (<span class="dt">AddUser</span> n) <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-8" data-line-number="8">      (s, ui) <span class="ot">&lt;-</span> liftIO <span class="fu">$</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-9" data-line-number="9">        mgr <span class="ot">&lt;-</span> newManager defaultManagerSettings</a>
-<a class="sourceLine" id="cb2-10" data-line-number="10">        addReq <span class="ot">&lt;-</span> parseRequest <span class="st">&quot;POST http://localhost:3000/users&quot;</span></a>
-<a class="sourceLine" id="cb2-11" data-line-number="11">        <span class="kw">let</span> addReq' <span class="fu">=</span> addReq { requestBody <span class="fu">=</span> <span class="dt">RequestBodyLBS</span> (encode <span class="fu">$</span> <span class="dt">User</span> <span class="dv">0</span> n)}</a>
-<a class="sourceLine" id="cb2-12" data-line-number="12">        addResp <span class="ot">&lt;-</span> httpLbs addReq' mgr</a>
-<a class="sourceLine" id="cb2-13" data-line-number="13">        <span class="kw">let</span> user <span class="fu">=</span> decode (responseBody addResp)<span class="ot"> ::</span> <span class="dt">Maybe</span> <span class="dt">User</span></a>
-<a class="sourceLine" id="cb2-14" data-line-number="14">        return (responseStatus addResp, user)</a>
-<a class="sourceLine" id="cb2-15" data-line-number="15">      status201 <span class="fu">===</span> s</a>
-<a class="sourceLine" id="cb2-16" data-line-number="16">      assert <span class="fu">$</span> isJust ui</a>
-<a class="sourceLine" id="cb2-17" data-line-number="17">      (userName <span class="fu">&lt;$&gt;</span> ui) <span class="fu">===</span> <span class="dt">Just</span> n</a>
-<a class="sourceLine" id="cb2-18" data-line-number="18">      return <span class="fu">$</span> userId <span class="fu">$</span> fromJust ui</a>
-<a class="sourceLine" id="cb2-19" data-line-number="19"></a>
-<a class="sourceLine" id="cb2-20" data-line-number="20">    u (<span class="dt">State</span> m) (<span class="dt">AddUser</span> n) o <span class="fu">=</span> <span class="dt">State</span> (M.insert o n m)</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="ot">addUser ::</span> (<span class="dt">MonadGen</span> n, <span class="dt">MonadIO</span> m, <span class="dt">MonadTest</span> m) <span class="ot">=&gt;</span> <span class="dt">Command</span> n m <span class="dt">State</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a>addUser <span class="ot">=</span> <span class="dt">Command</span> gen exec [ <span class="dt">Update</span> u</span>
+<span id="cb2-3"><a href="#cb2-3"></a>                           ]</span>
+<span id="cb2-4"><a href="#cb2-4"></a>  <span class="kw">where</span></span>
+<span id="cb2-5"><a href="#cb2-5"></a>    gen _ <span class="ot">=</span> <span class="dt">Just</span> <span class="op">$</span> <span class="dt">AddUser</span> <span class="op">&lt;$&gt;</span> Gen.text (Range.linear <span class="dv">0</span> <span class="dv">42</span>) Gen.alpha</span>
+<span id="cb2-6"><a href="#cb2-6"></a></span>
+<span id="cb2-7"><a href="#cb2-7"></a>    exec (<span class="dt">AddUser</span> n) <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb2-8"><a href="#cb2-8"></a>      (s, ui) <span class="ot">&lt;-</span> liftIO <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb2-9"><a href="#cb2-9"></a>        mgr <span class="ot">&lt;-</span> newManager defaultManagerSettings</span>
+<span id="cb2-10"><a href="#cb2-10"></a>        addReq <span class="ot">&lt;-</span> parseRequest <span class="st">&quot;POST http://localhost:3000/users&quot;</span></span>
+<span id="cb2-11"><a href="#cb2-11"></a>        <span class="kw">let</span> addReq' <span class="ot">=</span> addReq { requestBody <span class="ot">=</span> <span class="dt">RequestBodyLBS</span> (encode <span class="op">$</span> <span class="dt">User</span> <span class="dv">0</span> n)}</span>
+<span id="cb2-12"><a href="#cb2-12"></a>        addResp <span class="ot">&lt;-</span> httpLbs addReq' mgr</span>
+<span id="cb2-13"><a href="#cb2-13"></a>        <span class="kw">let</span> user <span class="ot">=</span> decode (responseBody addResp)<span class="ot"> ::</span> <span class="dt">Maybe</span> <span class="dt">User</span></span>
+<span id="cb2-14"><a href="#cb2-14"></a>        <span class="fu">return</span> (responseStatus addResp, user)</span>
+<span id="cb2-15"><a href="#cb2-15"></a>      status201 <span class="op">===</span> s</span>
+<span id="cb2-16"><a href="#cb2-16"></a>      assert <span class="op">$</span> isJust ui</span>
+<span id="cb2-17"><a href="#cb2-17"></a>      (userName <span class="op">&lt;$&gt;</span> ui) <span class="op">===</span> <span class="dt">Just</span> n</span>
+<span id="cb2-18"><a href="#cb2-18"></a>      <span class="fu">return</span> <span class="op">$</span> userId <span class="op">$</span> fromJust ui</span>
+<span id="cb2-19"><a href="#cb2-19"></a></span>
+<span id="cb2-20"><a href="#cb2-20"></a>    u (<span class="dt">State</span> m) (<span class="dt">AddUser</span> n) o <span class="ot">=</span> <span class="dt">State</span> (M.insert o n m)</span></code></pre></div>
 <p>I found that once I’d come around to folding the <code>Ensure</code> callback into the <code>commandExecute</code> function the rest fell out from the types.</p>
 <h2 id="the-api-calls-delete-user">The API calls: delete user</h2>
 <p>The other actions, deleting a user and getting a user, required only minor changes and the changes were rather similar in both cases.</p>
 <p>Not the type for the action needs to take a <code>Var Int v</code> instead of just a plain <code>Int</code>.</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">newtype</span> <span class="dt">DeleteUser</span> (<span class="ot">v ::</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span>) <span class="fu">=</span> <span class="dt">DeleteUser</span> (<span class="dt">Var</span> <span class="dt">Int</span> v)</a>
-<a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">newtype</span> <span class="dt">DeleteUser</span> (<span class="ot">v ::</span> <span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span>) <span class="ot">=</span> <span class="dt">DeleteUser</span> (<span class="dt">Var</span> <span class="dt">Int</span> v)</span>
+<span id="cb3-2"><a href="#cb3-2"></a>  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span></code></pre></div>
 <p>Which in turn affect the implementation of <code>HTraversable</code></p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">HTraversable</span> <span class="dt">DeleteUser</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb4-2" data-line-number="2">  htraverse f (<span class="dt">DeleteUser</span> vi) <span class="fu">=</span> <span class="dt">DeleteUser</span> <span class="fu">&lt;$&gt;</span> htraverse f vi</a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">instance</span> <span class="dt">HTraversable</span> <span class="dt">DeleteUser</span> <span class="kw">where</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a>  htraverse f (<span class="dt">DeleteUser</span> vi) <span class="ot">=</span> <span class="dt">DeleteUser</span> <span class="op">&lt;$&gt;</span> htraverse f vi</span></code></pre></div>
 <p>Then the changes to the <code>Command</code> mostly comprise use of <a href="https://hackage.haskell.org/package/hedgehog-0.5.3/docs/Hedgehog.html#v:concrete"><code>concrete</code></a> in places where the real ID is needed.</p>
 <pre class="haskll"><code>deleteUser :: (MonadGen n, MonadIO m) =&gt; Command n m State
 deleteUser = Command gen exec [ Update u
@@ -96,7 +96,7 @@ deleteUser = Command gen exec [ Update u
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/hedgehog.html">hedgehog</a>, <a href="../tags/testing.html">testing</a>
+Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>, <a title="All pages tagged 'hedgehog'." href="../tags/hedgehog.html">hedgehog</a>, <a title="All pages tagged 'testing'." href="../tags/testing.html">testing</a>
 </div>
 
 

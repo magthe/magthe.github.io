@@ -30,8 +30,8 @@
 </header>
 
 <p>Lately I’ve been playing around <a href="https://hackage.haskell.org/package/conduit">conduit</a>. One thing I wanted to try out was to set up processing where one processing step was chosen on random from a number of components, based on weights. In short I guess I wanted a function with a type something like this</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">foo ::</span> [(<span class="dt">Int</span>, <span class="dt">ConduitT</span> i o m r)] <span class="ot">-&gt;</span> <span class="dt">ConduitT</span> i o m r</a></code></pre></div>
-<p>I have to admit I don’t even know where to start writing such a function<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> but after a little bit of thinking I realised I could get the same effect by controlling how chunks of data is routed. That is, instead of choosing a component randomly, I can choose a route randomly. It would look something like when choosing from three components</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="ot">foo ::</span> [(<span class="dt">Int</span>, <span class="dt">ConduitT</span> i o m r)] <span class="ot">-&gt;</span> <span class="dt">ConduitT</span> i o m r</span></code></pre></div>
+<p>I have to admit I don’t even know where to start writing such a function<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> but after a little bit of thinking I realised I could get the same effect by controlling how chunks of data is routed. That is, instead of choosing a component randomly, I can choose a route randomly. It would look something like when choosing from three components</p>
 <pre><code>                        +---------+   +----------+   +-------------+
                         | Filter  |   | Drop tag |   | Component A |
                     +--&gt;| Value-0 |--&gt;|          |--&gt;|             |--+
@@ -62,25 +62,25 @@
 <li>for filtering, use <a href="https://hackage.haskell.org/package/conduit-1.3.1/docs/Data-Conduit-Combinators.html#v:filter"><code>filter</code></a></li>
 <li>for dropping the tag, use <a href="https://hackage.haskell.org/package/conduit-1.3.1/docs/Data-Conduit-Combinators.html#v:map"><code>map</code></a></li>
 </ul>
-<p>What’s left is the beginning. I started with a function to pick a value on random based on weights<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a></p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">pickByWeight ::</span> [(<span class="dt">Int</span>, b)] <span class="ot">-&gt;</span> <span class="dt">IO</span> b</a>
-<a class="sourceLine" id="cb3-2" data-line-number="2">pickByWeight xs <span class="fu">=</span> randomRIO (<span class="dv">1</span>, tot) <span class="fu">&gt;&gt;=</span> \ n <span class="ot">-&gt;</span> return (pick n xs)</a>
-<a class="sourceLine" id="cb3-3" data-line-number="3">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb3-4" data-line-number="4">    tot <span class="fu">=</span> sum <span class="fu">$</span> map fst xs</a>
-<a class="sourceLine" id="cb3-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb3-6" data-line-number="6">    pick n ((k, x)<span class="fu">:</span>xs)</a>
-<a class="sourceLine" id="cb3-7" data-line-number="7">      <span class="fu">|</span> n <span class="fu">&lt;=</span> k <span class="fu">=</span> x</a>
-<a class="sourceLine" id="cb3-8" data-line-number="8">      <span class="fu">|</span> otherwise <span class="fu">=</span> pick (n <span class="fu">-</span> k) xs</a>
-<a class="sourceLine" id="cb3-9" data-line-number="9">    pick _ _ <span class="fu">=</span> error <span class="st">&quot;pick error&quot;</span></a></code></pre></div>
+<p>What’s left is the beginning. I started with a function to pick a value on random based on weights<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a></p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="ot">pickByWeight ::</span> [(<span class="dt">Int</span>, b)] <span class="ot">-&gt;</span> <span class="dt">IO</span> b</span>
+<span id="cb3-2"><a href="#cb3-2"></a>pickByWeight xs <span class="ot">=</span> randomRIO (<span class="dv">1</span>, tot) <span class="op">&gt;&gt;=</span> \ n <span class="ot">-&gt;</span> <span class="fu">return</span> (pick n xs)</span>
+<span id="cb3-3"><a href="#cb3-3"></a>  <span class="kw">where</span></span>
+<span id="cb3-4"><a href="#cb3-4"></a>    tot <span class="ot">=</span> <span class="fu">sum</span> <span class="op">$</span> <span class="fu">map</span> <span class="fu">fst</span> xs</span>
+<span id="cb3-5"><a href="#cb3-5"></a></span>
+<span id="cb3-6"><a href="#cb3-6"></a>    pick n ((k, x)<span class="op">:</span>xs)</span>
+<span id="cb3-7"><a href="#cb3-7"></a>      <span class="op">|</span> n <span class="op">&lt;=</span> k <span class="ot">=</span> x</span>
+<span id="cb3-8"><a href="#cb3-8"></a>      <span class="op">|</span> <span class="fu">otherwise</span> <span class="ot">=</span> pick (n <span class="op">-</span> k) xs</span>
+<span id="cb3-9"><a href="#cb3-9"></a>    pick _ _ <span class="ot">=</span> <span class="fu">error</span> <span class="st">&quot;pick error&quot;</span></span></code></pre></div>
 <p>Using that I then made a component that tags chunks</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">picker ws <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb4-2" data-line-number="2">  evt <span class="ot">&lt;-</span> await</a>
-<a class="sourceLine" id="cb4-3" data-line-number="3">  <span class="kw">case</span> evt <span class="kw">of</span></a>
-<a class="sourceLine" id="cb4-4" data-line-number="4">    <span class="dt">Nothing</span> <span class="ot">-&gt;</span> return ()</a>
-<a class="sourceLine" id="cb4-5" data-line-number="5">    <span class="dt">Just</span> e <span class="ot">-&gt;</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb4-6" data-line-number="6">      p <span class="ot">&lt;-</span> liftIO <span class="fu">$</span> pickByWeight ws</a>
-<a class="sourceLine" id="cb4-7" data-line-number="7">      yield (p, e)</a>
-<a class="sourceLine" id="cb4-8" data-line-number="8">      picker ws</a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a>picker ws <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a>  evt <span class="ot">&lt;-</span> await</span>
+<span id="cb4-3"><a href="#cb4-3"></a>  <span class="kw">case</span> evt <span class="kw">of</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a>    <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="fu">return</span> ()</span>
+<span id="cb4-5"><a href="#cb4-5"></a>    <span class="dt">Just</span> e <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb4-6"><a href="#cb4-6"></a>      p <span class="ot">&lt;-</span> liftIO <span class="op">$</span> pickByWeight ws</span>
+<span id="cb4-7"><a href="#cb4-7"></a>      yield (p, e)</span>
+<span id="cb4-8"><a href="#cb4-8"></a>      picker ws</span></code></pre></div>
 <p>I was rather happy with this…</p>
 <center>
 <blockquote class="twitter-tweet" data-lang="en">
@@ -91,11 +91,11 @@
 </blockquote>
 <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 </center>
-<section class="footnotes">
+<section class="footnotes" role="doc-endnotes">
 <hr />
 <ol>
-<li id="fn1"><p>Except maybe by using Template Haskell to generate the code I did come up with.<a href="#fnref1" class="footnote-back">↩</a></p></li>
-<li id="fn2"><p>I used <code>Quickcheck</code>’s <a href="https://hackage.haskell.org/package/QuickCheck-2.12.6.1/docs/Test-QuickCheck-Gen.html#v:frequency"><code>frequency</code></a> as inspiration for writing it.<a href="#fnref2" class="footnote-back">↩</a></p></li>
+<li id="fn1" role="doc-endnote"><p>Except maybe by using Template Haskell to generate the code I did come up with.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2" role="doc-endnote"><p>I used <code>Quickcheck</code>’s <a href="https://hackage.haskell.org/package/QuickCheck-2.12.6.1/docs/Test-QuickCheck-Gen.html#v:frequency"><code>frequency</code></a> as inspiration for writing it.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section>
 
@@ -103,7 +103,7 @@
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/conduit.html">conduit</a>
+Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>, <a title="All pages tagged 'conduit'." href="../tags/conduit.html">conduit</a>
 </div>
 
 

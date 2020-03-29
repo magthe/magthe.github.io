@@ -31,50 +31,50 @@
 
 <p>The <a href="../posts/2009-09-07-738-wrapping-io-part-1.html">previous post</a> was a fairly silly example, unless of course it’s more useful than I realise :) However, here’s something that I can see a bit more use of, a monad that restricts reading and writing of files to two files, one to read from and one to write to.</p>
 <p>Again, the first step is to create a data type:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">newtype</span> <span class="dt">TwoFileIO</span> a <span class="fu">=</span> <span class="dt">TwoFileIO</span> {<span class="ot"> execTwoFileIO ::</span> (<span class="dt">Handle</span>, <span class="dt">Handle</span>) <span class="ot">-&gt;</span> <span class="dt">IO</span> a }</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">newtype</span> <span class="dt">TwoFileIO</span> a <span class="ot">=</span> <span class="dt">TwoFileIO</span> {<span class="ot"> execTwoFileIO ::</span> (<span class="dt">Handle</span>, <span class="dt">Handle</span>) <span class="ot">-&gt;</span> <span class="dt">IO</span> a }</span></code></pre></div>
 <p>This defines a type wrapping a function that takes a pair of handles (one for input and one for output) and returns an “IO action”. Turning this into a monad is straight forward (actually it’s similar to the <a href="http://hackage.haskell.org/packages/archive/mtl/latest/doc/html/Control-Monad-Reader.html#t%3AReader">Reader</a> monad):</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Monad</span> <span class="dt">TwoFileIO</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb2-2" data-line-number="2">    return v <span class="fu">=</span> <span class="dt">TwoFileIO</span> <span class="fu">$</span> \ _ <span class="ot">-&gt;</span> return v</a>
-<a class="sourceLine" id="cb2-3" data-line-number="3">    (<span class="fu">&gt;&gt;=</span>) m f <span class="fu">=</span> <span class="kw">let</span></a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">            fInIO <span class="fu">=</span> execTwoFileIO <span class="fu">.</span> f</a>
-<a class="sourceLine" id="cb2-5" data-line-number="5">        <span class="kw">in</span> <span class="dt">TwoFileIO</span> <span class="fu">$</span> \ hs <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb2-6" data-line-number="6">            execTwoFileIO m hs <span class="fu">&gt;&gt;=</span> \v <span class="ot">-&gt;</span> fInIO v hs</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">instance</span> <span class="dt">Monad</span> <span class="dt">TwoFileIO</span> <span class="kw">where</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a>    <span class="fu">return</span> v <span class="ot">=</span> <span class="dt">TwoFileIO</span> <span class="op">$</span> \ _ <span class="ot">-&gt;</span> <span class="fu">return</span> v</span>
+<span id="cb2-3"><a href="#cb2-3"></a>    (<span class="op">&gt;&gt;=</span>) m f <span class="ot">=</span> <span class="kw">let</span></span>
+<span id="cb2-4"><a href="#cb2-4"></a>            fInIO <span class="ot">=</span> execTwoFileIO <span class="op">.</span> f</span>
+<span id="cb2-5"><a href="#cb2-5"></a>        <span class="kw">in</span> <span class="dt">TwoFileIO</span> <span class="op">$</span> \ hs <span class="ot">-&gt;</span></span>
+<span id="cb2-6"><a href="#cb2-6"></a>            execTwoFileIO m hs <span class="op">&gt;&gt;=</span> \v <span class="ot">-&gt;</span> fInIO v hs</span></code></pre></div>
 <p>To return a value we can simply drop the pair of handles and return the value in <code>IO</code>. Bind (<code>&gt;&gt;=</code>) only looks complicated, what happens is that the first argument is “executed” with the provided handles, then the second argument is passed the result and executed with the same pair of handles. Of course the handles aren’t actually known yet, so an anynmous function is created, and wrapped in an instance of <code>TwoFileIO</code>. That’s it for the most complicated part.</p>
 <p>In order to avoid having to manually open files and wire everything up I wrote the following convenience function:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1">runFileIO m iFn oFn <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb3-2" data-line-number="2">    iH <span class="ot">&lt;-</span> openFile iFn <span class="dt">ReadMode</span></a>
-<a class="sourceLine" id="cb3-3" data-line-number="3">    oH <span class="ot">&lt;-</span> openFile oFn <span class="dt">WriteMode</span></a>
-<a class="sourceLine" id="cb3-4" data-line-number="4">    res <span class="ot">&lt;-</span> execTwoFileIO m (iH, oH)</a>
-<a class="sourceLine" id="cb3-5" data-line-number="5">    mapM_ hClose [iH, oH]</a>
-<a class="sourceLine" id="cb3-6" data-line-number="6">    return res</a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a>runFileIO m iFn oFn <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a>    iH <span class="ot">&lt;-</span> openFile iFn <span class="dt">ReadMode</span></span>
+<span id="cb3-3"><a href="#cb3-3"></a>    oH <span class="ot">&lt;-</span> openFile oFn <span class="dt">WriteMode</span></span>
+<span id="cb3-4"><a href="#cb3-4"></a>    res <span class="ot">&lt;-</span> execTwoFileIO m (iH, oH)</span>
+<span id="cb3-5"><a href="#cb3-5"></a>    <span class="fu">mapM_</span> hClose [iH, oH]</span>
+<span id="cb3-6"><a href="#cb3-6"></a>    <span class="fu">return</span> res</span></code></pre></div>
 <p>Yes, it does lack a bit in exception handling, but it’s good enough for now.</p>
 <p>Then I can define the actions/functions that are available inside <code>TwoFileIO</code>. Reading and writing lines:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">fioPutStrLn s <span class="fu">=</span> <span class="dt">TwoFileIO</span> <span class="fu">$</span> \ (iH, oH) <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb4-2" data-line-number="2">    hPutStrLn oH s</a>
-<a class="sourceLine" id="cb4-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb4-4" data-line-number="4">fioGetLine <span class="fu">=</span> <span class="dt">TwoFileIO</span> <span class="fu">$</span> \ (iH, oH) <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb4-5" data-line-number="5">    hGetLine iH</a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a>fioPutStrLn s <span class="ot">=</span> <span class="dt">TwoFileIO</span> <span class="op">$</span> \ (iH, oH) <span class="ot">-&gt;</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a>    hPutStrLn oH s</span>
+<span id="cb4-3"><a href="#cb4-3"></a></span>
+<span id="cb4-4"><a href="#cb4-4"></a>fioGetLine <span class="ot">=</span> <span class="dt">TwoFileIO</span> <span class="op">$</span> \ (iH, oH) <span class="ot">-&gt;</span></span>
+<span id="cb4-5"><a href="#cb4-5"></a>    hGetLine iH</span></code></pre></div>
 <p>Note how it now becomes <em>very hard</em> to mix up the files and accidentally read from the output file or write to the input file.</p>
 <p>As a little test function I used this one, which reads two lines and then writes them in the reversed order:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1">get1stN2ndPutLast <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb5-2" data-line-number="2">    first <span class="ot">&lt;-</span> fioGetLine</a>
-<a class="sourceLine" id="cb5-3" data-line-number="3">    second <span class="ot">&lt;-</span> fioGetLine</a>
-<a class="sourceLine" id="cb5-4" data-line-number="4">    fioPutStrLn second</a>
-<a class="sourceLine" id="cb5-5" data-line-number="5">    fioPutStrLn first</a></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1"></a>get1stN2ndPutLast <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a>    first <span class="ot">&lt;-</span> fioGetLine</span>
+<span id="cb5-3"><a href="#cb5-3"></a>    second <span class="ot">&lt;-</span> fioGetLine</span>
+<span id="cb5-4"><a href="#cb5-4"></a>    fioPutStrLn second</span>
+<span id="cb5-5"><a href="#cb5-5"></a>    fioPutStrLn first</span></code></pre></div>
 <p>I can now test this using <code>ghci</code>:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="fu">&gt;</span> h <span class="ot">&lt;-</span> openFile <span class="st">&quot;testIn.txt&quot;</span> <span class="dt">ReadMode</span></a>
-<a class="sourceLine" id="cb6-2" data-line-number="2"><span class="fu">&gt;</span> hGetContents h</a>
-<a class="sourceLine" id="cb6-3" data-line-number="3"><span class="st">&quot;line 0\nline 1\nline 2\n&quot;</span></a>
-<a class="sourceLine" id="cb6-4" data-line-number="4"><span class="fu">&gt;</span> runFileIO get1stN2ndPutLast <span class="st">&quot;testIn.txt&quot;</span> <span class="st">&quot;testOut.txt&quot;</span></a>
-<a class="sourceLine" id="cb6-5" data-line-number="5"><span class="fu">&gt;</span> h <span class="ot">&lt;-</span> openFile <span class="st">&quot;testOut.txt&quot;</span> <span class="dt">ReadMode</span></a>
-<a class="sourceLine" id="cb6-6" data-line-number="6"><span class="fu">&gt;</span> hGetContents h</a>
-<a class="sourceLine" id="cb6-7" data-line-number="7"><span class="st">&quot;line 1\nline 0\n&quot;</span></a></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1"></a><span class="op">&gt;</span> h <span class="ot">&lt;-</span> openFile <span class="st">&quot;testIn.txt&quot;</span> <span class="dt">ReadMode</span></span>
+<span id="cb6-2"><a href="#cb6-2"></a><span class="op">&gt;</span> hGetContents h</span>
+<span id="cb6-3"><a href="#cb6-3"></a><span class="st">&quot;line 0\nline 1\nline 2\n&quot;</span></span>
+<span id="cb6-4"><a href="#cb6-4"></a><span class="op">&gt;</span> runFileIO get1stN2ndPutLast <span class="st">&quot;testIn.txt&quot;</span> <span class="st">&quot;testOut.txt&quot;</span></span>
+<span id="cb6-5"><a href="#cb6-5"></a><span class="op">&gt;</span> h <span class="ot">&lt;-</span> openFile <span class="st">&quot;testOut.txt&quot;</span> <span class="dt">ReadMode</span></span>
+<span id="cb6-6"><a href="#cb6-6"></a><span class="op">&gt;</span> hGetContents h</span>
+<span id="cb6-7"><a href="#cb6-7"></a><span class="st">&quot;line 1\nline 0\n&quot;</span></span></code></pre></div>
 
 
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/monad.html">monad</a>
+Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>, <a title="All pages tagged 'monad'." href="../tags/monad.html">monad</a>
 </div>
 
 

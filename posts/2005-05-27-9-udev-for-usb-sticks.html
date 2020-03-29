@@ -34,7 +34,7 @@
 <pre><code>$ udevinfo -q path -n /dev/sda
 /block/sda
 $ udevinfo -a -p /sys/block/sda | less</code></pre>
-<p>Look for a an entry the looks like this <code>SYSFS{serial}=&quot;070B000514B09F0&quot;</code>. Now you know enough to set up your udev rule. I don’t like modifying system files so I created a new one <code>/etc/udev/rules.d/local.rules</code> and put the following line in it:</p>
+<p>Look for a an entry the looks like this <code>SYSFS{serial}="070B000514B09F0"</code>. Now you know enough to set up your udev rule. I don’t like modifying system files so I created a new one <code>/etc/udev/rules.d/local.rules</code> and put the following line in it:</p>
 <pre><code>BUS=&quot;usb&quot;, SYSFS{serial}=&quot;070B000514B09F0&quot;, KERNEL=&quot;sd*&quot;, \
   NAME=&quot;%k&quot;, SYMLINK=&quot;usbstick_priv%n&quot;</code></pre>
 <p>This means that when my USB stick is inserted a few symlinks will be created, one for the device (usbstick_priv to sdX) and one for each partition (usbstick_priv1 to sdX1, etc). Pretty nice, I think, since it doesn’t matter what X is. Then I use <code>pmount</code> to mount the partitions using the link names:</p>
@@ -46,7 +46,7 @@ pmount /dev/usbstick_priv2 mystick_2</code></pre>
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/gnome.html">gnome</a>, <a href="../tags/udev.html">udev</a>, <a href="../tags/usb.html">usb</a>
+Tags: <a title="All pages tagged 'gnome'." href="../tags/gnome.html">gnome</a>, <a title="All pages tagged 'udev'." href="../tags/udev.html">udev</a>, <a title="All pages tagged 'usb'." href="../tags/usb.html">usb</a>
 </div>
 
 

@@ -31,26 +31,26 @@
 
 <p>The other day I read Chris Penner’s post on <a href="https://chrispenner.ca/posts/hie-core">Haskell IDE Support</a> and thought I’d make an attempt to use it with Spacemacs.</p>
 <p>After running <code>stack build hie-bios ghcide haskell-lsp --copy-compiler-tool</code> I had a look at the <a href="https://github.com/haskell/haskell-ide-engine#using-hie-with-spacemacs">instructions on using <code>haskell-ide-engine</code> with Spacemacs</a>. After a bit of trial and error I came up with these changes to my <code>~/.spacemacs</code>:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode commonlisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb1-1" data-line-number="1">(<span class="kw">defun</span><span class="fu"> dotspacemacs/layers </span>()</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  (setq-default</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">   dotspacemacs-configuration-layers</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">   '(</a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">    ...</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6">    lsp</a>
-<a class="sourceLine" id="cb1-7" data-line-number="7">    (haskell :variables</a>
-<a class="sourceLine" id="cb1-8" data-line-number="8">             haskell-completion-backend 'lsp</a>
-<a class="sourceLine" id="cb1-9" data-line-number="9">             )</a>
-<a class="sourceLine" id="cb1-10" data-line-number="10">    ...)</a>
-<a class="sourceLine" id="cb1-11" data-line-number="11">  )</a>
-<a class="sourceLine" id="cb1-12" data-line-number="12">)</a></code></pre></div>
-<div class="sourceCode" id="cb2"><pre class="sourceCode commonlisp"><code class="sourceCode commonlisp"><a class="sourceLine" id="cb2-1" data-line-number="1">(<span class="kw">defun</span><span class="fu"> dotspacemacs/user-config </span>()</a>
-<a class="sourceLine" id="cb2-2" data-line-number="2">  (<span class="kw">setq</span> lsp-haskell-process-args-hie '(<span class="st">&quot;exec&quot;</span> <span class="st">&quot;ghcide&quot;</span> <span class="st">&quot;--&quot;</span> <span class="st">&quot;--lsp&quot;</span>)</a>
-<a class="sourceLine" id="cb2-3" data-line-number="3">        lsp-haskell-process-path-hie <span class="st">&quot;stack&quot;</span></a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">        lsp-haskell-process-wrapper-function (<span class="kw">lambda</span> (argv) (<span class="kw">cons</span> (<span class="kw">car</span> argv) (<span class="kw">cddr</span> argv)))</a>
-<a class="sourceLine" id="cb2-5" data-line-number="5">        )</a>
-<a class="sourceLine" id="cb2-6" data-line-number="6">  (add-hook 'haskell-mode-hook</a>
-<a class="sourceLine" id="cb2-7" data-line-number="7">            #'lsp)</a>
-<a class="sourceLine" id="cb2-8" data-line-number="8">)</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode commonlisp"><code class="sourceCode commonlisp"><span id="cb1-1"><a href="#cb1-1"></a>(<span class="kw">defun</span><span class="fu"> dotspacemacs/layers </span>()</span>
+<span id="cb1-2"><a href="#cb1-2"></a>  (setq-default</span>
+<span id="cb1-3"><a href="#cb1-3"></a>   dotspacemacs-configuration-layers</span>
+<span id="cb1-4"><a href="#cb1-4"></a>   '(</span>
+<span id="cb1-5"><a href="#cb1-5"></a>    ...</span>
+<span id="cb1-6"><a href="#cb1-6"></a>    lsp</span>
+<span id="cb1-7"><a href="#cb1-7"></a>    (haskell :variables</span>
+<span id="cb1-8"><a href="#cb1-8"></a>             haskell-completion-backend 'lsp</span>
+<span id="cb1-9"><a href="#cb1-9"></a>             )</span>
+<span id="cb1-10"><a href="#cb1-10"></a>    ...)</span>
+<span id="cb1-11"><a href="#cb1-11"></a>  )</span>
+<span id="cb1-12"><a href="#cb1-12"></a>)</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode commonlisp"><code class="sourceCode commonlisp"><span id="cb2-1"><a href="#cb2-1"></a>(<span class="kw">defun</span><span class="fu"> dotspacemacs/user-config </span>()</span>
+<span id="cb2-2"><a href="#cb2-2"></a>  (<span class="kw">setq</span> lsp-haskell-process-args-hie '(<span class="st">&quot;exec&quot;</span> <span class="st">&quot;ghcide&quot;</span> <span class="st">&quot;--&quot;</span> <span class="st">&quot;--lsp&quot;</span>)</span>
+<span id="cb2-3"><a href="#cb2-3"></a>        lsp-haskell-process-path-hie <span class="st">&quot;stack&quot;</span></span>
+<span id="cb2-4"><a href="#cb2-4"></a>        lsp-haskell-process-wrapper-function (<span class="kw">lambda</span> (argv) (<span class="kw">cons</span> (<span class="kw">car</span> argv) (<span class="kw">cddr</span> argv)))</span>
+<span id="cb2-5"><a href="#cb2-5"></a>        )</span>
+<span id="cb2-6"><a href="#cb2-6"></a>  (add-hook 'haskell-mode-hook</span>
+<span id="cb2-7"><a href="#cb2-7"></a>            #'lsp)</span>
+<span id="cb2-8"><a href="#cb2-8"></a>)</span></code></pre></div>
 <p>The slightly weird looking <code>lsp-haskell-process-wrapper-function</code> is removing the pesky <code>--lsp</code> inserted by <a href="https://github.com/emacs-lsp/lsp-haskell/blob/64106be79350f9ce6903d22c66b29761dadb5001/lsp-haskell.el#L179">this line</a>.</p>
 <p>That seems to work. Though I have to say I’m not ready to switch from <a href="https://hackage.haskell.org/package/intero">intero</a> just yet. Two things in particular didn’t work with <code>ghcide</code>/LSP:</p>
 <ol type="1">
@@ -62,7 +62,7 @@
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/emacs.html">emacs</a>, <a href="../tags/haskell.html">haskell</a>, <a href="../tags/lsp.html">lsp</a>, <a href="../tags/spacemacs.html">spacemacs</a>
+Tags: <a title="All pages tagged 'emacs'." href="../tags/emacs.html">emacs</a>, <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>, <a title="All pages tagged 'lsp'." href="../tags/lsp.html">lsp</a>, <a title="All pages tagged 'spacemacs'." href="../tags/spacemacs.html">spacemacs</a>
 </div>
 
 

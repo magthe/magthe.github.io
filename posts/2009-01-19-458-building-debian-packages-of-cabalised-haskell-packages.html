@@ -32,11 +32,11 @@
 <p>I’ve just spent the last hour or so ironing out the details required to automate the building of cabalised Haskell packages for Debian. At the same time I also built Debian packages for 5 Haskell packages (<a href="http://hackage.haskell.org/cgi-bin/hackage-scripts/package/test-framework">test-framework</a> and its dependencies).</p>
 <p>These are the basic steps I’ve followed:</p>
 <ol type="1">
-<li>Extract the tar-ball in the working directory.</li>
-<li>Rename the directory to match the form <code>haskell-X-0.1</code>.</li>
-<li>Re-tar the directory into an archive named <code>haskell-X_0.1.orig.tar.gz</code>.</li>
-<li>Change into the package directory.</li>
-<li>Run Cabal’s <code>configure</code> command followed by <code>register --gen-pkg-conf=pkg.conf</code>.</li>
+<li><p>Extract the tar-ball in the working directory.</p></li>
+<li><p>Rename the directory to match the form <code>haskell-X-0.1</code>.</p></li>
+<li><p>Re-tar the directory into an archive named <code>haskell-X_0.1.orig.tar.gz</code>.</p></li>
+<li><p>Change into the package directory.</p></li>
+<li><p>Run Cabal’s <code>configure</code> command followed by <code>register --gen-pkg-conf=pkg.conf</code>.</p></li>
 <li><p>Modify the generated file and turn it into a <em>.ini</em>-style file:</p>
 <pre><code> echo '[conf]' &gt; pkg.conf.tmp; cat pkg.conf &gt;&gt; pkg.conf.tmp; mv pkg.conf.tmp pkg.conf</code></pre></li>
 <li><p>Use Python to extract the dependencies:</p>
@@ -48,21 +48,21 @@
  for d in map(lambda s: s.rsplit('-', 1)[0].lower(), deps):
      print d
  EOF</code></pre></li>
-<li>Clean up by <code>rm pkg.conf</code> and running Cabal’s <code>clean</code> command.</li>
-<li>Create the <code>debian</code> directory.</li>
-<li>Create <code>debian/compat</code>: <code>echo 5 &gt; debian/compat</code></li>
+<li><p>Clean up by <code>rm pkg.conf</code> and running Cabal’s <code>clean</code> command.</p></li>
+<li><p>Create the <code>debian</code> directory.</p></li>
+<li><p>Create <code>debian/compat</code>: <code>echo 5 &gt; debian/compat</code></p></li>
 <li><p>Create <code>debian/changelog</code>, it should be something like:</p>
 <pre><code> haskell-X (0.1-1) unstable; urgency=low
 
    * Automatic build.
 
   -- Magnus Therning &lt;magnus@therning.org&gt;  Mon, 19 Jan 2009 22:35:00 +0000</code></pre></li>
-<li>Create <code>debian/control</code>. This is by far the most time consuming part to do manually. It’s also a bit long so I’ll leave it out of this post. Take a look in <a href="http://therning.org/magnus_apt/unstable/">my APT repo</a> if you are interested in the details.</li>
-<li>Copy <code>hlibrary.mk</code> into <code>debian/</code>. At some point it will be included in some Debian package (<a href="http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=462482">bug #462482</a>) but for now it can be found <a href="http://people.debian.org/~kaol/repos/hlibrary/hlibrary.mk">here</a>.</li>
+<li><p>Create <code>debian/control</code>. This is by far the most time consuming part to do manually. It’s also a bit long so I’ll leave it out of this post. Take a look in <a href="http://therning.org/magnus_apt/unstable/">my APT repo</a> if you are interested in the details.</p></li>
+<li><p>Copy <code>hlibrary.mk</code> into <code>debian/</code>. At some point it will be included in some Debian package (<a href="http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=462482">bug #462482</a>) but for now it can be found <a href="http://people.debian.org/~kaol/repos/hlibrary/hlibrary.mk">here</a>.</p></li>
 <li><p>Create <code>debian/rules</code> with</p>
 <pre><code> #!/usr/bin/make -f
  include $(CURDIR)/debian/hlibrary.mk</code></pre>
-and make it executable, <code>chmod +x debian/rules</code>.</li>
+<p>and make it executable, <code>chmod +x debian/rules</code>.</p></li>
 <li><p>Done. Run <code>debuild</code>.</p></li>
 </ol>
 <p>My intention is to at some point encode these steps in a tool so that I can spew out Debian packages for all interesting packages on <a href="http://hackage.haskell.org/packages/hackage.html">HackageDB</a> at the press of a button. Of course that tool will be written in Haskell, and it sure won’t rely on Python for any part of the process ;-)</p>
@@ -72,7 +72,7 @@ and make it executable, <code>chmod +x debian/rules</code>.</li>
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/debian.html">debian</a>, <a href="../tags/haskell.html">haskell</a>
+Tags: <a title="All pages tagged 'debian'." href="../tags/debian.html">debian</a>, <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>
 </div>
 
 

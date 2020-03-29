@@ -53,43 +53,43 @@
 <p>It should also be noted that <code>index.html</code> basically is a template itself. These three files fit together such that each post is turned into an HTML snippet (<code>single-post.html</code>), all the snippets are then pulled into <code>index.html</code>, which finally is wrapped into a proper page by <code>default.html</code>.</p>
 <h2 id="the-script">The script</h2>
 <p>The full script looks like this:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode numberSource haskell numberLines"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">#! /usr/bin/runhaskell</span></a>
-<a class="sourceLine" id="cb2-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb2-3" data-line-number="3"><span class="ot">{-# LANGUAGE OverloadedStrings #-}</span></a>
-<a class="sourceLine" id="cb2-4" data-line-number="4"><span class="kw">import</span> <span class="dt">Data.Monoid</span></a>
-<a class="sourceLine" id="cb2-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Hakyll</span></a>
-<a class="sourceLine" id="cb2-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb2-7" data-line-number="7"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb2-8" data-line-number="8">main <span class="fu">=</span> hakyll <span class="fu">$</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-9" data-line-number="9">    match <span class="st">&quot;posts/*&quot;</span> <span class="fu">$</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-10" data-line-number="10">        route <span class="fu">$</span> setExtension <span class="st">&quot;html&quot;</span></a>
-<a class="sourceLine" id="cb2-11" data-line-number="11">        compile <span class="fu">$</span> pandocCompiler</a>
-<a class="sourceLine" id="cb2-12" data-line-number="12">            <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/single-post.html&quot;</span> baseCtx</a>
-<a class="sourceLine" id="cb2-13" data-line-number="13">            <span class="fu">&gt;&gt;=</span> saveSnapshot <span class="st">&quot;posts-content&quot;</span></a>
-<a class="sourceLine" id="cb2-14" data-line-number="14">            <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/default.html&quot;</span> baseCtx</a>
-<a class="sourceLine" id="cb2-15" data-line-number="15">            <span class="fu">&gt;&gt;=</span> relativizeUrls</a>
-<a class="sourceLine" id="cb2-16" data-line-number="16"></a>
-<a class="sourceLine" id="cb2-17" data-line-number="17">    match <span class="st">&quot;index.html&quot;</span> <span class="fu">$</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-18" data-line-number="18">        route idRoute</a>
-<a class="sourceLine" id="cb2-19" data-line-number="19">        compile <span class="fu">$</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-20" data-line-number="20">            posts <span class="ot">&lt;-</span> recentFirst <span class="fu">=&lt;&lt;</span> loadAllSnapshots <span class="st">&quot;posts/*&quot;</span> <span class="st">&quot;posts-content&quot;</span></a>
-<a class="sourceLine" id="cb2-21" data-line-number="21">            <span class="kw">let</span> indexCtx <span class="fu">=</span></a>
-<a class="sourceLine" id="cb2-22" data-line-number="22">                    listField <span class="st">&quot;posts&quot;</span> baseCtx (return posts) <span class="fu">&lt;&gt;</span></a>
-<a class="sourceLine" id="cb2-23" data-line-number="23">                    baseCtx</a>
-<a class="sourceLine" id="cb2-24" data-line-number="24">            getResourceBody</a>
-<a class="sourceLine" id="cb2-25" data-line-number="25">                <span class="fu">&gt;&gt;=</span> applyAsTemplate indexCtx</a>
-<a class="sourceLine" id="cb2-26" data-line-number="26">                <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/default.html&quot;</span> indexCtx</a>
-<a class="sourceLine" id="cb2-27" data-line-number="27">                <span class="fu">&gt;&gt;=</span> relativizeUrls</a>
-<a class="sourceLine" id="cb2-28" data-line-number="28"></a>
-<a class="sourceLine" id="cb2-29" data-line-number="29">    match <span class="st">&quot;templates/*&quot;</span> <span class="fu">$</span> compile templateCompiler</a>
-<a class="sourceLine" id="cb2-30" data-line-number="30"></a>
-<a class="sourceLine" id="cb2-31" data-line-number="31"><span class="ot">baseCtx ::</span> <span class="dt">Context</span> <span class="dt">String</span></a>
-<a class="sourceLine" id="cb2-32" data-line-number="32">baseCtx <span class="fu">=</span></a>
-<a class="sourceLine" id="cb2-33" data-line-number="33">    dateField <span class="st">&quot;date&quot;</span> <span class="st">&quot;%Y-%m-%d&quot;</span> <span class="fu">&lt;&gt;</span></a>
-<a class="sourceLine" id="cb2-34" data-line-number="34">    constField <span class="st">&quot;site-title&quot;</span> <span class="st">&quot;Magnus web site&quot;</span> <span class="fu">&lt;&gt;</span></a>
-<a class="sourceLine" id="cb2-35" data-line-number="35">    constField <span class="st">&quot;site-subtitle&quot;</span> <span class="st">&quot;Random stuff&quot;</span> <span class="fu">&lt;&gt;</span></a>
-<a class="sourceLine" id="cb2-36" data-line-number="36">    constField <span class="st">&quot;author&quot;</span> <span class="st">&quot;Magnus Therning&quot;</span> <span class="fu">&lt;&gt;</span></a>
-<a class="sourceLine" id="cb2-37" data-line-number="37">    defaultContext</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode numberSource haskell numberLines"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="pp">#! /usr/bin/runhaskell</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a></span>
+<span id="cb2-3"><a href="#cb2-3"></a><span class="ot">{-# LANGUAGE OverloadedStrings #-}</span></span>
+<span id="cb2-4"><a href="#cb2-4"></a><span class="kw">import</span> <span class="dt">Data.Monoid</span></span>
+<span id="cb2-5"><a href="#cb2-5"></a><span class="kw">import</span> <span class="dt">Hakyll</span></span>
+<span id="cb2-6"><a href="#cb2-6"></a></span>
+<span id="cb2-7"><a href="#cb2-7"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb2-8"><a href="#cb2-8"></a>main <span class="ot">=</span> hakyll <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb2-9"><a href="#cb2-9"></a>    match <span class="st">&quot;posts/*&quot;</span> <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb2-10"><a href="#cb2-10"></a>        route <span class="op">$</span> setExtension <span class="st">&quot;html&quot;</span></span>
+<span id="cb2-11"><a href="#cb2-11"></a>        compile <span class="op">$</span> pandocCompiler</span>
+<span id="cb2-12"><a href="#cb2-12"></a>            <span class="op">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/single-post.html&quot;</span> baseCtx</span>
+<span id="cb2-13"><a href="#cb2-13"></a>            <span class="op">&gt;&gt;=</span> saveSnapshot <span class="st">&quot;posts-content&quot;</span></span>
+<span id="cb2-14"><a href="#cb2-14"></a>            <span class="op">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/default.html&quot;</span> baseCtx</span>
+<span id="cb2-15"><a href="#cb2-15"></a>            <span class="op">&gt;&gt;=</span> relativizeUrls</span>
+<span id="cb2-16"><a href="#cb2-16"></a></span>
+<span id="cb2-17"><a href="#cb2-17"></a>    match <span class="st">&quot;index.html&quot;</span> <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb2-18"><a href="#cb2-18"></a>        route idRoute</span>
+<span id="cb2-19"><a href="#cb2-19"></a>        compile <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb2-20"><a href="#cb2-20"></a>            posts <span class="ot">&lt;-</span> recentFirst <span class="op">=&lt;&lt;</span> loadAllSnapshots <span class="st">&quot;posts/*&quot;</span> <span class="st">&quot;posts-content&quot;</span></span>
+<span id="cb2-21"><a href="#cb2-21"></a>            <span class="kw">let</span> indexCtx <span class="ot">=</span></span>
+<span id="cb2-22"><a href="#cb2-22"></a>                    listField <span class="st">&quot;posts&quot;</span> baseCtx (<span class="fu">return</span> posts) <span class="op">&lt;&gt;</span></span>
+<span id="cb2-23"><a href="#cb2-23"></a>                    baseCtx</span>
+<span id="cb2-24"><a href="#cb2-24"></a>            getResourceBody</span>
+<span id="cb2-25"><a href="#cb2-25"></a>                <span class="op">&gt;&gt;=</span> applyAsTemplate indexCtx</span>
+<span id="cb2-26"><a href="#cb2-26"></a>                <span class="op">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/default.html&quot;</span> indexCtx</span>
+<span id="cb2-27"><a href="#cb2-27"></a>                <span class="op">&gt;&gt;=</span> relativizeUrls</span>
+<span id="cb2-28"><a href="#cb2-28"></a></span>
+<span id="cb2-29"><a href="#cb2-29"></a>    match <span class="st">&quot;templates/*&quot;</span> <span class="op">$</span> compile templateCompiler</span>
+<span id="cb2-30"><a href="#cb2-30"></a></span>
+<span id="cb2-31"><a href="#cb2-31"></a><span class="ot">baseCtx ::</span> <span class="dt">Context</span> <span class="dt">String</span></span>
+<span id="cb2-32"><a href="#cb2-32"></a>baseCtx <span class="ot">=</span></span>
+<span id="cb2-33"><a href="#cb2-33"></a>    dateField <span class="st">&quot;date&quot;</span> <span class="st">&quot;%Y-%m-%d&quot;</span> <span class="op">&lt;&gt;</span></span>
+<span id="cb2-34"><a href="#cb2-34"></a>    constField <span class="st">&quot;site-title&quot;</span> <span class="st">&quot;Magnus web site&quot;</span> <span class="op">&lt;&gt;</span></span>
+<span id="cb2-35"><a href="#cb2-35"></a>    constField <span class="st">&quot;site-subtitle&quot;</span> <span class="st">&quot;Random stuff&quot;</span> <span class="op">&lt;&gt;</span></span>
+<span id="cb2-36"><a href="#cb2-36"></a>    constField <span class="st">&quot;author&quot;</span> <span class="st">&quot;Magnus Therning&quot;</span> <span class="op">&lt;&gt;</span></span>
+<span id="cb2-37"><a href="#cb2-37"></a>    defaultContext</span></code></pre></div>
 <p>The only slightly unnecessary thing is that all posts are turned into complete web pages (line 14), but none of those files is actually reachable from the generated landing page. My plan is to limit the number of posts on the landing page so they will be used later on.</p>
 <p>For the moment some site constants are put into the base context. I’m not completely convinced that’s the wise thing to do, but I have a vague feeling that it’s better putting stuff like that into the context than hard code them into the template. I guess the better solution would be to have a configuration file for them though. That’s for the future though, for now I’m keeping it simple.</p>
 
@@ -97,7 +97,7 @@
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/hakyll.html">hakyll</a>, <a href="../tags/haskell.html">haskell</a>
+Tags: <a title="All pages tagged 'hakyll'." href="../tags/hakyll.html">hakyll</a>, <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>
 </div>
 
 

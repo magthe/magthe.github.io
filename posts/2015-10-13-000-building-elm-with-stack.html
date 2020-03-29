@@ -38,18 +38,18 @@
 <p>After this make sure <code>~/.local/bin</code> is in your <code>$PATH</code>.</p>
 <h2 id="cloning-the-elm-tool-repos">Cloning the elm tool repos</h2>
 <p>The elm developers have decided to not use Hackage so to get the tools one has to clone the repos from GitHub. I used the following shell script to get them all cloned in one go:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="co">#! /usr/bin/zsh</span></a>
-<a class="sourceLine" id="cb2-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb2-3" data-line-number="3"><span class="va">repos=(</span><span class="st">&quot;git clone https://github.com/elm-lang/elm-compiler.git -b 0.15.1&quot;</span></a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">       <span class="st">&quot;git clone https://github.com/elm-lang/elm-package.git -b 0.5.1&quot;</span></a>
-<a class="sourceLine" id="cb2-5" data-line-number="5">       <span class="st">&quot;git clone https://github.com/elm-lang/elm-make.git -b 0.2&quot;</span></a>
-<a class="sourceLine" id="cb2-6" data-line-number="6">       <span class="st">&quot;git clone https://github.com/elm-lang/elm-reactor.git -b 0.3.2&quot;</span></a>
-<a class="sourceLine" id="cb2-7" data-line-number="7">       <span class="st">&quot;git clone https://github.com/elm-lang/elm-repl.git -b 0.4.2&quot;</span></a>
-<a class="sourceLine" id="cb2-8" data-line-number="8">      )</a>
-<a class="sourceLine" id="cb2-9" data-line-number="9"></a>
-<a class="sourceLine" id="cb2-10" data-line-number="10"><span class="kw">for</span> <span class="ex">r</span> in <span class="va">${repos[@]}</span><span class="kw">;</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb2-11" data-line-number="11">    <span class="bu">eval</span> <span class="va">${r}</span></a>
-<a class="sourceLine" id="cb2-12" data-line-number="12"><span class="kw">done</span></a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1"></a><span class="co">#! /usr/bin/zsh</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a></span>
+<span id="cb2-3"><a href="#cb2-3"></a><span class="va">repos=(</span><span class="st">&quot;git clone https://github.com/elm-lang/elm-compiler.git -b 0.15.1&quot;</span></span>
+<span id="cb2-4"><a href="#cb2-4"></a>       <span class="st">&quot;git clone https://github.com/elm-lang/elm-package.git -b 0.5.1&quot;</span></span>
+<span id="cb2-5"><a href="#cb2-5"></a>       <span class="st">&quot;git clone https://github.com/elm-lang/elm-make.git -b 0.2&quot;</span></span>
+<span id="cb2-6"><a href="#cb2-6"></a>       <span class="st">&quot;git clone https://github.com/elm-lang/elm-reactor.git -b 0.3.2&quot;</span></span>
+<span id="cb2-7"><a href="#cb2-7"></a>       <span class="st">&quot;git clone https://github.com/elm-lang/elm-repl.git -b 0.4.2&quot;</span></span>
+<span id="cb2-8"><a href="#cb2-8"></a>      )</span>
+<span id="cb2-9"><a href="#cb2-9"></a></span>
+<span id="cb2-10"><a href="#cb2-10"></a><span class="kw">for</span> <span class="ex">r</span> in <span class="va">${repos[@]}</span><span class="kw">;</span> <span class="kw">do</span></span>
+<span id="cb2-11"><a href="#cb2-11"></a>    <span class="bu">eval</span> <span class="va">${r}</span></span>
+<span id="cb2-12"><a href="#cb2-12"></a><span class="kw">done</span></span></code></pre></div>
 <h2 id="creating-stack.yaml">Creating <code>stack.yaml</code></h2>
 <p>To create the initial <code>stack.yalm</code> run</p>
 <pre><code>% stack init --resolver ghc-7.8.4</code></pre>
@@ -89,7 +89,7 @@ index b80a98f..69fe488 100644
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/elm.html">elm</a>, <a href="../tags/stack.html">stack</a>
+Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>, <a title="All pages tagged 'elm'." href="../tags/elm.html">elm</a>, <a title="All pages tagged 'stack'." href="../tags/stack.html">stack</a>
 </div>
 
 

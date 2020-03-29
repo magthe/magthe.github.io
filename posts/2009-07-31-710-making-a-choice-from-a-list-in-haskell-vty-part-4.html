@@ -32,22 +32,22 @@
 <p>After <a href="../posts/2009-07-24-702-making-a-choice-from-a-list-in-haskell-vty-part-3.html">part 3 in this series</a>, which might have been the longest post I’ve ever put on this blog, follows a much short post. In fact it’s so short it’s rather silly.</p>
 <p>In this post I’ll modify the <code>Option</code> type to render into multiple lines; two in fact (it’s easy to see that it would work with more lines).</p>
 <p>So, to start off, I add a second string to <code>Option</code>:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Option</span> <span class="fu">=</span> <span class="dt">Option</span> {<span class="ot"> optionRange::</span>(<span class="dt">Int</span>, <span class="dt">Int</span>),<span class="ot"> optionS1::</span><span class="dt">String</span>,<span class="ot"> optionS2::</span><span class="dt">String</span> }</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">    <span class="kw">deriving</span> (<span class="dt">Show</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">data</span> <span class="dt">Option</span> <span class="ot">=</span> <span class="dt">Option</span> {<span class="ot"> optionRange::</span>(<span class="dt">Int</span>, <span class="dt">Int</span>),<span class="ot"> optionS1::</span><span class="dt">String</span>,<span class="ot"> optionS2::</span><span class="dt">String</span> }</span>
+<span id="cb1-2"><a href="#cb1-2"></a>    <span class="kw">deriving</span> (<span class="dt">Show</span>)</span></code></pre></div>
 <p>Next the definition for <code>Pretty</code> is changed to render an <code>Option</code> on two lines:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Pretty</span> <span class="dt">Option</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb2-2" data-line-number="2">    pretty (<span class="dt">Option</span> _ s1 s2) <span class="fu">=</span> string s1 <span class="fu">&lt;&gt;</span> line <span class="fu">&lt;&gt;</span> indent <span class="dv">2</span> (string s2)</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">instance</span> <span class="dt">Pretty</span> <span class="dt">Option</span> <span class="kw">where</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a>    pretty (<span class="dt">Option</span> _ s1 s2) <span class="ot">=</span> string s1 <span class="op">&lt;&gt;</span> line <span class="op">&lt;&gt;</span> indent <span class="dv">2</span> (string s2)</span></code></pre></div>
 <p>Due to the change to <code>Option</code> I also need to modify <code>optionIsInRange</code>:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1">optionIsInRange (<span class="dt">Option</span> (b, e) _ _) i <span class="fu">=</span> b <span class="fu">&lt;=</span> i <span class="fu">&amp;&amp;</span> i <span class="fu">&lt;=</span> e</a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a>optionIsInRange (<span class="dt">Option</span> (b, e) _ _) i <span class="ot">=</span> b <span class="op">&lt;=</span> i <span class="op">&amp;&amp;</span> i <span class="op">&lt;=</span> e</span></code></pre></div>
 <p>Finally the <code>options</code> need to be modified as well:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">options <span class="fu">=</span> ozFromListWithMod (optionSetRange <span class="dv">0</span>) [<span class="dt">Option</span> (<span class="dv">0</span>, <span class="dv">0</span>) ((show i) <span class="fu">++</span> <span class="st">&quot; Foo&quot;</span>) <span class="st">&quot;Bar&quot;</span> <span class="fu">|</span> i <span class="ot">&lt;-</span> [<span class="dv">0</span><span class="fu">..</span><span class="dv">2</span>]]</a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a>options <span class="ot">=</span> ozFromListWithMod (optionSetRange <span class="dv">0</span>) [<span class="dt">Option</span> (<span class="dv">0</span>, <span class="dv">0</span>) ((<span class="fu">show</span> i) <span class="op">++</span> <span class="st">&quot; Foo&quot;</span>) <span class="st">&quot;Bar&quot;</span> <span class="op">|</span> i <span class="ot">&lt;-</span> [<span class="dv">0</span><span class="op">..</span><span class="dv">2</span>]]</span></code></pre></div>
 <p>That’s all there’s to it. Short and sweet.</p>
 
 
 </div>
 
 <div class="post-tags">
-Tags: <a href="../tags/haskell.html">haskell</a>, <a href="../tags/vty.html">vty</a>
+Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>, <a title="All pages tagged 'vty'." href="../tags/vty.html">vty</a>
 </div>
 
 
