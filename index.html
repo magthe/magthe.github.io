@@ -26,6 +26,99 @@
 
   <div class="post-body">
     <header>
+      <h1 class="post-title"><a href="./posts/2020-04-08-000-xray-and-way.html">X-Ray and WAI</a></h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2020-04-08">2020-04-08</time> - Magnus Therning</p>
+</header>
+
+<p>For a while we’ve been planning on introducing <a href="https://aws.amazon.com/xray/">AWS X-Ray</a> into our system at work. There’s official support for a few languages, but not too surprisingly Haskell isn’t on that list. I found <a href="https://github.com/freckle/aws-xray-client">freckle/aws-xray-client</a> on GitHub, which is so unofficial that it isn’t even published on Hackage. While it looks very good, I suspect it does more than I need and since it lacks licensing information I decided to instead implement a version tailored to our needs.</p>
+<p>As a first step I implemented a WAI <em>middleware</em> that wraps an HTTP request and reports the time it took to produce a response. Between the <a href="https://docs.aws.amazon.com/xray/latest/devguide/aws-xray.html">X-Ray Developer Guide</a> and the code in Freckle’s git repo it turned out to be fairly simple.</p>
+<p>First off, this is the first step towards X-Ray nirvana, so all I’m aiming for is minimal support. That means all I want is to send <a href="https://docs.aws.amazon.com/xray/latest/devguide/xray-api-segmentdocuments.html#api-segmentdocuments-fields">minimal X-Ray segment</a>s, with the small addition that I want to support <code>parent_id</code> from the start.</p>
+<p>The first step then is to parse the HTTP header containing the X-Ray information – <a href="https://docs.aws.amazon.com/xray/latest/devguide/xray-concepts.html#xray-concepts-tracingheader"><code>X-Amzn-Trace-Id</code></a>. For now I’m only interested in two parts, <code>Root</code> and <code>Parent</code>, so for simplicity’s sake I use a tuple to keep them in. The idea is to take the header’s value, split on <code>;</code> to get the parts, then split each part in two, a key and a value, and put them into an association list (<code>[(Text, Text)]</code>) for easy lookup using, well <code>lookup</code>.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="ot">parseXRayTraceIdHdr ::</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Text</span>, <span class="dt">Maybe</span> <span class="dt">Text</span>)</span>
+<span id="cb1-2"><a href="#cb1-2"></a>parseXRayTraceIdHdr hdr <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a>  bits <span class="ot">&lt;-</span> <span class="fu">traverse</span> parseHeaderComponent <span class="op">$</span> T.split (<span class="op">==</span> <span class="ch">';'</span>) hdr</span>
+<span id="cb1-4"><a href="#cb1-4"></a>  traceId <span class="ot">&lt;-</span> <span class="fu">lookup</span> <span class="st">&quot;Root&quot;</span> bits</span>
+<span id="cb1-5"><a href="#cb1-5"></a>  <span class="kw">let</span> parent <span class="ot">=</span> <span class="fu">lookup</span> <span class="st">&quot;Parent&quot;</span> bits</span>
+<span id="cb1-6"><a href="#cb1-6"></a>  <span class="fu">pure</span> (traceId, parent)</span>
+<span id="cb1-7"><a href="#cb1-7"></a></span>
+<span id="cb1-8"><a href="#cb1-8"></a><span class="ot">parseHeaderComponent ::</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Text</span>, <span class="dt">Text</span>)</span>
+<span id="cb1-9"><a href="#cb1-9"></a>parseHeaderComponent cmp <span class="ot">=</span> <span class="kw">case</span> T.split (<span class="op">==</span> <span class="ch">'='</span>) cmp <span class="kw">of</span></span>
+<span id="cb1-10"><a href="#cb1-10"></a>                            [name, value] <span class="ot">-&gt;</span> <span class="dt">Just</span> (name, value)</span>
+<span id="cb1-11"><a href="#cb1-11"></a>                            _ <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span></code></pre></div>
+<p>The start and end times for processing a request are also required. The docs say that using at least millisecond resolution is a good idea, so I decided to do exactly that. <code>NominalDiffTime</code>, which is what <code>getPOSIXTime</code> produces, supports a resolution of picoseconds (though I doubt my system’s clock does) which requires a bit of (type-based) converting.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="ot">mkTimeInMilli ::</span> <span class="dt">IO</span> <span class="dt">Milli</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a>mkTimeInMilli <span class="ot">=</span> ndfToMilli <span class="op">&lt;$&gt;</span> getPOSIXTime</span>
+<span id="cb2-3"><a href="#cb2-3"></a>  <span class="kw">where</span></span>
+<span id="cb2-4"><a href="#cb2-4"></a>    ndfToMilli <span class="ot">=</span> <span class="fu">fromRational</span> <span class="op">.</span> <span class="fu">toRational</span></span></code></pre></div>
+<p>The last support function needed is one that creates the segment. Just building the JSON object, using <em>aeson</em>’s <code>object</code>, is enough at this point.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="ot">mkSegment ::</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> <span class="dt">Milli</span> <span class="ot">-&gt;</span> <span class="dt">Milli</span> <span class="ot">-&gt;</span> (<span class="dt">Text</span>, <span class="dt">Maybe</span> <span class="dt">Text</span>) <span class="ot">-&gt;</span> <span class="dt">Value</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a>mkSegment name <span class="fu">id</span> startTime endTime (root, parent) <span class="ot">=</span></span>
+<span id="cb3-3"><a href="#cb3-3"></a>  object <span class="op">$</span> [ <span class="st">&quot;name&quot;</span> <span class="op">.=</span> name</span>
+<span id="cb3-4"><a href="#cb3-4"></a>           , <span class="st">&quot;id&quot;</span> <span class="op">.=</span> <span class="fu">id</span></span>
+<span id="cb3-5"><a href="#cb3-5"></a>           , <span class="st">&quot;trace_id&quot;</span> <span class="op">.=</span> root</span>
+<span id="cb3-6"><a href="#cb3-6"></a>           , <span class="st">&quot;start_time&quot;</span> <span class="op">.=</span> startTime</span>
+<span id="cb3-7"><a href="#cb3-7"></a>           , <span class="st">&quot;end_time&quot;</span> <span class="op">.=</span> endTime</span>
+<span id="cb3-8"><a href="#cb3-8"></a>           ] <span class="op">&lt;&gt;</span> p</span>
+<span id="cb3-9"><a href="#cb3-9"></a>  <span class="kw">where</span></span>
+<span id="cb3-10"><a href="#cb3-10"></a>    p <span class="ot">=</span> <span class="fu">maybe</span> [] (\ v <span class="ot">-&gt;</span> [<span class="st">&quot;parent&quot;</span> <span class="op">.=</span> v]) parent</span></code></pre></div>
+<p>Armed with all this, I can now put together a WAI middleware that</p>
+<ol type="1">
+<li>records the start time of the call</li>
+<li>processes the request</li>
+<li>sends off the response and keeps the result of it</li>
+<li>records the end time</li>
+<li>parses the tracing header</li>
+<li>builds the segment prepended with the <a href="https://docs.aws.amazon.com/xray/latest/devguide/xray-api-sendingdata.html#xray-api-daemon">X-Ray daemon header</a></li>
+<li>sends the segment to the X-Ray daemon</li>
+</ol>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a><span class="ot">traceId ::</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> <span class="dt">Middleware</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a>traceId xrayName app req sendResponse <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb4-3"><a href="#cb4-3"></a>  startTime <span class="ot">&lt;-</span> mkTimeInMilli</span>
+<span id="cb4-4"><a href="#cb4-4"></a>  app req <span class="op">$</span> \ res <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb4-5"><a href="#cb4-5"></a>    rr <span class="ot">&lt;-</span> sendResponse res</span>
+<span id="cb4-6"><a href="#cb4-6"></a>    endTime <span class="ot">&lt;-</span> mkTimeInMilli</span>
+<span id="cb4-7"><a href="#cb4-7"></a>    theId <span class="ot">&lt;-</span> T.pack <span class="op">.</span> (\ v <span class="ot">-&gt;</span> showHex v <span class="st">&quot;&quot;</span>) <span class="op">&lt;$&gt;</span> randomIO <span class="op">@</span><span class="dt">Word64</span></span>
+<span id="cb4-8"><a href="#cb4-8"></a>    <span class="kw">let</span> traceParts <span class="ot">=</span> (decodeUtf8 <span class="op">&lt;$&gt;</span> requestHeaderTraceId req) <span class="op">&gt;&gt;=</span> parseXRayTraceIdHdr</span>
+<span id="cb4-9"><a href="#cb4-9"></a>        segment <span class="ot">=</span> mkSegment xrayName theId startTime endTime <span class="op">&lt;$&gt;</span> traceParts</span>
+<span id="cb4-10"><a href="#cb4-10"></a>    <span class="kw">case</span> segment <span class="kw">of</span></span>
+<span id="cb4-11"><a href="#cb4-11"></a>      <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="fu">pure</span> ()</span>
+<span id="cb4-12"><a href="#cb4-12"></a>      <span class="dt">Just</span> segment' <span class="ot">-&gt;</span> sendXRayPayload <span class="op">$</span> toStrict <span class="op">$</span> prepareXRayPayload segment'</span>
+<span id="cb4-13"><a href="#cb4-13"></a>    <span class="fu">pure</span> rr</span>
+<span id="cb4-14"><a href="#cb4-14"></a></span>
+<span id="cb4-15"><a href="#cb4-15"></a>  <span class="kw">where</span></span>
+<span id="cb4-16"><a href="#cb4-16"></a>    prepareXRayPayload segment <span class="ot">=</span></span>
+<span id="cb4-17"><a href="#cb4-17"></a>      <span class="kw">let</span> header <span class="ot">=</span> object [<span class="st">&quot;format&quot;</span> <span class="op">.=</span> (<span class="st">&quot;json&quot;</span><span class="ot"> ::</span> <span class="dt">String</span>), <span class="st">&quot;version&quot;</span> <span class="op">.=</span> (<span class="dv">1</span><span class="ot"> ::</span> <span class="dt">Int</span>)]</span>
+<span id="cb4-18"><a href="#cb4-18"></a>      <span class="kw">in</span> encode header <span class="op">&lt;&gt;</span> <span class="st">&quot;\n&quot;</span> <span class="op">&lt;&gt;</span> encode segment</span>
+<span id="cb4-19"><a href="#cb4-19"></a></span>
+<span id="cb4-20"><a href="#cb4-20"></a>    sendXRayPayload payload <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb4-21"><a href="#cb4-21"></a>      addrInfos <span class="ot">&lt;-</span> S.getAddrInfo <span class="dt">Nothing</span> (<span class="dt">Just</span> <span class="st">&quot;127.0.0.1&quot;</span>) (<span class="dt">Just</span> <span class="st">&quot;2000&quot;</span>)</span>
+<span id="cb4-22"><a href="#cb4-22"></a>      <span class="kw">case</span> addrInfos <span class="kw">of</span></span>
+<span id="cb4-23"><a href="#cb4-23"></a>        [] <span class="ot">-&gt;</span> <span class="fu">pure</span> () <span class="co">-- silently skip</span></span>
+<span id="cb4-24"><a href="#cb4-24"></a>        (xrayAddr<span class="op">:</span>_) <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb4-25"><a href="#cb4-25"></a>          sock <span class="ot">&lt;-</span> S.socket (S.addrFamily xrayAddr) <span class="dt">S.Datagram</span> S.defaultProtocol</span>
+<span id="cb4-26"><a href="#cb4-26"></a>          S.connect sock (S.addrAddress xrayAddr)</span>
+<span id="cb4-27"><a href="#cb4-27"></a>          sendAll sock payload</span>
+<span id="cb4-28"><a href="#cb4-28"></a>          S.close sock</span></code></pre></div>
+<p>The next step will be to instrument the actual processing. The service I’m instrumenting is asynchronous, so all the work happens <em>after</em> the response has been sent. My plan for this is to use subsegments to record it. That means I’ll have to</p>
+<ul>
+<li>keep the <code>Root</code> and ID (<code>theId</code> in <code>traceId</code> above) for use in subsegments</li>
+<li>keep the original tracing header, for use in outgoing calls</li>
+<li>make sure all outgoing HTTP calls include a tracing header with a proper <code>Parent</code></li>
+<li>wrap all outgoing HTTP calls with time keeping and sending a subsegment to the X-Ray daemon</li>
+</ul>
+<p>I’m saving that work for a rainy day though, or rather, for a day when I’m so upset at Clojure that I don’t want to see another parenthesis.</p>
+
+
+  </div>
+
+</article>
+
+
+<article>
+
+  <div class="post-body">
+    <header>
       <h1 class="post-title"><a href="./posts/2020-02-02-000-my-ghcide-build-for-nix.html">My ghcide build for Nix</a></h1>
 
 <p class="post-date"><time pubdate="pubdate" datetime="2020-02-02">2020-02-02</time> - Magnus Therning</p>
@@ -456,228 +549,6 @@ deleteUser = Command gen exec [ Update u
 <hr />
 <ol>
 <li id="fn1" role="doc-endnote"><p>Something that makes me wonder what the definition of <em>schema-free</em> is. I sure didn’t expect there to ever be a type constraint preventing pushing a document into something that’s called schema-free (see the <a href="https://en.wikipedia.org/wiki/Elasticsearch">Wikipedia article</a>). (The initiated say it’s Lucene, not Elasticsearch, but to me that doesn’t make any difference at all.)<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-</ol>
-</section>
-
-
-  </div>
-
-</article>
-
-
-<article>
-
-  <div class="post-body">
-    <header>
-      <h1 class="post-title"><a href="./posts/2019-06-23-000-hedgehog-on-a-rest-api--part-2.html">Hedgehog on a REST API, part 2</a></h1>
-
-<p class="post-date"><time pubdate="pubdate" datetime="2019-06-23">2019-06-23</time> - Magnus Therning</p>
-</header>
-
-<p>This is a short follow-up to <a href="./posts/2019-05-30-000-hedgehog-on-a-rest-api.html">Hedgehog on a REST API</a> where I actually run the tests in that post.</p>
-<h2 id="fixing-an-issue-with-the-model">Fixing an issue with the model</h2>
-<p>The first issue I run into is</p>
-<pre><code>━━━ Main ━━━
-  ✗ sequential failed after 18 tests and 1 shrink.
-  
-        ┏━━ tst/test-01.hs ━━━
-     89 ┃ getUser :: (MonadGen n, MonadIO m) =&gt; Command n m State
-     90 ┃ getUser = Command gen exec [ Require r
-     91 ┃                            , Ensure e
-     92 ┃                            ]
-     93 ┃   where
-     94 ┃     gen (State m) = case M.keys m of
-     95 ┃       [] -&gt; Nothing
-     96 ┃       ks -&gt; Just $ GetUser &lt;$&gt; Gen.element ks
-     97 ┃ 
-     98 ┃     exec (GetUser i) = liftIO $ do
-     99 ┃       mgr &lt;- newManager defaultManagerSettings
-    100 ┃       getReq &lt;- parseRequest $ &quot;GET http://localhost:3000/users/&quot; ++ show i
-    101 ┃       getResp &lt;- httpLbs getReq mgr
-    102 ┃       let us = decode $ responseBody getResp :: Maybe [User]
-    103 ┃       return (status200 == responseStatus getResp, us)
-    104 ┃ 
-    105 ┃     r (State m) (GetUser i) = i `elem` M.keys m
-    106 ┃ 
-    107 ┃     e _ _ (GetUser _) (r, us) = do
-    108 ┃       r === True
-    109 ┃       assert $ isJust us
-    110 ┃       (length &lt;$&gt; us) === Just 1
-        ┃       ^^^^^^^^^^^^^^^^^^^^^^^^^^
-        ┃       │ Failed (- lhs =/= + rhs)
-        ┃       │ - Just 0
-        ┃       │ + Just 1
-    
-        ┏━━ tst/test-01.hs ━━━
-    118 ┃ prop_seq :: Property
-    119 ┃ prop_seq = property $ do
-    120 ┃   actions &lt;- forAll $ Gen.sequential (Range.linear 1 10) initialState [addUser, deleteUser, getUser]
-        ┃   │ Var 0 = AddUser &quot;&quot;
-        ┃   │ Var 1 = GetUser 1
-    121 ┃   resetWS
-    122 ┃   executeSequential initialState actions
-    
-    This failure can be reproduced by running:
-    &gt; recheck (Size 17) (Seed 2158538972777046104 (-1442908127347265675)) sequential
-  
-  ✗ 1 failed.</code></pre>
-<p>It’s easy to verify this using <a href="https://httpie.org/">httpie</a>:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1"></a>$ <span class="ex">http</span> -p b POST :3000/users userId:=0 <span class="st">&quot;userName=&quot;</span></span>
-<span id="cb2-2"><a href="#cb2-2"></a><span class="kw">{</span></span>
-<span id="cb2-3"><a href="#cb2-3"></a>    <span class="st">&quot;userId&quot;</span>: <span class="ex">0</span>,</span>
-<span id="cb2-4"><a href="#cb2-4"></a>    <span class="st">&quot;userName&quot;</span>: <span class="st">&quot;&quot;</span></span>
-<span id="cb2-5"><a href="#cb2-5"></a><span class="kw">}</span></span>
-<span id="cb2-6"><a href="#cb2-6"></a>$ <span class="ex">http</span> -p b GET :3000/users/1</span>
-<span id="cb2-7"><a href="#cb2-7"></a>[]</span></code></pre></div>
-<p>It’s clear that my assumption that <em>User ID</em> starts at 1 is wrong. Luckily fixing that isn’t too difficult. Instead of defining the update function for <code>addUser</code> as</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a>u (<span class="dt">State</span> m) (<span class="dt">AddUser</span> n) _o <span class="ot">=</span> <span class="dt">State</span> <span class="op">$</span> M.insert k n m</span>
-<span id="cb3-2"><a href="#cb3-2"></a>  <span class="kw">where</span></span>
-<span id="cb3-3"><a href="#cb3-3"></a>    k <span class="ot">=</span> <span class="fu">succ</span> <span class="op">$</span> <span class="fu">foldl</span> <span class="fu">max</span> <span class="dv">0</span> (M.keys m)</span></code></pre></div>
-<p>I define it as</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a>u (<span class="dt">State</span> m) (<span class="dt">AddUser</span> n) _o <span class="ot">=</span> <span class="dt">State</span> <span class="op">$</span> M.insert k n m</span>
-<span id="cb4-2"><a href="#cb4-2"></a>  <span class="kw">where</span></span>
-<span id="cb4-3"><a href="#cb4-3"></a>    k <span class="ot">=</span> <span class="kw">case</span> M.keys m <span class="kw">of</span></span>
-<span id="cb4-4"><a href="#cb4-4"></a>      [] <span class="ot">-&gt;</span> <span class="dv">0</span></span>
-<span id="cb4-5"><a href="#cb4-5"></a>      ks <span class="ot">-&gt;</span> <span class="fu">succ</span> <span class="op">$</span> <span class="fu">foldl</span> <span class="fu">max</span> <span class="dv">0</span> ks</span></code></pre></div>
-<p>The complete code at this point can be found <a href="https://gist.github.com/8cbbfdb130a173bb51c317df0c00aa15">here</a>.</p>
-<h2 id="fixing-another-issue-with-the-model">Fixing another issue with the model</h2>
-<p>With that fix in place another issue with the model shows up</p>
-<pre><code>━━━ Main ━━━
-  ✗ sequential failed after 74 tests and 2 shrinks.
-  
-        ┏━━ tst/test-01.hs ━━━
-     91 ┃ getUser :: (MonadGen n, MonadIO m) =&gt; Command n m State
-     92 ┃ getUser = Command gen exec [ Require r
-     93 ┃                            , Ensure e
-     94 ┃                            ]
-     95 ┃   where
-     96 ┃     gen (State m) = case M.keys m of
-     97 ┃       [] -&gt; Nothing
-     98 ┃       ks -&gt; Just $ GetUser &lt;$&gt; Gen.element ks
-     99 ┃ 
-    100 ┃     exec (GetUser i) = liftIO $ do
-    101 ┃       mgr &lt;- newManager defaultManagerSettings
-    102 ┃       getReq &lt;- parseRequest $ &quot;GET http://localhost:3000/users/&quot; ++ show i
-    103 ┃       getResp &lt;- httpLbs getReq mgr
-    104 ┃       let us = decode $ responseBody getResp :: Maybe [User]
-    105 ┃       return (status200 == responseStatus getResp, us)
-    106 ┃ 
-    107 ┃     r (State m) (GetUser i) = i `elem` M.keys m
-    108 ┃ 
-    109 ┃     e _ _ (GetUser _) (r, us) = do
-    110 ┃       r === True
-    111 ┃       assert $ isJust us
-    112 ┃       (length &lt;$&gt; us) === Just 1
-        ┃       ^^^^^^^^^^^^^^^^^^^^^^^^^^
-        ┃       │ Failed (- lhs =/= + rhs)
-        ┃       │ - Just 0
-        ┃       │ + Just 1
-    
-        ┏━━ tst/test-01.hs ━━━
-    120 ┃ prop_seq :: Property
-    121 ┃ prop_seq = property $ do
-    122 ┃   actions &lt;- forAll $ Gen.sequential (Range.linear 1 10) initialState [addUser, deleteUser, getUser]
-        ┃   │ Var 0 = AddUser &quot;&quot;
-        ┃   │ Var 1 = DeleteUser 0
-        ┃   │ Var 2 = AddUser &quot;&quot;
-        ┃   │ Var 3 = GetUser 0
-    123 ┃   resetWS
-    124 ┃   executeSequential initialState actions
-    
-    This failure can be reproduced by running:
-    &gt; recheck (Size 73) (Seed 3813043122711576923 (-444438259649958339)) sequential
-  
-  ✗ 1 failed.</code></pre>
-<p>Again, verifying this using <a href="https://httpie.org/">httpie</a> shows what the issue is</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1"></a>$ <span class="ex">http</span> -p b POST :3000/users userId:=0 <span class="st">&quot;userName=&quot;</span></span>
-<span id="cb6-2"><a href="#cb6-2"></a><span class="kw">{</span></span>
-<span id="cb6-3"><a href="#cb6-3"></a>    <span class="st">&quot;userId&quot;</span>: <span class="ex">0</span>,</span>
-<span id="cb6-4"><a href="#cb6-4"></a>    <span class="st">&quot;userName&quot;</span>: <span class="st">&quot;&quot;</span></span>
-<span id="cb6-5"><a href="#cb6-5"></a><span class="kw">}</span></span>
-<span id="cb6-6"><a href="#cb6-6"></a>$ <span class="ex">http</span> -p b DELETE :3000/users/0                  </span>
-<span id="cb6-7"><a href="#cb6-7"></a>$ <span class="ex">http</span> -p b POST :3000/users userId:=0 <span class="st">&quot;userName=&quot;</span></span>
-<span id="cb6-8"><a href="#cb6-8"></a><span class="kw">{</span></span>
-<span id="cb6-9"><a href="#cb6-9"></a>    <span class="st">&quot;userId&quot;</span>: <span class="ex">1</span>,</span>
-<span id="cb6-10"><a href="#cb6-10"></a>    <span class="st">&quot;userName&quot;</span>: <span class="st">&quot;&quot;</span></span>
-<span id="cb6-11"><a href="#cb6-11"></a><span class="kw">}</span></span>
-<span id="cb6-12"><a href="#cb6-12"></a>$ <span class="ex">http</span> -p b GET :3000/users/0</span>
-<span id="cb6-13"><a href="#cb6-13"></a>[]</span></code></pre></div>
-<p>In other words, the model assumes that the 0 <em>User ID</em> get’s re-used.</p>
-<p>To fix this I need a bigger change. The central bit is that the state is changed to keep track of the index more explicitly. That is, it changes from</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">newtype</span> <span class="dt">State</span> (<span class="ot">v ::</span> <span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span>)<span class="ot">=</span> <span class="dt">State</span> (<span class="dt">M.Map</span> <span class="dt">Int</span> <span class="dt">Text</span>)</span>
-<span id="cb7-2"><a href="#cb7-2"></a>  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span></code></pre></div>
-<p>to</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">data</span> <span class="dt">State</span> (<span class="ot">v ::</span> <span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span>)<span class="ot">=</span> <span class="dt">State</span> <span class="dt">Int</span> (<span class="dt">M.Map</span> <span class="dt">Int</span> <span class="dt">Text</span>)</span>
-<span id="cb8-2"><a href="#cb8-2"></a>  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span></code></pre></div>
-<p>That change does, quite obviously, require a bunch of other changes in the other functions dealing with the state. The complete file can be viewed <a href="https://gist.github.com/e3c3f4a3c35ab8a529045f90f9f4ba71">here</a>.</p>
-<h2 id="all-is-well-or-is-it">All is well, or is it?</h2>
-<p>After this the tests pass, so all is good in the world, right?</p>
-<p>In the test I defined the <a href="./posts/2019-05-30-000-hedgehog-on-a-rest-api.html#the-property-and-test">property</a> over rather short sequences of commands. What happens if I increase the (maximum) length of the sequences a bit? Instead using <code>Range.linear 1 10</code> I’ll use <code>Range.linear 1 1000</code>. Well, besides taking slightly longer to run I get another sequence of commands that triggers an issue:</p>
-<pre><code>━━━ Main ━━━
-  ✗ sequential failed after 13 tests and 29 shrinks.
-  
-        ┏━━ tst/test-01.hs ━━━
-     87 ┃ getUser :: (MonadGen n, MonadIO m) =&gt; Command n m State
-     88 ┃ getUser = Command gen exec [ Require r
-     89 ┃                            , Ensure e
-     90 ┃                            ]
-     91 ┃   where
-     92 ┃     gen (State _ m) = case M.keys m of
-     93 ┃       [] -&gt; Nothing
-     94 ┃       ks -&gt; Just $ GetUser &lt;$&gt; Gen.element ks
-     95 ┃ 
-     96 ┃     exec (GetUser i) = liftIO $ do
-     97 ┃       mgr &lt;- newManager defaultManagerSettings
-     98 ┃       getReq &lt;- parseRequest $ &quot;GET http://localhost:3000/users/&quot; ++ show i
-     99 ┃       getResp &lt;- httpLbs getReq mgr
-    100 ┃       let us = decode $ responseBody getResp :: Maybe [User]
-    101 ┃       return (status200 == responseStatus getResp, us)
-    102 ┃ 
-    103 ┃     r (State _ m) (GetUser i) = i `elem` M.keys m
-    104 ┃ 
-    105 ┃     e _ _ (GetUser _) (r, us) = do
-    106 ┃       r === True
-    107 ┃       assert $ isJust us
-    108 ┃       (length &lt;$&gt; us) === Just 1
-        ┃       ^^^^^^^^^^^^^^^^^^^^^^^^^^
-        ┃       │ Failed (- lhs =/= + rhs)
-        ┃       │ - Just 0
-        ┃       │ + Just 1
-    
-        ┏━━ tst/test-01.hs ━━━
-    116 ┃ prop_seq :: Property
-    117 ┃ prop_seq = property $ do
-    118 ┃   actions &lt;- forAll $ Gen.sequential (Range.linear 1 1000) initialState [addUser, deleteUser, getUser]
-        ┃   │ Var 0 = AddUser &quot;&quot;
-        ┃   │ Var 2 = AddUser &quot;&quot;
-        ┃   │ Var 5 = AddUser &quot;&quot;
-        ┃   │ Var 7 = AddUser &quot;&quot;
-        ┃   │ Var 9 = AddUser &quot;&quot;
-        ┃   │ Var 11 = AddUser &quot;&quot;
-        ┃   │ Var 20 = AddUser &quot;&quot;
-        ┃   │ Var 28 = AddUser &quot;&quot;
-        ┃   │ Var 30 = AddUser &quot;&quot;
-        ┃   │ Var 32 = AddUser &quot;&quot;
-        ┃   │ Var 33 = AddUser &quot;&quot;
-        ┃   │ Var 34 = AddUser &quot;&quot;
-        ┃   │ Var 37 = AddUser &quot;&quot;
-        ┃   │ Var 38 = AddUser &quot;&quot;
-        ┃   │ Var 41 = AddUser &quot;&quot;
-        ┃   │ Var 45 = AddUser &quot;&quot;
-        ┃   │ Var 47 = GetUser 15
-    119 ┃   resetWS
-    120 ┃   executeSequential initialState actions
-    
-    This failure can be reproduced by running:
-    &gt; recheck (Size 12) (Seed 2976784816810995551 (-47094630645854485)) sequential
-  
-  ✗ 1 failed.</code></pre>
-<p>That is, after inserting 16 users, we don’t see any user when trying to get that 16th user (<em>User ID</em> 15). That’s a proper bug in the server.</p>
-<p>As a matter of fact, this is the bug I put into the server and was hoping to find. In particular, I wanted <em>hedgehog</em> to find the minimal sequence leading to this bug.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> Which it clearly has!</p>
-<section class="footnotes" role="doc-endnotes">
-<hr />
-<ol>
-<li id="fn1" role="doc-endnote"><p>If you recall from the <a href="./posts/2019-05-30-000-hedgehog-on-a-rest-api.html">previous post</a>, I was interested in the integrated shrinking offered by <em>hedgehog</em>.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section>
 
