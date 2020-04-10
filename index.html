@@ -61,7 +61,7 @@
 <span id="cb3-7"><a href="#cb3-7"></a>           , <span class="st">&quot;end_time&quot;</span> <span class="op">.=</span> endTime</span>
 <span id="cb3-8"><a href="#cb3-8"></a>           ] <span class="op">&lt;&gt;</span> p</span>
 <span id="cb3-9"><a href="#cb3-9"></a>  <span class="kw">where</span></span>
-<span id="cb3-10"><a href="#cb3-10"></a>    p <span class="ot">=</span> <span class="fu">maybe</span> [] (\ v <span class="ot">-&gt;</span> [<span class="st">&quot;parent&quot;</span> <span class="op">.=</span> v]) parent</span></code></pre></div>
+<span id="cb3-10"><a href="#cb3-10"></a>    p <span class="ot">=</span> <span class="fu">maybe</span> [] (\ v <span class="ot">-&gt;</span> [<span class="st">&quot;parent_id&quot;</span> <span class="op">.=</span> v]) parent</span></code></pre></div>
 <p>Armed with all this, I can now put together a WAI middleware that</p>
 <ol type="1">
 <li>records the start time of the call</li>
@@ -108,6 +108,7 @@
 <li>wrap all outgoing HTTP calls with time keeping and sending a subsegment to the X-Ray daemon</li>
 </ul>
 <p>I’m saving that work for a rainy day though, or rather, for a day when I’m so upset at Clojure that I don’t want to see another parenthesis.</p>
+<p><em>Edit (2020-04-10):</em> Corrected the segment field name for the parent ID, it should be <code>parent_id</code>.</p>
 
 
   </div>
