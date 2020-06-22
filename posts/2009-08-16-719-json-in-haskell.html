@@ -39,16 +39,16 @@
     }
 }</code></pre>
 <p>As a slight aside, the absolutely easiest way to add JSON to your program is to derive <code>Data</code> (and by implication <code>Typeable</code> too). This is the way I might have represented the data above in Haskell<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">data</span> <span class="dt">GlossDef</span> <span class="ot">=</span> <span class="dt">GlossDef</span></span>
-<span id="cb2-2"><a href="#cb2-2"></a>    {<span class="ot"> glossDefPara ::</span> <span class="dt">String</span></span>
-<span id="cb2-3"><a href="#cb2-3"></a>    ,<span class="ot"> glossDefSeeAlso ::</span> [<span class="dt">String</span>]</span>
-<span id="cb2-4"><a href="#cb2-4"></a>    } <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>, <span class="dt">Typeable</span>, <span class="dt">Data</span>) </span>
-<span id="cb2-5"><a href="#cb2-5"></a></span>
-<span id="cb2-6"><a href="#cb2-6"></a><span class="kw">data</span> <span class="dt">GlossEntry</span> <span class="ot">=</span> <span class="dt">GlossEntry</span></span>
-<span id="cb2-7"><a href="#cb2-7"></a>    {<span class="ot"> glossEntryId ::</span> <span class="dt">String</span></span>
-<span id="cb2-8"><a href="#cb2-8"></a>    ,<span class="ot"> glossEntrySortAs ::</span> <span class="dt">String</span></span>
-<span id="cb2-9"><a href="#cb2-9"></a>    ,<span class="ot"> glossEntryGlossDef ::</span> <span class="dt">GlossDef</span></span>
-<span id="cb2-10"><a href="#cb2-10"></a>    } <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>, <span class="dt">Typeable</span>, <span class="dt">Data</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">GlossDef</span> <span class="ot">=</span> <span class="dt">GlossDef</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>    {<span class="ot"> glossDefPara ::</span> <span class="dt">String</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a>    ,<span class="ot"> glossDefSeeAlso ::</span> [<span class="dt">String</span>]</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a>    } <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>, <span class="dt">Typeable</span>, <span class="dt">Data</span>) </span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">GlossEntry</span> <span class="ot">=</span> <span class="dt">GlossEntry</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a>    {<span class="ot"> glossEntryId ::</span> <span class="dt">String</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a>    ,<span class="ot"> glossEntrySortAs ::</span> <span class="dt">String</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true"></a>    ,<span class="ot"> glossEntryGlossDef ::</span> <span class="dt">GlossDef</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true"></a>    } <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>, <span class="dt">Typeable</span>, <span class="dt">Data</span>)</span></code></pre></div>
 <p>After that it’s as easy as using <code>Text.JSON.Generic.toJSON</code> followed by <code>Text.JSON.encode</code>:</p>
 <pre><code>&gt; let gd = GlossDef &quot;foo&quot; [&quot;bar&quot;, &quot;baz&quot;]
 &gt; let ge = GlossEntry &quot;aa&quot; &quot;bb&quot; gd
@@ -56,56 +56,56 @@
 {&quot;glossEntryId&quot;:&quot;aa&quot;,&quot;glossEntrySortAs&quot;:&quot;bb&quot;,&quot;glossEntryGlossDef&quot;:{&quot;glossDefPara&quot;:&quot;foo&quot;,&quot;glossDefSeeAlso&quot;:[&quot;bar&quot;,&quot;baz&quot;]}}</code></pre>
 <p>As can be seen the “names” of the members are derived from the field names in the datatypes. Great for when you are designing new JSON objects, not when you are writing code to parse an already existing object. For that there is another, more verbose way to do it.</p>
 <p>Start with the same data types, but without deriving <code>Typeable</code> and <code>Data</code>:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">data</span> <span class="dt">GlossDef</span> <span class="ot">=</span> <span class="dt">GlossDef</span></span>
-<span id="cb4-2"><a href="#cb4-2"></a>    {<span class="ot"> glossDefPara ::</span> <span class="dt">String</span></span>
-<span id="cb4-3"><a href="#cb4-3"></a>    ,<span class="ot"> glossDefSeeAlso ::</span> [<span class="dt">String</span>]</span>
-<span id="cb4-4"><a href="#cb4-4"></a>    } <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span>
-<span id="cb4-5"><a href="#cb4-5"></a></span>
-<span id="cb4-6"><a href="#cb4-6"></a><span class="kw">data</span> <span class="dt">GlossEntry</span> <span class="ot">=</span> <span class="dt">GlossEntry</span></span>
-<span id="cb4-7"><a href="#cb4-7"></a>    {<span class="ot"> glossEntryId ::</span> <span class="dt">String</span></span>
-<span id="cb4-8"><a href="#cb4-8"></a>    ,<span class="ot"> glossEntrySortAs ::</span> <span class="dt">String</span></span>
-<span id="cb4-9"><a href="#cb4-9"></a>    ,<span class="ot"> glossEntryGlossDef ::</span> <span class="dt">GlossDef</span></span>
-<span id="cb4-10"><a href="#cb4-10"></a>    } <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">GlossDef</span> <span class="ot">=</span> <span class="dt">GlossDef</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>    {<span class="ot"> glossDefPara ::</span> <span class="dt">String</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a>    ,<span class="ot"> glossDefSeeAlso ::</span> [<span class="dt">String</span>]</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a>    } <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">GlossEntry</span> <span class="ot">=</span> <span class="dt">GlossEntry</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true"></a>    {<span class="ot"> glossEntryId ::</span> <span class="dt">String</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true"></a>    ,<span class="ot"> glossEntrySortAs ::</span> <span class="dt">String</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true"></a>    ,<span class="ot"> glossEntryGlossDef ::</span> <span class="dt">GlossDef</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true"></a>    } <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span></code></pre></div>
 <p>Then you have to implement <code>Text.JSON.JSON</code>. Only two of the four functions must be implemented, <code>showJSON</code> and <code>readJSON</code>. Starting with <code>GlossDef</code>:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">instance</span> <span class="dt">JSON</span> <span class="dt">GlossDef</span> <span class="kw">where</span></span>
-<span id="cb5-2"><a href="#cb5-2"></a>    showJSON gd <span class="ot">=</span> makeObj</span>
-<span id="cb5-3"><a href="#cb5-3"></a>        [ (<span class="st">&quot;para&quot;</span>, showJSON <span class="op">$</span> glossDefPara gd)</span>
-<span id="cb5-4"><a href="#cb5-4"></a>        , (<span class="st">&quot;GlossSeeAlso&quot;</span>, showJSON <span class="op">$</span> glossDefSeeAlso gd)</span>
-<span id="cb5-5"><a href="#cb5-5"></a>        ]</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">JSON</span> <span class="dt">GlossDef</span> <span class="kw">where</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a>    showJSON gd <span class="ot">=</span> makeObj</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a>        [ (<span class="st">&quot;para&quot;</span>, showJSON <span class="op">$</span> glossDefPara gd)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a>        , (<span class="st">&quot;GlossSeeAlso&quot;</span>, showJSON <span class="op">$</span> glossDefSeeAlso gd)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true"></a>        ]</span></code></pre></div>
 <p>Basically this part defers to the already supplied implementations for the fields’ types. The same approach works for <code>readJSON</code> too:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1"></a>    readJSON (<span class="dt">JSObject</span> obj) <span class="ot">=</span> <span class="kw">let</span></span>
-<span id="cb6-2"><a href="#cb6-2"></a>            jsonObjAssoc <span class="ot">=</span> fromJSObject obj</span>
-<span id="cb6-3"><a href="#cb6-3"></a>        <span class="kw">in</span> <span class="kw">do</span></span>
-<span id="cb6-4"><a href="#cb6-4"></a>            para <span class="ot">&lt;-</span> mLookup <span class="st">&quot;para&quot;</span> jsonObjAssoc <span class="op">&gt;&gt;=</span> readJSON</span>
-<span id="cb6-5"><a href="#cb6-5"></a>            seeAlso <span class="ot">&lt;-</span> mLookup <span class="st">&quot;GlossSeeAlso&quot;</span> jsonObjAssoc <span class="op">&gt;&gt;=</span> readJSON</span>
-<span id="cb6-6"><a href="#cb6-6"></a>            <span class="fu">return</span> <span class="op">$</span> <span class="dt">GlossDef</span></span>
-<span id="cb6-7"><a href="#cb6-7"></a>                { glossDefPara <span class="ot">=</span> para</span>
-<span id="cb6-8"><a href="#cb6-8"></a>                , glossDefSeeAlso <span class="ot">=</span> seeAlso</span>
-<span id="cb6-9"><a href="#cb6-9"></a>                }</span>
-<span id="cb6-10"><a href="#cb6-10"></a></span>
-<span id="cb6-11"><a href="#cb6-11"></a>    readJSON _ <span class="ot">=</span> <span class="fu">fail</span> <span class="st">&quot;&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a>    readJSON (<span class="dt">JSObject</span> obj) <span class="ot">=</span> <span class="kw">let</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a>            jsonObjAssoc <span class="ot">=</span> fromJSObject obj</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a>        <span class="kw">in</span> <span class="kw">do</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true"></a>            para <span class="ot">&lt;-</span> mLookup <span class="st">&quot;para&quot;</span> jsonObjAssoc <span class="op">&gt;&gt;=</span> readJSON</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true"></a>            seeAlso <span class="ot">&lt;-</span> mLookup <span class="st">&quot;GlossSeeAlso&quot;</span> jsonObjAssoc <span class="op">&gt;&gt;=</span> readJSON</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true"></a>            <span class="fu">return</span> <span class="op">$</span> <span class="dt">GlossDef</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true"></a>                { glossDefPara <span class="ot">=</span> para</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true"></a>                , glossDefSeeAlso <span class="ot">=</span> seeAlso</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true"></a>                }</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true"></a></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true"></a>    readJSON _ <span class="ot">=</span> <span class="fu">fail</span> <span class="st">&quot;&quot;</span></span></code></pre></div>
 <p>The function <code>mLookup</code> is a wrapper around <code>lookup</code> that makes it a bit nicer to work with in monads other than <code>Maybe</code>:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1"></a>mLookup a as <span class="ot">=</span> <span class="fu">maybe</span> (<span class="fu">fail</span> <span class="op">$</span> <span class="st">&quot;No such element: &quot;</span> <span class="op">++</span> a) <span class="fu">return</span> (<span class="fu">lookup</span> a as)</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a>mLookup a as <span class="ot">=</span> <span class="fu">maybe</span> (<span class="fu">fail</span> <span class="op">$</span> <span class="st">&quot;No such element: &quot;</span> <span class="op">++</span> a) <span class="fu">return</span> (<span class="fu">lookup</span> a as)</span></code></pre></div>
 <p>(The choice to include the key in the string passed to <code>fail</code> limits the usefulness somewhat in the general case, but for this example it doesn’t make any difference.)</p>
 <p>Implementing the interface for <code>GlossEntry</code> is analogous:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">instance</span> <span class="dt">JSON</span> <span class="dt">GlossEntry</span> <span class="kw">where</span></span>
-<span id="cb8-2"><a href="#cb8-2"></a>    showJSON ge <span class="ot">=</span> makeObj</span>
-<span id="cb8-3"><a href="#cb8-3"></a>        [ (<span class="st">&quot;ID&quot;</span>, showJSON <span class="op">$</span> glossEntryId ge)</span>
-<span id="cb8-4"><a href="#cb8-4"></a>        , (<span class="st">&quot;SortAs&quot;</span>, showJSON <span class="op">$</span> glossEntrySortAs ge)</span>
-<span id="cb8-5"><a href="#cb8-5"></a>        , (<span class="st">&quot;GlossDef&quot;</span>, showJSON <span class="op">$</span> glossEntryGlossDef ge)</span>
-<span id="cb8-6"><a href="#cb8-6"></a>        ]</span>
-<span id="cb8-7"><a href="#cb8-7"></a></span>
-<span id="cb8-8"><a href="#cb8-8"></a>    readJSON (<span class="dt">JSObject</span> obj) <span class="ot">=</span> <span class="kw">let</span></span>
-<span id="cb8-9"><a href="#cb8-9"></a>            jsonObjAssoc <span class="ot">=</span> fromJSObject obj</span>
-<span id="cb8-10"><a href="#cb8-10"></a>        <span class="kw">in</span> <span class="kw">do</span></span>
-<span id="cb8-11"><a href="#cb8-11"></a>            <span class="fu">id</span> <span class="ot">&lt;-</span> mLookup <span class="st">&quot;ID&quot;</span> jsonObjAssoc <span class="op">&gt;&gt;=</span> readJSON</span>
-<span id="cb8-12"><a href="#cb8-12"></a>            sortAs <span class="ot">&lt;-</span> mLookup <span class="st">&quot;SortAs&quot;</span> jsonObjAssoc <span class="op">&gt;&gt;=</span> readJSON</span>
-<span id="cb8-13"><a href="#cb8-13"></a>            gd <span class="ot">&lt;-</span> mLookup <span class="st">&quot;GlossDef&quot;</span> jsonObjAssoc <span class="op">&gt;&gt;=</span> readJSON</span>
-<span id="cb8-14"><a href="#cb8-14"></a>            <span class="fu">return</span> <span class="op">$</span> <span class="dt">GlossEntry</span></span>
-<span id="cb8-15"><a href="#cb8-15"></a>                { glossEntryId <span class="ot">=</span> <span class="fu">id</span></span>
-<span id="cb8-16"><a href="#cb8-16"></a>                , glossEntrySortAs <span class="ot">=</span> sortAs</span>
-<span id="cb8-17"><a href="#cb8-17"></a>                , glossEntryGlossDef <span class="ot">=</span> gd</span>
-<span id="cb8-18"><a href="#cb8-18"></a>                }</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">JSON</span> <span class="dt">GlossEntry</span> <span class="kw">where</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a>    showJSON ge <span class="ot">=</span> makeObj</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true"></a>        [ (<span class="st">&quot;ID&quot;</span>, showJSON <span class="op">$</span> glossEntryId ge)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true"></a>        , (<span class="st">&quot;SortAs&quot;</span>, showJSON <span class="op">$</span> glossEntrySortAs ge)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true"></a>        , (<span class="st">&quot;GlossDef&quot;</span>, showJSON <span class="op">$</span> glossEntryGlossDef ge)</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true"></a>        ]</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true"></a></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true"></a>    readJSON (<span class="dt">JSObject</span> obj) <span class="ot">=</span> <span class="kw">let</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true"></a>            jsonObjAssoc <span class="ot">=</span> fromJSObject obj</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true"></a>        <span class="kw">in</span> <span class="kw">do</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true"></a>            <span class="fu">id</span> <span class="ot">&lt;-</span> mLookup <span class="st">&quot;ID&quot;</span> jsonObjAssoc <span class="op">&gt;&gt;=</span> readJSON</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true"></a>            sortAs <span class="ot">&lt;-</span> mLookup <span class="st">&quot;SortAs&quot;</span> jsonObjAssoc <span class="op">&gt;&gt;=</span> readJSON</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true"></a>            gd <span class="ot">&lt;-</span> mLookup <span class="st">&quot;GlossDef&quot;</span> jsonObjAssoc <span class="op">&gt;&gt;=</span> readJSON</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true"></a>            <span class="fu">return</span> <span class="op">$</span> <span class="dt">GlossEntry</span></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true"></a>                { glossEntryId <span class="ot">=</span> <span class="fu">id</span></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true"></a>                , glossEntrySortAs <span class="ot">=</span> sortAs</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true"></a>                , glossEntryGlossDef <span class="ot">=</span> gd</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true"></a>                }</span></code></pre></div>
 <p>With the JSON object mentioned at the top in the file <code>test.json</code> the following is possible:</p>
 <pre><code>&gt; f &lt;- readFile &quot;test.json&quot;
 &gt; let (Ok j) = decode f :: Result GlossEntry

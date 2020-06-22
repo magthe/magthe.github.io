@@ -33,106 +33,106 @@
 <p>The first part of the paper is all about writing small visitors that then are combined into more complicated ones. This part is nice but not that exciting. The interesting bit is when it gets to controlling traversal, which means it’s possible to remove the traversal code that usually appear in the <code>accept</code> method each visited type has to implement. Let’s see how that can look in Python.</p>
 <p>The full code in this post is available at <a href="https://gist.github.com/magthe/beddad5c627946f28748">https://gist.github.com/magthe/beddad5c627946f28748</a>.</p>
 <p>First we need a structure to traverse, a simple tree will do.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">class</span> Tree(Visitable):</span>
-<span id="cb1-2"><a href="#cb1-2"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, left, right):</span>
-<span id="cb1-3"><a href="#cb1-3"></a>        <span class="va">self</span>.left <span class="op">=</span> left</span>
-<span id="cb1-4"><a href="#cb1-4"></a>        <span class="va">self</span>.right <span class="op">=</span> right</span>
-<span id="cb1-5"><a href="#cb1-5"></a></span>
-<span id="cb1-6"><a href="#cb1-6"></a><span class="kw">class</span> Leaf(Visitable):</span>
-<span id="cb1-7"><a href="#cb1-7"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, value):</span>
-<span id="cb1-8"><a href="#cb1-8"></a>        <span class="va">self</span>.value <span class="op">=</span> value</span>
-<span id="cb1-9"><a href="#cb1-9"></a></span>
-<span id="cb1-10"><a href="#cb1-10"></a><span class="kw">def</span> build_tree():</span>
-<span id="cb1-11"><a href="#cb1-11"></a>    l0 <span class="op">=</span> Leaf(<span class="dv">0</span>)</span>
-<span id="cb1-12"><a href="#cb1-12"></a>    l1 <span class="op">=</span> Leaf(<span class="dv">1</span>)</span>
-<span id="cb1-13"><a href="#cb1-13"></a>    t0 <span class="op">=</span> Tree(l0, l1)</span>
-<span id="cb1-14"><a href="#cb1-14"></a>    l2 <span class="op">=</span> Leaf(<span class="dv">2</span>)</span>
-<span id="cb1-15"><a href="#cb1-15"></a>    t1 <span class="op">=</span> Tree(t0, l2)</span>
-<span id="cb1-16"><a href="#cb1-16"></a>    l3 <span class="op">=</span> Leaf(<span class="dv">3</span>)</span>
-<span id="cb1-17"><a href="#cb1-17"></a>    l4 <span class="op">=</span> Leaf(<span class="dv">4</span>)</span>
-<span id="cb1-18"><a href="#cb1-18"></a>    t2 <span class="op">=</span> Tree(l3, l4)</span>
-<span id="cb1-19"><a href="#cb1-19"></a>    <span class="cf">return</span> Tree(t1, t2)</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">class</span> Tree(Visitable):</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, left, right):</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>        <span class="va">self</span>.left <span class="op">=</span> left</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>        <span class="va">self</span>.right <span class="op">=</span> right</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a><span class="kw">class</span> Leaf(Visitable):</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, value):</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a>        <span class="va">self</span>.value <span class="op">=</span> value</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a><span class="kw">def</span> build_tree():</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a>    l0 <span class="op">=</span> Leaf(<span class="dv">0</span>)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a>    l1 <span class="op">=</span> Leaf(<span class="dv">1</span>)</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true"></a>    t0 <span class="op">=</span> Tree(l0, l1)</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true"></a>    l2 <span class="op">=</span> Leaf(<span class="dv">2</span>)</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true"></a>    t1 <span class="op">=</span> Tree(t0, l2)</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true"></a>    l3 <span class="op">=</span> Leaf(<span class="dv">3</span>)</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true"></a>    l4 <span class="op">=</span> Leaf(<span class="dv">4</span>)</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true"></a>    t2 <span class="op">=</span> Tree(l3, l4)</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true"></a>    <span class="cf">return</span> Tree(t1, t2)</span></code></pre></div>
 <p>But before this we really should define <code>Visitor</code>, the base class for visitors, and <code>Visitable</code>, the base class of everything that can be visited.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">class</span> Visitor:</span>
-<span id="cb2-2"><a href="#cb2-2"></a>    <span class="kw">def</span> visit(<span class="va">self</span>, obj):</span>
-<span id="cb2-3"><a href="#cb2-3"></a>        <span class="bu">getattr</span>(<span class="va">self</span>, <span class="st">'visit_'</span> <span class="op">+</span> obj.__class__.<span class="va">__name__</span>)(obj)</span>
-<span id="cb2-4"><a href="#cb2-4"></a></span>
-<span id="cb2-5"><a href="#cb2-5"></a>    <span class="kw">def</span> visit_Tree(<span class="va">self</span>, t):</span>
-<span id="cb2-6"><a href="#cb2-6"></a>        <span class="cf">pass</span></span>
-<span id="cb2-7"><a href="#cb2-7"></a></span>
-<span id="cb2-8"><a href="#cb2-8"></a>    <span class="kw">def</span> visit_Leaf(<span class="va">self</span>, l):</span>
-<span id="cb2-9"><a href="#cb2-9"></a>        <span class="cf">pass</span></span>
-<span id="cb2-10"><a href="#cb2-10"></a></span>
-<span id="cb2-11"><a href="#cb2-11"></a><span class="kw">class</span> Visitable:</span>
-<span id="cb2-12"><a href="#cb2-12"></a>    <span class="kw">def</span> accept(<span class="va">self</span>, visitor):</span>
-<span id="cb2-13"><a href="#cb2-13"></a>        visitor.visit(<span class="va">self</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="kw">class</span> Visitor:</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>    <span class="kw">def</span> visit(<span class="va">self</span>, obj):</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a>        <span class="bu">getattr</span>(<span class="va">self</span>, <span class="st">'visit_'</span> <span class="op">+</span> obj.__class__.<span class="va">__name__</span>)(obj)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a>    <span class="kw">def</span> visit_Tree(<span class="va">self</span>, t):</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a>        <span class="cf">pass</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a>    <span class="kw">def</span> visit_Leaf(<span class="va">self</span>, l):</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true"></a>        <span class="cf">pass</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true"></a><span class="kw">class</span> Visitable:</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true"></a>    <span class="kw">def</span> accept(<span class="va">self</span>, visitor):</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true"></a>        visitor.visit(<span class="va">self</span>)</span></code></pre></div>
 <p>We’ll throw in a visitor for printing the whole tree too:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">class</span> Print(Visitor):</span>
-<span id="cb3-2"><a href="#cb3-2"></a>    <span class="kw">def</span> visit_Tree(<span class="va">self</span>, t):</span>
-<span id="cb3-3"><a href="#cb3-3"></a>        <span class="bu">print</span>(<span class="st">'Tree (</span><span class="sc">%s</span><span class="st">)'</span> <span class="op">%</span> <span class="bu">hex</span>(<span class="bu">id</span>(t)))</span>
-<span id="cb3-4"><a href="#cb3-4"></a></span>
-<span id="cb3-5"><a href="#cb3-5"></a>    <span class="kw">def</span> visit_Leaf(<span class="va">self</span>, l):</span>
-<span id="cb3-6"><a href="#cb3-6"></a>        <span class="bu">print</span>(<span class="st">'Leaf (</span><span class="sc">%s</span><span class="st">): </span><span class="sc">%i</span><span class="st">'</span> <span class="op">%</span> (<span class="bu">hex</span>(<span class="bu">id</span>(l)), l.value))</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="kw">class</span> Print(Visitor):</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>    <span class="kw">def</span> visit_Tree(<span class="va">self</span>, t):</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>        <span class="bu">print</span>(<span class="st">'Tree (</span><span class="sc">%s</span><span class="st">)'</span> <span class="op">%</span> <span class="bu">hex</span>(<span class="bu">id</span>(t)))</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a>    <span class="kw">def</span> visit_Leaf(<span class="va">self</span>, l):</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true"></a>        <span class="bu">print</span>(<span class="st">'Leaf (</span><span class="sc">%s</span><span class="st">): </span><span class="sc">%i</span><span class="st">'</span> <span class="op">%</span> (<span class="bu">hex</span>(<span class="bu">id</span>(l)), l.value))</span></code></pre></div>
 <p>Due to the lack of traversal in the <code>accept</code> methods it’s easy to be underwhelmed by the <code>Print</code> visitor:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1"></a>In [<span class="dv">32</span>]: build_tree().accept(Print())</span>
-<span id="cb4-2"><a href="#cb4-2"></a>Tree (<span class="bn">0x7f1680681a90</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a>In [<span class="dv">32</span>]: build_tree().accept(Print())</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>Tree (<span class="bn">0x7f1680681a90</span>)</span></code></pre></div>
 <p>To address this we first need a visitor combinator that runs two visitors in sequence. Unsurprisingly we’ll call it <code>Sequence</code>. Its constructor takes two visitors, and for each node in the tree it passed each one to the <code>node.accept</code> method.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">class</span> Sequence(Visitor):</span>
-<span id="cb5-2"><a href="#cb5-2"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, first, then):</span>
-<span id="cb5-3"><a href="#cb5-3"></a>        <span class="va">self</span>.first <span class="op">=</span> first</span>
-<span id="cb5-4"><a href="#cb5-4"></a>        <span class="va">self</span>.then <span class="op">=</span> then</span>
-<span id="cb5-5"><a href="#cb5-5"></a></span>
-<span id="cb5-6"><a href="#cb5-6"></a>    <span class="kw">def</span> visit_Tree(<span class="va">self</span>, t):</span>
-<span id="cb5-7"><a href="#cb5-7"></a>        t.accept(<span class="va">self</span>.first)</span>
-<span id="cb5-8"><a href="#cb5-8"></a>        t.accept(<span class="va">self</span>.then)</span>
-<span id="cb5-9"><a href="#cb5-9"></a></span>
-<span id="cb5-10"><a href="#cb5-10"></a>    <span class="kw">def</span> visit_Leaf(<span class="va">self</span>, l):</span>
-<span id="cb5-11"><a href="#cb5-11"></a>        l.accept(<span class="va">self</span>.first)</span>
-<span id="cb5-12"><a href="#cb5-12"></a>        l.accept(<span class="va">self</span>.then)</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="kw">class</span> Sequence(Visitor):</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, first, then):</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a>        <span class="va">self</span>.first <span class="op">=</span> first</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a>        <span class="va">self</span>.then <span class="op">=</span> then</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true"></a>    <span class="kw">def</span> visit_Tree(<span class="va">self</span>, t):</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true"></a>        t.accept(<span class="va">self</span>.first)</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true"></a>        t.accept(<span class="va">self</span>.then)</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true"></a></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true"></a>    <span class="kw">def</span> visit_Leaf(<span class="va">self</span>, l):</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true"></a>        l.accept(<span class="va">self</span>.first)</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true"></a>        l.accept(<span class="va">self</span>.then)</span></code></pre></div>
 <p>The next building block is a visitor that descends one level down from a <code>Tree</code> node.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">class</span> All(Visitor):</span>
-<span id="cb6-2"><a href="#cb6-2"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, v):</span>
-<span id="cb6-3"><a href="#cb6-3"></a>        <span class="va">self</span>.v <span class="op">=</span> v</span>
-<span id="cb6-4"><a href="#cb6-4"></a></span>
-<span id="cb6-5"><a href="#cb6-5"></a>    <span class="kw">def</span> visit_Tree(<span class="va">self</span>, t):</span>
-<span id="cb6-6"><a href="#cb6-6"></a>        t.left.accept(<span class="va">self</span>.v)</span>
-<span id="cb6-7"><a href="#cb6-7"></a>        t.right.accept(<span class="va">self</span>.v)</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a><span class="kw">class</span> All(Visitor):</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, v):</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a>        <span class="va">self</span>.v <span class="op">=</span> v</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true"></a>    <span class="kw">def</span> visit_Tree(<span class="va">self</span>, t):</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true"></a>        t.left.accept(<span class="va">self</span>.v)</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true"></a>        t.right.accept(<span class="va">self</span>.v)</span></code></pre></div>
 <p>At this point it’s worth noting that the name <code>All</code> probably isn’t very well chosen, since we don’t really get <em>all</em> nodes:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1"></a>In [<span class="dv">33</span>]: build_tree().accept(All(Print()))</span>
-<span id="cb7-2"><a href="#cb7-2"></a>Tree (<span class="bn">0x7f1680681278</span>)</span>
-<span id="cb7-3"><a href="#cb7-3"></a>Tree (<span class="bn">0x7f1680681be0</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a>In [<span class="dv">33</span>]: build_tree().accept(All(Print()))</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a>Tree (<span class="bn">0x7f1680681278</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true"></a>Tree (<span class="bn">0x7f1680681be0</span>)</span></code></pre></div>
 <p>We only descend one level, but we still keep the name since that’s the name they use in the paper.</p>
 <p>With this in place it does become possible to create combinations that do traverse the full tree though. It even becomes rather simple. Traversing top-down is a simple matter of using a sequence that ends with <code>All</code>, and bottom-up is a matter of using a sequence starting with <code>All</code>.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">class</span> TopDown(Sequence):</span>
-<span id="cb8-2"><a href="#cb8-2"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, v):</span>
-<span id="cb8-3"><a href="#cb8-3"></a>        Sequence.<span class="fu">__init__</span>(<span class="va">self</span>, v, All(<span class="va">self</span>))</span>
-<span id="cb8-4"><a href="#cb8-4"></a></span>
-<span id="cb8-5"><a href="#cb8-5"></a></span>
-<span id="cb8-6"><a href="#cb8-6"></a><span class="kw">class</span> BottomUp(Sequence):</span>
-<span id="cb8-7"><a href="#cb8-7"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, v):</span>
-<span id="cb8-8"><a href="#cb8-8"></a>        Sequence.<span class="fu">__init__</span>(<span class="va">self</span>, All(<span class="va">self</span>), v)</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a><span class="kw">class</span> TopDown(Sequence):</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, v):</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true"></a>        Sequence.<span class="fu">__init__</span>(<span class="va">self</span>, v, All(<span class="va">self</span>))</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true"></a></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true"></a></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true"></a><span class="kw">class</span> BottomUp(Sequence):</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, v):</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true"></a>        Sequence.<span class="fu">__init__</span>(<span class="va">self</span>, All(<span class="va">self</span>), v)</span></code></pre></div>
 <p>First top-down:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1"></a>In [<span class="dv">34</span>]: build_tree().accept(TopDown(Print()))</span>
-<span id="cb9-2"><a href="#cb9-2"></a>Tree (<span class="bn">0x7f1680681ef0</span>)</span>
-<span id="cb9-3"><a href="#cb9-3"></a>Tree (<span class="bn">0x7f16806814a8</span>)</span>
-<span id="cb9-4"><a href="#cb9-4"></a>Tree (<span class="bn">0x7f16806813c8</span>)</span>
-<span id="cb9-5"><a href="#cb9-5"></a>Leaf (<span class="bn">0x7f1680681278</span>): <span class="dv">0</span></span>
-<span id="cb9-6"><a href="#cb9-6"></a>Leaf (<span class="bn">0x7f1680681550</span>): <span class="dv">1</span></span>
-<span id="cb9-7"><a href="#cb9-7"></a>Leaf (<span class="bn">0x7f1680681a90</span>): <span class="dv">2</span></span>
-<span id="cb9-8"><a href="#cb9-8"></a>Tree (<span class="bn">0x7f1680681f28</span>)</span>
-<span id="cb9-9"><a href="#cb9-9"></a>Leaf (<span class="bn">0x7f1680681ba8</span>): <span class="dv">3</span></span>
-<span id="cb9-10"><a href="#cb9-10"></a>Leaf (<span class="bn">0x7f1680681a20</span>): <span class="dv">4</span></span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a>In [<span class="dv">34</span>]: build_tree().accept(TopDown(Print()))</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true"></a>Tree (<span class="bn">0x7f1680681ef0</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true"></a>Tree (<span class="bn">0x7f16806814a8</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true"></a>Tree (<span class="bn">0x7f16806813c8</span>)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true"></a>Leaf (<span class="bn">0x7f1680681278</span>): <span class="dv">0</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true"></a>Leaf (<span class="bn">0x7f1680681550</span>): <span class="dv">1</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true"></a>Leaf (<span class="bn">0x7f1680681a90</span>): <span class="dv">2</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true"></a>Tree (<span class="bn">0x7f1680681f28</span>)</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true"></a>Leaf (<span class="bn">0x7f1680681ba8</span>): <span class="dv">3</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true"></a>Leaf (<span class="bn">0x7f1680681a20</span>): <span class="dv">4</span></span></code></pre></div>
 <p>Then bottom-up:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1"></a>In [<span class="dv">35</span>]: build_tree().accept(BottomUp(Print()))</span>
-<span id="cb10-2"><a href="#cb10-2"></a>Leaf (<span class="bn">0x7f1680681ba8</span>): <span class="dv">0</span></span>
-<span id="cb10-3"><a href="#cb10-3"></a>Leaf (<span class="bn">0x7f16806814a8</span>): <span class="dv">1</span></span>
-<span id="cb10-4"><a href="#cb10-4"></a>Tree (<span class="bn">0x7f1680681a90</span>)</span>
-<span id="cb10-5"><a href="#cb10-5"></a>Leaf (<span class="bn">0x7f16806813c8</span>): <span class="dv">2</span></span>
-<span id="cb10-6"><a href="#cb10-6"></a>Tree (<span class="bn">0x7f1680681550</span>)</span>
-<span id="cb10-7"><a href="#cb10-7"></a>Leaf (<span class="bn">0x7f1680681278</span>): <span class="dv">3</span></span>
-<span id="cb10-8"><a href="#cb10-8"></a>Leaf (<span class="bn">0x7f16806a1048</span>): <span class="dv">4</span></span>
-<span id="cb10-9"><a href="#cb10-9"></a>Tree (<span class="bn">0x7f16806a1198</span>)</span>
-<span id="cb10-10"><a href="#cb10-10"></a>Tree (<span class="bn">0x7f16806a1390</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true"></a>In [<span class="dv">35</span>]: build_tree().accept(BottomUp(Print()))</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true"></a>Leaf (<span class="bn">0x7f1680681ba8</span>): <span class="dv">0</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true"></a>Leaf (<span class="bn">0x7f16806814a8</span>): <span class="dv">1</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true"></a>Tree (<span class="bn">0x7f1680681a90</span>)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true"></a>Leaf (<span class="bn">0x7f16806813c8</span>): <span class="dv">2</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true"></a>Tree (<span class="bn">0x7f1680681550</span>)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true"></a>Leaf (<span class="bn">0x7f1680681278</span>): <span class="dv">3</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true"></a>Leaf (<span class="bn">0x7f16806a1048</span>): <span class="dv">4</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true"></a>Tree (<span class="bn">0x7f16806a1198</span>)</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true"></a>Tree (<span class="bn">0x7f16806a1390</span>)</span></code></pre></div>
 <p>That’s all rather cute I think.</p>
 
 

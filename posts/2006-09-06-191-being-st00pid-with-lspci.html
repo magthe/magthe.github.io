@@ -31,8 +31,8 @@
 
 <p>This wasn’t a serious mistake and the only reason it took a while to sort out was my amazing thickness.</p>
 <p>I had removed <code>pciutils</code> (and thereby <code>lspci</code>) from the system thinking that “now everything works, so I won’t ever need it again”. Just to show me the error of my ways the benevolent Debian decided to punish me by not giving me network. It turned out that Linux’ excellent support for a multitude of network cards worked against me on this one—which one to insert? After several uninspired thoughts I had an inspired one. Brute force! Insert them all!</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1"></a>    <span class="bu">cd</span> /lib/modules/2.6.17-2-686/kernel/drivers/net</span>
-<span id="cb1-2"><a href="#cb1-2"></a>    <span class="kw">for</span> <span class="ex">f</span> in *.ko<span class="kw">;</span> <span class="kw">do</span> <span class="ex">insmod</span> <span class="va">$f</span><span class="kw">;</span> <span class="kw">done</span></span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a>    <span class="bu">cd</span> /lib/modules/2.6.17-2-686/kernel/drivers/net</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>    <span class="kw">for</span> <span class="ex">f</span> in *.ko<span class="kw">;</span> <span class="kw">do</span> <span class="ex">insmod</span> <span class="va">$f</span><span class="kw">;</span> <span class="kw">done</span></span></code></pre></div>
 <p>A few error messages later I tried <code>ifup eth0</code>, and it worked :-) Quick download of <code>pciutils</code>. Now I know the machine in question requires <code>eepro100</code> to get network. I recorded that in <code>/etc/modules</code>.</p>
 <p>At the moment I’m having a hard time resisting removing <code>pciutils</code>. I mean, now everything works, I won’t ever need it again, right?</p>
 

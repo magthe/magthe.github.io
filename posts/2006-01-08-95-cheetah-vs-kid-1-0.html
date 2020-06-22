@@ -32,93 +32,93 @@
 <p>I should have spent my Sunday doing a million other things, e.g. trying to clean up <a href="http://muttprint.sourceforge.net/">muttprint</a>’s build system. Instead I decided to take a quick look at <a href="http://turbogears.org/">TurboGears</a> and its parts. The Arch packages for it didn’t quite build so I ended up spending some time with <a href="http://www.cherrypy.org/">CherryPy</a>, <a href="http://www.cheetahtemplate.org/">Cheetah</a> and <a href="http://kid.lesscode.org/">Kid</a>. I’m an utter beginner when it comes to “programming the web”, I’ve just never been very interested in it. It might be changing now though :)</p>
 <p>CherryPy is truly impressive. A simple Hello World web service hints at just how easy it is to use. It’s written in Python, and it’s very pythonic indeed. However CherryPy isn’t what I wanted to write about. Another area I’ve not looked at is templating systems, I haven’t found a need for it yet. That’s possibly because I’ve never really understood what they are and what they do. That’s changing too.</p>
 <p>TurboGears uses Kid so that’s were I started. I downloaded a simple example consisting of two files. The template:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode html"><code class="sourceCode html"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">&lt;html&gt;</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a>  <span class="kw">&lt;head&gt;</span></span>
-<span id="cb1-3"><a href="#cb1-3"></a>    <span class="kw">&lt;title</span><span class="ot"> py:content=</span><span class="st">&quot;title&quot;</span><span class="kw">&gt;</span>Title<span class="kw">&lt;/title&gt;</span></span>
-<span id="cb1-4"><a href="#cb1-4"></a>  <span class="kw">&lt;/head&gt;</span></span>
-<span id="cb1-5"><a href="#cb1-5"></a>  <span class="kw">&lt;body&gt;</span></span>
-<span id="cb1-6"><a href="#cb1-6"></a></span>
-<span id="cb1-7"><a href="#cb1-7"></a>    <span class="kw">&lt;h1</span><span class="ot"> py:content=</span><span class="st">&quot;title&quot;</span><span class="kw">&gt;</span>There should be content<span class="kw">&lt;/h1&gt;</span></span>
-<span id="cb1-8"><a href="#cb1-8"></a></span>
-<span id="cb1-9"><a href="#cb1-9"></a>    <span class="kw">&lt;ol</span><span class="ot"> py:if=</span><span class="st">&quot;title&quot;</span><span class="kw">&gt;</span></span>
-<span id="cb1-10"><a href="#cb1-10"></a>      <span class="kw">&lt;li</span><span class="ot"> py:for=</span><span class="st">&quot;line in lines&quot;</span><span class="kw">&gt;</span></span>
-<span id="cb1-11"><a href="#cb1-11"></a>      <span class="kw">&lt;span</span><span class="ot"> py:replace=</span><span class="st">&quot;line&quot;</span><span class="kw">&gt;&lt;/span&gt;</span></span>
-<span id="cb1-12"><a href="#cb1-12"></a>      <span class="kw">&lt;/li&gt;</span></span>
-<span id="cb1-13"><a href="#cb1-13"></a>    <span class="kw">&lt;/ol&gt;</span></span>
-<span id="cb1-14"><a href="#cb1-14"></a></span>
-<span id="cb1-15"><a href="#cb1-15"></a>    <span class="kw">&lt;dl&gt;</span></span>
-<span id="cb1-16"><a href="#cb1-16"></a>      <span class="kw">&lt;span</span><span class="ot"> py:for=</span><span class="st">&quot;n, line in enumerate(lines)&quot;</span><span class="ot"> py:omit=</span><span class="st">&quot;&quot;</span><span class="kw">&gt;</span></span>
-<span id="cb1-17"><a href="#cb1-17"></a>        <span class="kw">&lt;dt</span><span class="ot"> py:content=</span><span class="st">&quot;'Line %s' % n&quot;</span><span class="kw">&gt;&lt;/dt&gt;</span></span>
-<span id="cb1-18"><a href="#cb1-18"></a>        <span class="kw">&lt;dd</span><span class="ot"> py:content=</span><span class="st">&quot;line&quot;</span><span class="kw">&gt;&lt;/dd&gt;</span></span>
-<span id="cb1-19"><a href="#cb1-19"></a>      <span class="kw">&lt;/span&gt;</span></span>
-<span id="cb1-20"><a href="#cb1-20"></a>    <span class="kw">&lt;/dl&gt;</span></span>
-<span id="cb1-21"><a href="#cb1-21"></a></span>
-<span id="cb1-22"><a href="#cb1-22"></a>    <span class="kw">&lt;p</span><span class="ot"> py:replace=</span><span class="st">&quot;'End of page'+title&quot;</span><span class="kw">&gt;&lt;/p&gt;</span></span>
-<span id="cb1-23"><a href="#cb1-23"></a></span>
-<span id="cb1-24"><a href="#cb1-24"></a>  <span class="kw">&lt;/body&gt;</span></span>
-<span id="cb1-25"><a href="#cb1-25"></a><span class="kw">&lt;/html&gt;</span></span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode html"><code class="sourceCode html"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">&lt;html&gt;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>  <span class="kw">&lt;head&gt;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>    <span class="kw">&lt;title</span><span class="ot"> py:content=</span><span class="st">&quot;title&quot;</span><span class="kw">&gt;</span>Title<span class="kw">&lt;/title&gt;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>  <span class="kw">&lt;/head&gt;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>  <span class="kw">&lt;body&gt;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a>    <span class="kw">&lt;h1</span><span class="ot"> py:content=</span><span class="st">&quot;title&quot;</span><span class="kw">&gt;</span>There should be content<span class="kw">&lt;/h1&gt;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a>    <span class="kw">&lt;ol</span><span class="ot"> py:if=</span><span class="st">&quot;title&quot;</span><span class="kw">&gt;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a>      <span class="kw">&lt;li</span><span class="ot"> py:for=</span><span class="st">&quot;line in lines&quot;</span><span class="kw">&gt;</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a>      <span class="kw">&lt;span</span><span class="ot"> py:replace=</span><span class="st">&quot;line&quot;</span><span class="kw">&gt;&lt;/span&gt;</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a>      <span class="kw">&lt;/li&gt;</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true"></a>    <span class="kw">&lt;/ol&gt;</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true"></a></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true"></a>    <span class="kw">&lt;dl&gt;</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true"></a>      <span class="kw">&lt;span</span><span class="ot"> py:for=</span><span class="st">&quot;n, line in enumerate(lines)&quot;</span><span class="ot"> py:omit=</span><span class="st">&quot;&quot;</span><span class="kw">&gt;</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true"></a>        <span class="kw">&lt;dt</span><span class="ot"> py:content=</span><span class="st">&quot;'Line %s' % n&quot;</span><span class="kw">&gt;&lt;/dt&gt;</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true"></a>        <span class="kw">&lt;dd</span><span class="ot"> py:content=</span><span class="st">&quot;line&quot;</span><span class="kw">&gt;&lt;/dd&gt;</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true"></a>      <span class="kw">&lt;/span&gt;</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true"></a>    <span class="kw">&lt;/dl&gt;</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true"></a></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true"></a>    <span class="kw">&lt;p</span><span class="ot"> py:replace=</span><span class="st">&quot;'End of page'+title&quot;</span><span class="kw">&gt;&lt;/p&gt;</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true"></a></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true"></a>  <span class="kw">&lt;/body&gt;</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true"></a><span class="kw">&lt;/html&gt;</span></span></code></pre></div>
 <p>The second file is the CherryPy modules that combines the template with values:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1"></a><span class="im">import</span> cherrypy</span>
-<span id="cb2-2"><a href="#cb2-2"></a><span class="im">import</span> kid</span>
-<span id="cb2-3"><a href="#cb2-3"></a></span>
-<span id="cb2-4"><a href="#cb2-4"></a><span class="kw">class</span> HomePage:</span>
-<span id="cb2-5"><a href="#cb2-5"></a></span>
-<span id="cb2-6"><a href="#cb2-6"></a>    <span class="at">@cherrypy.expose</span></span>
-<span id="cb2-7"><a href="#cb2-7"></a>    <span class="kw">def</span> index(<span class="va">self</span>):</span>
-<span id="cb2-8"><a href="#cb2-8"></a>        test <span class="op">=</span> kid.Template(<span class="bu">file</span><span class="op">=</span><span class="st">'kid_test.kid'</span>)</span>
-<span id="cb2-9"><a href="#cb2-9"></a>        test.title <span class="op">=</span> <span class="st">&quot;Test Kid Page&quot;</span></span>
-<span id="cb2-10"><a href="#cb2-10"></a>        test.lines <span class="op">=</span> [<span class="st">'qwe'</span>,<span class="st">'asd'</span>,<span class="st">'zxc'</span>]</span>
-<span id="cb2-11"><a href="#cb2-11"></a>        <span class="cf">return</span> test.serialize(output<span class="op">=</span><span class="st">'xhtml'</span>)</span>
-<span id="cb2-12"><a href="#cb2-12"></a></span>
-<span id="cb2-13"><a href="#cb2-13"></a></span>
-<span id="cb2-14"><a href="#cb2-14"></a><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">&quot;__main__&quot;</span>:</span>
-<span id="cb2-15"><a href="#cb2-15"></a>    cherrypy.root <span class="op">=</span> HomePage()</span>
-<span id="cb2-16"><a href="#cb2-16"></a>    cherrypy.server.start()</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="im">import</span> cherrypy</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a><span class="im">import</span> kid</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a><span class="kw">class</span> HomePage:</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a>    <span class="at">@cherrypy.expose</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a>    <span class="kw">def</span> index(<span class="va">self</span>):</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a>        test <span class="op">=</span> kid.Template(<span class="bu">file</span><span class="op">=</span><span class="st">'kid_test.kid'</span>)</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true"></a>        test.title <span class="op">=</span> <span class="st">&quot;Test Kid Page&quot;</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true"></a>        test.lines <span class="op">=</span> [<span class="st">'qwe'</span>,<span class="st">'asd'</span>,<span class="st">'zxc'</span>]</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true"></a>        <span class="cf">return</span> test.serialize(output<span class="op">=</span><span class="st">'xhtml'</span>)</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true"></a></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true"></a></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true"></a><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">&quot;__main__&quot;</span>:</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true"></a>    cherrypy.root <span class="op">=</span> HomePage()</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true"></a>    cherrypy.server.start()</span></code></pre></div>
 <p>This, I think, is rather cool. Very clean, very nice. Still I thought it’d be interesting to take a look at Cheetah (one main reason was that their homepage mentioned that <a href="http://reddit.com/">reddit.com</a>, which is funded by <a href="http://www.paulgraham.com/">Paul Graham</a>, uses it). It was a good decision, I think.</p>
 <p>I wrote a Cheetah template producing the same output as the Kid template I downloaded.</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode html"><code class="sourceCode html"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">&lt;html&gt;</span></span>
-<span id="cb3-2"><a href="#cb3-2"></a>  <span class="kw">&lt;head&gt;</span></span>
-<span id="cb3-3"><a href="#cb3-3"></a>    <span class="kw">&lt;title&gt;</span>$title<span class="kw">&lt;/title&gt;</span></span>
-<span id="cb3-4"><a href="#cb3-4"></a>  <span class="kw">&lt;/head&gt;</span></span>
-<span id="cb3-5"><a href="#cb3-5"></a></span>
-<span id="cb3-6"><a href="#cb3-6"></a>  <span class="kw">&lt;body&gt;</span></span>
-<span id="cb3-7"><a href="#cb3-7"></a>    <span class="kw">&lt;h1&gt;</span>$title<span class="kw">&lt;/h1&gt;</span></span>
-<span id="cb3-8"><a href="#cb3-8"></a></span>
-<span id="cb3-9"><a href="#cb3-9"></a>    <span class="kw">&lt;ol&gt;</span></span>
-<span id="cb3-10"><a href="#cb3-10"></a>      #for $l in $lines:</span>
-<span id="cb3-11"><a href="#cb3-11"></a>      <span class="kw">&lt;li&gt;</span>$l<span class="kw">&lt;/li&gt;</span></span>
-<span id="cb3-12"><a href="#cb3-12"></a>      #end for</span>
-<span id="cb3-13"><a href="#cb3-13"></a>    <span class="kw">&lt;/ol&gt;</span></span>
-<span id="cb3-14"><a href="#cb3-14"></a></span>
-<span id="cb3-15"><a href="#cb3-15"></a>    <span class="kw">&lt;dl&gt;</span></span>
-<span id="cb3-16"><a href="#cb3-16"></a>      <span class="kw">&lt;span&gt;</span></span>
-<span id="cb3-17"><a href="#cb3-17"></a>        #for $n, $l in $enumerate($lines):</span>
-<span id="cb3-18"><a href="#cb3-18"></a>        <span class="kw">&lt;dt&gt;</span>Line $n<span class="kw">&lt;/dt&gt;</span></span>
-<span id="cb3-19"><a href="#cb3-19"></a>        <span class="kw">&lt;dd&gt;</span>$l<span class="kw">&lt;/dd&gt;</span></span>
-<span id="cb3-20"><a href="#cb3-20"></a>        #end for</span>
-<span id="cb3-21"><a href="#cb3-21"></a>      <span class="kw">&lt;/span&gt;</span></span>
-<span id="cb3-22"><a href="#cb3-22"></a>    <span class="kw">&lt;/dl&gt;</span></span>
-<span id="cb3-23"><a href="#cb3-23"></a></span>
-<span id="cb3-24"><a href="#cb3-24"></a>    <span class="kw">&lt;p&gt;</span>End of page $title<span class="kw">&lt;/p&gt;</span></span>
-<span id="cb3-25"><a href="#cb3-25"></a>  <span class="kw">&lt;/body&gt;</span></span>
-<span id="cb3-26"><a href="#cb3-26"></a><span class="kw">&lt;/html&gt;</span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode html"><code class="sourceCode html"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="kw">&lt;html&gt;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>  <span class="kw">&lt;head&gt;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>    <span class="kw">&lt;title&gt;</span>$title<span class="kw">&lt;/title&gt;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a>  <span class="kw">&lt;/head&gt;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true"></a>  <span class="kw">&lt;body&gt;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true"></a>    <span class="kw">&lt;h1&gt;</span>$title<span class="kw">&lt;/h1&gt;</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true"></a></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true"></a>    <span class="kw">&lt;ol&gt;</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true"></a>      #for $l in $lines:</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true"></a>      <span class="kw">&lt;li&gt;</span>$l<span class="kw">&lt;/li&gt;</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true"></a>      #end for</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true"></a>    <span class="kw">&lt;/ol&gt;</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true"></a></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true"></a>    <span class="kw">&lt;dl&gt;</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true"></a>      <span class="kw">&lt;span&gt;</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true"></a>        #for $n, $l in $enumerate($lines):</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true"></a>        <span class="kw">&lt;dt&gt;</span>Line $n<span class="kw">&lt;/dt&gt;</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true"></a>        <span class="kw">&lt;dd&gt;</span>$l<span class="kw">&lt;/dd&gt;</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true"></a>        #end for</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true"></a>      <span class="kw">&lt;/span&gt;</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true"></a>    <span class="kw">&lt;/dl&gt;</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true"></a></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true"></a>    <span class="kw">&lt;p&gt;</span>End of page $title<span class="kw">&lt;/p&gt;</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true"></a>  <span class="kw">&lt;/body&gt;</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true"></a><span class="kw">&lt;/html&gt;</span></span></code></pre></div>
 <p>The matching CherryPy module is very similar to the one above.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1"></a><span class="im">import</span> cherrypy</span>
-<span id="cb4-2"><a href="#cb4-2"></a><span class="im">from</span> Cheetah.Template <span class="im">import</span> Template</span>
-<span id="cb4-3"><a href="#cb4-3"></a></span>
-<span id="cb4-4"><a href="#cb4-4"></a><span class="kw">class</span> HomePage:</span>
-<span id="cb4-5"><a href="#cb4-5"></a></span>
-<span id="cb4-6"><a href="#cb4-6"></a>    <span class="at">@cherrypy.expose</span></span>
-<span id="cb4-7"><a href="#cb4-7"></a>    <span class="kw">def</span> index(<span class="va">self</span>):</span>
-<span id="cb4-8"><a href="#cb4-8"></a>        tmpl <span class="op">=</span> Template(<span class="bu">file</span><span class="op">=</span><span class="st">'cheetah_test.html'</span>, <span class="op">\</span></span>
-<span id="cb4-9"><a href="#cb4-9"></a>                searchList<span class="op">=</span>[{<span class="st">'title'</span>: <span class="st">'Test Cheetah Page'</span>, <span class="op">\</span></span>
-<span id="cb4-10"><a href="#cb4-10"></a>                    <span class="st">'lines'</span>: [<span class="st">'qwe'</span>, <span class="st">'asd'</span>, <span class="st">'zxc'</span>],</span>
-<span id="cb4-11"><a href="#cb4-11"></a>                    }])</span>
-<span id="cb4-12"><a href="#cb4-12"></a>        <span class="cf">return</span> <span class="bu">str</span>(tmpl)</span>
-<span id="cb4-13"><a href="#cb4-13"></a></span>
-<span id="cb4-14"><a href="#cb4-14"></a><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">'__main__'</span>:</span>
-<span id="cb4-15"><a href="#cb4-15"></a>    cherrypy.root <span class="op">=</span> HomePage()</span>
-<span id="cb4-16"><a href="#cb4-16"></a>    cherrypy.server.start()</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="im">import</span> cherrypy</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a><span class="im">from</span> Cheetah.Template <span class="im">import</span> Template</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a><span class="kw">class</span> HomePage:</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true"></a>    <span class="at">@cherrypy.expose</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true"></a>    <span class="kw">def</span> index(<span class="va">self</span>):</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true"></a>        tmpl <span class="op">=</span> Template(<span class="bu">file</span><span class="op">=</span><span class="st">'cheetah_test.html'</span>, <span class="op">\</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true"></a>                searchList<span class="op">=</span>[{<span class="st">'title'</span>: <span class="st">'Test Cheetah Page'</span>, <span class="op">\</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true"></a>                    <span class="st">'lines'</span>: [<span class="st">'qwe'</span>, <span class="st">'asd'</span>, <span class="st">'zxc'</span>],</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true"></a>                    }])</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true"></a>        <span class="cf">return</span> <span class="bu">str</span>(tmpl)</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true"></a></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true"></a><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">'__main__'</span>:</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true"></a>    cherrypy.root <span class="op">=</span> HomePage()</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true"></a>    cherrypy.server.start()</span></code></pre></div>
 <p>Now, what do I think? I guess the title of the post betrays my preference ;-)</p>
 <p>I spent very little time reading documentation to do this. I needed some help to write the Cheetah template since I had to do it myself. However, I think that if I’d had a Cheetah example and tried to create a matching template using Kid, I wouldn’t be writing this right now. The Kid syntax just seems more confusing to me. I think I’d have to read more documentation as well as spend more time with Kid to reach the same level of confidence I have with Cheetah already after 30 minutes with it.</p>
 <p>Now I just need to find some nice little project to verify that my first impressions are correct, both relating to Cheetah and to CherryPy. Any ideas?</p>
@@ -184,10 +184,10 @@ Tags: <a title="All pages tagged 'cheeta'." href="../tags/cheeta.html">cheeta</a
     <p class="comment-date"><time pubdate="pubdate" datetime="2006-01-10">2006-01-10</time></p>
   </header>
 <p>To answer your question, here’s what your example would look like as a Django “view”:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a><span class="im">from</span> django.core.extensions <span class="im">import</span> render_to_response</span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="kw">def</span> homepage(request):</span>
-<span id="cb1-3"><a href="#cb1-3"></a>    context <span class="op">=</span> {<span class="st">'title'</span>: <span class="st">'Test Page'</span>, <span class="st">'lines'</span>: [<span class="st">'qwe'</span>, <span class="st">'asd'</span>, <span class="st">'zxc'</span>]}</span>
-<span id="cb1-4"><a href="#cb1-4"></a>    <span class="cf">return</span> render_to_response(<span class="st">'templatename'</span>, context)</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="im">from</span> django.core.extensions <span class="im">import</span> render_to_response</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a><span class="kw">def</span> homepage(request):</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>    context <span class="op">=</span> {<span class="st">'title'</span>: <span class="st">'Test Page'</span>, <span class="st">'lines'</span>: [<span class="st">'qwe'</span>, <span class="st">'asd'</span>, <span class="st">'zxc'</span>]}</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>    <span class="cf">return</span> render_to_response(<span class="st">'templatename'</span>, context)</span></code></pre></div>
 <p>You’d design your URL(s) in a separate file – a <a href="http://www.djangoproject.com/documentation/url_dispatch/">URLconf</a> – which is essentially a “table of contents” of your site’s URL structure.</p>
 <p>Feel free to ask any more questions, or join the <a href="http://groups.google.com/group/django-users">django-users mailing list</a>, which is full of helpful people!</p>
 </article>

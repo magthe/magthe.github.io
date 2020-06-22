@@ -35,34 +35,34 @@
 </blockquote>
 <p>That’s an excellent idea. One thought has been bugging me since beginning implementing the library, each module exposes the same methods, with the same type signatures, but there is no type-safe polymorphism in the API. I’ve never really understood phantom types so Saizan’s idea was a bit of an eye-opener for me. I think they can help solve the problem. Unfortunately I ran into another problem when playing.</p>
 <p>I picked base16 encoding to play a bit with this because the implementation is fairly short and simple. I began with creating a new typeclass:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">class</span> <span class="dt">DataEncoding</span> d <span class="kw">where</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="ot">    encode ::</span> [<span class="dt">Word8</span>] <span class="ot">-&gt;</span> d <span class="dt">String</span></span>
-<span id="cb1-3"><a href="#cb1-3"></a><span class="ot">    decode ::</span> d <span class="dt">String</span> <span class="ot">-&gt;</span> [<span class="dt">Word8</span>]</span>
-<span id="cb1-4"><a href="#cb1-4"></a><span class="ot">    chop ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> d <span class="dt">String</span> <span class="ot">-&gt;</span> d [<span class="dt">String</span>]</span>
-<span id="cb1-5"><a href="#cb1-5"></a><span class="ot">    unchop ::</span> d [<span class="dt">String</span>] <span class="ot">-&gt;</span> d <span class="dt">String</span></span>
-<span id="cb1-6"><a href="#cb1-6"></a><span class="ot">    liberate ::</span> d [<span class="dt">String</span>] <span class="ot">-&gt;</span> [<span class="dt">String</span>]</span>
-<span id="cb1-7"><a href="#cb1-7"></a><span class="ot">    incarcerate ::</span> [<span class="dt">String</span>] <span class="ot">-&gt;</span> d [<span class="dt">String</span>]</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">class</span> <span class="dt">DataEncoding</span> d <span class="kw">where</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a><span class="ot">    encode ::</span> [<span class="dt">Word8</span>] <span class="ot">-&gt;</span> d <span class="dt">String</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a><span class="ot">    decode ::</span> d <span class="dt">String</span> <span class="ot">-&gt;</span> [<span class="dt">Word8</span>]</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a><span class="ot">    chop ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> d <span class="dt">String</span> <span class="ot">-&gt;</span> d [<span class="dt">String</span>]</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a><span class="ot">    unchop ::</span> d [<span class="dt">String</span>] <span class="ot">-&gt;</span> d <span class="dt">String</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a><span class="ot">    liberate ::</span> d [<span class="dt">String</span>] <span class="ot">-&gt;</span> [<span class="dt">String</span>]</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a><span class="ot">    incarcerate ::</span> [<span class="dt">String</span>] <span class="ot">-&gt;</span> d [<span class="dt">String</span>]</span></code></pre></div>
 <p>I added the last two functions since it’s no good to have the encoding locked up and inaccessible all the time, at some point we might actually want to do something with the data.</p>
 <p>The implementation in Base16 looks like this:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">data</span> <span class="dt">B16Enc</span> p <span class="ot">=</span> <span class="dt">B16EncS</span> <span class="dt">String</span></span>
-<span id="cb2-2"><a href="#cb2-2"></a>    <span class="op">|</span> <span class="dt">B16EncLS</span> [<span class="dt">String</span>]</span>
-<span id="cb2-3"><a href="#cb2-3"></a>    <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span>
-<span id="cb2-4"><a href="#cb2-4"></a></span>
-<span id="cb2-5"><a href="#cb2-5"></a><span class="kw">instance</span> <span class="dt">DataEncoding</span> <span class="dt">B16Enc</span> <span class="kw">where</span></span>
-<span id="cb2-6"><a href="#cb2-6"></a>    encode os <span class="ot">=</span> <span class="dt">B16EncS</span> <span class="op">$</span> b16Encode os</span>
-<span id="cb2-7"><a href="#cb2-7"></a>    decode (<span class="dt">B16EncS</span> s) <span class="ot">=</span> b16Decode s</span>
-<span id="cb2-8"><a href="#cb2-8"></a>    chop n (<span class="dt">B16EncS</span> s) <span class="ot">=</span> <span class="dt">B16EncLS</span> <span class="op">$</span> b16Chop n s</span>
-<span id="cb2-9"><a href="#cb2-9"></a>    unchop (<span class="dt">B16EncLS</span> ss) <span class="ot">=</span> <span class="dt">B16EncS</span> <span class="op">$</span> b16Unchop ss</span>
-<span id="cb2-10"><a href="#cb2-10"></a>    liberate (<span class="dt">B16EncLS</span> ss) <span class="ot">=</span> ss</span>
-<span id="cb2-11"><a href="#cb2-11"></a>    incarcerate ss <span class="ot">=</span> <span class="dt">B16EncLS</span> ss</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">B16Enc</span> p <span class="ot">=</span> <span class="dt">B16EncS</span> <span class="dt">String</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>    <span class="op">|</span> <span class="dt">B16EncLS</span> [<span class="dt">String</span>]</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a>    <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">DataEncoding</span> <span class="dt">B16Enc</span> <span class="kw">where</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a>    encode os <span class="ot">=</span> <span class="dt">B16EncS</span> <span class="op">$</span> b16Encode os</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a>    decode (<span class="dt">B16EncS</span> s) <span class="ot">=</span> b16Decode s</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a>    chop n (<span class="dt">B16EncS</span> s) <span class="ot">=</span> <span class="dt">B16EncLS</span> <span class="op">$</span> b16Chop n s</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true"></a>    unchop (<span class="dt">B16EncLS</span> ss) <span class="ot">=</span> <span class="dt">B16EncS</span> <span class="op">$</span> b16Unchop ss</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true"></a>    liberate (<span class="dt">B16EncLS</span> ss) <span class="ot">=</span> ss</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true"></a>    incarcerate ss <span class="ot">=</span> <span class="dt">B16EncLS</span> ss</span></code></pre></div>
 <p>Then I realised that it might be useful to be able to liberate not only the result of a <code>chop</code> but also the result of a plain <code>encode</code>. That is I want something like</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="ot">    liberate ::</span> d a <span class="ot">-&gt;</span> a</span>
-<span id="cb3-2"><a href="#cb3-2"></a><span class="ot">    incarcerate ::</span> a <span class="ot">-&gt;</span> d a</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="ot">    liberate ::</span> d a <span class="ot">-&gt;</span> a</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a><span class="ot">    incarcerate ::</span> a <span class="ot">-&gt;</span> d a</span></code></pre></div>
 <p>Where ideally <code>a</code> can be <code>String</code> or <code>[String]</code> and nothing else (I’ll settle for a weaker type if I have to though). What I want to avoid, if possible is the need for two functions for both <code>liberate</code> and <code>incarcerate</code>:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a><span class="ot">    liberateS ::</span> d <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span></span>
-<span id="cb4-2"><a href="#cb4-2"></a><span class="ot">    incarcerateS ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> d <span class="dt">String</span></span>
-<span id="cb4-3"><a href="#cb4-3"></a><span class="ot">    liberateSL ::</span> d [<span class="dt">String</span>] <span class="ot">-&gt;</span> [<span class="dt">String</span>]</span>
-<span id="cb4-4"><a href="#cb4-4"></a><span class="ot">    incarcerateSL ::</span> [<span class="dt">String</span>] <span class="ot">-&gt;</span> d [<span class="dt">String</span>]</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="ot">    liberateS ::</span> d <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a><span class="ot">    incarcerateS ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> d <span class="dt">String</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a><span class="ot">    liberateSL ::</span> d [<span class="dt">String</span>] <span class="ot">-&gt;</span> [<span class="dt">String</span>]</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a><span class="ot">    incarcerateSL ::</span> [<span class="dt">String</span>] <span class="ot">-&gt;</span> d [<span class="dt">String</span>]</span></code></pre></div>
 <p>I’ve tried just introducing the <code>a</code> like above, but that causes a failure to match types, and declaring the class on <code>DataEncoding d a</code> (and enabling Glasgow extensions) causes arity problems in the types that confuse me to no end.</p>
 <p>So, introducing phantom types and a typeclass is still ongoing. Any tip on solving the immidiate issue is welcome. I’ll be back as soon as I’ve come to any conclusion as to whether it’s worth the trouble or not :-)</p>
 
@@ -99,69 +99,69 @@ Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell
     <p class="comment-date"><time pubdate="pubdate" datetime="2007-10-16">2007-10-16</time></p>
   </header>
 <p>Try this:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a></span>
-<span id="cb1-3"><a href="#cb1-3"></a><span class="kw">import</span> <span class="dt">Data.Word</span></span>
-<span id="cb1-4"><a href="#cb1-4"></a></span>
-<span id="cb1-5"><a href="#cb1-5"></a><span class="co">{-</span></span>
-<span id="cb1-6"><a href="#cb1-6"></a><span class="co">'encoding' is a phantom type. It's not expressed in the structure of</span></span>
-<span id="cb1-7"><a href="#cb1-7"></a><span class="co">the data (so no overhead), but the compiler knows about it and can use</span></span>
-<span id="cb1-8"><a href="#cb1-8"></a><span class="co">it to typecheck.  'a' is a real type.  'Encoded encoding a' means an</span></span>
-<span id="cb1-9"><a href="#cb1-9"></a><span class="co">'a', but wrapped in 'Encoded' so we know it's encoded, not raw data.</span></span>
-<span id="cb1-10"><a href="#cb1-10"></a><span class="co">The compiler knows what kind of encoding you're using (the phantom</span></span>
-<span id="cb1-11"><a href="#cb1-11"></a><span class="co">type), but once the code is compiled and known to work correctly, that</span></span>
-<span id="cb1-12"><a href="#cb1-12"></a><span class="co">information is discarded and vanishes.</span></span>
-<span id="cb1-13"><a href="#cb1-13"></a><span class="co">-}</span></span>
-<span id="cb1-14"><a href="#cb1-14"></a><span class="kw">data</span> <span class="dt">Encoded</span> encoding a <span class="ot">=</span> <span class="dt">Encoded</span> a</span>
-<span id="cb1-15"><a href="#cb1-15"></a></span>
-<span id="cb1-16"><a href="#cb1-16"></a><span class="co">{-</span></span>
-<span id="cb1-17"><a href="#cb1-17"></a><span class="co">Here we define what it means to be a DataEncoding.</span></span>
-<span id="cb1-18"><a href="#cb1-18"></a><span class="co">-}</span></span>
-<span id="cb1-19"><a href="#cb1-19"></a><span class="kw">class</span> <span class="dt">DataEncoding</span> encoding <span class="kw">where</span></span>
-<span id="cb1-20"><a href="#cb1-20"></a><span class="ot">    encode ::</span> [<span class="dt">Word8</span>] <span class="op">-&amp;</span>gt; <span class="dt">Encoded</span> encoding <span class="dt">String</span></span>
-<span id="cb1-21"><a href="#cb1-21"></a><span class="ot">    decode ::</span> <span class="dt">Encoded</span> encoding <span class="dt">String</span> <span class="op">-&amp;</span>gt; [<span class="dt">Word8</span>]</span>
-<span id="cb1-22"><a href="#cb1-22"></a><span class="ot">    chop ::</span> <span class="dt">Int</span> <span class="op">-&amp;</span>gt; <span class="dt">Encoded</span> encoding <span class="dt">String</span> <span class="op">-&amp;</span>gt; <span class="dt">Encoded</span> encoding [<span class="dt">String</span>]</span>
-<span id="cb1-23"><a href="#cb1-23"></a><span class="ot">    unchop ::</span> <span class="dt">Encoded</span> encoding [<span class="dt">String</span>] <span class="op">-&amp;</span>gt; <span class="dt">Encoded</span> encoding <span class="dt">String</span></span>
-<span id="cb1-24"><a href="#cb1-24"></a><span class="ot">    liberate ::</span> <span class="dt">Encoded</span> encoding a <span class="op">-&amp;</span>gt; a</span>
-<span id="cb1-25"><a href="#cb1-25"></a><span class="ot">    incarcerate ::</span> a <span class="op">-&amp;</span>gt; <span class="dt">Encoded</span> encoding a</span>
-<span id="cb1-26"><a href="#cb1-26"></a></span>
-<span id="cb1-27"><a href="#cb1-27"></a><span class="co">{-</span></span>
-<span id="cb1-28"><a href="#cb1-28"></a><span class="co">Here we define one of the encodings.  The encoding doesn't have to</span></span>
-<span id="cb1-29"><a href="#cb1-29"></a><span class="co">carry any information; it's just a tag to tell the compiler which</span></span>
-<span id="cb1-30"><a href="#cb1-30"></a><span class="co">implementation of encode/decode/chop/etc. to use.  In fact, since it's</span></span>
-<span id="cb1-31"><a href="#cb1-31"></a><span class="co">a phantom type which gets thrown out after compilation, there wouldn't</span></span>
-<span id="cb1-32"><a href="#cb1-32"></a><span class="co">be any point to having it store data.</span></span>
-<span id="cb1-33"><a href="#cb1-33"></a><span class="co">-}</span></span>
-<span id="cb1-34"><a href="#cb1-34"></a></span>
-<span id="cb1-35"><a href="#cb1-35"></a><span class="kw">data</span> <span class="dt">B16</span> <span class="ot">=</span> <span class="dt">B16</span></span>
-<span id="cb1-36"><a href="#cb1-36"></a></span>
-<span id="cb1-37"><a href="#cb1-37"></a><span class="co">{-</span></span>
-<span id="cb1-38"><a href="#cb1-38"></a><span class="co">Here we define how we want to implement the functions for B16.</span></span>
-<span id="cb1-39"><a href="#cb1-39"></a><span class="co">-}</span></span>
-<span id="cb1-40"><a href="#cb1-40"></a><span class="kw">instance</span> <span class="dt">DataEncoding</span> <span class="dt">B16</span> <span class="kw">where</span></span>
-<span id="cb1-41"><a href="#cb1-41"></a>    encode ws <span class="ot">=</span> <span class="dt">Encoded</span> (b16Encode ws)</span>
-<span id="cb1-42"><a href="#cb1-42"></a>    decode (<span class="dt">Encoded</span> str) <span class="ot">=</span> b16Decode str</span>
-<span id="cb1-43"><a href="#cb1-43"></a>    chop n (<span class="dt">Encoded</span> str) <span class="ot">=</span> <span class="dt">Encoded</span> (b16Chop n str)</span>
-<span id="cb1-44"><a href="#cb1-44"></a>    unchop (<span class="dt">Encoded</span> strs) <span class="ot">=</span> <span class="dt">Encoded</span> (b16Upchop strs)</span>
-<span id="cb1-45"><a href="#cb1-45"></a>    liberate (<span class="dt">Encoded</span> whatever) <span class="ot">=</span> whatever</span>
-<span id="cb1-46"><a href="#cb1-46"></a>    incarcerate whatever <span class="ot">=</span> <span class="dt">Encoded</span> whatever</span>
-<span id="cb1-47"><a href="#cb1-47"></a></span>
-<span id="cb1-48"><a href="#cb1-48"></a><span class="co">{- </span></span>
-<span id="cb1-49"><a href="#cb1-49"></a><span class="co">Here are a bunch of dummy implementations of your functions.  They're</span></span>
-<span id="cb1-50"><a href="#cb1-50"></a><span class="co">here just to provide the right type signatures.</span></span>
-<span id="cb1-51"><a href="#cb1-51"></a><span class="co">-}</span></span>
-<span id="cb1-52"><a href="#cb1-52"></a></span>
-<span id="cb1-53"><a href="#cb1-53"></a><span class="ot">b16Encode ::</span> [<span class="dt">Word8</span>] <span class="op">-&amp;</span>gt; <span class="dt">String</span></span>
-<span id="cb1-54"><a href="#cb1-54"></a>b16Encode <span class="ot">=</span> <span class="fu">error</span> <span class="st">&quot;b16Encode&quot;</span></span>
-<span id="cb1-55"><a href="#cb1-55"></a></span>
-<span id="cb1-56"><a href="#cb1-56"></a><span class="ot">b16Decode ::</span> <span class="dt">String</span> <span class="op">-&amp;</span>gt; [<span class="dt">Word8</span>]</span>
-<span id="cb1-57"><a href="#cb1-57"></a>b16Decode <span class="ot">=</span> <span class="fu">error</span> <span class="st">&quot;b16Decode&quot;</span></span>
-<span id="cb1-58"><a href="#cb1-58"></a></span>
-<span id="cb1-59"><a href="#cb1-59"></a><span class="ot">b16Chop ::</span> <span class="dt">Int</span> <span class="op">-&amp;</span>gt; <span class="dt">String</span> <span class="op">-&amp;</span>gt; [<span class="dt">String</span>]</span>
-<span id="cb1-60"><a href="#cb1-60"></a>b16Chop <span class="ot">=</span> <span class="fu">error</span> <span class="st">&quot;b16Chop&quot;</span></span>
-<span id="cb1-61"><a href="#cb1-61"></a></span>
-<span id="cb1-62"><a href="#cb1-62"></a><span class="ot">b16Unchop ::</span> [<span class="dt">String</span>] <span class="op">-&amp;</span>gt; <span class="dt">String</span></span>
-<span id="cb1-63"><a href="#cb1-63"></a>b16Unchop <span class="ot">=</span> <span class="fu">error</span> <span class="st">&quot;b16Unchop&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Data.Word</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a><span class="co">{-</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a><span class="co">'encoding' is a phantom type. It's not expressed in the structure of</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a><span class="co">the data (so no overhead), but the compiler knows about it and can use</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a><span class="co">it to typecheck.  'a' is a real type.  'Encoded encoding a' means an</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a><span class="co">'a', but wrapped in 'Encoded' so we know it's encoded, not raw data.</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a><span class="co">The compiler knows what kind of encoding you're using (the phantom</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a><span class="co">type), but once the code is compiled and known to work correctly, that</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a><span class="co">information is discarded and vanishes.</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true"></a><span class="co">-}</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Encoded</span> encoding a <span class="ot">=</span> <span class="dt">Encoded</span> a</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true"></a><span class="co">{-</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true"></a><span class="co">Here we define what it means to be a DataEncoding.</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true"></a><span class="co">-}</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true"></a><span class="kw">class</span> <span class="dt">DataEncoding</span> encoding <span class="kw">where</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true"></a><span class="ot">    encode ::</span> [<span class="dt">Word8</span>] <span class="op">-&amp;</span>gt; <span class="dt">Encoded</span> encoding <span class="dt">String</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true"></a><span class="ot">    decode ::</span> <span class="dt">Encoded</span> encoding <span class="dt">String</span> <span class="op">-&amp;</span>gt; [<span class="dt">Word8</span>]</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true"></a><span class="ot">    chop ::</span> <span class="dt">Int</span> <span class="op">-&amp;</span>gt; <span class="dt">Encoded</span> encoding <span class="dt">String</span> <span class="op">-&amp;</span>gt; <span class="dt">Encoded</span> encoding [<span class="dt">String</span>]</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true"></a><span class="ot">    unchop ::</span> <span class="dt">Encoded</span> encoding [<span class="dt">String</span>] <span class="op">-&amp;</span>gt; <span class="dt">Encoded</span> encoding <span class="dt">String</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true"></a><span class="ot">    liberate ::</span> <span class="dt">Encoded</span> encoding a <span class="op">-&amp;</span>gt; a</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true"></a><span class="ot">    incarcerate ::</span> a <span class="op">-&amp;</span>gt; <span class="dt">Encoded</span> encoding a</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true"></a></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true"></a><span class="co">{-</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true"></a><span class="co">Here we define one of the encodings.  The encoding doesn't have to</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true"></a><span class="co">carry any information; it's just a tag to tell the compiler which</span></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true"></a><span class="co">implementation of encode/decode/chop/etc. to use.  In fact, since it's</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true"></a><span class="co">a phantom type which gets thrown out after compilation, there wouldn't</span></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true"></a><span class="co">be any point to having it store data.</span></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true"></a><span class="co">-}</span></span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true"></a></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">B16</span> <span class="ot">=</span> <span class="dt">B16</span></span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true"></a></span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true"></a><span class="co">{-</span></span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true"></a><span class="co">Here we define how we want to implement the functions for B16.</span></span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true"></a><span class="co">-}</span></span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">DataEncoding</span> <span class="dt">B16</span> <span class="kw">where</span></span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true"></a>    encode ws <span class="ot">=</span> <span class="dt">Encoded</span> (b16Encode ws)</span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true"></a>    decode (<span class="dt">Encoded</span> str) <span class="ot">=</span> b16Decode str</span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true"></a>    chop n (<span class="dt">Encoded</span> str) <span class="ot">=</span> <span class="dt">Encoded</span> (b16Chop n str)</span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true"></a>    unchop (<span class="dt">Encoded</span> strs) <span class="ot">=</span> <span class="dt">Encoded</span> (b16Upchop strs)</span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true"></a>    liberate (<span class="dt">Encoded</span> whatever) <span class="ot">=</span> whatever</span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true"></a>    incarcerate whatever <span class="ot">=</span> <span class="dt">Encoded</span> whatever</span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true"></a></span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true"></a><span class="co">{- </span></span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true"></a><span class="co">Here are a bunch of dummy implementations of your functions.  They're</span></span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true"></a><span class="co">here just to provide the right type signatures.</span></span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true"></a><span class="co">-}</span></span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true"></a></span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true"></a><span class="ot">b16Encode ::</span> [<span class="dt">Word8</span>] <span class="op">-&amp;</span>gt; <span class="dt">String</span></span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true"></a>b16Encode <span class="ot">=</span> <span class="fu">error</span> <span class="st">&quot;b16Encode&quot;</span></span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true"></a></span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true"></a><span class="ot">b16Decode ::</span> <span class="dt">String</span> <span class="op">-&amp;</span>gt; [<span class="dt">Word8</span>]</span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true"></a>b16Decode <span class="ot">=</span> <span class="fu">error</span> <span class="st">&quot;b16Decode&quot;</span></span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true"></a></span>
+<span id="cb1-59"><a href="#cb1-59" aria-hidden="true"></a><span class="ot">b16Chop ::</span> <span class="dt">Int</span> <span class="op">-&amp;</span>gt; <span class="dt">String</span> <span class="op">-&amp;</span>gt; [<span class="dt">String</span>]</span>
+<span id="cb1-60"><a href="#cb1-60" aria-hidden="true"></a>b16Chop <span class="ot">=</span> <span class="fu">error</span> <span class="st">&quot;b16Chop&quot;</span></span>
+<span id="cb1-61"><a href="#cb1-61" aria-hidden="true"></a></span>
+<span id="cb1-62"><a href="#cb1-62" aria-hidden="true"></a><span class="ot">b16Unchop ::</span> [<span class="dt">String</span>] <span class="op">-&amp;</span>gt; <span class="dt">String</span></span>
+<span id="cb1-63"><a href="#cb1-63" aria-hidden="true"></a>b16Unchop <span class="ot">=</span> <span class="fu">error</span> <span class="st">&quot;b16Unchop&quot;</span></span></code></pre></div>
 </article>
 
 <article class="comment-body">

@@ -40,64 +40,64 @@
 </ol>
 <h2 id="the-c-api">The C API</h2>
 <p>To begin with I hacked up a simple implementation of a stack in C. The “specification” is</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb1-1"><a href="#cb1-1"></a><span class="co">/**</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="co"> * Create a stack.</span></span>
-<span id="cb1-3"><a href="#cb1-3"></a><span class="co"> */</span></span>
-<span id="cb1-4"><a href="#cb1-4"></a><span class="dt">void</span> *create();</span>
-<span id="cb1-5"><a href="#cb1-5"></a></span>
-<span id="cb1-6"><a href="#cb1-6"></a><span class="co">/**</span></span>
-<span id="cb1-7"><a href="#cb1-7"></a><span class="co"> * Push a value onto an existing stack.</span></span>
-<span id="cb1-8"><a href="#cb1-8"></a><span class="co"> */</span></span>
-<span id="cb1-9"><a href="#cb1-9"></a><span class="dt">void</span> push (<span class="dt">void</span> *, <span class="dt">int</span>);</span>
-<span id="cb1-10"><a href="#cb1-10"></a></span>
-<span id="cb1-11"><a href="#cb1-11"></a><span class="co">/**</span></span>
-<span id="cb1-12"><a href="#cb1-12"></a><span class="co"> * Pop a value off an existing stack.</span></span>
-<span id="cb1-13"><a href="#cb1-13"></a><span class="co"> */</span></span>
-<span id="cb1-14"><a href="#cb1-14"></a><span class="dt">int</span> pop(<span class="dt">void</span> *);</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="co">/**</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a><span class="co"> * Create a stack.</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a><span class="co"> */</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a><span class="dt">void</span> *create();</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a><span class="co">/**</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a><span class="co"> * Push a value onto an existing stack.</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a><span class="co"> */</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a><span class="dt">void</span> push (<span class="dt">void</span> *, <span class="dt">int</span>);</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a><span class="co">/**</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a><span class="co"> * Pop a value off an existing stack.</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true"></a><span class="co"> */</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true"></a><span class="dt">int</span> pop(<span class="dt">void</span> *);</span></code></pre></div>
 <p>Using <code>inline-c</code> to create bindings for it is amazingly simple:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="ot">{-# LANGUAGE QuasiQuotes #-}</span></span>
-<span id="cb2-2"><a href="#cb2-2"></a><span class="ot">{-# LANGUAGE TemplateHaskell #-}</span></span>
-<span id="cb2-3"><a href="#cb2-3"></a></span>
-<span id="cb2-4"><a href="#cb2-4"></a><span class="kw">module</span> <span class="dt">CApi</span></span>
-<span id="cb2-5"><a href="#cb2-5"></a>    <span class="kw">where</span></span>
-<span id="cb2-6"><a href="#cb2-6"></a></span>
-<span id="cb2-7"><a href="#cb2-7"></a><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Language.C.Inline</span> <span class="kw">as</span> <span class="dt">C</span></span>
-<span id="cb2-8"><a href="#cb2-8"></a><span class="kw">import</span> <span class="dt">Foreign.Ptr</span></span>
-<span id="cb2-9"><a href="#cb2-9"></a></span>
-<span id="cb2-10"><a href="#cb2-10"></a>C.include <span class="st">&quot;stack.h&quot;</span></span>
-<span id="cb2-11"><a href="#cb2-11"></a></span>
-<span id="cb2-12"><a href="#cb2-12"></a><span class="ot">create ::</span> <span class="dt">IO</span> (<span class="dt">Ptr</span> ())</span>
-<span id="cb2-13"><a href="#cb2-13"></a>create <span class="ot">=</span> [C.exp<span class="op">|</span> void <span class="op">*</span> { create() } <span class="op">|</span>]</span>
-<span id="cb2-14"><a href="#cb2-14"></a></span>
-<span id="cb2-15"><a href="#cb2-15"></a><span class="ot">push ::</span> <span class="dt">Ptr</span> () <span class="ot">-&gt;</span> <span class="dt">C.CInt</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
-<span id="cb2-16"><a href="#cb2-16"></a>push s i <span class="ot">=</span> [C.exp<span class="op">|</span> void { push(<span class="op">$</span>(void <span class="op">*</span>s), <span class="op">$</span>(int i)) } <span class="op">|</span>]</span>
-<span id="cb2-17"><a href="#cb2-17"></a></span>
-<span id="cb2-18"><a href="#cb2-18"></a><span class="ot">pop ::</span> <span class="dt">Ptr</span> () <span class="ot">-&gt;</span> <span class="dt">IO</span> <span class="dt">C.CInt</span></span>
-<span id="cb2-19"><a href="#cb2-19"></a>pop s <span class="ot">=</span> [C.exp<span class="op">|</span> int { pop(<span class="op">$</span>(void <span class="op">*</span>s)) } <span class="op">|</span>]</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="ot">{-# LANGUAGE QuasiQuotes #-}</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a><span class="ot">{-# LANGUAGE TemplateHaskell #-}</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a><span class="kw">module</span> <span class="dt">CApi</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a>    <span class="kw">where</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Language.C.Inline</span> <span class="kw">as</span> <span class="dt">C</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Foreign.Ptr</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true"></a></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true"></a>C.include <span class="st">&quot;stack.h&quot;</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true"></a></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true"></a><span class="ot">create ::</span> <span class="dt">IO</span> (<span class="dt">Ptr</span> ())</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true"></a>create <span class="ot">=</span> [C.exp<span class="op">|</span> void <span class="op">*</span> { create() } <span class="op">|</span>]</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true"></a></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true"></a><span class="ot">push ::</span> <span class="dt">Ptr</span> () <span class="ot">-&gt;</span> <span class="dt">C.CInt</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true"></a>push s i <span class="ot">=</span> [C.exp<span class="op">|</span> void { push(<span class="op">$</span>(void <span class="op">*</span>s), <span class="op">$</span>(int i)) } <span class="op">|</span>]</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true"></a></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true"></a><span class="ot">pop ::</span> <span class="dt">Ptr</span> () <span class="ot">-&gt;</span> <span class="dt">IO</span> <span class="dt">C.CInt</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true"></a>pop s <span class="ot">=</span> [C.exp<span class="op">|</span> int { pop(<span class="op">$</span>(void <span class="op">*</span>s)) } <span class="op">|</span>]</span></code></pre></div>
 <p>In the code below I import this module qualified.</p>
 <h2 id="representing-a-program">Representing a program</h2>
 <p>To represent a sequence of calls I first used a custom type, but later realised that there really was no reason at all to not use a wrapped list:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">newtype</span> <span class="dt">Program</span> a <span class="ot">=</span> <span class="dt">P</span> [a]</span>
-<span id="cb3-2"><a href="#cb3-2"></a>    <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Foldable</span>, <span class="dt">Functor</span>, <span class="dt">Show</span>, <span class="dt">Traversable</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="kw">newtype</span> <span class="dt">Program</span> a <span class="ot">=</span> <span class="dt">P</span> [a]</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>    <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Foldable</span>, <span class="dt">Functor</span>, <span class="dt">Show</span>, <span class="dt">Traversable</span>)</span></code></pre></div>
 <p>Then each of the C API functions can be represented with</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">data</span> <span class="dt">Statement</span> <span class="ot">=</span> <span class="dt">Create</span> <span class="op">|</span> <span class="dt">Push</span> <span class="dt">Int</span> <span class="op">|</span> <span class="dt">Pop</span></span>
-<span id="cb4-2"><a href="#cb4-2"></a>    <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Statement</span> <span class="ot">=</span> <span class="dt">Create</span> <span class="op">|</span> <span class="dt">Push</span> <span class="dt">Int</span> <span class="op">|</span> <span class="dt">Pop</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>    <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span></code></pre></div>
 <h2 id="arbitrary-for-statement"><code>Arbitrary</code> for <code>Statement</code></h2>
 <p>My implementation of <code>Arbitrary</code> for <code>Statement</code> is very simple:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">instance</span> <span class="dt">Arbitrary</span> <span class="dt">Statement</span> <span class="kw">where</span></span>
-<span id="cb5-2"><a href="#cb5-2"></a>    arbitrary <span class="ot">=</span> oneof [<span class="fu">return</span> <span class="dt">Create</span>, <span class="fu">return</span> <span class="dt">Pop</span>, liftM <span class="dt">Push</span> arbitrary]</span>
-<span id="cb5-3"><a href="#cb5-3"></a>    shrink (<span class="dt">Push</span> i) <span class="ot">=</span> <span class="dt">Push</span> <span class="op">&lt;$&gt;</span> shrink i</span>
-<span id="cb5-4"><a href="#cb5-4"></a>    shrink _ <span class="ot">=</span> []</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">Arbitrary</span> <span class="dt">Statement</span> <span class="kw">where</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a>    arbitrary <span class="ot">=</span> oneof [<span class="fu">return</span> <span class="dt">Create</span>, <span class="fu">return</span> <span class="dt">Pop</span>, liftM <span class="dt">Push</span> arbitrary]</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a>    shrink (<span class="dt">Push</span> i) <span class="ot">=</span> <span class="dt">Push</span> <span class="op">&lt;$&gt;</span> shrink i</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a>    shrink _ <span class="ot">=</span> []</span></code></pre></div>
 <p>That is, <code>arbitrary</code> just returns one of the constructors of <code>Statement</code>, and shrinking only returns anything for the one constructor that takes an argument, <code>Push</code>.</p>
 <h2 id="prerequisites-of-arbitrary-for-program-statement">Prerequisites of <code>Arbitrary</code> for <code>Program Statement</code></h2>
 <p>I want to ensure that all <code>Program Statement</code> are valid, which means I need to define the model for running the program and functions for checking the precondition of a statement as well as for updating the model (i.e. for running the <code>Statement</code>).</p>
 <p>Based on the <a href="#the-c-api">C API</a> above it seems necessary to track creation, the contents of the stack, and even if it isn’t explicitly mentioned it’s probably a good idea to track the popped value. Using <a href="http://hackage.haskell.org/package/record"><code>record</code></a> (<code>Record</code> is imported as <code>R</code>, and <code>Record.Lens</code> as <code>RL</code>) I defined it like this:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">type</span> <span class="dt">ModelContext</span> <span class="ot">=</span> [R.r<span class="op">|</span> {<span class="ot"> created ::</span> <span class="dt">Bool</span>,<span class="ot"> pop ::</span> <span class="dt">Maybe</span> <span class="dt">Int</span>,<span class="ot"> stack ::</span> [<span class="dt">Int</span>] } <span class="op">|</span>]</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a><span class="kw">type</span> <span class="dt">ModelContext</span> <span class="ot">=</span> [R.r<span class="op">|</span> {<span class="ot"> created ::</span> <span class="dt">Bool</span>,<span class="ot"> pop ::</span> <span class="dt">Maybe</span> <span class="dt">Int</span>,<span class="ot"> stack ::</span> [<span class="dt">Int</span>] } <span class="op">|</span>]</span></code></pre></div>
 <p>Based on the rather informal specification I coded the pre-conditions for the three statements as</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1"></a><span class="ot">preCond ::</span> <span class="dt">ModelContext</span> <span class="ot">-&gt;</span> <span class="dt">Statement</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
-<span id="cb7-2"><a href="#cb7-2"></a>preCond ctx <span class="dt">Create</span> <span class="ot">=</span> <span class="fu">not</span> <span class="op">$</span> RL.view [R.l<span class="op">|</span> created <span class="op">|</span>] ctx</span>
-<span id="cb7-3"><a href="#cb7-3"></a>preCond ctx (<span class="dt">Push</span> _) <span class="ot">=</span> RL.view [R.l<span class="op">|</span> created <span class="op">|</span>] ctx</span>
-<span id="cb7-4"><a href="#cb7-4"></a>preCond ctx <span class="dt">Pop</span> <span class="ot">=</span> RL.view [R.l<span class="op">|</span> created <span class="op">|</span>] ctx</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a><span class="ot">preCond ::</span> <span class="dt">ModelContext</span> <span class="ot">-&gt;</span> <span class="dt">Statement</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a>preCond ctx <span class="dt">Create</span> <span class="ot">=</span> <span class="fu">not</span> <span class="op">$</span> RL.view [R.l<span class="op">|</span> created <span class="op">|</span>] ctx</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true"></a>preCond ctx (<span class="dt">Push</span> _) <span class="ot">=</span> RL.view [R.l<span class="op">|</span> created <span class="op">|</span>] ctx</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true"></a>preCond ctx <span class="dt">Pop</span> <span class="ot">=</span> RL.view [R.l<span class="op">|</span> created <span class="op">|</span>] ctx</span></code></pre></div>
 <p>That is</p>
 <ul>
 <li><code>Create</code> requires that the stack hasn’t been created already.</li>
@@ -105,83 +105,83 @@
 <li><code>Pop</code> also requires that the stack has been created.</li>
 </ul>
 <p>Furthermore the “specification” suggests the following definition of a function for running a statement:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1"></a><span class="ot">modelRunStatement ::</span> <span class="dt">ModelContext</span> <span class="ot">-&gt;</span> <span class="dt">Statement</span> <span class="ot">-&gt;</span> <span class="dt">ModelContext</span></span>
-<span id="cb8-2"><a href="#cb8-2"></a>modelRunStatement ctx <span class="dt">Create</span> <span class="ot">=</span> RL.set [R.l<span class="op">|</span> created <span class="op">|</span>] <span class="dt">True</span> ctx</span>
-<span id="cb8-3"><a href="#cb8-3"></a>modelRunStatement ctx (<span class="dt">Push</span> i) <span class="ot">=</span> RL.over [R.l<span class="op">|</span> stack <span class="op">|</span>] (i <span class="op">:</span>) ctx</span>
-<span id="cb8-4"><a href="#cb8-4"></a>modelRunStatement ctx <span class="dt">Pop</span> <span class="ot">=</span> [R.r<span class="op">|</span> { created <span class="ot">=</span> c, pop <span class="ot">=</span> headMay s, stack <span class="ot">=</span> <span class="fu">tail</span> s } <span class="op">|</span>]</span>
-<span id="cb8-5"><a href="#cb8-5"></a>    <span class="kw">where</span></span>
-<span id="cb8-6"><a href="#cb8-6"></a>        c <span class="ot">=</span> RL.view [R.l<span class="op">|</span> created <span class="op">|</span>] ctx</span>
-<span id="cb8-7"><a href="#cb8-7"></a>        s <span class="ot">=</span> RL.view [R.l<span class="op">|</span> stack <span class="op">|</span>] ctx</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a><span class="ot">modelRunStatement ::</span> <span class="dt">ModelContext</span> <span class="ot">-&gt;</span> <span class="dt">Statement</span> <span class="ot">-&gt;</span> <span class="dt">ModelContext</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a>modelRunStatement ctx <span class="dt">Create</span> <span class="ot">=</span> RL.set [R.l<span class="op">|</span> created <span class="op">|</span>] <span class="dt">True</span> ctx</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true"></a>modelRunStatement ctx (<span class="dt">Push</span> i) <span class="ot">=</span> RL.over [R.l<span class="op">|</span> stack <span class="op">|</span>] (i <span class="op">:</span>) ctx</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true"></a>modelRunStatement ctx <span class="dt">Pop</span> <span class="ot">=</span> [R.r<span class="op">|</span> { created <span class="ot">=</span> c, pop <span class="ot">=</span> headMay s, stack <span class="ot">=</span> <span class="fu">tail</span> s } <span class="op">|</span>]</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true"></a>    <span class="kw">where</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true"></a>        c <span class="ot">=</span> RL.view [R.l<span class="op">|</span> created <span class="op">|</span>] ctx</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true"></a>        s <span class="ot">=</span> RL.view [R.l<span class="op">|</span> stack <span class="op">|</span>] ctx</span></code></pre></div>
 <p>(This definition assumes that the model satisfies the pre-conditions, as can be seen in the use of <code>tail</code>.)</p>
 <h2 id="arbitrary-for-program-statement"><code>Arbitrary</code> for <code>Program Statement</code></h2>
 <p>With this in place I can define <code>Arbitrary</code> for <code>Program Statement</code> as follows.</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">instance</span> <span class="dt">Arbitrary</span> (<span class="dt">Program</span> <span class="dt">Statement</span>) <span class="kw">where</span></span>
-<span id="cb9-2"><a href="#cb9-2"></a>    arbitrary <span class="ot">=</span> liftM <span class="dt">P</span> <span class="op">$</span> ar baseModelCtx</span>
-<span id="cb9-3"><a href="#cb9-3"></a>        <span class="kw">where</span></span>
-<span id="cb9-4"><a href="#cb9-4"></a>            ar m <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb9-5"><a href="#cb9-5"></a>                push <span class="ot">&lt;-</span> liftM <span class="dt">Push</span> arbitrary</span>
-<span id="cb9-6"><a href="#cb9-6"></a>                <span class="kw">let</span> possible <span class="ot">=</span> <span class="fu">filter</span> (preCond m) [<span class="dt">Create</span>, <span class="dt">Pop</span>, push]</span>
-<span id="cb9-7"><a href="#cb9-7"></a>                <span class="kw">if</span> <span class="fu">null</span> possible</span>
-<span id="cb9-8"><a href="#cb9-8"></a>                    <span class="kw">then</span> <span class="fu">return</span> []</span>
-<span id="cb9-9"><a href="#cb9-9"></a>                    <span class="kw">else</span> <span class="kw">do</span></span>
-<span id="cb9-10"><a href="#cb9-10"></a>                        s <span class="ot">&lt;-</span> oneof (<span class="fu">map</span> <span class="fu">return</span> possible)</span>
-<span id="cb9-11"><a href="#cb9-11"></a>                        <span class="kw">let</span> m' <span class="ot">=</span> modelRunStatement m s</span>
-<span id="cb9-12"><a href="#cb9-12"></a>                        frequency [(<span class="dv">499</span>, liftM2 (<span class="op">:</span>) (<span class="fu">return</span> s) (ar m')), (<span class="dv">1</span>, <span class="fu">return</span> [])]</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">Arbitrary</span> (<span class="dt">Program</span> <span class="dt">Statement</span>) <span class="kw">where</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true"></a>    arbitrary <span class="ot">=</span> liftM <span class="dt">P</span> <span class="op">$</span> ar baseModelCtx</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true"></a>        <span class="kw">where</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true"></a>            ar m <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true"></a>                push <span class="ot">&lt;-</span> liftM <span class="dt">Push</span> arbitrary</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true"></a>                <span class="kw">let</span> possible <span class="ot">=</span> <span class="fu">filter</span> (preCond m) [<span class="dt">Create</span>, <span class="dt">Pop</span>, push]</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true"></a>                <span class="kw">if</span> <span class="fu">null</span> possible</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true"></a>                    <span class="kw">then</span> <span class="fu">return</span> []</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true"></a>                    <span class="kw">else</span> <span class="kw">do</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true"></a>                        s <span class="ot">&lt;-</span> oneof (<span class="fu">map</span> <span class="fu">return</span> possible)</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true"></a>                        <span class="kw">let</span> m' <span class="ot">=</span> modelRunStatement m s</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true"></a>                        frequency [(<span class="dv">499</span>, liftM2 (<span class="op">:</span>) (<span class="fu">return</span> s) (ar m')), (<span class="dv">1</span>, <span class="fu">return</span> [])]</span></code></pre></div>
 <p>The idea is to, in each step, choose a valid statement given the provided model and cons it with the result of a recursive call with an updated model. The constant 499 is just an arbitrary one I chose after running <code>arbitrary</code> a few times to see how long the generated programs were.</p>
 <p>For shrinking I take advantage of the already existing implementation for lists:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1"></a>    shrink (<span class="dt">P</span> p) <span class="ot">=</span> <span class="fu">filter</span> allowed <span class="op">$</span> <span class="fu">map</span> <span class="dt">P</span> (shrink p)</span>
-<span id="cb10-2"><a href="#cb10-2"></a>        <span class="kw">where</span></span>
-<span id="cb10-3"><a href="#cb10-3"></a>            allowed <span class="ot">=</span> <span class="fu">and</span> <span class="op">.</span> <span class="fu">snd</span> <span class="op">.</span> mapAccumL go baseModelCtx</span>
-<span id="cb10-4"><a href="#cb10-4"></a>                <span class="kw">where</span></span>
-<span id="cb10-5"><a href="#cb10-5"></a>                    go ctx s <span class="ot">=</span> (modelRunStatement ctx s, preCond ctx s)</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true"></a>    shrink (<span class="dt">P</span> p) <span class="ot">=</span> <span class="fu">filter</span> allowed <span class="op">$</span> <span class="fu">map</span> <span class="dt">P</span> (shrink p)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true"></a>        <span class="kw">where</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true"></a>            allowed <span class="ot">=</span> <span class="fu">and</span> <span class="op">.</span> <span class="fu">snd</span> <span class="op">.</span> mapAccumL go baseModelCtx</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true"></a>                <span class="kw">where</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true"></a>                    go ctx s <span class="ot">=</span> (modelRunStatement ctx s, preCond ctx s)</span></code></pre></div>
 <h2 id="some-thoughts-so-far">Some thoughts so far</h2>
 <p>I would love making an implementation of <code>Arbitrary s</code>, where <code>s</code> is something that implements a type class that contains <code>preCond</code>, <code>modelRunStatement</code> and anything else needed. I made an attempt using something like</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1"></a><span class="kw">class</span> <span class="dt">S</span> a <span class="kw">where</span></span>
-<span id="cb11-2"><a href="#cb11-2"></a>    <span class="kw">type</span> <span class="dt">Ctx</span><span class="ot"> a ::</span> <span class="op">*</span></span>
-<span id="cb11-3"><a href="#cb11-3"></a></span>
-<span id="cb11-4"><a href="#cb11-4"></a><span class="ot">    baseCtx ::</span> <span class="dt">Ctx</span> a</span>
-<span id="cb11-5"><a href="#cb11-5"></a><span class="ot">    preCond ::</span> <span class="dt">Ctx</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
-<span id="cb11-6"><a href="#cb11-6"></a>    <span class="op">...</span></span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true"></a><span class="kw">class</span> <span class="dt">S</span> a <span class="kw">where</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true"></a>    <span class="kw">type</span> <span class="dt">Ctx</span><span class="ot"> a ::</span> <span class="op">*</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true"></a></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true"></a><span class="ot">    baseCtx ::</span> <span class="dt">Ctx</span> a</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true"></a><span class="ot">    preCond ::</span> <span class="dt">Ctx</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true"></a>    <span class="op">...</span></span></code></pre></div>
 <p>However, when trying to use <code>baseCtx</code> in an implementation of <code>arbitrary</code> I ran into the issue of injectivity. I’m still not entirely sure what that means, or if there is something I can do to work around it. Hopefully someone reading this can offer a solution.</p>
 <h2 id="running-the-c-code">Running the C code</h2>
 <p>When running the sequence of <code>Statement</code> against the C code I catch the results in</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">type</span> <span class="dt">RealContext</span> <span class="ot">=</span> [r| { o :: Ptr (), pop :: Maybe Int } |]</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true"></a><span class="kw">type</span> <span class="dt">RealContext</span> <span class="ot">=</span> [r| { o :: Ptr (), pop :: Maybe Int } |]</span></code></pre></div>
 <p>Actually running a statement and capturing the output in a <code>RealContext</code> is easily done using <code>inline-c</code> and <code>record</code>:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1"></a><span class="ot">realRunStatement ::</span> <span class="dt">RealContext</span> <span class="ot">-&gt;</span> <span class="dt">Statement</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> <span class="dt">RealContext</span></span>
-<span id="cb13-2"><a href="#cb13-2"></a>realRunStatement ctx <span class="dt">Create</span> <span class="ot">=</span> CApi.create <span class="op">&gt;&gt;=</span> \ ptr <span class="ot">-&gt;</span> <span class="fu">return</span> <span class="op">$</span> RL.set [R.l<span class="op">|</span> o <span class="op">|</span>] ptr ctx</span>
-<span id="cb13-3"><a href="#cb13-3"></a>realRunStatement ctx (<span class="dt">Push</span> i) <span class="ot">=</span> CApi.push o (<span class="fu">toEnum</span> i) <span class="op">&gt;&gt;</span> <span class="fu">return</span> ctx</span>
-<span id="cb13-4"><a href="#cb13-4"></a>    <span class="kw">where</span></span>
-<span id="cb13-5"><a href="#cb13-5"></a>        o <span class="ot">=</span> RL.view [R.l<span class="op">|</span> o <span class="op">|</span>] ctx</span>
-<span id="cb13-6"><a href="#cb13-6"></a>realRunStatement ctx <span class="dt">Pop</span> <span class="ot">=</span> CApi.pop o <span class="op">&gt;&gt;=</span> \ v <span class="ot">-&gt;</span> <span class="fu">return</span> <span class="op">$</span> RL.set [R.l<span class="op">|</span> pop <span class="op">|</span>] (<span class="dt">Just</span> (<span class="fu">fromEnum</span> v)) ctx</span>
-<span id="cb13-7"><a href="#cb13-7"></a>    <span class="kw">where</span></span>
-<span id="cb13-8"><a href="#cb13-8"></a>        o <span class="ot">=</span> RL.view [R.l<span class="op">|</span> o <span class="op">|</span>] ctx</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true"></a><span class="ot">realRunStatement ::</span> <span class="dt">RealContext</span> <span class="ot">-&gt;</span> <span class="dt">Statement</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> <span class="dt">RealContext</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true"></a>realRunStatement ctx <span class="dt">Create</span> <span class="ot">=</span> CApi.create <span class="op">&gt;&gt;=</span> \ ptr <span class="ot">-&gt;</span> <span class="fu">return</span> <span class="op">$</span> RL.set [R.l<span class="op">|</span> o <span class="op">|</span>] ptr ctx</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true"></a>realRunStatement ctx (<span class="dt">Push</span> i) <span class="ot">=</span> CApi.push o (<span class="fu">toEnum</span> i) <span class="op">&gt;&gt;</span> <span class="fu">return</span> ctx</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true"></a>    <span class="kw">where</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true"></a>        o <span class="ot">=</span> RL.view [R.l<span class="op">|</span> o <span class="op">|</span>] ctx</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true"></a>realRunStatement ctx <span class="dt">Pop</span> <span class="ot">=</span> CApi.pop o <span class="op">&gt;&gt;=</span> \ v <span class="ot">-&gt;</span> <span class="fu">return</span> <span class="op">$</span> RL.set [R.l<span class="op">|</span> pop <span class="op">|</span>] (<span class="dt">Just</span> (<span class="fu">fromEnum</span> v)) ctx</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true"></a>    <span class="kw">where</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true"></a>        o <span class="ot">=</span> RL.view [R.l<span class="op">|</span> o <span class="op">|</span>] ctx</span></code></pre></div>
 <h2 id="comparing-states">Comparing states</h2>
 <p>Comparing a <code>ModelContext</code> and a <code>RealContext</code> is easily done:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1"></a><span class="ot">compCtx ::</span> <span class="dt">ModelContext</span> <span class="ot">-&gt;</span> <span class="dt">RealContext</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
-<span id="cb14-2"><a href="#cb14-2"></a>compCtx mc rc <span class="ot">=</span> mcC <span class="op">==</span> rcC <span class="op">&amp;&amp;</span> mcP <span class="op">==</span> rcP</span>
-<span id="cb14-3"><a href="#cb14-3"></a>    <span class="kw">where</span></span>
-<span id="cb14-4"><a href="#cb14-4"></a>        mcC <span class="ot">=</span> RL.view [R.l<span class="op">|</span> created <span class="op">|</span>] mc</span>
-<span id="cb14-5"><a href="#cb14-5"></a>        rcC <span class="ot">=</span> RL.view [R.l<span class="op">|</span> o <span class="op">|</span>] rc <span class="op">/=</span> nullPtr</span>
-<span id="cb14-6"><a href="#cb14-6"></a>        mcP <span class="ot">=</span> RL.view [R.l<span class="op">|</span> pop<span class="op">|</span>] mc</span>
-<span id="cb14-7"><a href="#cb14-7"></a>        rcP <span class="ot">=</span> RL.view [R.l<span class="op">|</span> pop<span class="op">|</span>] rc</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true"></a><span class="ot">compCtx ::</span> <span class="dt">ModelContext</span> <span class="ot">-&gt;</span> <span class="dt">RealContext</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true"></a>compCtx mc rc <span class="ot">=</span> mcC <span class="op">==</span> rcC <span class="op">&amp;&amp;</span> mcP <span class="op">==</span> rcP</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true"></a>    <span class="kw">where</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true"></a>        mcC <span class="ot">=</span> RL.view [R.l<span class="op">|</span> created <span class="op">|</span>] mc</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true"></a>        rcC <span class="ot">=</span> RL.view [R.l<span class="op">|</span> o <span class="op">|</span>] rc <span class="op">/=</span> nullPtr</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true"></a>        mcP <span class="ot">=</span> RL.view [R.l<span class="op">|</span> pop<span class="op">|</span>] mc</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true"></a>        rcP <span class="ot">=</span> RL.view [R.l<span class="op">|</span> pop<span class="op">|</span>] rc</span></code></pre></div>
 <h2 id="verifying-a-program-statement">Verifying a <code>Program Statement</code></h2>
 <p>With all that in place I can finally write a function for checking the validity of a program:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1"></a><span class="ot">validProgram ::</span> <span class="dt">Program</span> <span class="dt">Statement</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> <span class="dt">Bool</span></span>
-<span id="cb15-2"><a href="#cb15-2"></a>validProgram p <span class="ot">=</span> <span class="fu">and</span> <span class="op">&lt;$&gt;</span> <span class="fu">snd</span> <span class="op">&lt;$&gt;</span> mapAccumM go (baseModelCtx, baseRealContext) p</span>
-<span id="cb15-3"><a href="#cb15-3"></a>    <span class="kw">where</span></span>
-<span id="cb15-4"><a href="#cb15-4"></a>        runSingleStatement mc rc s <span class="ot">=</span> realRunStatement rc s <span class="op">&gt;&gt;=</span> \ rc' <span class="ot">-&gt;</span> <span class="fu">return</span> (modelRunStatement mc s, rc')</span>
-<span id="cb15-5"><a href="#cb15-5"></a></span>
-<span id="cb15-6"><a href="#cb15-6"></a>        go (mc, rc) s <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb15-7"><a href="#cb15-7"></a>            ctxs<span class="op">@</span>(mc', rc') <span class="ot">&lt;-</span> runSingleStatement mc rc s</span>
-<span id="cb15-8"><a href="#cb15-8"></a>            <span class="fu">return</span> (ctxs, compCtx mc' rc')</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true"></a><span class="ot">validProgram ::</span> <span class="dt">Program</span> <span class="dt">Statement</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> <span class="dt">Bool</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true"></a>validProgram p <span class="ot">=</span> <span class="fu">and</span> <span class="op">&lt;$&gt;</span> <span class="fu">snd</span> <span class="op">&lt;$&gt;</span> mapAccumM go (baseModelCtx, baseRealContext) p</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true"></a>    <span class="kw">where</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true"></a>        runSingleStatement mc rc s <span class="ot">=</span> realRunStatement rc s <span class="op">&gt;&gt;=</span> \ rc' <span class="ot">-&gt;</span> <span class="fu">return</span> (modelRunStatement mc s, rc')</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true"></a></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true"></a>        go (mc, rc) s <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true"></a>            ctxs<span class="op">@</span>(mc', rc') <span class="ot">&lt;-</span> runSingleStatement mc rc s</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true"></a>            <span class="fu">return</span> (ctxs, compCtx mc' rc')</span></code></pre></div>
 <p>(This uses <code>mapAccumM</code> from an <a href="../posts/2015-06-09-000-mapaccum-in-monad.html">earlier post of mine</a>.)</p>
 <h2 id="the-property-finally">The property, finally!</h2>
 <p>To wrap this all up I then define the property</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1"></a><span class="ot">prop_program ::</span> <span class="dt">Program</span> <span class="dt">Statement</span> <span class="ot">-&gt;</span> <span class="dt">Property</span></span>
-<span id="cb16-2"><a href="#cb16-2"></a>prop_program p <span class="ot">=</span> monadicIO <span class="op">$</span> run (validProgram p) <span class="op">&gt;&gt;=</span> assert</span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true"></a><span class="ot">prop_program ::</span> <span class="dt">Program</span> <span class="dt">Statement</span> <span class="ot">-&gt;</span> <span class="dt">Property</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true"></a>prop_program p <span class="ot">=</span> monadicIO <span class="op">$</span> run (validProgram p) <span class="op">&gt;&gt;=</span> assert</span></code></pre></div>
 <p>and a main function</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
-<span id="cb17-2"><a href="#cb17-2"></a>main <span class="ot">=</span> quickCheck prop_program</span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true"></a>main <span class="ot">=</span> quickCheck prop_program</span></code></pre></div>
 <hr />
 <p><em>Edit 2015-07-17</em>: Adjusted the description of the pre-conditions to match the code.</p>
 
@@ -200,9 +200,9 @@ Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell
     <p class="comment-date"><time pubdate="pubdate" datetime="2015-06-15">2015-06-15</time></p>
   </header>
 <p>I believe the problem with <code>baseCtx</code> is that there could be two or more instances of <code>S</code> which have the same definition for <code>Ctx a</code>, which means that the compiler can’t infer <code>a</code> (and thus the instance to use) from <code>Ctx a</code>. One option would be to add a <code>Proxy a</code> parameter to <code>baseCtx</code> to select the instance. Another would be to make <code>S</code> a multi-parameter type class with a one-to-one functional dependency between the parameters, like so:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">class</span> <span class="dt">S</span> a ctx <span class="op">|</span> a <span class="ot">-&gt;</span> ctx, ctx <span class="ot">-&gt;</span> a <span class="kw">where</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="ot">    baseCtx ::</span> ctx</span>
-<span id="cb1-3"><a href="#cb1-3"></a>    <span class="op">...</span></span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">class</span> <span class="dt">S</span> a ctx <span class="op">|</span> a <span class="ot">-&gt;</span> ctx, ctx <span class="ot">-&gt;</span> a <span class="kw">where</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a><span class="ot">    baseCtx ::</span> ctx</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>    <span class="op">...</span></span></code></pre></div>
 </article>
 
 <article class="comment-body">

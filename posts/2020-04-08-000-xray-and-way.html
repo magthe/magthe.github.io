@@ -33,33 +33,33 @@
 <p>As a first step I implemented a WAI <em>middleware</em> that wraps an HTTP request and reports the time it took to produce a response. Between the <a href="https://docs.aws.amazon.com/xray/latest/devguide/aws-xray.html">X-Ray Developer Guide</a> and the code in Freckle’s git repo it turned out to be fairly simple.</p>
 <p>First off, this is the first step towards X-Ray nirvana, so all I’m aiming for is minimal support. That means all I want is to send <a href="https://docs.aws.amazon.com/xray/latest/devguide/xray-api-segmentdocuments.html#api-segmentdocuments-fields">minimal X-Ray segment</a>s, with the small addition that I want to support <code>parent_id</code> from the start.</p>
 <p>The first step then is to parse the HTTP header containing the X-Ray information – <a href="https://docs.aws.amazon.com/xray/latest/devguide/xray-concepts.html#xray-concepts-tracingheader"><code>X-Amzn-Trace-Id</code></a>. For now I’m only interested in two parts, <code>Root</code> and <code>Parent</code>, so for simplicity’s sake I use a tuple to keep them in. The idea is to take the header’s value, split on <code>;</code> to get the parts, then split each part in two, a key and a value, and put them into an association list (<code>[(Text, Text)]</code>) for easy lookup using, well <code>lookup</code>.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="ot">parseXRayTraceIdHdr ::</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Text</span>, <span class="dt">Maybe</span> <span class="dt">Text</span>)</span>
-<span id="cb1-2"><a href="#cb1-2"></a>parseXRayTraceIdHdr hdr <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb1-3"><a href="#cb1-3"></a>  bits <span class="ot">&lt;-</span> <span class="fu">traverse</span> parseHeaderComponent <span class="op">$</span> T.split (<span class="op">==</span> <span class="ch">';'</span>) hdr</span>
-<span id="cb1-4"><a href="#cb1-4"></a>  traceId <span class="ot">&lt;-</span> <span class="fu">lookup</span> <span class="st">&quot;Root&quot;</span> bits</span>
-<span id="cb1-5"><a href="#cb1-5"></a>  <span class="kw">let</span> parent <span class="ot">=</span> <span class="fu">lookup</span> <span class="st">&quot;Parent&quot;</span> bits</span>
-<span id="cb1-6"><a href="#cb1-6"></a>  <span class="fu">pure</span> (traceId, parent)</span>
-<span id="cb1-7"><a href="#cb1-7"></a></span>
-<span id="cb1-8"><a href="#cb1-8"></a><span class="ot">parseHeaderComponent ::</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Text</span>, <span class="dt">Text</span>)</span>
-<span id="cb1-9"><a href="#cb1-9"></a>parseHeaderComponent cmp <span class="ot">=</span> <span class="kw">case</span> T.split (<span class="op">==</span> <span class="ch">'='</span>) cmp <span class="kw">of</span></span>
-<span id="cb1-10"><a href="#cb1-10"></a>                            [name, value] <span class="ot">-&gt;</span> <span class="dt">Just</span> (name, value)</span>
-<span id="cb1-11"><a href="#cb1-11"></a>                            _ <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="ot">parseXRayTraceIdHdr ::</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Text</span>, <span class="dt">Maybe</span> <span class="dt">Text</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>parseXRayTraceIdHdr hdr <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>  bits <span class="ot">&lt;-</span> <span class="fu">traverse</span> parseHeaderComponent <span class="op">$</span> T.split (<span class="op">==</span> <span class="ch">';'</span>) hdr</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>  traceId <span class="ot">&lt;-</span> <span class="fu">lookup</span> <span class="st">&quot;Root&quot;</span> bits</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>  <span class="kw">let</span> parent <span class="ot">=</span> <span class="fu">lookup</span> <span class="st">&quot;Parent&quot;</span> bits</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a>  <span class="fu">pure</span> (traceId, parent)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a><span class="ot">parseHeaderComponent ::</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Text</span>, <span class="dt">Text</span>)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a>parseHeaderComponent cmp <span class="ot">=</span> <span class="kw">case</span> T.split (<span class="op">==</span> <span class="ch">'='</span>) cmp <span class="kw">of</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a>                            [name, value] <span class="ot">-&gt;</span> <span class="dt">Just</span> (name, value)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a>                            _ <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span></code></pre></div>
 <p>The start and end times for processing a request are also required. The docs say that using at least millisecond resolution is a good idea, so I decided to do exactly that. <code>NominalDiffTime</code>, which is what <code>getPOSIXTime</code> produces, supports a resolution of picoseconds (though I doubt my system’s clock does) which requires a bit of (type-based) converting.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="ot">mkTimeInMilli ::</span> <span class="dt">IO</span> <span class="dt">Milli</span></span>
-<span id="cb2-2"><a href="#cb2-2"></a>mkTimeInMilli <span class="ot">=</span> ndfToMilli <span class="op">&lt;$&gt;</span> getPOSIXTime</span>
-<span id="cb2-3"><a href="#cb2-3"></a>  <span class="kw">where</span></span>
-<span id="cb2-4"><a href="#cb2-4"></a>    ndfToMilli <span class="ot">=</span> <span class="fu">fromRational</span> <span class="op">.</span> <span class="fu">toRational</span></span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="ot">mkTimeInMilli ::</span> <span class="dt">IO</span> <span class="dt">Milli</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>mkTimeInMilli <span class="ot">=</span> ndfToMilli <span class="op">&lt;$&gt;</span> getPOSIXTime</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a>  <span class="kw">where</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a>    ndfToMilli <span class="ot">=</span> <span class="fu">fromRational</span> <span class="op">.</span> <span class="fu">toRational</span></span></code></pre></div>
 <p>The last support function needed is one that creates the segment. Just building the JSON object, using <em>aeson</em>’s <code>object</code>, is enough at this point.</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="ot">mkSegment ::</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> <span class="dt">Milli</span> <span class="ot">-&gt;</span> <span class="dt">Milli</span> <span class="ot">-&gt;</span> (<span class="dt">Text</span>, <span class="dt">Maybe</span> <span class="dt">Text</span>) <span class="ot">-&gt;</span> <span class="dt">Value</span></span>
-<span id="cb3-2"><a href="#cb3-2"></a>mkSegment name <span class="fu">id</span> startTime endTime (root, parent) <span class="ot">=</span></span>
-<span id="cb3-3"><a href="#cb3-3"></a>  object <span class="op">$</span> [ <span class="st">&quot;name&quot;</span> <span class="op">.=</span> name</span>
-<span id="cb3-4"><a href="#cb3-4"></a>           , <span class="st">&quot;id&quot;</span> <span class="op">.=</span> <span class="fu">id</span></span>
-<span id="cb3-5"><a href="#cb3-5"></a>           , <span class="st">&quot;trace_id&quot;</span> <span class="op">.=</span> root</span>
-<span id="cb3-6"><a href="#cb3-6"></a>           , <span class="st">&quot;start_time&quot;</span> <span class="op">.=</span> startTime</span>
-<span id="cb3-7"><a href="#cb3-7"></a>           , <span class="st">&quot;end_time&quot;</span> <span class="op">.=</span> endTime</span>
-<span id="cb3-8"><a href="#cb3-8"></a>           ] <span class="op">&lt;&gt;</span> p</span>
-<span id="cb3-9"><a href="#cb3-9"></a>  <span class="kw">where</span></span>
-<span id="cb3-10"><a href="#cb3-10"></a>    p <span class="ot">=</span> <span class="fu">maybe</span> [] (\ v <span class="ot">-&gt;</span> [<span class="st">&quot;parent_id&quot;</span> <span class="op">.=</span> v]) parent</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="ot">mkSegment ::</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> <span class="dt">Milli</span> <span class="ot">-&gt;</span> <span class="dt">Milli</span> <span class="ot">-&gt;</span> (<span class="dt">Text</span>, <span class="dt">Maybe</span> <span class="dt">Text</span>) <span class="ot">-&gt;</span> <span class="dt">Value</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>mkSegment name <span class="fu">id</span> startTime endTime (root, parent) <span class="ot">=</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>  object <span class="op">$</span> [ <span class="st">&quot;name&quot;</span> <span class="op">.=</span> name</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a>           , <span class="st">&quot;id&quot;</span> <span class="op">.=</span> <span class="fu">id</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a>           , <span class="st">&quot;trace_id&quot;</span> <span class="op">.=</span> root</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true"></a>           , <span class="st">&quot;start_time&quot;</span> <span class="op">.=</span> startTime</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true"></a>           , <span class="st">&quot;end_time&quot;</span> <span class="op">.=</span> endTime</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true"></a>           ] <span class="op">&lt;&gt;</span> p</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true"></a>  <span class="kw">where</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true"></a>    p <span class="ot">=</span> <span class="fu">maybe</span> [] (\ v <span class="ot">-&gt;</span> [<span class="st">&quot;parent_id&quot;</span> <span class="op">.=</span> v]) parent</span></code></pre></div>
 <p>Armed with all this, I can now put together a WAI middleware that</p>
 <ol type="1">
 <li>records the start time of the call</li>
@@ -70,34 +70,34 @@
 <li>builds the segment prepended with the <a href="https://docs.aws.amazon.com/xray/latest/devguide/xray-api-sendingdata.html#xray-api-daemon">X-Ray daemon header</a></li>
 <li>sends the segment to the X-Ray daemon</li>
 </ol>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a><span class="ot">traceId ::</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> <span class="dt">Middleware</span></span>
-<span id="cb4-2"><a href="#cb4-2"></a>traceId xrayName app req sendResponse <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb4-3"><a href="#cb4-3"></a>  startTime <span class="ot">&lt;-</span> mkTimeInMilli</span>
-<span id="cb4-4"><a href="#cb4-4"></a>  app req <span class="op">$</span> \ res <span class="ot">-&gt;</span> <span class="kw">do</span></span>
-<span id="cb4-5"><a href="#cb4-5"></a>    rr <span class="ot">&lt;-</span> sendResponse res</span>
-<span id="cb4-6"><a href="#cb4-6"></a>    endTime <span class="ot">&lt;-</span> mkTimeInMilli</span>
-<span id="cb4-7"><a href="#cb4-7"></a>    theId <span class="ot">&lt;-</span> T.pack <span class="op">.</span> (\ v <span class="ot">-&gt;</span> showHex v <span class="st">&quot;&quot;</span>) <span class="op">&lt;$&gt;</span> randomIO <span class="op">@</span><span class="dt">Word64</span></span>
-<span id="cb4-8"><a href="#cb4-8"></a>    <span class="kw">let</span> traceParts <span class="ot">=</span> (decodeUtf8 <span class="op">&lt;$&gt;</span> requestHeaderTraceId req) <span class="op">&gt;&gt;=</span> parseXRayTraceIdHdr</span>
-<span id="cb4-9"><a href="#cb4-9"></a>        segment <span class="ot">=</span> mkSegment xrayName theId startTime endTime <span class="op">&lt;$&gt;</span> traceParts</span>
-<span id="cb4-10"><a href="#cb4-10"></a>    <span class="kw">case</span> segment <span class="kw">of</span></span>
-<span id="cb4-11"><a href="#cb4-11"></a>      <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="fu">pure</span> ()</span>
-<span id="cb4-12"><a href="#cb4-12"></a>      <span class="dt">Just</span> segment' <span class="ot">-&gt;</span> sendXRayPayload <span class="op">$</span> toStrict <span class="op">$</span> prepareXRayPayload segment'</span>
-<span id="cb4-13"><a href="#cb4-13"></a>    <span class="fu">pure</span> rr</span>
-<span id="cb4-14"><a href="#cb4-14"></a></span>
-<span id="cb4-15"><a href="#cb4-15"></a>  <span class="kw">where</span></span>
-<span id="cb4-16"><a href="#cb4-16"></a>    prepareXRayPayload segment <span class="ot">=</span></span>
-<span id="cb4-17"><a href="#cb4-17"></a>      <span class="kw">let</span> header <span class="ot">=</span> object [<span class="st">&quot;format&quot;</span> <span class="op">.=</span> (<span class="st">&quot;json&quot;</span><span class="ot"> ::</span> <span class="dt">String</span>), <span class="st">&quot;version&quot;</span> <span class="op">.=</span> (<span class="dv">1</span><span class="ot"> ::</span> <span class="dt">Int</span>)]</span>
-<span id="cb4-18"><a href="#cb4-18"></a>      <span class="kw">in</span> encode header <span class="op">&lt;&gt;</span> <span class="st">&quot;\n&quot;</span> <span class="op">&lt;&gt;</span> encode segment</span>
-<span id="cb4-19"><a href="#cb4-19"></a></span>
-<span id="cb4-20"><a href="#cb4-20"></a>    sendXRayPayload payload <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb4-21"><a href="#cb4-21"></a>      addrInfos <span class="ot">&lt;-</span> S.getAddrInfo <span class="dt">Nothing</span> (<span class="dt">Just</span> <span class="st">&quot;127.0.0.1&quot;</span>) (<span class="dt">Just</span> <span class="st">&quot;2000&quot;</span>)</span>
-<span id="cb4-22"><a href="#cb4-22"></a>      <span class="kw">case</span> addrInfos <span class="kw">of</span></span>
-<span id="cb4-23"><a href="#cb4-23"></a>        [] <span class="ot">-&gt;</span> <span class="fu">pure</span> () <span class="co">-- silently skip</span></span>
-<span id="cb4-24"><a href="#cb4-24"></a>        (xrayAddr<span class="op">:</span>_) <span class="ot">-&gt;</span> <span class="kw">do</span></span>
-<span id="cb4-25"><a href="#cb4-25"></a>          sock <span class="ot">&lt;-</span> S.socket (S.addrFamily xrayAddr) <span class="dt">S.Datagram</span> S.defaultProtocol</span>
-<span id="cb4-26"><a href="#cb4-26"></a>          S.connect sock (S.addrAddress xrayAddr)</span>
-<span id="cb4-27"><a href="#cb4-27"></a>          sendAll sock payload</span>
-<span id="cb4-28"><a href="#cb4-28"></a>          S.close sock</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="ot">traceId ::</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> <span class="dt">Middleware</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>traceId xrayName app req sendResponse <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a>  startTime <span class="ot">&lt;-</span> mkTimeInMilli</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a>  app req <span class="op">$</span> \ res <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a>    rr <span class="ot">&lt;-</span> sendResponse res</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true"></a>    endTime <span class="ot">&lt;-</span> mkTimeInMilli</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true"></a>    theId <span class="ot">&lt;-</span> T.pack <span class="op">.</span> (\ v <span class="ot">-&gt;</span> showHex v <span class="st">&quot;&quot;</span>) <span class="op">&lt;$&gt;</span> randomIO <span class="op">@</span><span class="dt">Word64</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true"></a>    <span class="kw">let</span> traceParts <span class="ot">=</span> (decodeUtf8 <span class="op">&lt;$&gt;</span> requestHeaderTraceId req) <span class="op">&gt;&gt;=</span> parseXRayTraceIdHdr</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true"></a>        segment <span class="ot">=</span> mkSegment xrayName theId startTime endTime <span class="op">&lt;$&gt;</span> traceParts</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true"></a>    <span class="kw">case</span> segment <span class="kw">of</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true"></a>      <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="fu">pure</span> ()</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true"></a>      <span class="dt">Just</span> segment' <span class="ot">-&gt;</span> sendXRayPayload <span class="op">$</span> toStrict <span class="op">$</span> prepareXRayPayload segment'</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true"></a>    <span class="fu">pure</span> rr</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true"></a></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true"></a>  <span class="kw">where</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true"></a>    prepareXRayPayload segment <span class="ot">=</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true"></a>      <span class="kw">let</span> header <span class="ot">=</span> object [<span class="st">&quot;format&quot;</span> <span class="op">.=</span> (<span class="st">&quot;json&quot;</span><span class="ot"> ::</span> <span class="dt">String</span>), <span class="st">&quot;version&quot;</span> <span class="op">.=</span> (<span class="dv">1</span><span class="ot"> ::</span> <span class="dt">Int</span>)]</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true"></a>      <span class="kw">in</span> encode header <span class="op">&lt;&gt;</span> <span class="st">&quot;\n&quot;</span> <span class="op">&lt;&gt;</span> encode segment</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true"></a></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true"></a>    sendXRayPayload payload <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true"></a>      addrInfos <span class="ot">&lt;-</span> S.getAddrInfo <span class="dt">Nothing</span> (<span class="dt">Just</span> <span class="st">&quot;127.0.0.1&quot;</span>) (<span class="dt">Just</span> <span class="st">&quot;2000&quot;</span>)</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true"></a>      <span class="kw">case</span> addrInfos <span class="kw">of</span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true"></a>        [] <span class="ot">-&gt;</span> <span class="fu">pure</span> () <span class="co">-- silently skip</span></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true"></a>        (xrayAddr<span class="op">:</span>_) <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true"></a>          sock <span class="ot">&lt;-</span> S.socket (S.addrFamily xrayAddr) <span class="dt">S.Datagram</span> S.defaultProtocol</span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true"></a>          S.connect sock (S.addrAddress xrayAddr)</span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true"></a>          sendAll sock payload</span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true"></a>          S.close sock</span></code></pre></div>
 <p>The next step will be to instrument the actual processing. The service I’m instrumenting is asynchronous, so all the work happens <em>after</em> the response has been sent. My plan for this is to use subsegments to record it. That means I’ll have to</p>
 <ul>
 <li>keep the <code>Root</code> and ID (<code>theId</code> in <code>traceId</code> above) for use in subsegments</li>

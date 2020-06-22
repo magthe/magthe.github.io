@@ -42,83 +42,83 @@
 <li>the support for <a href="https://json-schema.org/specification.html">JSON Schema</a> is very lacking in Haskell, <a href="https://hackage.haskell.org/package/hjsonschema">hjsonschema</a> is deprecated and <a href="https://hackage.haskell.org/package/aeson-schema">aeson-schema</a> only supports version 3 of the draft (the current version is 7) and the authors claim that that <code>hjsonschema</code> is more moderna and more actively maintained</li>
 </ul>
 <p>So, a bit disappointed I started playing with the problem myself and found that, just as is stated in the description of the <a href="https://hackage.haskell.org/package/validation">validation</a> library, I want something that’s isomorphic to <code>Either</code> but accumulates on the error side. That is, something like</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">data</span> <span class="dt">JSONValidationResult</span> <span class="ot">=</span> <span class="dt">JVRInvalid</span> [<span class="dt">JSONValidationFailure</span>]</span>
-<span id="cb1-2"><a href="#cb1-2"></a>                          <span class="op">|</span> <span class="dt">JVRValid</span></span>
-<span id="cb1-3"><a href="#cb1-3"></a>                          <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span>
-<span id="cb1-4"><a href="#cb1-4"></a></span>
-<span id="cb1-5"><a href="#cb1-5"></a><span class="kw">instance</span> <span class="dt">Semigroup</span> <span class="dt">JSONValidationResult</span> <span class="kw">where</span></span>
-<span id="cb1-6"><a href="#cb1-6"></a>  (<span class="dt">JVRInvalid</span> es0) <span class="op">&lt;&gt;</span> (<span class="dt">JVRInvalid</span> es1) <span class="ot">=</span> <span class="dt">JVRInvalid</span> <span class="op">$</span> es0 <span class="op">&lt;&gt;</span> es1</span>
-<span id="cb1-7"><a href="#cb1-7"></a>  <span class="dt">JVRValid</span> <span class="op">&lt;&gt;</span> r <span class="ot">=</span> r</span>
-<span id="cb1-8"><a href="#cb1-8"></a>  r <span class="op">&lt;&gt;</span> <span class="dt">JVRValid</span> <span class="ot">=</span> r</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">JSONValidationResult</span> <span class="ot">=</span> <span class="dt">JVRInvalid</span> [<span class="dt">JSONValidationFailure</span>]</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>                          <span class="op">|</span> <span class="dt">JVRValid</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>                          <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">Semigroup</span> <span class="dt">JSONValidationResult</span> <span class="kw">where</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a>  (<span class="dt">JVRInvalid</span> es0) <span class="op">&lt;&gt;</span> (<span class="dt">JVRInvalid</span> es1) <span class="ot">=</span> <span class="dt">JVRInvalid</span> <span class="op">$</span> es0 <span class="op">&lt;&gt;</span> es1</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a>  <span class="dt">JVRValid</span> <span class="op">&lt;&gt;</span> r <span class="ot">=</span> r</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a>  r <span class="op">&lt;&gt;</span> <span class="dt">JVRValid</span> <span class="ot">=</span> r</span></code></pre></div>
 <p>I decided it was all right to limit validation to proper JSON expressions, i.e. a validator could have the type <code>Value -&gt; JSONValidationResult</code>. I want to combine validators so I decided to wrap it in a <code>newtype</code> and write a <code>SemiGroup</code> instance for it as well:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">newtype</span> <span class="dt">JSONValidator</span> <span class="ot">=</span> <span class="dt">JV</span> (<span class="dt">A.Value</span> <span class="ot">-&gt;</span> <span class="dt">JSONValidationResult</span>)</span>
-<span id="cb2-2"><a href="#cb2-2"></a></span>
-<span id="cb2-3"><a href="#cb2-3"></a><span class="kw">instance</span> <span class="dt">Semigroup</span> <span class="dt">JSONValidator</span> <span class="kw">where</span></span>
-<span id="cb2-4"><a href="#cb2-4"></a>  (<span class="dt">JV</span> v0) <span class="op">&lt;&gt;</span> (<span class="dt">JV</span> v1) <span class="ot">=</span> <span class="dt">JV</span> <span class="op">$</span> \ val <span class="ot">-&gt;</span> v0 val <span class="op">&lt;&gt;</span> v1 val</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="kw">newtype</span> <span class="dt">JSONValidator</span> <span class="ot">=</span> <span class="dt">JV</span> (<span class="dt">A.Value</span> <span class="ot">-&gt;</span> <span class="dt">JSONValidationResult</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">Semigroup</span> <span class="dt">JSONValidator</span> <span class="kw">where</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a>  (<span class="dt">JV</span> v0) <span class="op">&lt;&gt;</span> (<span class="dt">JV</span> v1) <span class="ot">=</span> <span class="dt">JV</span> <span class="op">$</span> \ val <span class="ot">-&gt;</span> v0 val <span class="op">&lt;&gt;</span> v1 val</span></code></pre></div>
 <p>The function to actually run the validation is rather straight forward</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a>runJSONValidator (<span class="dt">JV</span> validator) val <span class="ot">=</span> validator val</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a>runJSONValidator (<span class="dt">JV</span> validator) val <span class="ot">=</span> validator val</span></code></pre></div>
 <p>After writing a few validators I realised a few patterns emerged and the following functions simplified things a bit:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a>mapInvalid _ <span class="dt">JVRValid</span> <span class="ot">=</span> <span class="dt">JVRValid</span></span>
-<span id="cb4-2"><a href="#cb4-2"></a>mapInvalid f (<span class="dt">JVRInvalid</span> es) <span class="ot">=</span> <span class="dt">JVRInvalid</span> <span class="op">$</span> <span class="fu">map</span> f es</span>
-<span id="cb4-3"><a href="#cb4-3"></a></span>
-<span id="cb4-4"><a href="#cb4-4"></a>valid <span class="ot">=</span> <span class="dt">JVRValid</span></span>
-<span id="cb4-5"><a href="#cb4-5"></a>invalid s <span class="ot">=</span> <span class="dt">JVRInvalid</span> [<span class="dt">JVFDesc</span> s]</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a>mapInvalid _ <span class="dt">JVRValid</span> <span class="ot">=</span> <span class="dt">JVRValid</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>mapInvalid f (<span class="dt">JVRInvalid</span> es) <span class="ot">=</span> <span class="dt">JVRInvalid</span> <span class="op">$</span> <span class="fu">map</span> f es</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a>valid <span class="ot">=</span> <span class="dt">JVRValid</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a>invalid s <span class="ot">=</span> <span class="dt">JVRInvalid</span> [<span class="dt">JVFDesc</span> s]</span></code></pre></div>
 <p>With this in place I started writing validators for the basic JSON types:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1"></a>isNumber <span class="ot">=</span> <span class="dt">JV</span> go</span>
-<span id="cb5-2"><a href="#cb5-2"></a>  <span class="kw">where</span></span>
-<span id="cb5-3"><a href="#cb5-3"></a>    go (<span class="dt">A.Number</span> _) <span class="ot">=</span> valid</span>
-<span id="cb5-4"><a href="#cb5-4"></a>    go _ <span class="ot">=</span> invalid <span class="st">&quot;not a number&quot;</span></span>
-<span id="cb5-5"><a href="#cb5-5"></a></span>
-<span id="cb5-6"><a href="#cb5-6"></a>isString <span class="ot">=</span> <span class="dt">JV</span> go</span>
-<span id="cb5-7"><a href="#cb5-7"></a>  <span class="kw">where</span></span>
-<span id="cb5-8"><a href="#cb5-8"></a>    go (<span class="dt">A.String</span> _) <span class="ot">=</span> valid</span>
-<span id="cb5-9"><a href="#cb5-9"></a>    go _ <span class="ot">=</span> invalid <span class="st">&quot;not a string&quot;</span></span>
-<span id="cb5-10"><a href="#cb5-10"></a></span>
-<span id="cb5-11"><a href="#cb5-11"></a>isBool <span class="ot">=</span> <span class="dt">JV</span> go</span>
-<span id="cb5-12"><a href="#cb5-12"></a>  <span class="kw">where</span></span>
-<span id="cb5-13"><a href="#cb5-13"></a>    go (<span class="dt">A.Bool</span> _) <span class="ot">=</span> valid</span>
-<span id="cb5-14"><a href="#cb5-14"></a>    go _ <span class="ot">=</span> invalid <span class="st">&quot;not a bool&quot;</span></span>
-<span id="cb5-15"><a href="#cb5-15"></a></span>
-<span id="cb5-16"><a href="#cb5-16"></a>isNull <span class="ot">=</span> <span class="dt">JV</span> go</span>
-<span id="cb5-17"><a href="#cb5-17"></a>  <span class="kw">where</span></span>
-<span id="cb5-18"><a href="#cb5-18"></a>    go <span class="dt">A.Null</span> <span class="ot">=</span> valid</span>
-<span id="cb5-19"><a href="#cb5-19"></a>    go _ <span class="ot">=</span> invalid <span class="st">&quot;not 'null'&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a>isNumber <span class="ot">=</span> <span class="dt">JV</span> go</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a>  <span class="kw">where</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a>    go (<span class="dt">A.Number</span> _) <span class="ot">=</span> valid</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a>    go _ <span class="ot">=</span> invalid <span class="st">&quot;not a number&quot;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true"></a>isString <span class="ot">=</span> <span class="dt">JV</span> go</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true"></a>  <span class="kw">where</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true"></a>    go (<span class="dt">A.String</span> _) <span class="ot">=</span> valid</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true"></a>    go _ <span class="ot">=</span> invalid <span class="st">&quot;not a string&quot;</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true"></a></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true"></a>isBool <span class="ot">=</span> <span class="dt">JV</span> go</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true"></a>  <span class="kw">where</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true"></a>    go (<span class="dt">A.Bool</span> _) <span class="ot">=</span> valid</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true"></a>    go _ <span class="ot">=</span> invalid <span class="st">&quot;not a bool&quot;</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true"></a></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true"></a>isNull <span class="ot">=</span> <span class="dt">JV</span> go</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true"></a>  <span class="kw">where</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true"></a>    go <span class="dt">A.Null</span> <span class="ot">=</span> valid</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true"></a>    go _ <span class="ot">=</span> invalid <span class="st">&quot;not 'null'&quot;</span></span></code></pre></div>
 <p>The number type in JSON is a float (well, in <code>aeson</code> it’s a <a href="https://hackage.haskell.org/package/scientific-0.3.6.2/docs/Data-Scientific.html#t:Scientific"><code>Scientific</code></a>), so to check for an integer a bit more than the above is needed</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1"></a>isInt <span class="ot">=</span> <span class="dt">JV</span> go</span>
-<span id="cb6-2"><a href="#cb6-2"></a>  <span class="kw">where</span></span>
-<span id="cb6-3"><a href="#cb6-3"></a>    go (<span class="dt">A.Number</span> i) <span class="ot">=</span> <span class="kw">if</span> i <span class="op">==</span> <span class="fu">fromInteger</span> (<span class="fu">round</span> i)</span>
-<span id="cb6-4"><a href="#cb6-4"></a>                      <span class="kw">then</span> valid</span>
-<span id="cb6-5"><a href="#cb6-5"></a>                      <span class="kw">else</span> invalid <span class="st">&quot;not an integer&quot;</span></span>
-<span id="cb6-6"><a href="#cb6-6"></a>    go _ <span class="ot">=</span> invalid <span class="st">&quot;not an integer&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a>isInt <span class="ot">=</span> <span class="dt">JV</span> go</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a>  <span class="kw">where</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a>    go (<span class="dt">A.Number</span> i) <span class="ot">=</span> <span class="kw">if</span> i <span class="op">==</span> <span class="fu">fromInteger</span> (<span class="fu">round</span> i)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true"></a>                      <span class="kw">then</span> valid</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true"></a>                      <span class="kw">else</span> invalid <span class="st">&quot;not an integer&quot;</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true"></a>    go _ <span class="ot">=</span> invalid <span class="st">&quot;not an integer&quot;</span></span></code></pre></div>
 <p>as well as functions that check for the presence of a specific key</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1"></a>reqKey n v <span class="ot">=</span> <span class="dt">JV</span> go</span>
-<span id="cb7-2"><a href="#cb7-2"></a>  <span class="kw">where</span></span>
-<span id="cb7-3"><a href="#cb7-3"></a>    go (<span class="dt">A.Object</span> obj) <span class="ot">=</span> <span class="kw">case</span> HM.lookup n obj <span class="kw">of</span></span>
-<span id="cb7-4"><a href="#cb7-4"></a>                          <span class="dt">Nothing</span> <span class="ot">-&gt;</span> invalid <span class="op">$</span> <span class="st">&quot;required key '&quot;</span> <span class="op">&lt;&gt;</span> n <span class="op">&lt;&gt;</span> <span class="st">&quot;' is missing&quot;</span></span>
-<span id="cb7-5"><a href="#cb7-5"></a>                          <span class="dt">Just</span> val <span class="ot">-&gt;</span> mapInvalid (<span class="dt">JVFPath</span> n) <span class="op">$</span> runJSONValidator v val</span>
-<span id="cb7-6"><a href="#cb7-6"></a>    go _ <span class="ot">=</span> invalid <span class="st">&quot;not an object&quot;</span></span>
-<span id="cb7-7"><a href="#cb7-7"></a>    </span>
-<span id="cb7-8"><a href="#cb7-8"></a>optKey n v <span class="ot">=</span> <span class="dt">JV</span> go</span>
-<span id="cb7-9"><a href="#cb7-9"></a>  <span class="kw">where</span></span>
-<span id="cb7-10"><a href="#cb7-10"></a>    go (<span class="dt">A.Object</span> obj) <span class="ot">=</span> <span class="kw">case</span> HM.lookup n obj <span class="kw">of</span></span>
-<span id="cb7-11"><a href="#cb7-11"></a>                          <span class="dt">Nothing</span> <span class="ot">-&gt;</span> valid</span>
-<span id="cb7-12"><a href="#cb7-12"></a>                          <span class="dt">Just</span> val <span class="ot">-&gt;</span> mapInvalid (<span class="dt">JVFPath</span> n) <span class="op">$</span> runJSONValidator v val</span>
-<span id="cb7-13"><a href="#cb7-13"></a>    go _ <span class="ot">=</span> invalid <span class="st">&quot;not an object&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a>reqKey n v <span class="ot">=</span> <span class="dt">JV</span> go</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a>  <span class="kw">where</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true"></a>    go (<span class="dt">A.Object</span> obj) <span class="ot">=</span> <span class="kw">case</span> HM.lookup n obj <span class="kw">of</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true"></a>                          <span class="dt">Nothing</span> <span class="ot">-&gt;</span> invalid <span class="op">$</span> <span class="st">&quot;required key '&quot;</span> <span class="op">&lt;&gt;</span> n <span class="op">&lt;&gt;</span> <span class="st">&quot;' is missing&quot;</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true"></a>                          <span class="dt">Just</span> val <span class="ot">-&gt;</span> mapInvalid (<span class="dt">JVFPath</span> n) <span class="op">$</span> runJSONValidator v val</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true"></a>    go _ <span class="ot">=</span> invalid <span class="st">&quot;not an object&quot;</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true"></a>    </span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true"></a>optKey n v <span class="ot">=</span> <span class="dt">JV</span> go</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true"></a>  <span class="kw">where</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true"></a>    go (<span class="dt">A.Object</span> obj) <span class="ot">=</span> <span class="kw">case</span> HM.lookup n obj <span class="kw">of</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true"></a>                          <span class="dt">Nothing</span> <span class="ot">-&gt;</span> valid</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true"></a>                          <span class="dt">Just</span> val <span class="ot">-&gt;</span> mapInvalid (<span class="dt">JVFPath</span> n) <span class="op">$</span> runJSONValidator v val</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true"></a>    go _ <span class="ot">=</span> invalid <span class="st">&quot;not an object&quot;</span></span></code></pre></div>
 <p>With this in place I can now create a validator for a person with a name and an age:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1"></a>vPerson <span class="ot">=</span> reqKey <span class="st">&quot;name&quot;</span> isString <span class="op">&lt;&gt;</span></span>
-<span id="cb8-2"><a href="#cb8-2"></a>          reqKey <span class="st">&quot;age&quot;</span> isInt</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a>vPerson <span class="ot">=</span> reqKey <span class="st">&quot;name&quot;</span> isString <span class="op">&lt;&gt;</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a>          reqKey <span class="st">&quot;age&quot;</span> isInt</span></code></pre></div>
 <p>and run it on a <code>Value</code>:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1"></a><span class="op">*&gt;</span> runJSONValidator vPerson <span class="op">&lt;$&gt;</span> (decode <span class="st">&quot;{\&quot;name\&quot;: \&quot;Alice\&quot;, \&quot;age\&quot;: 32}&quot;</span><span class="ot"> ::</span> <span class="dt">Maybe</span> <span class="dt">Value</span>)</span>
-<span id="cb9-2"><a href="#cb9-2"></a><span class="dt">Just</span> <span class="dt">JVRValid</span></span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a><span class="op">*&gt;</span> runJSONValidator vPerson <span class="op">&lt;$&gt;</span> (decode <span class="st">&quot;{\&quot;name\&quot;: \&quot;Alice\&quot;, \&quot;age\&quot;: 32}&quot;</span><span class="ot"> ::</span> <span class="dt">Maybe</span> <span class="dt">Value</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true"></a><span class="dt">Just</span> <span class="dt">JVRValid</span></span></code></pre></div>
 <p>and all failures are picked up</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1"></a><span class="op">*&gt;</span> runJSONValidator vPerson <span class="op">&lt;$&gt;</span> (decode <span class="st">&quot;{\&quot;name\&quot;: \&quot;Alice\&quot;, \&quot;age\&quot;: \&quot;foo\&quot;}&quot;</span><span class="ot"> ::</span> <span class="dt">Maybe</span> <span class="dt">Value</span>)</span>
-<span id="cb10-2"><a href="#cb10-2"></a><span class="dt">Just</span> (<span class="dt">JVRInvalid</span> [<span class="dt">JVFPath</span> <span class="st">&quot;age&quot;</span> (<span class="dt">JVFDesc</span> <span class="st">&quot;not an integer&quot;</span>)])</span>
-<span id="cb10-3"><a href="#cb10-3"></a></span>
-<span id="cb10-4"><a href="#cb10-4"></a><span class="op">*&gt;</span>runJSONValidator vPerson <span class="op">&lt;$&gt;</span> (decode <span class="st">&quot;{\&quot;name\&quot;: \&quot;Alice\&quot;}&quot;</span><span class="ot"> ::</span> <span class="dt">Maybe</span> <span class="dt">Value</span>)</span>
-<span id="cb10-5"><a href="#cb10-5"></a><span class="dt">Just</span> (<span class="dt">JVRInvalid</span> [<span class="dt">JVFDesc</span> <span class="st">&quot;required key 'age' is missing&quot;</span>])</span>
-<span id="cb10-6"><a href="#cb10-6"></a></span>
-<span id="cb10-7"><a href="#cb10-7"></a>runJSONValidator vPerson <span class="op">&lt;$&gt;</span> (decode <span class="st">&quot;{\&quot;nam\&quot;: \&quot;Alice\&quot;}&quot;</span><span class="ot"> ::</span> <span class="dt">Maybe</span> <span class="dt">Value</span>)</span>
-<span id="cb10-8"><a href="#cb10-8"></a><span class="dt">Just</span> (<span class="dt">JVRInvalid</span> [<span class="dt">JVFDesc</span> <span class="st">&quot;required key 'name' is missing&quot;</span>,<span class="dt">JVFDesc</span> <span class="st">&quot;required key 'age' is missing&quot;</span>])</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true"></a><span class="op">*&gt;</span> runJSONValidator vPerson <span class="op">&lt;$&gt;</span> (decode <span class="st">&quot;{\&quot;name\&quot;: \&quot;Alice\&quot;, \&quot;age\&quot;: \&quot;foo\&quot;}&quot;</span><span class="ot"> ::</span> <span class="dt">Maybe</span> <span class="dt">Value</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true"></a><span class="dt">Just</span> (<span class="dt">JVRInvalid</span> [<span class="dt">JVFPath</span> <span class="st">&quot;age&quot;</span> (<span class="dt">JVFDesc</span> <span class="st">&quot;not an integer&quot;</span>)])</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true"></a><span class="op">*&gt;</span>runJSONValidator vPerson <span class="op">&lt;$&gt;</span> (decode <span class="st">&quot;{\&quot;name\&quot;: \&quot;Alice\&quot;}&quot;</span><span class="ot"> ::</span> <span class="dt">Maybe</span> <span class="dt">Value</span>)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true"></a><span class="dt">Just</span> (<span class="dt">JVRInvalid</span> [<span class="dt">JVFDesc</span> <span class="st">&quot;required key 'age' is missing&quot;</span>])</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true"></a></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true"></a>runJSONValidator vPerson <span class="op">&lt;$&gt;</span> (decode <span class="st">&quot;{\&quot;nam\&quot;: \&quot;Alice\&quot;}&quot;</span><span class="ot"> ::</span> <span class="dt">Maybe</span> <span class="dt">Value</span>)</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true"></a><span class="dt">Just</span> (<span class="dt">JVRInvalid</span> [<span class="dt">JVFDesc</span> <span class="st">&quot;required key 'name' is missing&quot;</span>,<span class="dt">JVFDesc</span> <span class="st">&quot;required key 'age' is missing&quot;</span>])</span></code></pre></div>
 <h2 id="reflections">Reflections</h2>
 <ol type="1">
 <li>I quickly realised I wanted slightly more complex validation of course, so all the validators for basic JSON types above have a version taking a custom validator of type <code>a -&gt; JSONValidationResult</code> (where <code>a</code> is the Haskell type contained in the particulare <code>Value</code>).</li>
@@ -128,17 +128,17 @@
 </ol>
 <h2 id="appendix-a-look-at-aeson-better-errors">Appendix: A look at <code>aeson-better-errors</code></h2>
 <p>The issue with <code>aeson-better-errors</code> is easiest to illustrate using the same example as in <a href="https://harry.garrood.me/blog/aeson-better-errors/">its announcement</a>:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1"></a><span class="ot">{-# LANGUAGE OverloadedStrings #-}</span></span>
-<span id="cb11-2"><a href="#cb11-2"></a><span class="kw">module</span> <span class="dt">Play</span> <span class="kw">where</span></span>
-<span id="cb11-3"><a href="#cb11-3"></a></span>
-<span id="cb11-4"><a href="#cb11-4"></a><span class="kw">import</span>           <span class="dt">Data.Aeson</span></span>
-<span id="cb11-5"><a href="#cb11-5"></a><span class="kw">import</span>           <span class="dt">Data.Aeson.BetterErrors</span></span>
-<span id="cb11-6"><a href="#cb11-6"></a></span>
-<span id="cb11-7"><a href="#cb11-7"></a><span class="kw">data</span> <span class="dt">Person</span> <span class="ot">=</span> <span class="dt">Person</span> <span class="dt">String</span> <span class="dt">Int</span></span>
-<span id="cb11-8"><a href="#cb11-8"></a>  <span class="kw">deriving</span> (<span class="dt">Show</span>)</span>
-<span id="cb11-9"><a href="#cb11-9"></a></span>
-<span id="cb11-10"><a href="#cb11-10"></a><span class="ot">asPerson ::</span> <span class="dt">Parse</span> e <span class="dt">Person</span></span>
-<span id="cb11-11"><a href="#cb11-11"></a>asPerson <span class="ot">=</span> <span class="dt">Person</span> <span class="op">&lt;$&gt;</span> key <span class="st">&quot;name&quot;</span> asString <span class="op">&lt;*&gt;</span> key <span class="st">&quot;age&quot;</span> asIntegral</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true"></a><span class="ot">{-# LANGUAGE OverloadedStrings #-}</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true"></a><span class="kw">module</span> <span class="dt">Play</span> <span class="kw">where</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true"></a></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true"></a><span class="kw">import</span>           <span class="dt">Data.Aeson</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true"></a><span class="kw">import</span>           <span class="dt">Data.Aeson.BetterErrors</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true"></a></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Person</span> <span class="ot">=</span> <span class="dt">Person</span> <span class="dt">String</span> <span class="dt">Int</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true"></a>  <span class="kw">deriving</span> (<span class="dt">Show</span>)</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true"></a></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true"></a><span class="ot">asPerson ::</span> <span class="dt">Parse</span> e <span class="dt">Person</span></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true"></a>asPerson <span class="ot">=</span> <span class="dt">Person</span> <span class="op">&lt;$&gt;</span> key <span class="st">&quot;name&quot;</span> asString <span class="op">&lt;*&gt;</span> key <span class="st">&quot;age&quot;</span> asIntegral</span></code></pre></div>
 <p>and with this loaded in GHCi (and make sure to either pass <code>-XOverloadedStrings</code> on the command line, or <code>:set -XOverloadedStrings</code> in GHCi itself)</p>
 <pre><code>*&gt; parse asPerson &quot;{\&quot;name\&quot;: \&quot;Alice\&quot;, \&quot;age\&quot;: 32}&quot;
 Right (Person &quot;Alice&quot; 32)

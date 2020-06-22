@@ -63,44 +63,44 @@
 <h2 id="watchdog-in-systemd">Watchdog in systemd</h2>
 <p>One of the nice things offered by <em>systemd</em> is watchdog functionality. For work I had a need to try it out, partly for my own sake (I’ve never really had a need to play with watchdog functinality in any way before) and partly to communicate to the rest of the team how they can modify their parts to integrate with <em>systemd</em>.</p>
 <p>As is described in <a href="http://0pointer.net/blog/projects/watchdog.html">part 15</a> the watchdog period is communicated via the environment variable <code>WATCHDOG_USEC</code>. As the name suggests it holds the period in micro seconds. To then tickle the watchdog one uses <code>sd_notify(0, "WATCHDOG=1")</code>. To test this all I wrote the follwoing bit of C (<code>sd-watch.c</code>):</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb1-1"><a href="#cb1-1"></a><span class="pp">#include </span><span class="im">&lt;stdbool.h&gt;</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="pp">#include </span><span class="im">&lt;stdio.h&gt;</span></span>
-<span id="cb1-3"><a href="#cb1-3"></a><span class="pp">#include </span><span class="im">&lt;stdlib.h&gt;</span></span>
-<span id="cb1-4"><a href="#cb1-4"></a><span class="pp">#include </span><span class="im">&lt;sys/stat.h&gt;</span></span>
-<span id="cb1-5"><a href="#cb1-5"></a><span class="pp">#include </span><span class="im">&lt;unistd.h&gt;</span></span>
-<span id="cb1-6"><a href="#cb1-6"></a><span class="pp">#include </span><span class="im">&lt;systemd/sd-daemon.h&gt;</span></span>
-<span id="cb1-7"><a href="#cb1-7"></a></span>
-<span id="cb1-8"><a href="#cb1-8"></a><span class="dt">int</span> main(<span class="dt">int</span> ac, <span class="dt">char</span> **av)</span>
-<span id="cb1-9"><a href="#cb1-9"></a>{</span>
-<span id="cb1-10"><a href="#cb1-10"></a>  (<span class="dt">void</span>)ac;</span>
-<span id="cb1-11"><a href="#cb1-11"></a></span>
-<span id="cb1-12"><a href="#cb1-12"></a>  <span class="dt">char</span> *e = getenv(<span class="st">&quot;WATCHDOG_USEC&quot;</span>);</span>
-<span id="cb1-13"><a href="#cb1-13"></a>  <span class="cf">if</span>(!e) {</span>
-<span id="cb1-14"><a href="#cb1-14"></a>    printf(<span class="st">&quot;No WATCHDOG_USEC set!</span><span class="sc">\n</span><span class="st">&quot;</span>);</span>
-<span id="cb1-15"><a href="#cb1-15"></a>    exit(<span class="dv">1</span>);</span>
-<span id="cb1-16"><a href="#cb1-16"></a>  } <span class="cf">else</span></span>
-<span id="cb1-17"><a href="#cb1-17"></a>    printf(<span class="st">&quot;WATCHDOG_USEC: %s</span><span class="sc">\n</span><span class="st">&quot;</span>, e);</span>
-<span id="cb1-18"><a href="#cb1-18"></a></span>
-<span id="cb1-19"><a href="#cb1-19"></a>  <span class="dt">int</span> i = atoi(e);</span>
-<span id="cb1-20"><a href="#cb1-20"></a>  i /= <span class="dv">2</span>;</span>
-<span id="cb1-21"><a href="#cb1-21"></a>  printf(<span class="st">&quot;* Barking every %i usec.</span><span class="sc">\n</span><span class="st">&quot;</span>, i);</span>
-<span id="cb1-22"><a href="#cb1-22"></a></span>
-<span id="cb1-23"><a href="#cb1-23"></a>  <span class="dt">bool</span> cont = true;</span>
-<span id="cb1-24"><a href="#cb1-24"></a>  <span class="cf">while</span>(cont) {</span>
-<span id="cb1-25"><a href="#cb1-25"></a>    usleep(i);</span>
-<span id="cb1-26"><a href="#cb1-26"></a></span>
-<span id="cb1-27"><a href="#cb1-27"></a>    <span class="kw">struct</span> stat b;</span>
-<span id="cb1-28"><a href="#cb1-28"></a>    <span class="dt">int</span> r = stat(av[<span class="dv">1</span>], &amp;b);</span>
-<span id="cb1-29"><a href="#cb1-29"></a>    <span class="cf">if</span>(<span class="dv">0</span> == r) {</span>
-<span id="cb1-30"><a href="#cb1-30"></a>      <span class="cf">continue</span>;</span>
-<span id="cb1-31"><a href="#cb1-31"></a>    } <span class="cf">else</span> {</span>
-<span id="cb1-32"><a href="#cb1-32"></a>      r = sd_notify(<span class="dv">0</span>, <span class="st">&quot;WATCHDOG=1&quot;</span>);</span>
-<span id="cb1-33"><a href="#cb1-33"></a>      printf(<span class="st">&quot;Barked!!! (%i)</span><span class="sc">\n</span><span class="st">&quot;</span>, r);</span>
-<span id="cb1-34"><a href="#cb1-34"></a>    }</span>
-<span id="cb1-35"><a href="#cb1-35"></a>  }</span>
-<span id="cb1-36"><a href="#cb1-36"></a></span>
-<span id="cb1-37"><a href="#cb1-37"></a>  <span class="cf">return</span> <span class="dv">0</span>;</span>
-<span id="cb1-38"><a href="#cb1-38"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="pp">#include </span><span class="im">&lt;stdbool.h&gt;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a><span class="pp">#include </span><span class="im">&lt;stdio.h&gt;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a><span class="pp">#include </span><span class="im">&lt;stdlib.h&gt;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a><span class="pp">#include </span><span class="im">&lt;sys/stat.h&gt;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a><span class="pp">#include </span><span class="im">&lt;unistd.h&gt;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a><span class="pp">#include </span><span class="im">&lt;systemd/sd-daemon.h&gt;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a><span class="dt">int</span> main(<span class="dt">int</span> ac, <span class="dt">char</span> **av)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a>{</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a>  (<span class="dt">void</span>)ac;</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a>  <span class="dt">char</span> *e = getenv(<span class="st">&quot;WATCHDOG_USEC&quot;</span>);</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true"></a>  <span class="cf">if</span>(!e) {</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true"></a>    printf(<span class="st">&quot;No WATCHDOG_USEC set!</span><span class="sc">\n</span><span class="st">&quot;</span>);</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true"></a>    exit(<span class="dv">1</span>);</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true"></a>  } <span class="cf">else</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true"></a>    printf(<span class="st">&quot;WATCHDOG_USEC: %s</span><span class="sc">\n</span><span class="st">&quot;</span>, e);</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true"></a></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true"></a>  <span class="dt">int</span> i = atoi(e);</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true"></a>  i /= <span class="dv">2</span>;</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true"></a>  printf(<span class="st">&quot;* Barking every %i usec.</span><span class="sc">\n</span><span class="st">&quot;</span>, i);</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true"></a></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true"></a>  <span class="dt">bool</span> cont = true;</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true"></a>  <span class="cf">while</span>(cont) {</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true"></a>    usleep(i);</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true"></a></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true"></a>    <span class="kw">struct</span> stat b;</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true"></a>    <span class="dt">int</span> r = stat(av[<span class="dv">1</span>], &amp;b);</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true"></a>    <span class="cf">if</span>(<span class="dv">0</span> == r) {</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true"></a>      <span class="cf">continue</span>;</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true"></a>    } <span class="cf">else</span> {</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true"></a>      r = sd_notify(<span class="dv">0</span>, <span class="st">&quot;WATCHDOG=1&quot;</span>);</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true"></a>      printf(<span class="st">&quot;Barked!!! (%i)</span><span class="sc">\n</span><span class="st">&quot;</span>, r);</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true"></a>    }</span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true"></a>  }</span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true"></a></span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true"></a>  <span class="cf">return</span> <span class="dv">0</span>;</span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true"></a>}</span></code></pre></div>
 <p>Compile it with <code>gcc -o sd-watch sd-watch.c $(pkg-config --libs libsystemd)</code>.</p>
 <p>Together with this comes a service description:</p>
 <pre><code>[Unit]

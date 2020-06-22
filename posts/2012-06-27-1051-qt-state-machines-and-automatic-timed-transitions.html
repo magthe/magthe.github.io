@@ -42,146 +42,146 @@
 <h3 id="the-implementation">The implementation</h3>
 <p>As I like to do, I first experimented a little to find a suitable solution to the problem. What follows is the resulting code of that experiment. The final code used in the project ended up being very similar. It’s all based around the method <code>postDelayedEvent()</code> found in <code>QStateMachine</code>.</p>
 <p>First off a new type of event is nedded, a <code>ReturnEvent</code>:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">class</span> ReturnEvent : <span class="kw">public</span> <span class="ex">QEvent</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a>{</span>
-<span id="cb1-3"><a href="#cb1-3"></a><span class="kw">public</span>:</span>
-<span id="cb1-4"><a href="#cb1-4"></a>    ReturnEvent() : <span class="ex">QEvent</span>(<span class="ex">QEvent::</span>Type(<span class="ex">QEvent::</span>User + <span class="dv">1</span>)) {}</span>
-<span id="cb1-5"><a href="#cb1-5"></a>};</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">class</span> ReturnEvent : <span class="kw">public</span> <span class="ex">QEvent</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>{</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a><span class="kw">public</span>:</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>    ReturnEvent() : <span class="ex">QEvent</span>(<span class="ex">QEvent::</span>Type(<span class="ex">QEvent::</span>User + <span class="dv">1</span>)) {}</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>};</span></code></pre></div>
 <p>There is also a need for a new type of transition, <code>ReturnTransition</code>:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">class</span> ReturnTransition : <span class="kw">public</span> <span class="ex">QAbstractTransition</span></span>
-<span id="cb2-2"><a href="#cb2-2"></a>{</span>
-<span id="cb2-3"><a href="#cb2-3"></a><span class="kw">public</span>:</span>
-<span id="cb2-4"><a href="#cb2-4"></a>    ReturnTransition(<span class="ex">QState</span> *target=<span class="dv">0</span>) { <span class="cf">if</span>(target) setTargetState(target); }</span>
-<span id="cb2-5"><a href="#cb2-5"></a></span>
-<span id="cb2-6"><a href="#cb2-6"></a><span class="kw">protected</span>:</span>
-<span id="cb2-7"><a href="#cb2-7"></a>    <span class="kw">virtual</span> <span class="dt">bool</span> eventTest(<span class="ex">QEvent</span> *e) {</span>
-<span id="cb2-8"><a href="#cb2-8"></a>        <span class="cf">return</span>(e-&gt;type() == <span class="ex">QEvent::</span>Type(<span class="ex">QEvent::</span>User + <span class="dv">1</span>));</span>
-<span id="cb2-9"><a href="#cb2-9"></a>    }</span>
-<span id="cb2-10"><a href="#cb2-10"></a></span>
-<span id="cb2-11"><a href="#cb2-11"></a>    <span class="kw">virtual</span> <span class="dt">void</span> onTransition(<span class="ex">QEvent</span> *) {}</span>
-<span id="cb2-12"><a href="#cb2-12"></a>};</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="kw">class</span> ReturnTransition : <span class="kw">public</span> <span class="ex">QAbstractTransition</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>{</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a><span class="kw">public</span>:</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a>    ReturnTransition(<span class="ex">QState</span> *target=<span class="dv">0</span>) { <span class="cf">if</span>(target) setTargetState(target); }</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a><span class="kw">protected</span>:</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a>    <span class="kw">virtual</span> <span class="dt">bool</span> eventTest(<span class="ex">QEvent</span> *e) {</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a>        <span class="cf">return</span>(e-&gt;type() == <span class="ex">QEvent::</span>Type(<span class="ex">QEvent::</span>User + <span class="dv">1</span>));</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true"></a>    }</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true"></a>    <span class="kw">virtual</span> <span class="dt">void</span> onTransition(<span class="ex">QEvent</span> *) {}</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true"></a>};</span></code></pre></div>
 <p>For the experiment I decided to use a simple widget containing two buttons, it would also hold the state machine:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">class</span> MButtons : <span class="kw">public</span> <span class="ex">QWidget</span></span>
-<span id="cb3-2"><a href="#cb3-2"></a>{</span>
-<span id="cb3-3"><a href="#cb3-3"></a>    <span class="ex">Q_OBJECT</span>;</span>
-<span id="cb3-4"><a href="#cb3-4"></a></span>
-<span id="cb3-5"><a href="#cb3-5"></a><span class="kw">public</span>:</span>
-<span id="cb3-6"><a href="#cb3-6"></a>    MButtons(<span class="ex">QStateMachine</span> &amp;m)</span>
-<span id="cb3-7"><a href="#cb3-7"></a>        : _right(<span class="st">&quot;Right&quot;</span>), _left(<span class="st">&quot;Left&quot;</span>),</span>
-<span id="cb3-8"><a href="#cb3-8"></a>        _m(m), _delayed(<span class="dv">0</span>) {</span>
-<span id="cb3-9"><a href="#cb3-9"></a>        <span class="ex">QBoxLayout</span> *lo = <span class="kw">new</span> <span class="ex">QBoxLayout</span>(<span class="ex">QBoxLayout::</span>TopToBottom);</span>
-<span id="cb3-10"><a href="#cb3-10"></a>        lo-&gt;addWidget(&amp;_right);</span>
-<span id="cb3-11"><a href="#cb3-11"></a>        lo-&gt;addWidget(&amp;_left);</span>
-<span id="cb3-12"><a href="#cb3-12"></a></span>
-<span id="cb3-13"><a href="#cb3-13"></a>        setLayout(lo);</span>
-<span id="cb3-14"><a href="#cb3-14"></a>    }</span>
-<span id="cb3-15"><a href="#cb3-15"></a>    <span class="kw">virtual</span> ~MButtons() {}</span>
-<span id="cb3-16"><a href="#cb3-16"></a></span>
-<span id="cb3-17"><a href="#cb3-17"></a>    <span class="ex">QPushButton</span> _right,</span>
-<span id="cb3-18"><a href="#cb3-18"></a>                _left;</span>
-<span id="cb3-19"><a href="#cb3-19"></a>    <span class="ex">QStateMachine</span> &amp;_m;</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="kw">class</span> MButtons : <span class="kw">public</span> <span class="ex">QWidget</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>{</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>    <span class="ex">Q_OBJECT</span>;</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a><span class="kw">public</span>:</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true"></a>    MButtons(<span class="ex">QStateMachine</span> &amp;m)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true"></a>        : _right(<span class="st">&quot;Right&quot;</span>), _left(<span class="st">&quot;Left&quot;</span>),</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true"></a>        _m(m), _delayed(<span class="dv">0</span>) {</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true"></a>        <span class="ex">QBoxLayout</span> *lo = <span class="kw">new</span> <span class="ex">QBoxLayout</span>(<span class="ex">QBoxLayout::</span>TopToBottom);</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true"></a>        lo-&gt;addWidget(&amp;_right);</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true"></a>        lo-&gt;addWidget(&amp;_left);</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true"></a></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true"></a>        setLayout(lo);</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true"></a>    }</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true"></a>    <span class="kw">virtual</span> ~MButtons() {}</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true"></a></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true"></a>    <span class="ex">QPushButton</span> _right,</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true"></a>                _left;</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true"></a>    <span class="ex">QStateMachine</span> &amp;_m;</span></code></pre></div>
 <p>The widget also holds the slots for all the state entry functions:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">public</span> <span class="ex">slots</span>:</span>
-<span id="cb4-2"><a href="#cb4-2"></a>    <span class="dt">void</span> sRestingEntered() {</span>
-<span id="cb4-3"><a href="#cb4-3"></a>        <span class="fu">qDebug</span>() &lt;&lt; <span class="ot">__PRETTY_FUNCTION__</span>;</span>
-<span id="cb4-4"><a href="#cb4-4"></a>        <span class="cf">if</span>(_delayed) { _m.cancelDelayedEvent(_delayed); _delayed = <span class="dv">0</span>; }</span>
-<span id="cb4-5"><a href="#cb4-5"></a>    }</span>
-<span id="cb4-6"><a href="#cb4-6"></a></span>
-<span id="cb4-7"><a href="#cb4-7"></a>    <span class="dt">void</span> sOneEntered() {</span>
-<span id="cb4-8"><a href="#cb4-8"></a>        <span class="fu">qDebug</span>() &lt;&lt; <span class="ot">__PRETTY_FUNCTION__</span>;</span>
-<span id="cb4-9"><a href="#cb4-9"></a>        <span class="cf">if</span>(_delayed) { _m.cancelDelayedEvent(_delayed); _delayed = <span class="dv">0</span>; }</span>
-<span id="cb4-10"><a href="#cb4-10"></a>        _delayed = _m.postDelayedEvent(<span class="kw">new</span> ReturnEvent, <span class="dv">1000</span>);</span>
-<span id="cb4-11"><a href="#cb4-11"></a>    }</span>
-<span id="cb4-12"><a href="#cb4-12"></a></span>
-<span id="cb4-13"><a href="#cb4-13"></a>    <span class="dt">void</span> sTwoEntered() {</span>
-<span id="cb4-14"><a href="#cb4-14"></a>        <span class="fu">qDebug</span>() &lt;&lt; <span class="ot">__PRETTY_FUNCTION__</span>;</span>
-<span id="cb4-15"><a href="#cb4-15"></a>        <span class="cf">if</span>(_delayed) { _m.cancelDelayedEvent(_delayed); _delayed = <span class="dv">0</span>; }</span>
-<span id="cb4-16"><a href="#cb4-16"></a>        _delayed = _m.postDelayedEvent(<span class="kw">new</span> ReturnEvent, <span class="dv">1000</span>);</span>
-<span id="cb4-17"><a href="#cb4-17"></a>    }</span>
-<span id="cb4-18"><a href="#cb4-18"></a>    <span class="dt">void</span> sThreeEntered() {</span>
-<span id="cb4-19"><a href="#cb4-19"></a>        <span class="fu">qDebug</span>() &lt;&lt; <span class="ot">__PRETTY_FUNCTION__</span>;</span>
-<span id="cb4-20"><a href="#cb4-20"></a>        <span class="cf">if</span>(_delayed) { _m.cancelDelayedEvent(_delayed); _delayed = <span class="dv">0</span>; }</span>
-<span id="cb4-21"><a href="#cb4-21"></a>        _delayed = _m.postDelayedEvent(<span class="kw">new</span> ReturnEvent, <span class="dv">1000</span>);</span>
-<span id="cb4-22"><a href="#cb4-22"></a>    }</span>
-<span id="cb4-23"><a href="#cb4-23"></a>    <span class="dt">void</span> sFourEntered() {</span>
-<span id="cb4-24"><a href="#cb4-24"></a>        <span class="fu">qDebug</span>() &lt;&lt; <span class="ot">__PRETTY_FUNCTION__</span>;</span>
-<span id="cb4-25"><a href="#cb4-25"></a>        <span class="cf">if</span>(_delayed) { _m.cancelDelayedEvent(_delayed); _delayed = <span class="dv">0</span>; }</span>
-<span id="cb4-26"><a href="#cb4-26"></a>        _delayed = _m.postDelayedEvent(<span class="kw">new</span> ReturnEvent, <span class="dv">1000</span>);</span>
-<span id="cb4-27"><a href="#cb4-27"></a>    }</span>
-<span id="cb4-28"><a href="#cb4-28"></a>    <span class="dt">void</span> sTurningEntered() {</span>
-<span id="cb4-29"><a href="#cb4-29"></a>        <span class="fu">qDebug</span>() &lt;&lt; <span class="ot">__PRETTY_FUNCTION__</span>;</span>
-<span id="cb4-30"><a href="#cb4-30"></a>        <span class="cf">if</span>(_delayed) { _m.cancelDelayedEvent(_delayed); _delayed = <span class="dv">0</span>; }</span>
-<span id="cb4-31"><a href="#cb4-31"></a>        _delayed = _m.postDelayedEvent(<span class="kw">new</span> ReturnEvent, <span class="dv">1000</span>);</span>
-<span id="cb4-32"><a href="#cb4-32"></a>    }</span>
-<span id="cb4-33"><a href="#cb4-33"></a>    <span class="dt">void</span> sTurnRightEntered() {</span>
-<span id="cb4-34"><a href="#cb4-34"></a>        <span class="fu">qDebug</span>() &lt;&lt; <span class="ot">__PRETTY_FUNCTION__</span>;</span>
-<span id="cb4-35"><a href="#cb4-35"></a>    }</span>
-<span id="cb4-36"><a href="#cb4-36"></a>    <span class="dt">void</span> sTurnLeftEntered() {</span>
-<span id="cb4-37"><a href="#cb4-37"></a>        <span class="fu">qDebug</span>() &lt;&lt; <span class="ot">__PRETTY_FUNCTION__</span>;</span>
-<span id="cb4-38"><a href="#cb4-38"></a>    }</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="kw">public</span> <span class="ex">slots</span>:</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>    <span class="dt">void</span> sRestingEntered() {</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a>        <span class="fu">qDebug</span>() &lt;&lt; <span class="ot">__PRETTY_FUNCTION__</span>;</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a>        <span class="cf">if</span>(_delayed) { _m.cancelDelayedEvent(_delayed); _delayed = <span class="dv">0</span>; }</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a>    }</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true"></a>    <span class="dt">void</span> sOneEntered() {</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true"></a>        <span class="fu">qDebug</span>() &lt;&lt; <span class="ot">__PRETTY_FUNCTION__</span>;</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true"></a>        <span class="cf">if</span>(_delayed) { _m.cancelDelayedEvent(_delayed); _delayed = <span class="dv">0</span>; }</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true"></a>        _delayed = _m.postDelayedEvent(<span class="kw">new</span> ReturnEvent, <span class="dv">1000</span>);</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true"></a>    }</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true"></a></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true"></a>    <span class="dt">void</span> sTwoEntered() {</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true"></a>        <span class="fu">qDebug</span>() &lt;&lt; <span class="ot">__PRETTY_FUNCTION__</span>;</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true"></a>        <span class="cf">if</span>(_delayed) { _m.cancelDelayedEvent(_delayed); _delayed = <span class="dv">0</span>; }</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true"></a>        _delayed = _m.postDelayedEvent(<span class="kw">new</span> ReturnEvent, <span class="dv">1000</span>);</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true"></a>    }</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true"></a>    <span class="dt">void</span> sThreeEntered() {</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true"></a>        <span class="fu">qDebug</span>() &lt;&lt; <span class="ot">__PRETTY_FUNCTION__</span>;</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true"></a>        <span class="cf">if</span>(_delayed) { _m.cancelDelayedEvent(_delayed); _delayed = <span class="dv">0</span>; }</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true"></a>        _delayed = _m.postDelayedEvent(<span class="kw">new</span> ReturnEvent, <span class="dv">1000</span>);</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true"></a>    }</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true"></a>    <span class="dt">void</span> sFourEntered() {</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true"></a>        <span class="fu">qDebug</span>() &lt;&lt; <span class="ot">__PRETTY_FUNCTION__</span>;</span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true"></a>        <span class="cf">if</span>(_delayed) { _m.cancelDelayedEvent(_delayed); _delayed = <span class="dv">0</span>; }</span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true"></a>        _delayed = _m.postDelayedEvent(<span class="kw">new</span> ReturnEvent, <span class="dv">1000</span>);</span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true"></a>    }</span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true"></a>    <span class="dt">void</span> sTurningEntered() {</span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true"></a>        <span class="fu">qDebug</span>() &lt;&lt; <span class="ot">__PRETTY_FUNCTION__</span>;</span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true"></a>        <span class="cf">if</span>(_delayed) { _m.cancelDelayedEvent(_delayed); _delayed = <span class="dv">0</span>; }</span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true"></a>        _delayed = _m.postDelayedEvent(<span class="kw">new</span> ReturnEvent, <span class="dv">1000</span>);</span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true"></a>    }</span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true"></a>    <span class="dt">void</span> sTurnRightEntered() {</span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true"></a>        <span class="fu">qDebug</span>() &lt;&lt; <span class="ot">__PRETTY_FUNCTION__</span>;</span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true"></a>    }</span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true"></a>    <span class="dt">void</span> sTurnLeftEntered() {</span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true"></a>        <span class="fu">qDebug</span>() &lt;&lt; <span class="ot">__PRETTY_FUNCTION__</span>;</span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true"></a>    }</span></code></pre></div>
 <p>Sure, several of the entry functions could be folded into one, but in order to validate the idea it’s easier to make separate ones for each state. The pattern is easy to spot, on entry a delayed return event is registered (if there’s a previous one its replaced with a new), except for the steady state (<code>sResting</code>) where any delayed event is removed, and the turning states (<code>sTurnRight</code> and <code>sTurnLeft</code>) since those states immediately return to <code>sTurning</code> anyway.</p>
 <p>Finally it also holds the handle for the delayed event:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">private</span>:</span>
-<span id="cb5-2"><a href="#cb5-2"></a>    <span class="dt">int</span> _delayed;</span>
-<span id="cb5-3"><a href="#cb5-3"></a>};</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="kw">private</span>:</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a>    <span class="dt">int</span> _delayed;</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a>};</span></code></pre></div>
 <p>Now the main function for setting it all up is simple:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1"></a><span class="dt">int</span> main(<span class="dt">int</span> argc, <span class="dt">char</span> **argv)</span>
-<span id="cb6-2"><a href="#cb6-2"></a>{</span>
-<span id="cb6-3"><a href="#cb6-3"></a>    <span class="ex">QApplication</span> app(argc, argv);</span>
-<span id="cb6-4"><a href="#cb6-4"></a>    <span class="ex">QStateMachine</span> m;</span>
-<span id="cb6-5"><a href="#cb6-5"></a>    MButtons b(m);</span>
-<span id="cb6-6"><a href="#cb6-6"></a>    b.show();</span>
-<span id="cb6-7"><a href="#cb6-7"></a></span>
-<span id="cb6-8"><a href="#cb6-8"></a>    <span class="ex">QState</span> *sResting = <span class="kw">new</span> <span class="ex">QState</span>(),</span>
-<span id="cb6-9"><a href="#cb6-9"></a>           *sOne = <span class="kw">new</span> <span class="ex">QState</span>(),</span>
-<span id="cb6-10"><a href="#cb6-10"></a>           *sTwo = <span class="kw">new</span> <span class="ex">QState</span>(),</span>
-<span id="cb6-11"><a href="#cb6-11"></a>           *sThree = <span class="kw">new</span> <span class="ex">QState</span>(),</span>
-<span id="cb6-12"><a href="#cb6-12"></a>           *sFour = <span class="kw">new</span> <span class="ex">QState</span>(),</span>
-<span id="cb6-13"><a href="#cb6-13"></a>           *sTurning = <span class="kw">new</span> <span class="ex">QState</span>(),</span>
-<span id="cb6-14"><a href="#cb6-14"></a>           *sTurnRight = <span class="kw">new</span> <span class="ex">QState</span>(),</span>
-<span id="cb6-15"><a href="#cb6-15"></a>           *sTurnLeft = <span class="kw">new</span> <span class="ex">QState</span>();</span>
-<span id="cb6-16"><a href="#cb6-16"></a></span>
-<span id="cb6-17"><a href="#cb6-17"></a>    m.addState(sResting);</span>
-<span id="cb6-18"><a href="#cb6-18"></a>    m.addState(sOne);</span>
-<span id="cb6-19"><a href="#cb6-19"></a>    m.addState(sTwo);</span>
-<span id="cb6-20"><a href="#cb6-20"></a>    m.addState(sThree);</span>
-<span id="cb6-21"><a href="#cb6-21"></a>    m.addState(sFour);</span>
-<span id="cb6-22"><a href="#cb6-22"></a>    m.addState(sTurning);</span>
-<span id="cb6-23"><a href="#cb6-23"></a>    m.addState(sTurnRight);</span>
-<span id="cb6-24"><a href="#cb6-24"></a>    m.addState(sTurnLeft);</span>
-<span id="cb6-25"><a href="#cb6-25"></a>    m.setInitialState(sResting);</span>
-<span id="cb6-26"><a href="#cb6-26"></a></span>
-<span id="cb6-27"><a href="#cb6-27"></a>    sResting-&gt;addTransition(&amp;b._right, <span class="ex">SIGNAL</span>(clicked()), sOne);</span>
-<span id="cb6-28"><a href="#cb6-28"></a>    sResting-&gt;addTransition(&amp;b._left, <span class="ex">SIGNAL</span>(clicked()), sOne);</span>
-<span id="cb6-29"><a href="#cb6-29"></a>    sOne-&gt;addTransition(&amp;b._right, <span class="ex">SIGNAL</span>(clicked()), sTwo);</span>
-<span id="cb6-30"><a href="#cb6-30"></a>    sOne-&gt;addTransition(&amp;b._left, <span class="ex">SIGNAL</span>(clicked()), sTwo);</span>
-<span id="cb6-31"><a href="#cb6-31"></a>    sOne-&gt;addTransition(<span class="kw">new</span> ReturnTransition(sResting));</span>
-<span id="cb6-32"><a href="#cb6-32"></a>    sTwo-&gt;addTransition(&amp;b._right, <span class="ex">SIGNAL</span>(clicked()), sThree);</span>
-<span id="cb6-33"><a href="#cb6-33"></a>    sTwo-&gt;addTransition(&amp;b._left, <span class="ex">SIGNAL</span>(clicked()), sThree);</span>
-<span id="cb6-34"><a href="#cb6-34"></a>    sTwo-&gt;addTransition(<span class="kw">new</span> ReturnTransition(sResting));</span>
-<span id="cb6-35"><a href="#cb6-35"></a>    sThree-&gt;addTransition(&amp;b._right, <span class="ex">SIGNAL</span>(clicked()), sFour);</span>
-<span id="cb6-36"><a href="#cb6-36"></a>    sThree-&gt;addTransition(&amp;b._left, <span class="ex">SIGNAL</span>(clicked()), sFour);</span>
-<span id="cb6-37"><a href="#cb6-37"></a>    sThree-&gt;addTransition(<span class="kw">new</span> ReturnTransition(sResting));</span>
-<span id="cb6-38"><a href="#cb6-38"></a>    sFour-&gt;addTransition(sTurning);</span>
-<span id="cb6-39"><a href="#cb6-39"></a>    sTurning-&gt;addTransition(&amp;b._right, <span class="ex">SIGNAL</span>(clicked()), sTurnRight);</span>
-<span id="cb6-40"><a href="#cb6-40"></a>    sTurning-&gt;addTransition(&amp;b._left, <span class="ex">SIGNAL</span>(clicked()), sTurnLeft);</span>
-<span id="cb6-41"><a href="#cb6-41"></a>    sTurning-&gt;addTransition(<span class="kw">new</span> ReturnTransition(sResting));</span>
-<span id="cb6-42"><a href="#cb6-42"></a>    sTurnRight-&gt;addTransition(sTurning);</span>
-<span id="cb6-43"><a href="#cb6-43"></a>    sTurnLeft-&gt;addTransition(sTurning);</span>
-<span id="cb6-44"><a href="#cb6-44"></a></span>
-<span id="cb6-45"><a href="#cb6-45"></a>    <span class="ex">QObject::</span>connect(sResting, <span class="ex">SIGNAL</span>(entered()), &amp;b, <span class="ex">SLOT</span>(sRestingEntered()));</span>
-<span id="cb6-46"><a href="#cb6-46"></a>    <span class="ex">QObject::</span>connect(sOne, <span class="ex">SIGNAL</span>(entered()), &amp;b, <span class="ex">SLOT</span>(sOneEntered()));</span>
-<span id="cb6-47"><a href="#cb6-47"></a>    <span class="ex">QObject::</span>connect(sTwo, <span class="ex">SIGNAL</span>(entered()), &amp;b, <span class="ex">SLOT</span>(sTwoEntered()));</span>
-<span id="cb6-48"><a href="#cb6-48"></a>    <span class="ex">QObject::</span>connect(sThree, <span class="ex">SIGNAL</span>(entered()), &amp;b, <span class="ex">SLOT</span>(sThreeEntered()));</span>
-<span id="cb6-49"><a href="#cb6-49"></a>    <span class="ex">QObject::</span>connect(sFour, <span class="ex">SIGNAL</span>(entered()), &amp;b, <span class="ex">SLOT</span>(sFourEntered()));</span>
-<span id="cb6-50"><a href="#cb6-50"></a>    <span class="ex">QObject::</span>connect(sTurning, <span class="ex">SIGNAL</span>(entered()), &amp;b, <span class="ex">SLOT</span>(sTurningEntered()));</span>
-<span id="cb6-51"><a href="#cb6-51"></a>    <span class="ex">QObject::</span>connect(sTurnRight, <span class="ex">SIGNAL</span>(entered()), &amp;b, <span class="ex">SLOT</span>(sTurnRightEntered()));</span>
-<span id="cb6-52"><a href="#cb6-52"></a>    <span class="ex">QObject::</span>connect(sTurnLeft, <span class="ex">SIGNAL</span>(entered()), &amp;b, <span class="ex">SLOT</span>(sTurnLeftEntered()));</span>
-<span id="cb6-53"><a href="#cb6-53"></a></span>
-<span id="cb6-54"><a href="#cb6-54"></a>    m.start();</span>
-<span id="cb6-55"><a href="#cb6-55"></a></span>
-<span id="cb6-56"><a href="#cb6-56"></a>    <span class="cf">return</span>(app.exec());</span>
-<span id="cb6-57"><a href="#cb6-57"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a><span class="dt">int</span> main(<span class="dt">int</span> argc, <span class="dt">char</span> **argv)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a>{</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a>    <span class="ex">QApplication</span> app(argc, argv);</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true"></a>    <span class="ex">QStateMachine</span> m;</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true"></a>    MButtons b(m);</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true"></a>    b.show();</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true"></a></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true"></a>    <span class="ex">QState</span> *sResting = <span class="kw">new</span> <span class="ex">QState</span>(),</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true"></a>           *sOne = <span class="kw">new</span> <span class="ex">QState</span>(),</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true"></a>           *sTwo = <span class="kw">new</span> <span class="ex">QState</span>(),</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true"></a>           *sThree = <span class="kw">new</span> <span class="ex">QState</span>(),</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true"></a>           *sFour = <span class="kw">new</span> <span class="ex">QState</span>(),</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true"></a>           *sTurning = <span class="kw">new</span> <span class="ex">QState</span>(),</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true"></a>           *sTurnRight = <span class="kw">new</span> <span class="ex">QState</span>(),</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true"></a>           *sTurnLeft = <span class="kw">new</span> <span class="ex">QState</span>();</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true"></a></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true"></a>    m.addState(sResting);</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true"></a>    m.addState(sOne);</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true"></a>    m.addState(sTwo);</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true"></a>    m.addState(sThree);</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true"></a>    m.addState(sFour);</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true"></a>    m.addState(sTurning);</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true"></a>    m.addState(sTurnRight);</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true"></a>    m.addState(sTurnLeft);</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true"></a>    m.setInitialState(sResting);</span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true"></a></span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true"></a>    sResting-&gt;addTransition(&amp;b._right, <span class="ex">SIGNAL</span>(clicked()), sOne);</span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true"></a>    sResting-&gt;addTransition(&amp;b._left, <span class="ex">SIGNAL</span>(clicked()), sOne);</span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true"></a>    sOne-&gt;addTransition(&amp;b._right, <span class="ex">SIGNAL</span>(clicked()), sTwo);</span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true"></a>    sOne-&gt;addTransition(&amp;b._left, <span class="ex">SIGNAL</span>(clicked()), sTwo);</span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true"></a>    sOne-&gt;addTransition(<span class="kw">new</span> ReturnTransition(sResting));</span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true"></a>    sTwo-&gt;addTransition(&amp;b._right, <span class="ex">SIGNAL</span>(clicked()), sThree);</span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true"></a>    sTwo-&gt;addTransition(&amp;b._left, <span class="ex">SIGNAL</span>(clicked()), sThree);</span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true"></a>    sTwo-&gt;addTransition(<span class="kw">new</span> ReturnTransition(sResting));</span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true"></a>    sThree-&gt;addTransition(&amp;b._right, <span class="ex">SIGNAL</span>(clicked()), sFour);</span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true"></a>    sThree-&gt;addTransition(&amp;b._left, <span class="ex">SIGNAL</span>(clicked()), sFour);</span>
+<span id="cb6-37"><a href="#cb6-37" aria-hidden="true"></a>    sThree-&gt;addTransition(<span class="kw">new</span> ReturnTransition(sResting));</span>
+<span id="cb6-38"><a href="#cb6-38" aria-hidden="true"></a>    sFour-&gt;addTransition(sTurning);</span>
+<span id="cb6-39"><a href="#cb6-39" aria-hidden="true"></a>    sTurning-&gt;addTransition(&amp;b._right, <span class="ex">SIGNAL</span>(clicked()), sTurnRight);</span>
+<span id="cb6-40"><a href="#cb6-40" aria-hidden="true"></a>    sTurning-&gt;addTransition(&amp;b._left, <span class="ex">SIGNAL</span>(clicked()), sTurnLeft);</span>
+<span id="cb6-41"><a href="#cb6-41" aria-hidden="true"></a>    sTurning-&gt;addTransition(<span class="kw">new</span> ReturnTransition(sResting));</span>
+<span id="cb6-42"><a href="#cb6-42" aria-hidden="true"></a>    sTurnRight-&gt;addTransition(sTurning);</span>
+<span id="cb6-43"><a href="#cb6-43" aria-hidden="true"></a>    sTurnLeft-&gt;addTransition(sTurning);</span>
+<span id="cb6-44"><a href="#cb6-44" aria-hidden="true"></a></span>
+<span id="cb6-45"><a href="#cb6-45" aria-hidden="true"></a>    <span class="ex">QObject::</span>connect(sResting, <span class="ex">SIGNAL</span>(entered()), &amp;b, <span class="ex">SLOT</span>(sRestingEntered()));</span>
+<span id="cb6-46"><a href="#cb6-46" aria-hidden="true"></a>    <span class="ex">QObject::</span>connect(sOne, <span class="ex">SIGNAL</span>(entered()), &amp;b, <span class="ex">SLOT</span>(sOneEntered()));</span>
+<span id="cb6-47"><a href="#cb6-47" aria-hidden="true"></a>    <span class="ex">QObject::</span>connect(sTwo, <span class="ex">SIGNAL</span>(entered()), &amp;b, <span class="ex">SLOT</span>(sTwoEntered()));</span>
+<span id="cb6-48"><a href="#cb6-48" aria-hidden="true"></a>    <span class="ex">QObject::</span>connect(sThree, <span class="ex">SIGNAL</span>(entered()), &amp;b, <span class="ex">SLOT</span>(sThreeEntered()));</span>
+<span id="cb6-49"><a href="#cb6-49" aria-hidden="true"></a>    <span class="ex">QObject::</span>connect(sFour, <span class="ex">SIGNAL</span>(entered()), &amp;b, <span class="ex">SLOT</span>(sFourEntered()));</span>
+<span id="cb6-50"><a href="#cb6-50" aria-hidden="true"></a>    <span class="ex">QObject::</span>connect(sTurning, <span class="ex">SIGNAL</span>(entered()), &amp;b, <span class="ex">SLOT</span>(sTurningEntered()));</span>
+<span id="cb6-51"><a href="#cb6-51" aria-hidden="true"></a>    <span class="ex">QObject::</span>connect(sTurnRight, <span class="ex">SIGNAL</span>(entered()), &amp;b, <span class="ex">SLOT</span>(sTurnRightEntered()));</span>
+<span id="cb6-52"><a href="#cb6-52" aria-hidden="true"></a>    <span class="ex">QObject::</span>connect(sTurnLeft, <span class="ex">SIGNAL</span>(entered()), &amp;b, <span class="ex">SLOT</span>(sTurnLeftEntered()));</span>
+<span id="cb6-53"><a href="#cb6-53" aria-hidden="true"></a></span>
+<span id="cb6-54"><a href="#cb6-54" aria-hidden="true"></a>    m.start();</span>
+<span id="cb6-55"><a href="#cb6-55" aria-hidden="true"></a></span>
+<span id="cb6-56"><a href="#cb6-56" aria-hidden="true"></a>    <span class="cf">return</span>(app.exec());</span>
+<span id="cb6-57"><a href="#cb6-57" aria-hidden="true"></a>}</span></code></pre></div>
 <h3 id="conclusion-and-open-questions">Conclusion and open questions</h3>
 <p>I’m fairly happy with the solution, but I’d be curious how other people, people more skilled in using Qt, would have solved the problem.</p>
 <p>For a while I considered solving the skipping of four initial signals using a single state and counter, but I saw no obvious easy way to implement that, so I instead opted to use separate states. Slightly wasteful of resources, but not too bad, and simplicity <em>is</em> important. I’m very curious to find out if there’s a simply way to implement it using a single state.</p>

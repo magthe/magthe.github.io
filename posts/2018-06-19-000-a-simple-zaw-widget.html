@@ -30,24 +30,24 @@
 </header>
 
 <p>A colleague at work showed me a script he put together to quickly jump to the numerous git projects we work with. It’s based on <code>dmenu</code> and looks rather nice. However, I’d rather have something based on <code>zsh</code>, but when looking around I didn’t find anything that really fit. So, instead I ended up writing a simple widget for <a href="https://github.com/zsh-users/zaw">zaw</a>.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode zsh"><code class="sourceCode zsh"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">function</span><span class="fu"> magus-git-projs()</span> <span class="kw">{</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a>    <span class="ot">projs=</span><span class="st">&quot;</span><span class="ot">$(</span><span class="kw">find</span> ~/projs -maxdepth 2 -name .git -exec <span class="kw">dirname</span> <span class="dt">{}</span> <span class="dt">\;</span><span class="ot">)</span><span class="st">&quot;</span></span>
-<span id="cb1-3"><a href="#cb1-3"></a>    <span class="ot">candidates=(</span>$<span class="dt">{(f)projs}</span><span class="ot">)</span></span>
-<span id="cb1-4"><a href="#cb1-4"></a>    <span class="ot">actions=(</span>magus-git-projs-cd</span>
-<span id="cb1-5"><a href="#cb1-5"></a>             magus-git-projs-edit-first)</span>
-<span id="cb1-6"><a href="#cb1-6"></a><span class="kw">}</span></span>
-<span id="cb1-7"><a href="#cb1-7"></a></span>
-<span id="cb1-8"><a href="#cb1-8"></a><span class="kw">function</span><span class="fu"> magus-git-projs-cd()</span> <span class="kw">{</span></span>
-<span id="cb1-9"><a href="#cb1-9"></a>    zaw-callback-execute <span class="st">&quot;cd </span><span class="ot">${1}</span><span class="st">&quot;</span></span>
-<span id="cb1-10"><a href="#cb1-10"></a><span class="kw">}</span></span>
-<span id="cb1-11"><a href="#cb1-11"></a></span>
-<span id="cb1-12"><a href="#cb1-12"></a><span class="kw">function</span><span class="fu"> magus-git-projs-edit-first()</span> <span class="kw">{</span></span>
-<span id="cb1-13"><a href="#cb1-13"></a>    zaw-callback-replace-buffer <span class="st">&quot;cd </span><span class="ot">${1}</span><span class="st">&quot;</span></span>
-<span id="cb1-14"><a href="#cb1-14"></a><span class="kw">}</span></span>
-<span id="cb1-15"><a href="#cb1-15"></a></span>
-<span id="cb1-16"><a href="#cb1-16"></a>zaw-register-src -n git-projs magus-git-projs</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode zsh"><code class="sourceCode zsh"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">function</span><span class="fu"> magus-git-projs()</span> <span class="kw">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>    <span class="ot">projs=</span><span class="st">&quot;</span><span class="ot">$(</span><span class="kw">find</span> ~/projs -maxdepth 2 -name .git -exec <span class="kw">dirname</span> <span class="dt">{}</span> <span class="dt">\;</span><span class="ot">)</span><span class="st">&quot;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>    <span class="ot">candidates=(</span>$<span class="dt">{(f)projs}</span><span class="ot">)</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>    <span class="ot">actions=(</span>magus-git-projs-cd</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>             magus-git-projs-edit-first)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a><span class="kw">}</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a><span class="kw">function</span><span class="fu"> magus-git-projs-cd()</span> <span class="kw">{</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a>    zaw-callback-execute <span class="st">&quot;cd </span><span class="ot">${1}</span><span class="st">&quot;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a><span class="kw">}</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a><span class="kw">function</span><span class="fu"> magus-git-projs-edit-first()</span> <span class="kw">{</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true"></a>    zaw-callback-replace-buffer <span class="st">&quot;cd </span><span class="ot">${1}</span><span class="st">&quot;</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true"></a><span class="kw">}</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true"></a>zaw-register-src -n git-projs magus-git-projs</span></code></pre></div>
 <p>I then attached bound it like this</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode zsh"><code class="sourceCode zsh"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">bindkey</span> -M vicmd <span class="st">'zgp'</span> zaw-git-projs</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode zsh"><code class="sourceCode zsh"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="kw">bindkey</span> -M vicmd <span class="st">'zgp'</span> zaw-git-projs</span></code></pre></div>
 
 
 </div>

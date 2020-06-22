@@ -30,22 +30,22 @@
 </header>
 
 <p>The code in the <a href="../posts/2016-01-15-000-free-play--part-two.html">previous post</a> can do with a bit of cleaning up. I start with introducing a type class for an API that can be run</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">class</span> <span class="dt">RunnableF</span> f <span class="kw">where</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="ot">  runOp ::</span> f a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">class</span> <span class="dt">RunnableF</span> f <span class="kw">where</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a><span class="ot">  runOp ::</span> f a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span></code></pre></div>
 <p>and a function that actually runs iteFile</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="ot">runF ::</span> (<span class="dt">RunnableF</span> o) <span class="ot">=&gt;</span> <span class="dt">Free</span> o a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span>
-<span id="cb2-2"><a href="#cb2-2"></a>runF <span class="ot">=</span> foldFree runOp</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="ot">runF ::</span> (<span class="dt">RunnableF</span> o) <span class="ot">=&gt;</span> <span class="dt">Free</span> o a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>runF <span class="ot">=</span> foldFree runOp</span></code></pre></div>
 <p>A coproduct (<code>Sum</code>) of two runnable APIs can itself be runnable</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">instance</span> (<span class="dt">RunnableF</span> f, <span class="dt">RunnableF</span> g) <span class="ot">=&gt;</span> <span class="dt">RunnableF</span> (<span class="dt">Sum</span> f g) <span class="kw">where</span></span>
-<span id="cb3-2"><a href="#cb3-2"></a>  runOp (<span class="dt">InL</span> op) <span class="ot">=</span> runOp op</span>
-<span id="cb3-3"><a href="#cb3-3"></a>  runOp (<span class="dt">InR</span> op) <span class="ot">=</span> runOp op</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="kw">instance</span> (<span class="dt">RunnableF</span> f, <span class="dt">RunnableF</span> g) <span class="ot">=&gt;</span> <span class="dt">RunnableF</span> (<span class="dt">Sum</span> f g) <span class="kw">where</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>  runOp (<span class="dt">InL</span> op) <span class="ot">=</span> runOp op</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>  runOp (<span class="dt">InR</span> op) <span class="ot">=</span> runOp op</span></code></pre></div>
 <p>After this all I have to do is to move the guts of <code>runSimpleF</code> and <code>runLogging</code> into implementations for <code>SimpleFil</code> and <code>LogF</code> respectively</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">instance</span> <span class="dt">RunnableF</span> <span class="dt">SimpleFileF</span> <span class="kw">where</span></span>
-<span id="cb4-2"><a href="#cb4-2"></a>  runOp (<span class="dt">LoadFile</span> fp f') <span class="ot">=</span> liftM f' <span class="op">$</span> <span class="fu">readFile</span> fp</span>
-<span id="cb4-3"><a href="#cb4-3"></a>  runOp (<span class="dt">SaveFile</span> fp d r) <span class="ot">=</span> <span class="fu">writeFile</span> fp d <span class="op">&gt;&gt;</span> <span class="fu">return</span> r</span>
-<span id="cb4-4"><a href="#cb4-4"></a></span>
-<span id="cb4-5"><a href="#cb4-5"></a><span class="kw">instance</span> <span class="dt">RunnableF</span> <span class="dt">LogF</span> <span class="kw">where</span></span>
-<span id="cb4-6"><a href="#cb4-6"></a>  runOp (<span class="dt">Log</span> s a)<span class="ot">=</span> <span class="fu">putStrLn</span> s <span class="op">&gt;&gt;</span> <span class="fu">return</span> a</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">RunnableF</span> <span class="dt">SimpleFileF</span> <span class="kw">where</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>  runOp (<span class="dt">LoadFile</span> fp f') <span class="ot">=</span> liftM f' <span class="op">$</span> <span class="fu">readFile</span> fp</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a>  runOp (<span class="dt">SaveFile</span> fp d r) <span class="ot">=</span> <span class="fu">writeFile</span> fp d <span class="op">&gt;&gt;</span> <span class="fu">return</span> r</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">RunnableF</span> <span class="dt">LogF</span> <span class="kw">where</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true"></a>  runOp (<span class="dt">Log</span> s a)<span class="ot">=</span> <span class="fu">putStrLn</span> s <span class="op">&gt;&gt;</span> <span class="fu">return</span> a</span></code></pre></div>
 <p>The rest is left as is. Running now looks like this</p>
 <pre><code>&gt; :! cat test.txt
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec a diam lectus.

@@ -30,7 +30,7 @@
 </header>
 
 <p>Lately I’ve been playing around <a href="https://hackage.haskell.org/package/conduit">conduit</a>. One thing I wanted to try out was to set up processing where one processing step was chosen on random from a number of components, based on weights. In short I guess I wanted a function with a type something like this</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="ot">foo ::</span> [(<span class="dt">Int</span>, <span class="dt">ConduitT</span> i o m r)] <span class="ot">-&gt;</span> <span class="dt">ConduitT</span> i o m r</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="ot">foo ::</span> [(<span class="dt">Int</span>, <span class="dt">ConduitT</span> i o m r)] <span class="ot">-&gt;</span> <span class="dt">ConduitT</span> i o m r</span></code></pre></div>
 <p>I have to admit I don’t even know where to start writing such a function<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> but after a little bit of thinking I realised I could get the same effect by controlling how chunks of data is routed. That is, instead of choosing a component randomly, I can choose a route randomly. It would look something like when choosing from three components</p>
 <pre><code>                        +---------+   +----------+   +-------------+
                         | Filter  |   | Drop tag |   | Component A |
@@ -63,24 +63,24 @@
 <li>for dropping the tag, use <a href="https://hackage.haskell.org/package/conduit-1.3.1/docs/Data-Conduit-Combinators.html#v:map"><code>map</code></a></li>
 </ul>
 <p>What’s left is the beginning. I started with a function to pick a value on random based on weights<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a></p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="ot">pickByWeight ::</span> [(<span class="dt">Int</span>, b)] <span class="ot">-&gt;</span> <span class="dt">IO</span> b</span>
-<span id="cb3-2"><a href="#cb3-2"></a>pickByWeight xs <span class="ot">=</span> randomRIO (<span class="dv">1</span>, tot) <span class="op">&gt;&gt;=</span> \ n <span class="ot">-&gt;</span> <span class="fu">return</span> (pick n xs)</span>
-<span id="cb3-3"><a href="#cb3-3"></a>  <span class="kw">where</span></span>
-<span id="cb3-4"><a href="#cb3-4"></a>    tot <span class="ot">=</span> <span class="fu">sum</span> <span class="op">$</span> <span class="fu">map</span> <span class="fu">fst</span> xs</span>
-<span id="cb3-5"><a href="#cb3-5"></a></span>
-<span id="cb3-6"><a href="#cb3-6"></a>    pick n ((k, x)<span class="op">:</span>xs)</span>
-<span id="cb3-7"><a href="#cb3-7"></a>      <span class="op">|</span> n <span class="op">&lt;=</span> k <span class="ot">=</span> x</span>
-<span id="cb3-8"><a href="#cb3-8"></a>      <span class="op">|</span> <span class="fu">otherwise</span> <span class="ot">=</span> pick (n <span class="op">-</span> k) xs</span>
-<span id="cb3-9"><a href="#cb3-9"></a>    pick _ _ <span class="ot">=</span> <span class="fu">error</span> <span class="st">&quot;pick error&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="ot">pickByWeight ::</span> [(<span class="dt">Int</span>, b)] <span class="ot">-&gt;</span> <span class="dt">IO</span> b</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>pickByWeight xs <span class="ot">=</span> randomRIO (<span class="dv">1</span>, tot) <span class="op">&gt;&gt;=</span> \ n <span class="ot">-&gt;</span> <span class="fu">return</span> (pick n xs)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>  <span class="kw">where</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a>    tot <span class="ot">=</span> <span class="fu">sum</span> <span class="op">$</span> <span class="fu">map</span> <span class="fu">fst</span> xs</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true"></a>    pick n ((k, x)<span class="op">:</span>xs)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true"></a>      <span class="op">|</span> n <span class="op">&lt;=</span> k <span class="ot">=</span> x</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true"></a>      <span class="op">|</span> <span class="fu">otherwise</span> <span class="ot">=</span> pick (n <span class="op">-</span> k) xs</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true"></a>    pick _ _ <span class="ot">=</span> <span class="fu">error</span> <span class="st">&quot;pick error&quot;</span></span></code></pre></div>
 <p>Using that I then made a component that tags chunks</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a>picker ws <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb4-2"><a href="#cb4-2"></a>  evt <span class="ot">&lt;-</span> await</span>
-<span id="cb4-3"><a href="#cb4-3"></a>  <span class="kw">case</span> evt <span class="kw">of</span></span>
-<span id="cb4-4"><a href="#cb4-4"></a>    <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="fu">return</span> ()</span>
-<span id="cb4-5"><a href="#cb4-5"></a>    <span class="dt">Just</span> e <span class="ot">-&gt;</span> <span class="kw">do</span></span>
-<span id="cb4-6"><a href="#cb4-6"></a>      p <span class="ot">&lt;-</span> liftIO <span class="op">$</span> pickByWeight ws</span>
-<span id="cb4-7"><a href="#cb4-7"></a>      yield (p, e)</span>
-<span id="cb4-8"><a href="#cb4-8"></a>      picker ws</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a>picker ws <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>  evt <span class="ot">&lt;-</span> await</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a>  <span class="kw">case</span> evt <span class="kw">of</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a>    <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="fu">return</span> ()</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a>    <span class="dt">Just</span> e <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true"></a>      p <span class="ot">&lt;-</span> liftIO <span class="op">$</span> pickByWeight ws</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true"></a>      yield (p, e)</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true"></a>      picker ws</span></code></pre></div>
 <p>I was rather happy with this…</p>
 <center>
 <blockquote class="twitter-tweet" data-lang="en">

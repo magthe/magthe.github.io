@@ -30,14 +30,14 @@
 </header>
 
 <p>I recently had two functions of very similar shape, only difference was that one was pure and the other need some I/O. The former was easily written using <code>mapAccumL</code>. I failed to find a function like <code>mapAccumL</code> that runs in a monad, so I wrote up the following:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="ot">mapAccumM ::</span> (<span class="dt">Monad</span> m, <span class="dt">Traversable</span> t) <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> m (a, c)) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> m (a, t c)</span>
-<span id="cb1-2"><a href="#cb1-2"></a>mapAccumM f a l <span class="ot">=</span> swap <span class="op">&lt;$&gt;</span> runStateT (<span class="fu">mapM</span> go l) a</span>
-<span id="cb1-3"><a href="#cb1-3"></a>    <span class="kw">where</span></span>
-<span id="cb1-4"><a href="#cb1-4"></a>        go i <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb1-5"><a href="#cb1-5"></a>            s <span class="ot">&lt;-</span> get</span>
-<span id="cb1-6"><a href="#cb1-6"></a>            (s', r) <span class="ot">&lt;-</span> lift <span class="op">$</span> f s i</span>
-<span id="cb1-7"><a href="#cb1-7"></a>            put s'</span>
-<span id="cb1-8"><a href="#cb1-8"></a>            <span class="fu">return</span> r</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="ot">mapAccumM ::</span> (<span class="dt">Monad</span> m, <span class="dt">Traversable</span> t) <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> m (a, c)) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> m (a, t c)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>mapAccumM f a l <span class="ot">=</span> swap <span class="op">&lt;$&gt;</span> runStateT (<span class="fu">mapM</span> go l) a</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>    <span class="kw">where</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>        go i <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>            s <span class="ot">&lt;-</span> get</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a>            (s', r) <span class="ot">&lt;-</span> lift <span class="op">$</span> f s i</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a>            put s'</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a>            <span class="fu">return</span> r</span></code></pre></div>
 <p>Bring on the comments/suggestions/improvements/etc!</p>
 
 
@@ -55,25 +55,25 @@ Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell
     <p class="comment-date"><time pubdate="pubdate" datetime="2015-06-09">2015-06-09</time></p>
   </header>
 <p>I guess my only comment is that <a href="https://hackage.haskell.org/package/base-4.8.0.0/docs/src/Data-Traversable.html#mapAccumL"><code>mapAccumL</code> is already based on a hidden state transformer</a>, so the generalization is natural and maybe it should even be standard?</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="co">-- left-to-right state transformer</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="kw">newtype</span> <span class="dt">StateL</span> s a <span class="ot">=</span> <span class="dt">StateL</span> {<span class="ot"> runStateL ::</span> s <span class="ot">-&gt;</span> (s, a) }</span>
-<span id="cb1-3"><a href="#cb1-3"></a></span>
-<span id="cb1-4"><a href="#cb1-4"></a><span class="kw">instance</span> <span class="dt">Functor</span> (<span class="dt">StateL</span> s) <span class="kw">where</span></span>
-<span id="cb1-5"><a href="#cb1-5"></a>    <span class="fu">fmap</span> f (<span class="dt">StateL</span> k) <span class="ot">=</span> <span class="dt">StateL</span> <span class="op">$</span> \ s <span class="ot">-&gt;</span> <span class="kw">let</span> (s', v) <span class="ot">=</span> k s <span class="kw">in</span> (s', f v)</span>
-<span id="cb1-6"><a href="#cb1-6"></a></span>
-<span id="cb1-7"><a href="#cb1-7"></a><span class="kw">instance</span> <span class="dt">Applicative</span> (<span class="dt">StateL</span> s) <span class="kw">where</span></span>
-<span id="cb1-8"><a href="#cb1-8"></a>    <span class="fu">pure</span> x <span class="ot">=</span> <span class="dt">StateL</span> (\ s <span class="ot">-&gt;</span> (s, x))</span>
-<span id="cb1-9"><a href="#cb1-9"></a>    <span class="dt">StateL</span> kf <span class="op">&lt;*&gt;</span> <span class="dt">StateL</span> kv <span class="ot">=</span> <span class="dt">StateL</span> <span class="op">$</span> \ s <span class="ot">-&gt;</span></span>
-<span id="cb1-10"><a href="#cb1-10"></a>        <span class="kw">let</span> (s', f) <span class="ot">=</span> kf s</span>
-<span id="cb1-11"><a href="#cb1-11"></a>            (s'', v) <span class="ot">=</span> kv s'</span>
-<span id="cb1-12"><a href="#cb1-12"></a>        <span class="kw">in</span> (s'', f v)</span>
-<span id="cb1-13"><a href="#cb1-13"></a></span>
-<span id="cb1-14"><a href="#cb1-14"></a><span class="co">-- |The 'mapAccumL' function behaves like a combination of 'fmap'</span></span>
-<span id="cb1-15"><a href="#cb1-15"></a><span class="co">-- and 'foldl'; it applies a function to each element of a structure,</span></span>
-<span id="cb1-16"><a href="#cb1-16"></a><span class="co">-- passing an accumulating parameter from left to right, and returning</span></span>
-<span id="cb1-17"><a href="#cb1-17"></a><span class="co">-- a final value of this accumulator together with the new structure.</span></span>
-<span id="cb1-18"><a href="#cb1-18"></a><span class="ot">mapAccumL ::</span> <span class="dt">Traversable</span> t <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> (a, c)) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> (a, t c)</span>
-<span id="cb1-19"><a href="#cb1-19"></a>mapAccumL f s t <span class="ot">=</span> runStateL (<span class="fu">traverse</span> (<span class="dt">StateL</span> <span class="op">.</span> <span class="fu">flip</span> f) t) s</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="co">-- left-to-right state transformer</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a><span class="kw">newtype</span> <span class="dt">StateL</span> s a <span class="ot">=</span> <span class="dt">StateL</span> {<span class="ot"> runStateL ::</span> s <span class="ot">-&gt;</span> (s, a) }</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">Functor</span> (<span class="dt">StateL</span> s) <span class="kw">where</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>    <span class="fu">fmap</span> f (<span class="dt">StateL</span> k) <span class="ot">=</span> <span class="dt">StateL</span> <span class="op">$</span> \ s <span class="ot">-&gt;</span> <span class="kw">let</span> (s', v) <span class="ot">=</span> k s <span class="kw">in</span> (s', f v)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">Applicative</span> (<span class="dt">StateL</span> s) <span class="kw">where</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a>    <span class="fu">pure</span> x <span class="ot">=</span> <span class="dt">StateL</span> (\ s <span class="ot">-&gt;</span> (s, x))</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a>    <span class="dt">StateL</span> kf <span class="op">&lt;*&gt;</span> <span class="dt">StateL</span> kv <span class="ot">=</span> <span class="dt">StateL</span> <span class="op">$</span> \ s <span class="ot">-&gt;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a>        <span class="kw">let</span> (s', f) <span class="ot">=</span> kf s</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a>            (s'', v) <span class="ot">=</span> kv s'</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a>        <span class="kw">in</span> (s'', f v)</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true"></a></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true"></a><span class="co">-- |The 'mapAccumL' function behaves like a combination of 'fmap'</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true"></a><span class="co">-- and 'foldl'; it applies a function to each element of a structure,</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true"></a><span class="co">-- passing an accumulating parameter from left to right, and returning</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true"></a><span class="co">-- a final value of this accumulator together with the new structure.</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true"></a><span class="ot">mapAccumL ::</span> <span class="dt">Traversable</span> t <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> (a, c)) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> (a, t c)</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true"></a>mapAccumL f s t <span class="ot">=</span> runStateL (<span class="fu">traverse</span> (<span class="dt">StateL</span> <span class="op">.</span> <span class="fu">flip</span> f) t) s</span></code></pre></div>
 </article>
 
 

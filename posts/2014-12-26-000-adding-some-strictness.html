@@ -32,23 +32,23 @@
 <p>I’ve finally found some time to solve a few more exercises on <a href="http://exercism.io/">exercim.io</a>. One exercise, called <em>Robot Simulation</em>, I solved in a straight forward way and promptly got the feedback that my choice of data type could lead to space leaks. Since it’s a dimension of Haskell programming that I rarely (read “never”) have had to think about I thought I’d take the chance to play a bit.</p>
 <h3 id="a-simplified-solution">A simplified solution</h3>
 <p>I don’t want to give away the solution to the exercise so I’m using some code of a similar shape.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">import</span> <span class="dt">Data.List</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a></span>
-<span id="cb1-3"><a href="#cb1-3"></a><span class="kw">newtype</span> <span class="dt">P</span> <span class="ot">=</span> <span class="dt">P</span> (<span class="dt">Int</span>, <span class="dt">Int</span>)</span>
-<span id="cb1-4"><a href="#cb1-4"></a>    <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span>
-<span id="cb1-5"><a href="#cb1-5"></a></span>
-<span id="cb1-6"><a href="#cb1-6"></a><span class="ot">step ::</span> <span class="dt">P</span> <span class="ot">-&gt;</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">P</span></span>
-<span id="cb1-7"><a href="#cb1-7"></a>step (<span class="dt">P</span> c) <span class="ch">'A'</span> <span class="ot">=</span> <span class="dt">P</span> (c <span class="ot">`add`</span> (<span class="dv">0</span>, <span class="dv">1</span>))</span>
-<span id="cb1-8"><a href="#cb1-8"></a>step _ _ <span class="ot">=</span> <span class="fu">undefined</span></span>
-<span id="cb1-9"><a href="#cb1-9"></a></span>
-<span id="cb1-10"><a href="#cb1-10"></a><span class="ot">add ::</span> (<span class="dt">Num</span> a, <span class="dt">Num</span> b) <span class="ot">=&gt;</span> (a, b) <span class="ot">-&gt;</span> (a, b) <span class="ot">-&gt;</span> (a, b)</span>
-<span id="cb1-11"><a href="#cb1-11"></a>add (x0, y0) (x1, y1) <span class="ot">=</span> (x0 <span class="op">+</span> x1, y0 <span class="op">+</span> y1)</span>
-<span id="cb1-12"><a href="#cb1-12"></a></span>
-<span id="cb1-13"><a href="#cb1-13"></a><span class="ot">p ::</span> <span class="dt">P</span></span>
-<span id="cb1-14"><a href="#cb1-14"></a>p <span class="ot">=</span> foldl' step (<span class="dt">P</span> (<span class="dv">0</span>, <span class="dv">0</span>)) <span class="op">$</span> <span class="fu">replicate</span> <span class="dv">5000000</span> <span class="ch">'A'</span></span>
-<span id="cb1-15"><a href="#cb1-15"></a></span>
-<span id="cb1-16"><a href="#cb1-16"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
-<span id="cb1-17"><a href="#cb1-17"></a>main <span class="ot">=</span> <span class="fu">print</span> p</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Data.List</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a><span class="kw">newtype</span> <span class="dt">P</span> <span class="ot">=</span> <span class="dt">P</span> (<span class="dt">Int</span>, <span class="dt">Int</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>    <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a><span class="ot">step ::</span> <span class="dt">P</span> <span class="ot">-&gt;</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">P</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a>step (<span class="dt">P</span> c) <span class="ch">'A'</span> <span class="ot">=</span> <span class="dt">P</span> (c <span class="ot">`add`</span> (<span class="dv">0</span>, <span class="dv">1</span>))</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a>step _ _ <span class="ot">=</span> <span class="fu">undefined</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a><span class="ot">add ::</span> (<span class="dt">Num</span> a, <span class="dt">Num</span> b) <span class="ot">=&gt;</span> (a, b) <span class="ot">-&gt;</span> (a, b) <span class="ot">-&gt;</span> (a, b)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a>add (x0, y0) (x1, y1) <span class="ot">=</span> (x0 <span class="op">+</span> x1, y0 <span class="op">+</span> y1)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true"></a><span class="ot">p ::</span> <span class="dt">P</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true"></a>p <span class="ot">=</span> foldl' step (<span class="dt">P</span> (<span class="dv">0</span>, <span class="dv">0</span>)) <span class="op">$</span> <span class="fu">replicate</span> <span class="dv">5000000</span> <span class="ch">'A'</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true"></a>main <span class="ot">=</span> <span class="fu">print</span> p</span></code></pre></div>
 <p>There’s nothing complicated about the code, but the memory usage is rather ridiculous:</p>
 <pre><code>   1,132,746,080 bytes allocated in the heap
    1,149,823,448 bytes copied during GC
@@ -75,21 +75,21 @@
 <p>The reason, AFAIU is that tuples are lazy, which means a lot of thunk building when doing the additions.</p>
 <h3 id="using-a-stricter-data-type">Using a stricter data type</h3>
 <p>The maybe easiest way to add some strictness is to add a few exclamations marks in the data type. Modifying the data type brings a few other changes though, so here’s first a version without any strictness annotations so I have something to compare with later on<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="ot">{-# LANGUAGE RecordWildCards #-}</span></span>
-<span id="cb3-2"><a href="#cb3-2"></a><span class="kw">import</span> <span class="dt">Data.List</span></span>
-<span id="cb3-3"><a href="#cb3-3"></a></span>
-<span id="cb3-4"><a href="#cb3-4"></a><span class="kw">data</span> <span class="dt">P</span> <span class="ot">=</span> <span class="dt">P</span> {<span class="ot"> pX ::</span> <span class="dt">Int</span>,<span class="ot"> pY ::</span> <span class="dt">Int</span> }</span>
-<span id="cb3-5"><a href="#cb3-5"></a>    <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span>
-<span id="cb3-6"><a href="#cb3-6"></a></span>
-<span id="cb3-7"><a href="#cb3-7"></a><span class="ot">p ::</span> <span class="dt">P</span></span>
-<span id="cb3-8"><a href="#cb3-8"></a>p <span class="ot">=</span> foldl' step (<span class="dt">P</span> <span class="dv">0</span> <span class="dv">0</span>) <span class="op">$</span> <span class="fu">replicate</span> <span class="dv">5000000</span> <span class="ch">'A'</span></span>
-<span id="cb3-9"><a href="#cb3-9"></a></span>
-<span id="cb3-10"><a href="#cb3-10"></a><span class="ot">step ::</span> <span class="dt">P</span> <span class="ot">-&gt;</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">P</span></span>
-<span id="cb3-11"><a href="#cb3-11"></a>step q<span class="op">@</span>(<span class="dt">P</span> {<span class="op">..</span>}) <span class="ch">'A'</span> <span class="ot">=</span> q { pX <span class="ot">=</span> pX <span class="op">+</span><span class="dv">1</span> }</span>
-<span id="cb3-12"><a href="#cb3-12"></a>step _ _ <span class="ot">=</span> <span class="fu">undefined</span></span>
-<span id="cb3-13"><a href="#cb3-13"></a></span>
-<span id="cb3-14"><a href="#cb3-14"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
-<span id="cb3-15"><a href="#cb3-15"></a>main <span class="ot">=</span> <span class="fu">print</span> p</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="ot">{-# LANGUAGE RecordWildCards #-}</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Data.List</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">P</span> <span class="ot">=</span> <span class="dt">P</span> {<span class="ot"> pX ::</span> <span class="dt">Int</span>,<span class="ot"> pY ::</span> <span class="dt">Int</span> }</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a>    <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true"></a><span class="ot">p ::</span> <span class="dt">P</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true"></a>p <span class="ot">=</span> foldl' step (<span class="dt">P</span> <span class="dv">0</span> <span class="dv">0</span>) <span class="op">$</span> <span class="fu">replicate</span> <span class="dv">5000000</span> <span class="ch">'A'</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true"></a><span class="ot">step ::</span> <span class="dt">P</span> <span class="ot">-&gt;</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">P</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true"></a>step q<span class="op">@</span>(<span class="dt">P</span> {<span class="op">..</span>}) <span class="ch">'A'</span> <span class="ot">=</span> q { pX <span class="ot">=</span> pX <span class="op">+</span><span class="dv">1</span> }</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true"></a>step _ _ <span class="ot">=</span> <span class="fu">undefined</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true"></a></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true"></a>main <span class="ot">=</span> <span class="fu">print</span> p</span></code></pre></div>
 <p>This solution uses about half as much memory:</p>
 <pre><code>     766,417,952 bytes allocated in the heap
      639,064,600 bytes copied during GC
@@ -113,21 +113,21 @@
 
   Productivity  19.8% of total user, 19.8% of total elapsed</code></pre>
 <p>Halving the memory usage is rather nice, but adding some strictness ought to make it better still. The code with added exclamation marks:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1"></a><span class="ot">{-# LANGUAGE RecordWildCards #-}</span></span>
-<span id="cb5-2"><a href="#cb5-2"></a><span class="kw">import</span> <span class="dt">Data.List</span></span>
-<span id="cb5-3"><a href="#cb5-3"></a></span>
-<span id="cb5-4"><a href="#cb5-4"></a><span class="kw">data</span> <span class="dt">P</span> <span class="ot">=</span> <span class="dt">P</span> {<span class="ot"> pX ::</span> <span class="op">!</span><span class="dt">Int</span>,<span class="ot"> pY ::</span> <span class="op">!</span><span class="dt">Int</span> }</span>
-<span id="cb5-5"><a href="#cb5-5"></a>    <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span>
-<span id="cb5-6"><a href="#cb5-6"></a></span>
-<span id="cb5-7"><a href="#cb5-7"></a><span class="ot">p ::</span> <span class="dt">P</span></span>
-<span id="cb5-8"><a href="#cb5-8"></a>p <span class="ot">=</span> foldl' step (<span class="dt">P</span> <span class="dv">0</span> <span class="dv">0</span>) <span class="op">$</span> <span class="fu">replicate</span> <span class="dv">5000000</span> <span class="ch">'A'</span></span>
-<span id="cb5-9"><a href="#cb5-9"></a></span>
-<span id="cb5-10"><a href="#cb5-10"></a><span class="ot">step ::</span> <span class="dt">P</span> <span class="ot">-&gt;</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">P</span></span>
-<span id="cb5-11"><a href="#cb5-11"></a>step q<span class="op">@</span>(<span class="dt">P</span> {<span class="op">..</span>}) <span class="ch">'A'</span> <span class="ot">=</span> q { pX <span class="ot">=</span> pX <span class="op">+</span><span class="dv">1</span> }</span>
-<span id="cb5-12"><a href="#cb5-12"></a>step _ _ <span class="ot">=</span> <span class="fu">undefined</span></span>
-<span id="cb5-13"><a href="#cb5-13"></a></span>
-<span id="cb5-14"><a href="#cb5-14"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
-<span id="cb5-15"><a href="#cb5-15"></a>main <span class="ot">=</span> <span class="fu">print</span> p</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="ot">{-# LANGUAGE RecordWildCards #-}</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Data.List</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">P</span> <span class="ot">=</span> <span class="dt">P</span> {<span class="ot"> pX ::</span> <span class="op">!</span><span class="dt">Int</span>,<span class="ot"> pY ::</span> <span class="op">!</span><span class="dt">Int</span> }</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true"></a>    <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true"></a><span class="ot">p ::</span> <span class="dt">P</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true"></a>p <span class="ot">=</span> foldl' step (<span class="dt">P</span> <span class="dv">0</span> <span class="dv">0</span>) <span class="op">$</span> <span class="fu">replicate</span> <span class="dv">5000000</span> <span class="ch">'A'</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true"></a></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true"></a><span class="ot">step ::</span> <span class="dt">P</span> <span class="ot">-&gt;</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">P</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true"></a>step q<span class="op">@</span>(<span class="dt">P</span> {<span class="op">..</span>}) <span class="ch">'A'</span> <span class="ot">=</span> q { pX <span class="ot">=</span> pX <span class="op">+</span><span class="dv">1</span> }</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true"></a>step _ _ <span class="ot">=</span> <span class="fu">undefined</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true"></a></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true"></a>main <span class="ot">=</span> <span class="fu">print</span> p</span></code></pre></div>
 <p>The runtime behaviour of this code is remarkably more frugal with memory:</p>
 <pre><code>     480,054,816 bytes allocated in the heap
           57,968 bytes copied during GC
@@ -153,25 +153,25 @@
 <p>Indeed, 1MB is a bit more like it!</p>
 <h3 id="strictness-with-the-original-type">Strictness with the original type</h3>
 <p>However impressive the results when using a stricter data type, it might still be preferable to keep the original, somewhat simpler, type. It is possible to do just that by placing some explicit strictness in well chosen places. Since my suspicion is that it’s the addition in <code>step</code> that causes the space leak we’ll rewrite it:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">import</span> <span class="dt">Data.List</span></span>
-<span id="cb7-2"><a href="#cb7-2"></a></span>
-<span id="cb7-3"><a href="#cb7-3"></a><span class="kw">import</span> <span class="dt">Control.DeepSeq</span></span>
-<span id="cb7-4"><a href="#cb7-4"></a></span>
-<span id="cb7-5"><a href="#cb7-5"></a><span class="kw">newtype</span> <span class="dt">P</span> <span class="ot">=</span> <span class="dt">P</span> (<span class="dt">Int</span>, <span class="dt">Int</span>)</span>
-<span id="cb7-6"><a href="#cb7-6"></a>    <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span>
-<span id="cb7-7"><a href="#cb7-7"></a></span>
-<span id="cb7-8"><a href="#cb7-8"></a><span class="ot">add ::</span> (<span class="dt">Num</span> a, <span class="dt">Num</span> b) <span class="ot">=&gt;</span> (a, b) <span class="ot">-&gt;</span> (a, b) <span class="ot">-&gt;</span> (a, b)</span>
-<span id="cb7-9"><a href="#cb7-9"></a>add (x0, y0) (x1, y1) <span class="ot">=</span> (x0 <span class="op">+</span> x1, y0 <span class="op">+</span> y1)</span>
-<span id="cb7-10"><a href="#cb7-10"></a></span>
-<span id="cb7-11"><a href="#cb7-11"></a><span class="ot">p ::</span> <span class="dt">P</span></span>
-<span id="cb7-12"><a href="#cb7-12"></a>p <span class="ot">=</span> foldl' step (<span class="dt">P</span> (<span class="dv">0</span>, <span class="dv">0</span>)) <span class="op">$</span> <span class="fu">replicate</span> <span class="dv">5000000</span> <span class="ch">'A'</span></span>
-<span id="cb7-13"><a href="#cb7-13"></a></span>
-<span id="cb7-14"><a href="#cb7-14"></a><span class="ot">step ::</span> <span class="dt">P</span> <span class="ot">-&gt;</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">P</span></span>
-<span id="cb7-15"><a href="#cb7-15"></a>step (<span class="dt">P</span> c) <span class="ch">'A'</span> <span class="ot">=</span> <span class="kw">let</span> np <span class="ot">=</span> c <span class="ot">`add`</span> (<span class="dv">0</span>, <span class="dv">1</span>) <span class="kw">in</span> np <span class="ot">`deepseq`</span> <span class="dt">P</span> np</span>
-<span id="cb7-16"><a href="#cb7-16"></a>step _ _ <span class="ot">=</span> <span class="fu">undefined</span></span>
-<span id="cb7-17"><a href="#cb7-17"></a></span>
-<span id="cb7-18"><a href="#cb7-18"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
-<span id="cb7-19"><a href="#cb7-19"></a>main <span class="ot">=</span> <span class="fu">print</span> p</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Data.List</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Control.DeepSeq</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true"></a></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true"></a><span class="kw">newtype</span> <span class="dt">P</span> <span class="ot">=</span> <span class="dt">P</span> (<span class="dt">Int</span>, <span class="dt">Int</span>)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true"></a>    <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true"></a></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true"></a><span class="ot">add ::</span> (<span class="dt">Num</span> a, <span class="dt">Num</span> b) <span class="ot">=&gt;</span> (a, b) <span class="ot">-&gt;</span> (a, b) <span class="ot">-&gt;</span> (a, b)</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true"></a>add (x0, y0) (x1, y1) <span class="ot">=</span> (x0 <span class="op">+</span> x1, y0 <span class="op">+</span> y1)</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true"></a></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true"></a><span class="ot">p ::</span> <span class="dt">P</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true"></a>p <span class="ot">=</span> foldl' step (<span class="dt">P</span> (<span class="dv">0</span>, <span class="dv">0</span>)) <span class="op">$</span> <span class="fu">replicate</span> <span class="dv">5000000</span> <span class="ch">'A'</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true"></a></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true"></a><span class="ot">step ::</span> <span class="dt">P</span> <span class="ot">-&gt;</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">P</span></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true"></a>step (<span class="dt">P</span> c) <span class="ch">'A'</span> <span class="ot">=</span> <span class="kw">let</span> np <span class="ot">=</span> c <span class="ot">`add`</span> (<span class="dv">0</span>, <span class="dv">1</span>) <span class="kw">in</span> np <span class="ot">`deepseq`</span> <span class="dt">P</span> np</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true"></a>step _ _ <span class="ot">=</span> <span class="fu">undefined</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true"></a></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true"></a>main <span class="ot">=</span> <span class="fu">print</span> p</span></code></pre></div>
 <p>Note that it’s not enough to use <code>seq</code>; a bit more force is needed, which is what <code>deepseq</code> offers. It delivers sure enough:</p>
 <pre><code>     920,052,632 bytes allocated in the heap
          198,736 bytes copied during GC
@@ -195,28 +195,28 @@
 
   Productivity  98.5% of total user, 98.9% of total elapsed</code></pre>
 <p>A further slight change is possible: implement <code>NFData</code> for <code>P</code> itself. That way it’s not necessary to pull out and force evaluation of the innards of <code>P</code>. Using the default implementation of <code>rnf</code> did not cut it though, since it uses <code>seq</code> it just isn’t forceful enough:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">import</span> <span class="dt">Data.List</span></span>
-<span id="cb9-2"><a href="#cb9-2"></a></span>
-<span id="cb9-3"><a href="#cb9-3"></a><span class="kw">import</span> <span class="dt">Control.DeepSeq</span></span>
-<span id="cb9-4"><a href="#cb9-4"></a></span>
-<span id="cb9-5"><a href="#cb9-5"></a><span class="kw">newtype</span> <span class="dt">P</span> <span class="ot">=</span> <span class="dt">P</span> (<span class="dt">Int</span>, <span class="dt">Int</span>)</span>
-<span id="cb9-6"><a href="#cb9-6"></a>    <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span>
-<span id="cb9-7"><a href="#cb9-7"></a></span>
-<span id="cb9-8"><a href="#cb9-8"></a><span class="kw">instance</span> <span class="dt">NFData</span> <span class="dt">P</span> <span class="kw">where</span></span>
-<span id="cb9-9"><a href="#cb9-9"></a>    rnf (<span class="dt">P</span> q) <span class="ot">=</span> deepseq q ()</span>
-<span id="cb9-10"><a href="#cb9-10"></a></span>
-<span id="cb9-11"><a href="#cb9-11"></a><span class="ot">add ::</span> (<span class="dt">Num</span> a, <span class="dt">Num</span> b) <span class="ot">=&gt;</span> (a, b) <span class="ot">-&gt;</span> (a, b) <span class="ot">-&gt;</span> (a, b)</span>
-<span id="cb9-12"><a href="#cb9-12"></a>add (x0, y0) (x1, y1) <span class="ot">=</span> (x0 <span class="op">+</span> x1, y0 <span class="op">+</span> y1)</span>
-<span id="cb9-13"><a href="#cb9-13"></a></span>
-<span id="cb9-14"><a href="#cb9-14"></a><span class="ot">p ::</span> <span class="dt">P</span></span>
-<span id="cb9-15"><a href="#cb9-15"></a>p <span class="ot">=</span> foldl' step (<span class="dt">P</span> (<span class="dv">0</span>, <span class="dv">0</span>)) <span class="op">$</span> <span class="fu">replicate</span> <span class="dv">5000000</span> <span class="ch">'A'</span></span>
-<span id="cb9-16"><a href="#cb9-16"></a></span>
-<span id="cb9-17"><a href="#cb9-17"></a><span class="ot">step ::</span> <span class="dt">P</span> <span class="ot">-&gt;</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">P</span></span>
-<span id="cb9-18"><a href="#cb9-18"></a>step (<span class="dt">P</span> c) <span class="ch">'A'</span> <span class="ot">=</span> <span class="kw">let</span> np <span class="ot">=</span> <span class="dt">P</span> (c <span class="ot">`add`</span> (<span class="dv">0</span>, <span class="dv">1</span>)) <span class="kw">in</span> force np</span>
-<span id="cb9-19"><a href="#cb9-19"></a>step _ _ <span class="ot">=</span> <span class="fu">undefined</span></span>
-<span id="cb9-20"><a href="#cb9-20"></a></span>
-<span id="cb9-21"><a href="#cb9-21"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
-<span id="cb9-22"><a href="#cb9-22"></a>main <span class="ot">=</span> <span class="fu">print</span> p</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Data.List</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Control.DeepSeq</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true"></a></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true"></a><span class="kw">newtype</span> <span class="dt">P</span> <span class="ot">=</span> <span class="dt">P</span> (<span class="dt">Int</span>, <span class="dt">Int</span>)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true"></a>    <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true"></a></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">NFData</span> <span class="dt">P</span> <span class="kw">where</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true"></a>    rnf (<span class="dt">P</span> q) <span class="ot">=</span> deepseq q ()</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true"></a></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true"></a><span class="ot">add ::</span> (<span class="dt">Num</span> a, <span class="dt">Num</span> b) <span class="ot">=&gt;</span> (a, b) <span class="ot">-&gt;</span> (a, b) <span class="ot">-&gt;</span> (a, b)</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true"></a>add (x0, y0) (x1, y1) <span class="ot">=</span> (x0 <span class="op">+</span> x1, y0 <span class="op">+</span> y1)</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true"></a></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true"></a><span class="ot">p ::</span> <span class="dt">P</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true"></a>p <span class="ot">=</span> foldl' step (<span class="dt">P</span> (<span class="dv">0</span>, <span class="dv">0</span>)) <span class="op">$</span> <span class="fu">replicate</span> <span class="dv">5000000</span> <span class="ch">'A'</span></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true"></a></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true"></a><span class="ot">step ::</span> <span class="dt">P</span> <span class="ot">-&gt;</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">P</span></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true"></a>step (<span class="dt">P</span> c) <span class="ch">'A'</span> <span class="ot">=</span> <span class="kw">let</span> np <span class="ot">=</span> <span class="dt">P</span> (c <span class="ot">`add`</span> (<span class="dv">0</span>, <span class="dv">1</span>)) <span class="kw">in</span> force np</span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true"></a>step _ _ <span class="ot">=</span> <span class="fu">undefined</span></span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true"></a></span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true"></a>main <span class="ot">=</span> <span class="fu">print</span> p</span></code></pre></div>
 <p>The result is close to the previous:</p>
 <pre><code>     920,052,632 bytes allocated in the heap
          198,736 bytes copied during GC

@@ -31,17 +31,17 @@
 
 <p>Lately I’ve used C++ for a tool I’ve been working on at the office. Here are some idiosyncrasies in the standard library that I’ve noticed:</p>
 <p>I was expecting the following code to compile:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1"></a><span class="bu">std::</span>string f(<span class="st">&quot;hello.txt&quot;</span>);</span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="bu">std::</span>ifstream in_file(f);</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="bu">std::</span>string f(<span class="st">&quot;hello.txt&quot;</span>);</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a><span class="bu">std::</span>ifstream in_file(f);</span></code></pre></div>
 <p>But oh no! For some reason <code>ifstream</code> doesn’t have a constructor that accepts <em>a standard C++ string</em>. Instead I am forced to pass a <code>const char *</code> to the constructor, e.g.:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="bu">std::</span>string f(<span class="st">&quot;hello.txt&quot;</span>);</span>
-<span id="cb2-2"><a href="#cb2-2"></a><span class="bu">std::</span>ifstream in_file(f.c_str());</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="bu">std::</span>string f(<span class="st">&quot;hello.txt&quot;</span>);</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a><span class="bu">std::</span>ifstream in_file(f.c_str());</span></code></pre></div>
 <p>I guess that’s an excellent example of standardisation-by-committee where one part of the committee doesn’t have a clue what the other one is doing. Pathetic, really!</p>
 <p>Now more stuff on <code>ifstream</code>. One would hope that opening a non-existing file for reading would trigger some sort of exception, at the very least reading from a non-existing file shouldn’t succeed. Oh, but not so in the wonderful world of C++. The following code compiles and executes just fine even if the file (<code>hello.txt</code>) doesn’t exist:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="bu">std::</span>ifstream inf(<span class="st">&quot;hello.txt&quot;</span>);</span>
-<span id="cb3-2"><a href="#cb3-2"></a><span class="bu">std::</span>string r;</span>
-<span id="cb3-3"><a href="#cb3-3"></a>inf &gt;&gt; r;</span>
-<span id="cb3-4"><a href="#cb3-4"></a><span class="bu">std::</span>cout &lt;&lt; r &lt;&lt; <span class="bu">std::</span>endl;</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="bu">std::</span>ifstream inf(<span class="st">&quot;hello.txt&quot;</span>);</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a><span class="bu">std::</span>string r;</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>inf &gt;&gt; r;</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a><span class="bu">std::</span>cout &lt;&lt; r &lt;&lt; <span class="bu">std::</span>endl;</span></code></pre></div>
 <p><code>r</code> is unmodified by <code>inf &gt;&gt; r;</code>. Even more interestingly <code>inf.eof()</code> returns <code>false</code>. Interestingly <code>inf.bad()</code> returns <code>false</code> too. Luckily <code>inf.good()</code> ((I can’t understand the reasoning behind having two methods, <code>good()</code> and <code>bad()</code> which aren’t each other’s opposites, their names certainly suggests they ought to be! It seems they are badly named, they should be called <code>no_error_has_occured()</code> and <code>no_exceptional_failure_has_occured()</code> respectively.)) returns <code>false</code> too, so there is some way of finding out that not all is well with <code>inf</code>. It was also pointed out that evaluating <code>inf</code> itself, such as in <code>if(inf) ...</code>, also results in <code>false</code>.</p>
 <p>Ah, now I feel much better :-)</p>
 

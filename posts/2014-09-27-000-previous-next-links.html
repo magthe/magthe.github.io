@@ -37,64 +37,64 @@
 <p>I found another <a href="http://jaspervdj.be/hakyll/">hakyll</a>-based site that already implemented such previous-next links, <a href="http://rgoulter.com/blog/">Richard Goulter’s blog</a>. He even has a <a href="http://rgoulter.com/blog/posts/programming/2014-07-06-adding-nextprevious-post-to-hakyll.html">post about its implemantation</a>. It was a rather straigth-forward implementation and it served well as inspiration.</p>
 <h2 id="code-changes">Code changes</h2>
 <p>I want the links to have the post titles, not just general text like “previous post” and “next post”. That meant putting a total of four values into the context used to render the individual post pages, two URLs and two titles. That means <code>postCtx</code> will look like this:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">let</span> postCtx <span class="ot">=</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a>        field <span class="st">&quot;previousPostUrl&quot;</span> (previousPostUrl <span class="st">&quot;posts/*&quot;</span>) <span class="op">&lt;&gt;</span></span>
-<span id="cb1-3"><a href="#cb1-3"></a>        field <span class="st">&quot;previousPostTitle&quot;</span> (previousPostTitle <span class="st">&quot;posts/*&quot;</span>) <span class="op">&lt;&gt;</span></span>
-<span id="cb1-4"><a href="#cb1-4"></a>        field <span class="st">&quot;nextPostUrl&quot;</span> (nextPostUrl <span class="st">&quot;posts/*&quot;</span>) <span class="op">&lt;&gt;</span></span>
-<span id="cb1-5"><a href="#cb1-5"></a>        field <span class="st">&quot;nextPostTitle&quot;</span> (nextPostTitle <span class="st">&quot;posts/*&quot;</span>) <span class="op">&lt;&gt;</span></span>
-<span id="cb1-6"><a href="#cb1-6"></a>        baseCtx</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">let</span> postCtx <span class="ot">=</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>        field <span class="st">&quot;previousPostUrl&quot;</span> (previousPostUrl <span class="st">&quot;posts/*&quot;</span>) <span class="op">&lt;&gt;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>        field <span class="st">&quot;previousPostTitle&quot;</span> (previousPostTitle <span class="st">&quot;posts/*&quot;</span>) <span class="op">&lt;&gt;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>        field <span class="st">&quot;nextPostUrl&quot;</span> (nextPostUrl <span class="st">&quot;posts/*&quot;</span>) <span class="op">&lt;&gt;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>        field <span class="st">&quot;nextPostTitle&quot;</span> (nextPostTitle <span class="st">&quot;posts/*&quot;</span>) <span class="op">&lt;&gt;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a>        baseCtx</span></code></pre></div>
 <p>In implementing the functions to extract the URLs and titles I first tried working on a snapshot but that only resulted in circular dependencies, so I had to follow Richard’s lead and used <code>Identifier</code> to drive the whole thing. When done with functions for extracting both URL and title there was an obvious pattern so I generalised a little and refactored into a single function to do the grunt work:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="ot">withRelatedPost::</span> (<span class="dt">MonadMetadata</span> m, <span class="dt">Alternative</span> m) <span class="ot">=&gt;</span></span>
-<span id="cb2-2"><a href="#cb2-2"></a>    (<span class="dt">Identifier</span> <span class="ot">-&gt;</span> [<span class="dt">Identifier</span>] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> t) <span class="ot">-&gt;</span> (t <span class="ot">-&gt;</span> m b) <span class="ot">-&gt;</span> <span class="dt">Pattern</span> <span class="ot">-&gt;</span> <span class="dt">Item</span> a <span class="ot">-&gt;</span> m b</span>
-<span id="cb2-3"><a href="#cb2-3"></a>withRelatedPost r f <span class="kw">pattern</span> item <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb2-4"><a href="#cb2-4"></a>    idents <span class="ot">&lt;-</span> getMatches <span class="kw">pattern</span> <span class="op">&gt;&gt;=</span> sortRecentFirst</span>
-<span id="cb2-5"><a href="#cb2-5"></a>    <span class="kw">let</span> <span class="fu">id</span> <span class="ot">=</span> itemIdentifier item</span>
-<span id="cb2-6"><a href="#cb2-6"></a>        prevId <span class="ot">=</span> r <span class="fu">id</span> idents</span>
-<span id="cb2-7"><a href="#cb2-7"></a>    <span class="kw">case</span> prevId <span class="kw">of</span></span>
-<span id="cb2-8"><a href="#cb2-8"></a>        <span class="dt">Just</span> i <span class="ot">-&gt;</span> f i</span>
-<span id="cb2-9"><a href="#cb2-9"></a>        <span class="dt">Nothing</span> <span class="ot">-&gt;</span> empty</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="ot">withRelatedPost::</span> (<span class="dt">MonadMetadata</span> m, <span class="dt">Alternative</span> m) <span class="ot">=&gt;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>    (<span class="dt">Identifier</span> <span class="ot">-&gt;</span> [<span class="dt">Identifier</span>] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> t) <span class="ot">-&gt;</span> (t <span class="ot">-&gt;</span> m b) <span class="ot">-&gt;</span> <span class="dt">Pattern</span> <span class="ot">-&gt;</span> <span class="dt">Item</span> a <span class="ot">-&gt;</span> m b</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a>withRelatedPost r f <span class="kw">pattern</span> item <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a>    idents <span class="ot">&lt;-</span> getMatches <span class="kw">pattern</span> <span class="op">&gt;&gt;=</span> sortRecentFirst</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a>    <span class="kw">let</span> <span class="fu">id</span> <span class="ot">=</span> itemIdentifier item</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a>        prevId <span class="ot">=</span> r <span class="fu">id</span> idents</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a>    <span class="kw">case</span> prevId <span class="kw">of</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a>        <span class="dt">Just</span> i <span class="ot">-&gt;</span> f i</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true"></a>        <span class="dt">Nothing</span> <span class="ot">-&gt;</span> empty</span></code></pre></div>
 <p>The <code>r</code> argument is a function that given the ID of the current item, and a list of the IDs of all items (sorted with the most recent first) returns the ID of a single item. With that it’s possible to create two more functions, one that operates on the previous post and one on the next post:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="ot">withPreviousPost ::</span> (<span class="dt">MonadMetadata</span> m, <span class="dt">Alternative</span> m) <span class="ot">=&gt;</span> (<span class="dt">Identifier</span> <span class="ot">-&gt;</span> m b) <span class="ot">-&gt;</span> <span class="dt">Pattern</span> <span class="ot">-&gt;</span> <span class="dt">Item</span> a <span class="ot">-&gt;</span> m b</span>
-<span id="cb3-2"><a href="#cb3-2"></a>withPreviousPost <span class="ot">=</span> withRelatedPost itemAfter</span>
-<span id="cb3-3"><a href="#cb3-3"></a>    <span class="kw">where</span></span>
-<span id="cb3-4"><a href="#cb3-4"></a>        itemAfter x xs <span class="ot">=</span> <span class="fu">lookup</span> x <span class="op">$</span> <span class="fu">zip</span> xs (<span class="fu">tail</span> xs)</span>
-<span id="cb3-5"><a href="#cb3-5"></a></span>
-<span id="cb3-6"><a href="#cb3-6"></a><span class="ot">withNextPost ::</span> (<span class="dt">MonadMetadata</span> m, <span class="dt">Alternative</span> m) <span class="ot">=&gt;</span> (<span class="dt">Identifier</span> <span class="ot">-&gt;</span> m b) <span class="ot">-&gt;</span> <span class="dt">Pattern</span> <span class="ot">-&gt;</span> <span class="dt">Item</span> a <span class="ot">-&gt;</span> m b</span>
-<span id="cb3-7"><a href="#cb3-7"></a>withNextPost <span class="ot">=</span> withRelatedPost itemBefore</span>
-<span id="cb3-8"><a href="#cb3-8"></a>    <span class="kw">where</span></span>
-<span id="cb3-9"><a href="#cb3-9"></a>        itemBefore x xs <span class="ot">=</span> <span class="fu">lookup</span> x <span class="op">$</span> <span class="fu">zip</span> (<span class="fu">tail</span> xs) xs</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="ot">withPreviousPost ::</span> (<span class="dt">MonadMetadata</span> m, <span class="dt">Alternative</span> m) <span class="ot">=&gt;</span> (<span class="dt">Identifier</span> <span class="ot">-&gt;</span> m b) <span class="ot">-&gt;</span> <span class="dt">Pattern</span> <span class="ot">-&gt;</span> <span class="dt">Item</span> a <span class="ot">-&gt;</span> m b</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>withPreviousPost <span class="ot">=</span> withRelatedPost itemAfter</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>    <span class="kw">where</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a>        itemAfter x xs <span class="ot">=</span> <span class="fu">lookup</span> x <span class="op">$</span> <span class="fu">zip</span> xs (<span class="fu">tail</span> xs)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true"></a><span class="ot">withNextPost ::</span> (<span class="dt">MonadMetadata</span> m, <span class="dt">Alternative</span> m) <span class="ot">=&gt;</span> (<span class="dt">Identifier</span> <span class="ot">-&gt;</span> m b) <span class="ot">-&gt;</span> <span class="dt">Pattern</span> <span class="ot">-&gt;</span> <span class="dt">Item</span> a <span class="ot">-&gt;</span> m b</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true"></a>withNextPost <span class="ot">=</span> withRelatedPost itemBefore</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true"></a>    <span class="kw">where</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true"></a>        itemBefore x xs <span class="ot">=</span> <span class="fu">lookup</span> x <span class="op">$</span> <span class="fu">zip</span> (<span class="fu">tail</span> xs) xs</span></code></pre></div>
 <p>Now getting the URLs and titles becomes a few single-line functions:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a><span class="ot">previousPostUrl ::</span> <span class="dt">Pattern</span> <span class="ot">-&gt;</span> <span class="dt">Item</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Compiler</span> <span class="dt">String</span></span>
-<span id="cb4-2"><a href="#cb4-2"></a>previousPostUrl <span class="ot">=</span> withPreviousPost (<span class="fu">fmap</span> (<span class="fu">maybe</span> empty toUrl) <span class="op">.</span> getRoute)</span>
-<span id="cb4-3"><a href="#cb4-3"></a></span>
-<span id="cb4-4"><a href="#cb4-4"></a><span class="ot">previousPostTitle ::</span> <span class="dt">Pattern</span> <span class="ot">-&gt;</span> <span class="dt">Item</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Compiler</span> <span class="dt">String</span></span>
-<span id="cb4-5"><a href="#cb4-5"></a>previousPostTitle <span class="ot">=</span> withPreviousPost (\ i <span class="ot">-&gt;</span> getMetadataField' i <span class="st">&quot;title&quot;</span>)</span>
-<span id="cb4-6"><a href="#cb4-6"></a></span>
-<span id="cb4-7"><a href="#cb4-7"></a><span class="ot">nextPostUrl ::</span> <span class="dt">Pattern</span> <span class="ot">-&gt;</span> <span class="dt">Item</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Compiler</span> <span class="dt">String</span></span>
-<span id="cb4-8"><a href="#cb4-8"></a>nextPostUrl <span class="ot">=</span> withNextPost (<span class="fu">fmap</span> (<span class="fu">maybe</span> empty toUrl) <span class="op">.</span> getRoute)</span>
-<span id="cb4-9"><a href="#cb4-9"></a></span>
-<span id="cb4-10"><a href="#cb4-10"></a><span class="ot">nextPostTitle ::</span> <span class="dt">Pattern</span> <span class="ot">-&gt;</span> <span class="dt">Item</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Compiler</span> <span class="dt">String</span></span>
-<span id="cb4-11"><a href="#cb4-11"></a>nextPostTitle <span class="ot">=</span> withNextPost (<span class="fu">flip</span> getMetadataField' <span class="st">&quot;title&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="ot">previousPostUrl ::</span> <span class="dt">Pattern</span> <span class="ot">-&gt;</span> <span class="dt">Item</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Compiler</span> <span class="dt">String</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>previousPostUrl <span class="ot">=</span> withPreviousPost (<span class="fu">fmap</span> (<span class="fu">maybe</span> empty toUrl) <span class="op">.</span> getRoute)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a><span class="ot">previousPostTitle ::</span> <span class="dt">Pattern</span> <span class="ot">-&gt;</span> <span class="dt">Item</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Compiler</span> <span class="dt">String</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a>previousPostTitle <span class="ot">=</span> withPreviousPost (\ i <span class="ot">-&gt;</span> getMetadataField' i <span class="st">&quot;title&quot;</span>)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true"></a><span class="ot">nextPostUrl ::</span> <span class="dt">Pattern</span> <span class="ot">-&gt;</span> <span class="dt">Item</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Compiler</span> <span class="dt">String</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true"></a>nextPostUrl <span class="ot">=</span> withNextPost (<span class="fu">fmap</span> (<span class="fu">maybe</span> empty toUrl) <span class="op">.</span> getRoute)</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true"></a><span class="ot">nextPostTitle ::</span> <span class="dt">Pattern</span> <span class="ot">-&gt;</span> <span class="dt">Item</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Compiler</span> <span class="dt">String</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true"></a>nextPostTitle <span class="ot">=</span> withNextPost (<span class="fu">flip</span> getMetadataField' <span class="st">&quot;title&quot;</span>)</span></code></pre></div>
 <p>What’s left is putting the fields to use in a template. The template itself is in the following section. The compilation step is modified to use the new context, and the new template is put in after the snapshot so the added links don’t appear in the <code>index.html</code>.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1"></a>pandocCompiler</span>
-<span id="cb5-2"><a href="#cb5-2"></a>    <span class="op">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/single-post.html&quot;</span> postCtx</span>
-<span id="cb5-3"><a href="#cb5-3"></a>    <span class="op">&gt;&gt;=</span> saveSnapshot <span class="st">&quot;posts-content&quot;</span></span>
-<span id="cb5-4"><a href="#cb5-4"></a>    <span class="op">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/single-post-prev-next.html&quot;</span> postCtx</span>
-<span id="cb5-5"><a href="#cb5-5"></a>    <span class="op">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/default.html&quot;</span> postCtx</span>
-<span id="cb5-6"><a href="#cb5-6"></a>    <span class="op">&gt;&gt;=</span> relativizeUrls</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a>pandocCompiler</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a>    <span class="op">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/single-post.html&quot;</span> postCtx</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a>    <span class="op">&gt;&gt;=</span> saveSnapshot <span class="st">&quot;posts-content&quot;</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a>    <span class="op">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/single-post-prev-next.html&quot;</span> postCtx</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true"></a>    <span class="op">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/default.html&quot;</span> postCtx</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true"></a>    <span class="op">&gt;&gt;=</span> relativizeUrls</span></code></pre></div>
 <h2 id="template-changes">Template changes</h2>
 <p>The added template is short and rather short and obvious:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode html"><code class="sourceCode html"><span id="cb6-1"><a href="#cb6-1"></a>$body$</span>
-<span id="cb6-2"><a href="#cb6-2"></a></span>
-<span id="cb6-3"><a href="#cb6-3"></a><span class="kw">&lt;div&gt;</span></span>
-<span id="cb6-4"><a href="#cb6-4"></a>$if(previousPostUrl)$</span>
-<span id="cb6-5"><a href="#cb6-5"></a><span class="kw">&lt;a</span><span class="ot"> href=</span><span class="st">&quot;$previousPostUrl$&quot;</span><span class="kw">&gt;</span><span class="dv">&amp;#10232;</span> $previousPostTitle$<span class="kw">&lt;/a&gt;</span></span>
-<span id="cb6-6"><a href="#cb6-6"></a>$endif$</span>
-<span id="cb6-7"><a href="#cb6-7"></a></span>
-<span id="cb6-8"><a href="#cb6-8"></a>$if(nextPostUrl)$</span>
-<span id="cb6-9"><a href="#cb6-9"></a><span class="kw">&lt;a</span><span class="ot"> href=</span><span class="st">&quot;$nextPostUrl$&quot;</span><span class="kw">&gt;</span>$nextPostTitle$ <span class="dv">&amp;#10233;</span><span class="kw">&lt;/a&gt;</span></span>
-<span id="cb6-10"><a href="#cb6-10"></a>$endif$</span>
-<span id="cb6-11"><a href="#cb6-11"></a><span class="kw">&lt;/div&gt;</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode html"><code class="sourceCode html"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a>$body$</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a><span class="kw">&lt;div&gt;</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true"></a>$if(previousPostUrl)$</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true"></a><span class="kw">&lt;a</span><span class="ot"> href=</span><span class="st">&quot;$previousPostUrl$&quot;</span><span class="kw">&gt;</span><span class="dv">&amp;#10232;</span> $previousPostTitle$<span class="kw">&lt;/a&gt;</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true"></a>$endif$</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true"></a></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true"></a>$if(nextPostUrl)$</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true"></a><span class="kw">&lt;a</span><span class="ot"> href=</span><span class="st">&quot;$nextPostUrl$&quot;</span><span class="kw">&gt;</span>$nextPostTitle$ <span class="dv">&amp;#10233;</span><span class="kw">&lt;/a&gt;</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true"></a>$endif$</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true"></a><span class="kw">&lt;/div&gt;</span></span></code></pre></div>
 
 
 </div>

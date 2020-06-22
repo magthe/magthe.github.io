@@ -30,13 +30,13 @@
 </header>
 
 <p>Following on the <a href="../posts/2009-07-03-685-making-a-choice-from-a-list-in-haskell-vty-part-1.html">previous part</a> is another baby step. This just changes the options from a list of strings to a list of objects (the only requirement that they implement <code>Pretty</code>):</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">data</span> <span class="dt">Option</span> <span class="ot">=</span> <span class="dt">Option</span> {<span class="ot"> optionValue::</span><span class="dt">String</span> }</span>
-<span id="cb1-2"><a href="#cb1-2"></a>    <span class="kw">deriving</span> (<span class="dt">Show</span>)</span>
-<span id="cb1-3"><a href="#cb1-3"></a></span>
-<span id="cb1-4"><a href="#cb1-4"></a><span class="kw">instance</span> <span class="dt">Pretty</span> <span class="dt">Option</span> <span class="kw">where</span></span>
-<span id="cb1-5"><a href="#cb1-5"></a>    pretty (<span class="dt">Option</span> s) <span class="ot">=</span> string s</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Option</span> <span class="ot">=</span> <span class="dt">Option</span> {<span class="ot"> optionValue::</span><span class="dt">String</span> }</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>    <span class="kw">deriving</span> (<span class="dt">Show</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">Pretty</span> <span class="dt">Option</span> <span class="kw">where</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>    pretty (<span class="dt">Option</span> s) <span class="ot">=</span> string s</span></code></pre></div>
 <p>After this it’s an easy step to replace the list of strings with a list of <code>Option</code>:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a>options <span class="ot">=</span> [<span class="dt">Option</span> ((<span class="fu">show</span> i) <span class="op">++</span> <span class="st">&quot; Foo&quot;</span>) <span class="op">|</span> i <span class="ot">&lt;-</span> [<span class="dv">0</span><span class="op">..</span><span class="dv">99</span>]]</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a>options <span class="ot">=</span> [<span class="dt">Option</span> ((<span class="fu">show</span> i) <span class="op">++</span> <span class="st">&quot; Foo&quot;</span>) <span class="op">|</span> i <span class="ot">&lt;-</span> [<span class="dv">0</span><span class="op">..</span><span class="dv">99</span>]]</span></code></pre></div>
 <p>That’s it! Yes, yet another ridiculously short post, but I promise the next one will be considerably longer.</p>
 
 

@@ -32,54 +32,54 @@
 <p>I received an interesting comment from Conal Elliott on my <a href="../posts/2007-05-27-289-adventures-in-parsing.html#comment-50636">previous post on parsing</a>. I have to admit I wasn’t sure I understood him at first, I’m still not sure I do, but I think I have an idea of what he means :-)</p>
 <p>Basically my code is very sequential in that I use the <code>do</code> construct everywhere in the parsing code. Personally I thought that makes the parser very easy to read since the code very much mimics the structure of the <code>maps</code> file. I do realise the code isn’t very “functional” though so I thought I’d take Conal’s comments to heart and see what the result would be.</p>
 <p>Let’s start with observation that every entity in a line is separated by a space. However some things are separated by other characters. So the first thing I did was write a higher-order function that first reads something, then reads a character and returns the first thing that was read:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a>thenChar c f <span class="ot">=</span> f <span class="op">&gt;&gt;=</span> (\ r <span class="ot">-&gt;</span> char c <span class="op">&gt;&gt;</span> <span class="fu">return</span> r)</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a>thenChar c f <span class="ot">=</span> f <span class="op">&gt;&gt;=</span> (\ r <span class="ot">-&gt;</span> char c <span class="op">&gt;&gt;</span> <span class="fu">return</span> r)</span></code></pre></div>
 <p>Since space is used as a separator so often I added a short-cut for that:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a>thenSpace  <span class="ot">=</span> thenChar <span class="ch">' '</span></span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a>thenSpace  <span class="ot">=</span> thenChar <span class="ch">' '</span></span></code></pre></div>
 <p>Then I put that to use on <code>parseAddress</code>:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a>parseAddress <span class="ot">=</span> <span class="kw">let</span></span>
-<span id="cb3-2"><a href="#cb3-2"></a>        hexStr2Int <span class="ot">=</span> Prelude.read <span class="op">.</span> (<span class="st">&quot;0x&quot;</span> <span class="op">++</span>)</span>
-<span id="cb3-3"><a href="#cb3-3"></a>    <span class="kw">in</span> <span class="kw">do</span></span>
-<span id="cb3-4"><a href="#cb3-4"></a>        start <span class="ot">&lt;-</span> thenChar <span class="ch">'-'</span> <span class="op">$</span> many1 hexDigit</span>
-<span id="cb3-5"><a href="#cb3-5"></a>        end <span class="ot">&lt;-</span> many1 hexDigit</span>
-<span id="cb3-6"><a href="#cb3-6"></a>        <span class="fu">return</span> <span class="op">$</span> <span class="dt">Address</span> (hexStr2Int start) (hexStr2Int end)</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a>parseAddress <span class="ot">=</span> <span class="kw">let</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>        hexStr2Int <span class="ot">=</span> Prelude.read <span class="op">.</span> (<span class="st">&quot;0x&quot;</span> <span class="op">++</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>    <span class="kw">in</span> <span class="kw">do</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a>        start <span class="ot">&lt;-</span> thenChar <span class="ch">'-'</span> <span class="op">$</span> many1 hexDigit</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a>        end <span class="ot">&lt;-</span> many1 hexDigit</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true"></a>        <span class="fu">return</span> <span class="op">$</span> <span class="dt">Address</span> (hexStr2Int start) (hexStr2Int end)</span></code></pre></div>
 <p>Modifying the other parsing functions using <code>thenChar</code> and <code>thenSpace</code> is straight forward.</p>
 <p>I’m not entirely sure I understand what Conal meant with the part about <code>liftM</code> in his comment. I suspect his referring to the fact that I first read characters and then convert them in the “constructors”. By using <code>liftM</code> I can move the conversion “up in the code”. Here’s <code>parseAddress</code> after I’ve moved the calls to <code>hexStr2Int</code>:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a>parseAddress <span class="ot">=</span> <span class="kw">let</span></span>
-<span id="cb4-2"><a href="#cb4-2"></a>        hexStr2Int <span class="ot">=</span> Prelude.read <span class="op">.</span> (<span class="st">&quot;0x&quot;</span> <span class="op">++</span>)</span>
-<span id="cb4-3"><a href="#cb4-3"></a>    <span class="kw">in</span> <span class="kw">do</span></span>
-<span id="cb4-4"><a href="#cb4-4"></a>        start <span class="ot">&lt;-</span> liftM hexStr2Int <span class="op">$</span> thenChar <span class="ch">'-'</span> <span class="op">$</span> many1 hexDigit</span>
-<span id="cb4-5"><a href="#cb4-5"></a>        end <span class="ot">&lt;-</span> liftM hexStr2Int <span class="op">$</span> many1 hexDigit</span>
-<span id="cb4-6"><a href="#cb4-6"></a>        <span class="fu">return</span> <span class="op">$</span> <span class="dt">Address</span> start end</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a>parseAddress <span class="ot">=</span> <span class="kw">let</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>        hexStr2Int <span class="ot">=</span> Prelude.read <span class="op">.</span> (<span class="st">&quot;0x&quot;</span> <span class="op">++</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a>    <span class="kw">in</span> <span class="kw">do</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a>        start <span class="ot">&lt;-</span> liftM hexStr2Int <span class="op">$</span> thenChar <span class="ch">'-'</span> <span class="op">$</span> many1 hexDigit</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a>        end <span class="ot">&lt;-</span> liftM hexStr2Int <span class="op">$</span> many1 hexDigit</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true"></a>        <span class="fu">return</span> <span class="op">$</span> <span class="dt">Address</span> start end</span></code></pre></div>
 <p>After modifying the other parsing functions in a similar way I ended up with this:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1"></a>parsePerms <span class="ot">=</span> <span class="kw">let</span></span>
-<span id="cb5-2"><a href="#cb5-2"></a>        cA a <span class="ot">=</span> <span class="kw">case</span> a <span class="kw">of</span></span>
-<span id="cb5-3"><a href="#cb5-3"></a>            <span class="ch">'p'</span> <span class="ot">-&gt;</span> <span class="dt">Private</span></span>
-<span id="cb5-4"><a href="#cb5-4"></a>            <span class="ch">'s'</span> <span class="ot">-&gt;</span> <span class="dt">Shared</span></span>
-<span id="cb5-5"><a href="#cb5-5"></a>    <span class="kw">in</span> <span class="kw">do</span></span>
-<span id="cb5-6"><a href="#cb5-6"></a>        r <span class="ot">&lt;-</span> liftM (<span class="op">==</span> <span class="ch">'r'</span>) anyChar</span>
-<span id="cb5-7"><a href="#cb5-7"></a>        w <span class="ot">&lt;-</span> liftM (<span class="op">==</span> <span class="ch">'w'</span>) anyChar</span>
-<span id="cb5-8"><a href="#cb5-8"></a>        x <span class="ot">&lt;-</span> liftM (<span class="op">==</span> <span class="ch">'x'</span>) anyChar</span>
-<span id="cb5-9"><a href="#cb5-9"></a>        a <span class="ot">&lt;-</span> liftM cA anyChar</span>
-<span id="cb5-10"><a href="#cb5-10"></a>        <span class="fu">return</span> <span class="op">$</span> <span class="dt">Perms</span> r w x a</span>
-<span id="cb5-11"><a href="#cb5-11"></a></span>
-<span id="cb5-12"><a href="#cb5-12"></a>parseDevice <span class="ot">=</span> <span class="kw">let</span></span>
-<span id="cb5-13"><a href="#cb5-13"></a>        hexStr2Int <span class="ot">=</span> Prelude.read <span class="op">.</span> (<span class="st">&quot;0x&quot;</span> <span class="op">++</span>)</span>
-<span id="cb5-14"><a href="#cb5-14"></a>    <span class="kw">in</span> <span class="kw">do</span></span>
-<span id="cb5-15"><a href="#cb5-15"></a>        maj <span class="ot">&lt;-</span> liftM hexStr2Int <span class="op">$</span> thenChar <span class="ch">':'</span> <span class="op">$</span> many1 hexDigit</span>
-<span id="cb5-16"><a href="#cb5-16"></a>        <span class="fu">min</span> <span class="ot">&lt;-</span> liftM hexStr2Int <span class="op">$</span> many1 hexDigit</span>
-<span id="cb5-17"><a href="#cb5-17"></a>        <span class="fu">return</span> <span class="op">$</span> <span class="dt">Device</span> maj <span class="fu">min</span></span>
-<span id="cb5-18"><a href="#cb5-18"></a></span>
-<span id="cb5-19"><a href="#cb5-19"></a>parseRegion <span class="ot">=</span> <span class="kw">let</span></span>
-<span id="cb5-20"><a href="#cb5-20"></a>        hexStr2Int <span class="ot">=</span> Prelude.read <span class="op">.</span> (<span class="st">&quot;0x&quot;</span> <span class="op">++</span>)</span>
-<span id="cb5-21"><a href="#cb5-21"></a>        parsePath <span class="ot">=</span> (many1 <span class="op">$</span> char <span class="ch">' '</span>) <span class="op">&gt;&gt;</span> (many1 <span class="op">$</span> anyChar)</span>
-<span id="cb5-22"><a href="#cb5-22"></a>    <span class="kw">in</span> <span class="kw">do</span></span>
-<span id="cb5-23"><a href="#cb5-23"></a>        addr <span class="ot">&lt;-</span> thenSpace parseAddress</span>
-<span id="cb5-24"><a href="#cb5-24"></a>        perm <span class="ot">&lt;-</span> thenSpace parsePerms</span>
-<span id="cb5-25"><a href="#cb5-25"></a>        offset <span class="ot">&lt;-</span> liftM hexStr2Int <span class="op">$</span> thenSpace <span class="op">$</span> many1 hexDigit</span>
-<span id="cb5-26"><a href="#cb5-26"></a>        dev <span class="ot">&lt;-</span> thenSpace parseDevice</span>
-<span id="cb5-27"><a href="#cb5-27"></a>        inode <span class="ot">&lt;-</span> liftM Prelude.read <span class="op">$</span> thenSpace <span class="op">$</span> many1 digit</span>
-<span id="cb5-28"><a href="#cb5-28"></a>        path <span class="ot">&lt;-</span> parsePath <span class="op">&lt;|&gt;</span> string <span class="st">&quot;&quot;</span></span>
-<span id="cb5-29"><a href="#cb5-29"></a>        <span class="fu">return</span> <span class="op">$</span> <span class="dt">MemRegion</span> addr perm offset dev inode path</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a>parsePerms <span class="ot">=</span> <span class="kw">let</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a>        cA a <span class="ot">=</span> <span class="kw">case</span> a <span class="kw">of</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a>            <span class="ch">'p'</span> <span class="ot">-&gt;</span> <span class="dt">Private</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a>            <span class="ch">'s'</span> <span class="ot">-&gt;</span> <span class="dt">Shared</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true"></a>    <span class="kw">in</span> <span class="kw">do</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true"></a>        r <span class="ot">&lt;-</span> liftM (<span class="op">==</span> <span class="ch">'r'</span>) anyChar</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true"></a>        w <span class="ot">&lt;-</span> liftM (<span class="op">==</span> <span class="ch">'w'</span>) anyChar</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true"></a>        x <span class="ot">&lt;-</span> liftM (<span class="op">==</span> <span class="ch">'x'</span>) anyChar</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true"></a>        a <span class="ot">&lt;-</span> liftM cA anyChar</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true"></a>        <span class="fu">return</span> <span class="op">$</span> <span class="dt">Perms</span> r w x a</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true"></a></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true"></a>parseDevice <span class="ot">=</span> <span class="kw">let</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true"></a>        hexStr2Int <span class="ot">=</span> Prelude.read <span class="op">.</span> (<span class="st">&quot;0x&quot;</span> <span class="op">++</span>)</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true"></a>    <span class="kw">in</span> <span class="kw">do</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true"></a>        maj <span class="ot">&lt;-</span> liftM hexStr2Int <span class="op">$</span> thenChar <span class="ch">':'</span> <span class="op">$</span> many1 hexDigit</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true"></a>        <span class="fu">min</span> <span class="ot">&lt;-</span> liftM hexStr2Int <span class="op">$</span> many1 hexDigit</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true"></a>        <span class="fu">return</span> <span class="op">$</span> <span class="dt">Device</span> maj <span class="fu">min</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true"></a></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true"></a>parseRegion <span class="ot">=</span> <span class="kw">let</span></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true"></a>        hexStr2Int <span class="ot">=</span> Prelude.read <span class="op">.</span> (<span class="st">&quot;0x&quot;</span> <span class="op">++</span>)</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true"></a>        parsePath <span class="ot">=</span> (many1 <span class="op">$</span> char <span class="ch">' '</span>) <span class="op">&gt;&gt;</span> (many1 <span class="op">$</span> anyChar)</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true"></a>    <span class="kw">in</span> <span class="kw">do</span></span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true"></a>        addr <span class="ot">&lt;-</span> thenSpace parseAddress</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true"></a>        perm <span class="ot">&lt;-</span> thenSpace parsePerms</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true"></a>        offset <span class="ot">&lt;-</span> liftM hexStr2Int <span class="op">$</span> thenSpace <span class="op">$</span> many1 hexDigit</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true"></a>        dev <span class="ot">&lt;-</span> thenSpace parseDevice</span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true"></a>        inode <span class="ot">&lt;-</span> liftM Prelude.read <span class="op">$</span> thenSpace <span class="op">$</span> many1 digit</span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true"></a>        path <span class="ot">&lt;-</span> parsePath <span class="op">&lt;|&gt;</span> string <span class="st">&quot;&quot;</span></span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true"></a>        <span class="fu">return</span> <span class="op">$</span> <span class="dt">MemRegion</span> addr perm offset dev inode path</span></code></pre></div>
 <p>Is this code more “functional”? Is it easier to read? You’ll have to be the judge of that…</p>
 <p>Conal, if I got the intention of your comment completely wrong then feel free to tell me I’m an idiot ;-)</p>
 
@@ -99,10 +99,10 @@ Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell
   </header>
 <p>Hi,</p>
 <p>your story and Conal’s comment inspired me to play around with liftM and I came up with this version of parseAddress:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a>parseAddress <span class="ot">=</span> <span class="kw">let</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a>        hexStr2Int <span class="ot">=</span> Prelude.read <span class="op">.</span> (<span class="st">&quot;0x&quot;</span> <span class="op">++</span>)</span>
-<span id="cb1-3"><a href="#cb1-3"></a>    <span class="kw">in</span> </span>
-<span id="cb1-4"><a href="#cb1-4"></a>        liftM3 (\ x _ y <span class="ot">-&gt;</span> <span class="dt">Address</span> (hexStr2Int x) (hexStr2Int y)) (many1 hexDigit) (char <span class="ch">'-'</span>) (many1 hexDigit)</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a>parseAddress <span class="ot">=</span> <span class="kw">let</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>        hexStr2Int <span class="ot">=</span> Prelude.read <span class="op">.</span> (<span class="st">&quot;0x&quot;</span> <span class="op">++</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>    <span class="kw">in</span> </span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>        liftM3 (\ x _ y <span class="ot">-&gt;</span> <span class="dt">Address</span> (hexStr2Int x) (hexStr2Int y)) (many1 hexDigit) (char <span class="ch">'-'</span>) (many1 hexDigit)</span></code></pre></div>
 <p>You could probably rewrite all the functions in a similar way, but honestly I find your original code in do-notation much easier to read.</p>
 </article>
 
@@ -113,12 +113,12 @@ Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell
     <p class="comment-date"><time pubdate="pubdate" datetime="2007-05-30">2007-05-30</time></p>
   </header>
 <p>Yeah, the same line of thought made it a little difficult to fall asleep yesterday (yes, I know, nerdiness taken to new levels). My thoughts was something like this:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a>parseAddress <span class="ot">=</span> <span class="kw">let</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a>        hexStr2Int <span class="ot">=</span> <span class="op">...</span></span>
-<span id="cb1-3"><a href="#cb1-3"></a>    <span class="kw">in</span></span>
-<span id="cb1-4"><a href="#cb1-4"></a>        liftM2 <span class="dt">Address</span> </span>
-<span id="cb1-5"><a href="#cb1-5"></a>            (liftM hexStr2Int <span class="op">$</span> thenChar <span class="ch">'-'</span> <span class="op">$</span> many1 hexDigit)</span>
-<span id="cb1-6"><a href="#cb1-6"></a>            (liftM hexStr2Int <span class="op">$</span> many1 hexDigit)</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a>parseAddress <span class="ot">=</span> <span class="kw">let</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>        hexStr2Int <span class="ot">=</span> <span class="op">...</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>    <span class="kw">in</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>        liftM2 <span class="dt">Address</span> </span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>            (liftM hexStr2Int <span class="op">$</span> thenChar <span class="ch">'-'</span> <span class="op">$</span> many1 hexDigit)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a>            (liftM hexStr2Int <span class="op">$</span> many1 hexDigit)</span></code></pre></div>
 <p>I agree with you on readability. I also wonder if laziness could bite back or if <code>liftM2</code> guarantees an order of evaluation.</p>
 </article>
 
@@ -138,12 +138,12 @@ Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell
     <p class="comment-date"><time pubdate="pubdate" datetime="2007-05-30">2007-05-30</time></p>
   </header>
 <p>liftM2 guarantees an ordering on the monadic computation, because it’s defined like:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a>liftM2 f x y <span class="ot">=</span> <span class="kw">do</span> { u <span class="ot">&lt;-</span> x; v <span class="ot">&lt;-</span> y; <span class="fu">return</span> (f u v) }</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a>liftM2 f x y <span class="ot">=</span> <span class="kw">do</span> { u <span class="ot">&lt;-</span> x; v <span class="ot">&lt;-</span> y; <span class="fu">return</span> (f u v) }</span></code></pre></div>
 <p>Though, that’s a little different from guaranteeing an order of evaluation – depending on the monad, the order of evaluation will vary. In any case, it shouldn’t be much different from what you originally had.</p>
 <p>Another thing you might like to play around with, at least in your head, is the fact that:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a>liftM2 f x y <span class="ot">=</span> <span class="fu">return</span> f <span class="ot">`ap`</span> x <span class="ot">`ap`</span> y</span>
-<span id="cb2-2"><a href="#cb2-2"></a></span>
-<span id="cb2-3"><a href="#cb2-3"></a>liftM3 f x y z <span class="ot">=</span> <span class="fu">return</span> f <span class="ot">`ap`</span> x <span class="ot">`ap`</span> y <span class="ot">`ap`</span> z</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a>liftM2 f x y <span class="ot">=</span> <span class="fu">return</span> f <span class="ot">`ap`</span> x <span class="ot">`ap`</span> y</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a>liftM3 f x y z <span class="ot">=</span> <span class="fu">return</span> f <span class="ot">`ap`</span> x <span class="ot">`ap`</span> y <span class="ot">`ap`</span> z</span></code></pre></div>
 <p>and so on, which leads up to the style embodied by the Control.Applicative library, though if you really want to play around with that, you’ll need to write a quick instance of Applicative for GenParser, which should just consist of making pure = return and (&lt;*&gt;) = ap.</p>
 </article>
 
@@ -154,18 +154,18 @@ Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell
     <p class="comment-date"><time pubdate="pubdate" datetime="2007-05-30">2007-05-30</time></p>
   </header>
 <p>The best way to make parsing code readable is to use Data.Applicative. Also, most people prefer where to let..in if possible. This gives something like:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a>parseHexStr <span class="ot">=</span> Prelude.read <span class="op">.</span> (<span class="st">&quot;0x&quot;</span> <span class="op">++</span>)  many1 hexDigit</span>
-<span id="cb1-2"><a href="#cb1-2"></a>parsePath   <span class="ot">=</span> many1 (char <span class="ch">' '</span>) <span class="op">*&gt;</span> many1 anyChar</span>
-<span id="cb1-3"><a href="#cb1-3"></a></span>
-<span id="cb1-4"><a href="#cb1-4"></a>parseAddress <span class="ot">=</span> <span class="dt">Address</span>  hexStr <span class="op">*&gt;</span> char <span class="ch">'-'</span>  hexStr </span>
-<span id="cb1-5"><a href="#cb1-5"></a></span>
-<span id="cb1-6"><a href="#cb1-6"></a>parseRegion <span class="ot">=</span> <span class="dt">MemRegion</span></span>
-<span id="cb1-7"><a href="#cb1-7"></a>            parseAddress <span class="op">*&gt;</span> char <span class="ch">' '</span></span>
-<span id="cb1-8"><a href="#cb1-8"></a>            parsePerms   <span class="op">*&gt;</span> char <span class="ch">' '</span></span>
-<span id="cb1-9"><a href="#cb1-9"></a>            parseHexStr  <span class="op">*&gt;</span> char <span class="ch">' '</span></span>
-<span id="cb1-10"><a href="#cb1-10"></a>            parseDevice  <span class="op">*&gt;</span> char <span class="ch">' '</span></span>
-<span id="cb1-11"><a href="#cb1-11"></a>            (Prelude.read  many1 digit) <span class="op">*&gt;</span> char <span class="ch">' '</span></span>
-<span id="cb1-12"><a href="#cb1-12"></a>            (parsePath  <span class="fu">return</span> <span class="st">&quot;&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a>parseHexStr <span class="ot">=</span> Prelude.read <span class="op">.</span> (<span class="st">&quot;0x&quot;</span> <span class="op">++</span>)  many1 hexDigit</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>parsePath   <span class="ot">=</span> many1 (char <span class="ch">' '</span>) <span class="op">*&gt;</span> many1 anyChar</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>parseAddress <span class="ot">=</span> <span class="dt">Address</span>  hexStr <span class="op">*&gt;</span> char <span class="ch">'-'</span>  hexStr </span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a>parseRegion <span class="ot">=</span> <span class="dt">MemRegion</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a>            parseAddress <span class="op">*&gt;</span> char <span class="ch">' '</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a>            parsePerms   <span class="op">*&gt;</span> char <span class="ch">' '</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a>            parseHexStr  <span class="op">*&gt;</span> char <span class="ch">' '</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a>            parseDevice  <span class="op">*&gt;</span> char <span class="ch">' '</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a>            (Prelude.read  many1 digit) <span class="op">*&gt;</span> char <span class="ch">' '</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a>            (parsePath  <span class="fu">return</span> <span class="st">&quot;&quot;</span>)</span></code></pre></div>
 <p>Basicly <code>(liftM# f x y z)</code> can be written as <code>f  x &lt;*&gt; y &lt;*&gt; z</code>.</p>
 </article>
 
@@ -176,13 +176,13 @@ Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell
     <p class="comment-date"><time pubdate="pubdate" datetime="2007-05-30">2007-05-30</time></p>
   </header>
 <p>I find the <code>thenSpace</code> a bit difficult to read.I think something like this is more natural, as it maintains the left-to-right relationship of the parsed data and the following space:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a>aChar c r <span class="ot">=</span> char c <span class="op">&gt;&gt;</span> <span class="fu">return</span> r</span>
-<span id="cb1-2"><a href="#cb1-2"></a>aSpace <span class="ot">=</span> aChar <span class="ch">' '</span></span>
-<span id="cb1-3"><a href="#cb1-3"></a></span>
-<span id="cb1-4"><a href="#cb1-4"></a><span class="op">...</span></span>
-<span id="cb1-5"><a href="#cb1-5"></a>    <span class="kw">do</span></span>
-<span id="cb1-6"><a href="#cb1-6"></a>        start <span class="ot">&lt;-</span>  many1 hexDigit <span class="op">&gt;&gt;</span> aChar</span>
-<span id="cb1-7"><a href="#cb1-7"></a><span class="op">....</span></span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a>aChar c r <span class="ot">=</span> char c <span class="op">&gt;&gt;</span> <span class="fu">return</span> r</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>aSpace <span class="ot">=</span> aChar <span class="ch">' '</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a><span class="op">...</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>    <span class="kw">do</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a>        start <span class="ot">&lt;-</span>  many1 hexDigit <span class="op">&gt;&gt;</span> aChar</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a><span class="op">....</span></span></code></pre></div>
 <p>note that I haven’t tested this and my haskell-fu is not very strong, so I could be way off here.</p>
 </article>
 
@@ -212,15 +212,15 @@ Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell
     <p class="comment-date"><time pubdate="pubdate" datetime="2007-05-30">2007-05-30</time></p>
   </header>
 <p>Nick, yes your way of writing it is easier to read. You’ll need to change to using <code>&gt;&gt;=</code> though:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">do</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a>    start <span class="ot">&lt;-</span> many1 hexDigit <span class="op">&gt;&gt;=</span> aChar <span class="ch">'-'</span></span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">do</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>    start <span class="ot">&lt;-</span> many1 hexDigit <span class="op">&gt;&gt;=</span> aChar <span class="ch">'-'</span></span></code></pre></div>
 <p>Then you can mix in <code>liftM</code> as well:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">do</span></span>
-<span id="cb2-2"><a href="#cb2-2"></a>    start <span class="ot">&lt;-</span> liftM hexStr2Int <span class="op">$</span> many1 hexDigit <span class="op">&gt;&gt;=</span> aChar <span class="ch">'-'</span></span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="kw">do</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>    start <span class="ot">&lt;-</span> liftM hexStr2Int <span class="op">$</span> many1 hexDigit <span class="op">&gt;&gt;=</span> aChar <span class="ch">'-'</span></span></code></pre></div>
 <p>to do the conversion. However, I think my initial version is even clearer:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">do</span></span>
-<span id="cb3-2"><a href="#cb3-2"></a>    start <span class="ot">&lt;-</span> liftM hexStr2Int <span class="op">$</span> many1 hexDigitc</span>
-<span id="cb3-3"><a href="#cb3-3"></a>    char <span class="ch">'-'</span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="kw">do</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>    start <span class="ot">&lt;-</span> liftM hexStr2Int <span class="op">$</span> many1 hexDigitc</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>    char <span class="ch">'-'</span></span></code></pre></div>
 </article>
 
 <article class="comment-body">

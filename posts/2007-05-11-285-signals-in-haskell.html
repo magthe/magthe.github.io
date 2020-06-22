@@ -32,47 +32,47 @@
 <p>When playing with Haskell I sometimes get the feeling that I’m the last one in the world to figure out how some things work. It’s almost embarrassing to write about it at times, but I fear I’ll forget and end up redoing my trivial experiments if I don’t ((Or maybe I shouldn’t compare myself to the highly (dare I say it?) academical entries usually found on the Haskell Planet. Maybe I should just consider my writing to be “Haskell for mortals”.)). So, here goes…</p>
 <p>Dealing with signals in Haskell is fairly straight forward. Well, at least as far as dealing with signals ever is straight forward. In <code>System.Posix.Signals</code> you find <code>installHandler</code>. The arguments are a little funky but they get a little clearer if you look up the man-page for <code>sigaction</code>.</p>
 <p>Here’s a simple example that installs a handler for <code>SIGINT</code>:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a></span>
-<span id="cb1-3"><a href="#cb1-3"></a><span class="kw">import</span> <span class="dt">System.Posix.Signals</span></span>
-<span id="cb1-4"><a href="#cb1-4"></a><span class="kw">import</span> <span class="dt">Control.Concurrent</span></span>
-<span id="cb1-5"><a href="#cb1-5"></a></span>
-<span id="cb1-6"><a href="#cb1-6"></a><span class="ot">handler ::</span> <span class="dt">IO</span> ()</span>
-<span id="cb1-7"><a href="#cb1-7"></a>handler <span class="ot">=</span> <span class="fu">putStrLn</span> <span class="st">&quot;In handler&quot;</span></span>
-<span id="cb1-8"><a href="#cb1-8"></a></span>
-<span id="cb1-9"><a href="#cb1-9"></a><span class="ot">doNothing ::</span> <span class="dt">IO</span> ()</span>
-<span id="cb1-10"><a href="#cb1-10"></a>doNothing <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb1-11"><a href="#cb1-11"></a>    threadDelay <span class="dv">1000000</span></span>
-<span id="cb1-12"><a href="#cb1-12"></a>    <span class="fu">putStrLn</span> <span class="st">&quot;Repeating&quot;</span></span>
-<span id="cb1-13"><a href="#cb1-13"></a></span>
-<span id="cb1-14"><a href="#cb1-14"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
-<span id="cb1-15"><a href="#cb1-15"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb1-16"><a href="#cb1-16"></a>    installHandler sigINT (<span class="dt">Catch</span> handler) <span class="dt">Nothing</span></span>
-<span id="cb1-17"><a href="#cb1-17"></a>    <span class="fu">sequence_</span> <span class="op">$</span> <span class="fu">repeat</span> doNothing</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">System.Posix.Signals</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Control.Concurrent</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a><span class="ot">handler ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a>handler <span class="ot">=</span> <span class="fu">putStrLn</span> <span class="st">&quot;In handler&quot;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a><span class="ot">doNothing ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a>doNothing <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a>    threadDelay <span class="dv">1000000</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a>    <span class="fu">putStrLn</span> <span class="st">&quot;Repeating&quot;</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true"></a></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true"></a>    installHandler sigINT (<span class="dt">Catch</span> handler) <span class="dt">Nothing</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true"></a>    <span class="fu">sequence_</span> <span class="op">$</span> <span class="fu">repeat</span> doNothing</span></code></pre></div>
 <p>Now that’s fairly straight forward, I think. However, it’d be nice to be able to let the main thread know that we’ve recieved a signal in some way. From perusing the <a href="http://www.haskell.org/hawiki/FrontPage">Haskell Wiki</a> it seems the way to communicate between threads, at least for simple cases, is by using <code>MVar</code>s. So, extending the example above to also keep track of how many times <code>SIGINT</code> has been received could look like this:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></span>
-<span id="cb2-2"><a href="#cb2-2"></a></span>
-<span id="cb2-3"><a href="#cb2-3"></a><span class="kw">import</span> <span class="dt">System.Posix.Signals</span></span>
-<span id="cb2-4"><a href="#cb2-4"></a><span class="kw">import</span> <span class="dt">Control.Concurrent</span></span>
-<span id="cb2-5"><a href="#cb2-5"></a><span class="kw">import</span> <span class="dt">Control.Concurrent.MVar</span></span>
-<span id="cb2-6"><a href="#cb2-6"></a></span>
-<span id="cb2-7"><a href="#cb2-7"></a><span class="ot">handler ::</span> <span class="dt">MVar</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
-<span id="cb2-8"><a href="#cb2-8"></a>handler mi <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb2-9"><a href="#cb2-9"></a>    i <span class="ot">&lt;-</span> takeMVar mi</span>
-<span id="cb2-10"><a href="#cb2-10"></a>    <span class="fu">putStrLn</span> <span class="st">&quot;In handler&quot;</span></span>
-<span id="cb2-11"><a href="#cb2-11"></a>    putMVar mi (i <span class="op">+</span> <span class="dv">1</span>)</span>
-<span id="cb2-12"><a href="#cb2-12"></a></span>
-<span id="cb2-13"><a href="#cb2-13"></a><span class="ot">doNothing ::</span> <span class="dt">MVar</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
-<span id="cb2-14"><a href="#cb2-14"></a>doNothing mi <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb2-15"><a href="#cb2-15"></a>    threadDelay <span class="dv">1000000</span></span>
-<span id="cb2-16"><a href="#cb2-16"></a>    i <span class="ot">&lt;-</span> readMVar mi</span>
-<span id="cb2-17"><a href="#cb2-17"></a>    <span class="fu">putStrLn</span> <span class="op">$</span> <span class="st">&quot;Repeating &quot;</span> <span class="op">++</span> (<span class="fu">show</span> i)</span>
-<span id="cb2-18"><a href="#cb2-18"></a></span>
-<span id="cb2-19"><a href="#cb2-19"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
-<span id="cb2-20"><a href="#cb2-20"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb2-21"><a href="#cb2-21"></a>    mi <span class="ot">&lt;-</span> newMVar <span class="dv">0</span></span>
-<span id="cb2-22"><a href="#cb2-22"></a>    installHandler sigINT (<span class="dt">Catch</span> <span class="op">$</span> handler mi) <span class="dt">Nothing</span></span>
-<span id="cb2-23"><a href="#cb2-23"></a>    <span class="fu">sequence_</span> <span class="op">$</span> <span class="fu">repeat</span> <span class="op">$</span> doNothing mi</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">System.Posix.Signals</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Control.Concurrent</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Control.Concurrent.MVar</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a><span class="ot">handler ::</span> <span class="dt">MVar</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a>handler mi <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true"></a>    i <span class="ot">&lt;-</span> takeMVar mi</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true"></a>    <span class="fu">putStrLn</span> <span class="st">&quot;In handler&quot;</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true"></a>    putMVar mi (i <span class="op">+</span> <span class="dv">1</span>)</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true"></a></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true"></a><span class="ot">doNothing ::</span> <span class="dt">MVar</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true"></a>doNothing mi <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true"></a>    threadDelay <span class="dv">1000000</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true"></a>    i <span class="ot">&lt;-</span> readMVar mi</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true"></a>    <span class="fu">putStrLn</span> <span class="op">$</span> <span class="st">&quot;Repeating &quot;</span> <span class="op">++</span> (<span class="fu">show</span> i)</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true"></a></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true"></a>    mi <span class="ot">&lt;-</span> newMVar <span class="dv">0</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true"></a>    installHandler sigINT (<span class="dt">Catch</span> <span class="op">$</span> handler mi) <span class="dt">Nothing</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true"></a>    <span class="fu">sequence_</span> <span class="op">$</span> <span class="fu">repeat</span> <span class="op">$</span> doNothing mi</span></code></pre></div>
 <p>It should be noted that, and here it all hinges on me having understood things correctly, <code>handler</code> has more or less become a sort of critical section. Taking the value out of the <code>MVar</code> makes sure that the <code>readMVar</code> in <code>doNothing</code> blocks until a new value is put back. Probably not a very useful thing in this particular example, but it’s still worth keeping in mind for the future.</p>
 
 
@@ -109,15 +109,15 @@ Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell
   </header>
 <p>Thanks for the example code!</p>
 <p>I would like my Haskell program to exitFailure when the program is interrupted, so I changed the handler function to this:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">import</span> <span class="dt">System.Exit</span> (exitFailure)</span>
-<span id="cb1-2"><a href="#cb1-2"></a></span>
-<span id="cb1-3"><a href="#cb1-3"></a><span class="op">...</span></span>
-<span id="cb1-4"><a href="#cb1-4"></a></span>
-<span id="cb1-5"><a href="#cb1-5"></a><span class="ot">handler ::</span> <span class="dt">MVar</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
-<span id="cb1-6"><a href="#cb1-6"></a>handler mi <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb1-7"><a href="#cb1-7"></a>    i <span class="ot">&lt;-</span> takeMVar mi</span>
-<span id="cb1-8"><a href="#cb1-8"></a>    <span class="fu">putStrLn</span> <span class="st">&quot;In handler&quot;</span></span>
-<span id="cb1-9"><a href="#cb1-9"></a>    exitFailure</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">System.Exit</span> (exitFailure)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a><span class="op">...</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a><span class="ot">handler ::</span> <span class="dt">MVar</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a>handler mi <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a>    i <span class="ot">&lt;-</span> takeMVar mi</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a>    <span class="fu">putStrLn</span> <span class="st">&quot;In handler&quot;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a>    exitFailure</span></code></pre></div>
 <p>But when I run this code, the program doesn’t actually exit. It just prints out a notice that main.hs raised exitWith (Failure 1).</p>
 </article>
 

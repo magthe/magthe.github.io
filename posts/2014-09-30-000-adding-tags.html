@@ -31,41 +31,41 @@
 
 <p>Adding tags to a <a href="http://jaspervdj.be/hakyll/">Hakyll</a> site brought some surprises. In retrospect it all makes sense, but it took some thinking on my part to work out the why of it all. The resulting code was heavily influenced by <a href="https://variadic.me/">Erik Kronberg’s site</a>.</p>
 <p>First I thought I’d just add tags to each rendered post, by building the tags</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a>tags <span class="ot">&lt;-</span> buildTags <span class="st">&quot;posts/*&quot;</span> (fromCapture <span class="st">&quot;tags/*.html&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a>tags <span class="ot">&lt;-</span> buildTags <span class="st">&quot;posts/*&quot;</span> (fromCapture <span class="st">&quot;tags/*.html&quot;</span>)</span></code></pre></div>
 <p>then adding them to the post context</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">let</span> postCtx <span class="ot">=</span></span>
-<span id="cb2-2"><a href="#cb2-2"></a>        field <span class="st">&quot;previousPostUrl&quot;</span> (previousPostUrl <span class="st">&quot;posts/*&quot;</span>) <span class="op">&lt;&gt;</span></span>
-<span id="cb2-3"><a href="#cb2-3"></a>        field <span class="st">&quot;previousPostTitle&quot;</span> (previousPostTitle <span class="st">&quot;posts/*&quot;</span>) <span class="op">&lt;&gt;</span></span>
-<span id="cb2-4"><a href="#cb2-4"></a>        field <span class="st">&quot;nextPostUrl&quot;</span> (nextPostUrl <span class="st">&quot;posts/*&quot;</span>) <span class="op">&lt;&gt;</span></span>
-<span id="cb2-5"><a href="#cb2-5"></a>        field <span class="st">&quot;nextPostTitle&quot;</span> (nextPostTitle <span class="st">&quot;posts/*&quot;</span>) <span class="op">&lt;&gt;</span></span>
-<span id="cb2-6"><a href="#cb2-6"></a>        field <span class="st">&quot;postId&quot;</span> getPostId <span class="op">&lt;&gt;</span></span>
-<span id="cb2-7"><a href="#cb2-7"></a>        tagsField <span class="st">&quot;tags&quot;</span> tags <span class="op">&lt;&gt;</span></span>
-<span id="cb2-8"><a href="#cb2-8"></a>        listFieldFunc <span class="st">&quot;comments&quot;</span> defaultContext (getComments <span class="st">&quot;comments/*&quot;</span>) <span class="op">&lt;&gt;</span></span>
-<span id="cb2-9"><a href="#cb2-9"></a>        baseCtx</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="kw">let</span> postCtx <span class="ot">=</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>        field <span class="st">&quot;previousPostUrl&quot;</span> (previousPostUrl <span class="st">&quot;posts/*&quot;</span>) <span class="op">&lt;&gt;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a>        field <span class="st">&quot;previousPostTitle&quot;</span> (previousPostTitle <span class="st">&quot;posts/*&quot;</span>) <span class="op">&lt;&gt;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a>        field <span class="st">&quot;nextPostUrl&quot;</span> (nextPostUrl <span class="st">&quot;posts/*&quot;</span>) <span class="op">&lt;&gt;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a>        field <span class="st">&quot;nextPostTitle&quot;</span> (nextPostTitle <span class="st">&quot;posts/*&quot;</span>) <span class="op">&lt;&gt;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a>        field <span class="st">&quot;postId&quot;</span> getPostId <span class="op">&lt;&gt;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a>        tagsField <span class="st">&quot;tags&quot;</span> tags <span class="op">&lt;&gt;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a>        listFieldFunc <span class="st">&quot;comments&quot;</span> defaultContext (getComments <span class="st">&quot;comments/*&quot;</span>) <span class="op">&lt;&gt;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true"></a>        baseCtx</span></code></pre></div>
 <p>and last modify the template</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode html"><code class="sourceCode html"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">&lt;p&gt;</span>Tags: $tags$<span class="kw">&lt;/p&gt;</span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode html"><code class="sourceCode html"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="kw">&lt;p&gt;</span>Tags: $tags$<span class="kw">&lt;/p&gt;</span></span></code></pre></div>
 <p>Easy! Except it doesn’t work that way. The <code>$tags$</code> is always empty. To actually get the <code>tagsField</code> to work as intended it’s necessary to build the tag pages, which can be accomplished using <code>tagsRules</code></p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a>tagsRules tags <span class="op">$</span> \ tagStr <span class="kw">pattern</span> <span class="ot">-&gt;</span> <span class="kw">do</span></span>
-<span id="cb4-2"><a href="#cb4-2"></a>    route idRoute</span>
-<span id="cb4-3"><a href="#cb4-3"></a>    compile <span class="op">$</span> <span class="kw">do</span></span>
-<span id="cb4-4"><a href="#cb4-4"></a>        posts <span class="ot">&lt;-</span> loadAll <span class="kw">pattern</span> <span class="op">&gt;&gt;=</span> recentFirst</span>
-<span id="cb4-5"><a href="#cb4-5"></a>        <span class="kw">let</span> tagsCtx <span class="ot">=</span></span>
-<span id="cb4-6"><a href="#cb4-6"></a>                constField <span class="st">&quot;thetag&quot;</span> tagStr <span class="op">&lt;&gt;</span></span>
-<span id="cb4-7"><a href="#cb4-7"></a>                listField <span class="st">&quot;posts&quot;</span> baseCtx (<span class="fu">return</span> posts) <span class="op">&lt;&gt;</span></span>
-<span id="cb4-8"><a href="#cb4-8"></a>                baseCtx</span>
-<span id="cb4-9"><a href="#cb4-9"></a>        makeItem <span class="st">&quot;&quot;</span></span>
-<span id="cb4-10"><a href="#cb4-10"></a>            <span class="op">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/tag-post-list.html&quot;</span> tagsCtx</span>
-<span id="cb4-11"><a href="#cb4-11"></a>            <span class="op">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/default.html&quot;</span> tagsCtx</span>
-<span id="cb4-12"><a href="#cb4-12"></a>            <span class="op">&gt;&gt;=</span> relativizeUrls</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a>tagsRules tags <span class="op">$</span> \ tagStr <span class="kw">pattern</span> <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>    route idRoute</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a>    compile <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a>        posts <span class="ot">&lt;-</span> loadAll <span class="kw">pattern</span> <span class="op">&gt;&gt;=</span> recentFirst</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a>        <span class="kw">let</span> tagsCtx <span class="ot">=</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true"></a>                constField <span class="st">&quot;thetag&quot;</span> tagStr <span class="op">&lt;&gt;</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true"></a>                listField <span class="st">&quot;posts&quot;</span> baseCtx (<span class="fu">return</span> posts) <span class="op">&lt;&gt;</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true"></a>                baseCtx</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true"></a>        makeItem <span class="st">&quot;&quot;</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true"></a>            <span class="op">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/tag-post-list.html&quot;</span> tagsCtx</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true"></a>            <span class="op">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/default.html&quot;</span> tagsCtx</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true"></a>            <span class="op">&gt;&gt;=</span> relativizeUrls</span></code></pre></div>
 <p>The template for the tags pages is very simple at the moment</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode html"><code class="sourceCode html"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">&lt;h1&gt;</span>Posts tagged $thetag$<span class="kw">&lt;/h1&gt;</span></span>
-<span id="cb5-2"><a href="#cb5-2"></a><span class="kw">&lt;ul&gt;</span></span>
-<span id="cb5-3"><a href="#cb5-3"></a>  $for(posts)$</span>
-<span id="cb5-4"><a href="#cb5-4"></a>  <span class="kw">&lt;li&gt;</span></span>
-<span id="cb5-5"><a href="#cb5-5"></a>    <span class="kw">&lt;a</span><span class="ot"> href=</span><span class="st">&quot;$url$&quot;</span><span class="kw">&gt;</span>$title$<span class="kw">&lt;/a&gt;</span> - $date$</span>
-<span id="cb5-6"><a href="#cb5-6"></a>  <span class="kw">&lt;/li&gt;</span></span>
-<span id="cb5-7"><a href="#cb5-7"></a>  $endfor$</span>
-<span id="cb5-8"><a href="#cb5-8"></a><span class="kw">&lt;/ul&gt;</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode html"><code class="sourceCode html"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="kw">&lt;h1&gt;</span>Posts tagged $thetag$<span class="kw">&lt;/h1&gt;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a><span class="kw">&lt;ul&gt;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a>  $for(posts)$</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a>  <span class="kw">&lt;li&gt;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true"></a>    <span class="kw">&lt;a</span><span class="ot"> href=</span><span class="st">&quot;$url$&quot;</span><span class="kw">&gt;</span>$title$<span class="kw">&lt;/a&gt;</span> - $date$</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true"></a>  <span class="kw">&lt;/li&gt;</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true"></a>  $endfor$</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true"></a><span class="kw">&lt;/ul&gt;</span></span></code></pre></div>
 <p>That’s it. With that in place the <code>$tags$</code> field renders properly in the post pages as well.</p>
 
 

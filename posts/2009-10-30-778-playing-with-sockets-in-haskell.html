@@ -33,72 +33,72 @@
 <p>There are as far as I can see three ways to deal with sockets in Haskell. There’s the type <code>Socket</code> which is used throughout <code>Network.Socket</code>. From that it’s possible to get to the underlying filedescriptor, and it in turn can be converted to a <code>Handle</code>.</p>
 <p>When coupled with fork+exec it’s crucial to make sure the child process can find the socket Leaving it in a predictable place seems to be the easiest way to do that, and as far as I can see that requires using <code>dupTo</code> from <code>System.Posix.IO</code>. So, on the child-side it’s necessary to find a way to turn an integer (<code>CInt</code>) into something that can be treated as a socket (i.e. a <code>Socket</code>, a <code>Handle</code>, or a filedescriptor).</p>
 <p>A basic parent-child which obviously won’t work since the child’s socket is represented as a <code>Socket</code>:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">import</span> <span class="dt">Control.Concurrent</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="kw">import</span> <span class="dt">System.Posix.Process</span></span>
-<span id="cb1-3"><a href="#cb1-3"></a><span class="kw">import</span> <span class="dt">Network.Socket</span></span>
-<span id="cb1-4"><a href="#cb1-4"></a></span>
-<span id="cb1-5"><a href="#cb1-5"></a>childFunc s <span class="ot">=</span> send s <span class="st">&quot;Ping from child&quot;</span> <span class="op">&gt;&gt;</span> <span class="fu">return</span> ()</span>
-<span id="cb1-6"><a href="#cb1-6"></a></span>
-<span id="cb1-7"><a href="#cb1-7"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb1-8"><a href="#cb1-8"></a>    (childSock, parentSock) <span class="ot">&lt;-</span> socketPair <span class="dt">AF_UNIX</span> <span class="dt">Stream</span> defaultProtocol</span>
-<span id="cb1-9"><a href="#cb1-9"></a>    <span class="fu">print</span> (childSock, parentSock)</span>
-<span id="cb1-10"><a href="#cb1-10"></a>    child <span class="ot">&lt;-</span> forkProcess <span class="op">$</span> childFunc childSock</span>
-<span id="cb1-11"><a href="#cb1-11"></a>    recv parentSock <span class="dv">10</span> <span class="op">&gt;&gt;=</span> <span class="fu">print</span></span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Control.Concurrent</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">System.Posix.Process</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Network.Socket</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>childFunc s <span class="ot">=</span> send s <span class="st">&quot;Ping from child&quot;</span> <span class="op">&gt;&gt;</span> <span class="fu">return</span> ()</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a>    (childSock, parentSock) <span class="ot">&lt;-</span> socketPair <span class="dt">AF_UNIX</span> <span class="dt">Stream</span> defaultProtocol</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a>    <span class="fu">print</span> (childSock, parentSock)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a>    child <span class="ot">&lt;-</span> forkProcess <span class="op">$</span> childFunc childSock</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a>    recv parentSock <span class="dv">10</span> <span class="op">&gt;&gt;=</span> <span class="fu">print</span></span></code></pre></div>
 <p>Let the child take a <code>CInt</code> and turn it into a filedescriptor:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">import</span> <span class="dt">Control.Concurrent</span></span>
-<span id="cb2-2"><a href="#cb2-2"></a><span class="kw">import</span> <span class="dt">Control.Concurrent.MVar</span></span>
-<span id="cb2-3"><a href="#cb2-3"></a><span class="kw">import</span> <span class="dt">System.Posix.Process</span></span>
-<span id="cb2-4"><a href="#cb2-4"></a><span class="kw">import</span> <span class="dt">System.Posix.IO</span></span>
-<span id="cb2-5"><a href="#cb2-5"></a><span class="kw">import</span> <span class="dt">System.Posix.Types</span></span>
-<span id="cb2-6"><a href="#cb2-6"></a><span class="kw">import</span> <span class="dt">Network.Socket</span></span>
-<span id="cb2-7"><a href="#cb2-7"></a></span>
-<span id="cb2-8"><a href="#cb2-8"></a>childFunc sInt <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb2-9"><a href="#cb2-9"></a>    <span class="kw">let</span> fd <span class="ot">=</span> <span class="dt">Fd</span> sInt</span>
-<span id="cb2-10"><a href="#cb2-10"></a>    fdWrite fd <span class="st">&quot;Ping from child&quot;</span> <span class="op">&gt;&gt;</span> <span class="fu">return</span> ()</span>
-<span id="cb2-11"><a href="#cb2-11"></a></span>
-<span id="cb2-12"><a href="#cb2-12"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb2-13"><a href="#cb2-13"></a>    (childSock, parentSock) <span class="ot">&lt;-</span> socketPair <span class="dt">AF_UNIX</span> <span class="dt">Stream</span> defaultProtocol</span>
-<span id="cb2-14"><a href="#cb2-14"></a>    <span class="kw">let</span> childInt <span class="ot">=</span> fdSocket childSock</span>
-<span id="cb2-15"><a href="#cb2-15"></a>    <span class="fu">print</span> (childInt, parentSock)</span>
-<span id="cb2-16"><a href="#cb2-16"></a>    child <span class="ot">&lt;-</span> forkProcess <span class="op">$</span> childFunc childInt</span>
-<span id="cb2-17"><a href="#cb2-17"></a>    recv parentSock <span class="dv">10</span> <span class="op">&gt;&gt;=</span> <span class="fu">print</span></span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Control.Concurrent</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Control.Concurrent.MVar</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">System.Posix.Process</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">System.Posix.IO</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">System.Posix.Types</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Network.Socket</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a>childFunc sInt <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true"></a>    <span class="kw">let</span> fd <span class="ot">=</span> <span class="dt">Fd</span> sInt</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true"></a>    fdWrite fd <span class="st">&quot;Ping from child&quot;</span> <span class="op">&gt;&gt;</span> <span class="fu">return</span> ()</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true"></a></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true"></a>    (childSock, parentSock) <span class="ot">&lt;-</span> socketPair <span class="dt">AF_UNIX</span> <span class="dt">Stream</span> defaultProtocol</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true"></a>    <span class="kw">let</span> childInt <span class="ot">=</span> fdSocket childSock</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true"></a>    <span class="fu">print</span> (childInt, parentSock)</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true"></a>    child <span class="ot">&lt;-</span> forkProcess <span class="op">$</span> childFunc childInt</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true"></a>    recv parentSock <span class="dv">10</span> <span class="op">&gt;&gt;=</span> <span class="fu">print</span></span></code></pre></div>
 <p>Let the child take a <code>CInt</code> and turn it into a <code>Handle</code>:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">import</span> <span class="dt">Control.Concurrent</span></span>
-<span id="cb3-2"><a href="#cb3-2"></a><span class="kw">import</span> <span class="dt">System.Posix.Process</span></span>
-<span id="cb3-3"><a href="#cb3-3"></a><span class="kw">import</span> <span class="dt">System.Posix.IO</span></span>
-<span id="cb3-4"><a href="#cb3-4"></a><span class="kw">import</span> <span class="dt">System.Posix.Types</span></span>
-<span id="cb3-5"><a href="#cb3-5"></a><span class="kw">import</span> <span class="dt">Network.Socket</span></span>
-<span id="cb3-6"><a href="#cb3-6"></a><span class="kw">import</span> <span class="dt">System.IO</span></span>
-<span id="cb3-7"><a href="#cb3-7"></a></span>
-<span id="cb3-8"><a href="#cb3-8"></a>childFunc sInt <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb3-9"><a href="#cb3-9"></a>    h <span class="ot">&lt;-</span> fdToHandle <span class="op">$</span> <span class="dt">Fd</span> sInt</span>
-<span id="cb3-10"><a href="#cb3-10"></a>    hPutStr h <span class="st">&quot;Ping from child&quot;</span></span>
-<span id="cb3-11"><a href="#cb3-11"></a>    hFlush h</span>
-<span id="cb3-12"><a href="#cb3-12"></a></span>
-<span id="cb3-13"><a href="#cb3-13"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb3-14"><a href="#cb3-14"></a>    (childSock, parentSock) <span class="ot">&lt;-</span> socketPair <span class="dt">AF_UNIX</span> <span class="dt">Stream</span> defaultProtocol</span>
-<span id="cb3-15"><a href="#cb3-15"></a>    <span class="kw">let</span> childInt <span class="ot">=</span> fdSocket childSock</span>
-<span id="cb3-16"><a href="#cb3-16"></a>    <span class="fu">print</span> (childSock, parentSock)</span>
-<span id="cb3-17"><a href="#cb3-17"></a>    child <span class="ot">&lt;-</span> forkProcess <span class="op">$</span> childFunc childInt</span>
-<span id="cb3-18"><a href="#cb3-18"></a>    recv parentSock <span class="dv">10</span> <span class="op">&gt;&gt;=</span> <span class="fu">print</span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Control.Concurrent</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">System.Posix.Process</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">System.Posix.IO</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">System.Posix.Types</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Network.Socket</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">System.IO</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true"></a>childFunc sInt <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true"></a>    h <span class="ot">&lt;-</span> fdToHandle <span class="op">$</span> <span class="dt">Fd</span> sInt</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true"></a>    hPutStr h <span class="st">&quot;Ping from child&quot;</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true"></a>    hFlush h</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true"></a></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true"></a>    (childSock, parentSock) <span class="ot">&lt;-</span> socketPair <span class="dt">AF_UNIX</span> <span class="dt">Stream</span> defaultProtocol</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true"></a>    <span class="kw">let</span> childInt <span class="ot">=</span> fdSocket childSock</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true"></a>    <span class="fu">print</span> (childSock, parentSock)</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true"></a>    child <span class="ot">&lt;-</span> forkProcess <span class="op">$</span> childFunc childInt</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true"></a>    recv parentSock <span class="dv">10</span> <span class="op">&gt;&gt;=</span> <span class="fu">print</span></span></code></pre></div>
 <p>Let the child take a <code>CInt</code> and turn it into a <code>Socket</code>:<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">import</span> <span class="dt">Control.Concurrent</span></span>
-<span id="cb4-2"><a href="#cb4-2"></a><span class="kw">import</span> <span class="dt">Control.Concurrent.MVar</span></span>
-<span id="cb4-3"><a href="#cb4-3"></a><span class="kw">import</span> <span class="dt">System.Posix.Process</span></span>
-<span id="cb4-4"><a href="#cb4-4"></a><span class="kw">import</span> <span class="dt">System.Posix.IO</span></span>
-<span id="cb4-5"><a href="#cb4-5"></a><span class="kw">import</span> <span class="dt">System.Posix.Types</span></span>
-<span id="cb4-6"><a href="#cb4-6"></a><span class="kw">import</span> <span class="dt">Network.Socket</span></span>
-<span id="cb4-7"><a href="#cb4-7"></a></span>
-<span id="cb4-8"><a href="#cb4-8"></a>childFunc sInt <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb4-9"><a href="#cb4-9"></a>    s <span class="ot">&lt;-</span> mkSocket sInt <span class="dt">AF_UNIX</span> <span class="dt">Stream</span> defaultProtocol <span class="dt">Connected</span></span>
-<span id="cb4-10"><a href="#cb4-10"></a>    send s <span class="st">&quot;Ping from child&quot;</span> <span class="op">&gt;&gt;</span> <span class="fu">return</span> ()</span>
-<span id="cb4-11"><a href="#cb4-11"></a></span>
-<span id="cb4-12"><a href="#cb4-12"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb4-13"><a href="#cb4-13"></a>    (childSock, parentSock) <span class="ot">&lt;-</span> socketPair <span class="dt">AF_UNIX</span> <span class="dt">Stream</span> defaultProtocol</span>
-<span id="cb4-14"><a href="#cb4-14"></a>    <span class="kw">let</span> childInt <span class="ot">=</span> fdSocket childSock</span>
-<span id="cb4-15"><a href="#cb4-15"></a>    <span class="fu">print</span> (childInt, parentSock)</span>
-<span id="cb4-16"><a href="#cb4-16"></a>    child <span class="ot">&lt;-</span> forkProcess <span class="op">$</span> childFunc childInt</span>
-<span id="cb4-17"><a href="#cb4-17"></a>    recv parentSock <span class="dv">10</span> <span class="op">&gt;&gt;=</span> <span class="fu">print</span></span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Control.Concurrent</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Control.Concurrent.MVar</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">System.Posix.Process</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">System.Posix.IO</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">System.Posix.Types</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Network.Socket</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true"></a></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true"></a>childFunc sInt <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true"></a>    s <span class="ot">&lt;-</span> mkSocket sInt <span class="dt">AF_UNIX</span> <span class="dt">Stream</span> defaultProtocol <span class="dt">Connected</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true"></a>    send s <span class="st">&quot;Ping from child&quot;</span> <span class="op">&gt;&gt;</span> <span class="fu">return</span> ()</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true"></a></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true"></a>    (childSock, parentSock) <span class="ot">&lt;-</span> socketPair <span class="dt">AF_UNIX</span> <span class="dt">Stream</span> defaultProtocol</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true"></a>    <span class="kw">let</span> childInt <span class="ot">=</span> fdSocket childSock</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true"></a>    <span class="fu">print</span> (childInt, parentSock)</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true"></a>    child <span class="ot">&lt;-</span> forkProcess <span class="op">$</span> childFunc childInt</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true"></a>    recv parentSock <span class="dv">10</span> <span class="op">&gt;&gt;=</span> <span class="fu">print</span></span></code></pre></div>
 <section class="footnotes" role="doc-endnotes">
 <hr />
 <ol>

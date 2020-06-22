@@ -31,72 +31,72 @@
 
 <p>The time has come for the final installment of this series of “discussions of a refactoring”. <a href="../posts/2009-07-31-710-making-a-choice-from-a-list-in-haskell-vty-part-4.html">These</a> <a href="../posts/2009-07-24-702-making-a-choice-from-a-list-in-haskell-vty-part-3.html">are</a> <a href="../posts/2009-07-09-689-making-a-choice-from-a-list-in-haskell-vty-part-2.html">the</a> <a href="../posts/2009-07-03-685-making-a-choice-from-a-list-in-haskell-vty-part-1.html">earlier</a> <a href="../posts/2009-06-28-664-making-a-choice-from-a-list-in-haskell-vty-part-0.html">installments</a>. This is where I finally add the ability to collapse a list item. This is a rather terse description of the changes, since I feel all of them are fairly obvious, and hence require no lengthy explanation.</p>
 <p>First the <code>Option</code> type has to be changed to keep track of whether an item is collapsed or not:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">data</span> <span class="dt">Option</span> <span class="ot">=</span> <span class="dt">Option</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a>    {<span class="ot"> optionRange::</span>(<span class="dt">Int</span>, <span class="dt">Int</span>)</span>
-<span id="cb1-3"><a href="#cb1-3"></a>    ,<span class="ot"> optionCollapsed::</span><span class="dt">Bool</span></span>
-<span id="cb1-4"><a href="#cb1-4"></a>    ,<span class="ot"> optionS1::</span><span class="dt">String</span></span>
-<span id="cb1-5"><a href="#cb1-5"></a>    ,<span class="ot"> optionS2::</span><span class="dt">String</span></span>
-<span id="cb1-6"><a href="#cb1-6"></a>    } <span class="kw">deriving</span> (<span class="dt">Show</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Option</span> <span class="ot">=</span> <span class="dt">Option</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>    {<span class="ot"> optionRange::</span>(<span class="dt">Int</span>, <span class="dt">Int</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>    ,<span class="ot"> optionCollapsed::</span><span class="dt">Bool</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>    ,<span class="ot"> optionS1::</span><span class="dt">String</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>    ,<span class="ot"> optionS2::</span><span class="dt">String</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a>    } <span class="kw">deriving</span> (<span class="dt">Show</span>)</span></code></pre></div>
 <p>Next the rendering of an item has to be changed, so that collapsed items really appear collapsed. I thought displaying a collapsed item as its first line, with “…” added to the end would be acceptable for a first version:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">instance</span> <span class="dt">Pretty</span> <span class="dt">Option</span> <span class="kw">where</span></span>
-<span id="cb2-2"><a href="#cb2-2"></a>    pretty (<span class="dt">Option</span> _ <span class="dt">False</span> s1 s2) <span class="ot">=</span> string s1 <span class="op">&lt;&gt;</span> line <span class="op">&lt;&gt;</span> indent <span class="dv">2</span> (string s2)</span>
-<span id="cb2-3"><a href="#cb2-3"></a>    pretty (<span class="dt">Option</span> _ <span class="dt">True</span> s1 _) <span class="ot">=</span> string s1 <span class="op">&lt;&gt;</span> string <span class="st">&quot;...&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">Pretty</span> <span class="dt">Option</span> <span class="kw">where</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>    pretty (<span class="dt">Option</span> _ <span class="dt">False</span> s1 s2) <span class="ot">=</span> string s1 <span class="op">&lt;&gt;</span> line <span class="op">&lt;&gt;</span> indent <span class="dv">2</span> (string s2)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a>    pretty (<span class="dt">Option</span> _ <span class="dt">True</span> s1 _) <span class="ot">=</span> string s1 <span class="op">&lt;&gt;</span> string <span class="st">&quot;...&quot;</span></span></code></pre></div>
 <p>Later on I’ll need to update the range of an item. For the forgetful, the range of an item is the starting and ending line. Obviously the range changes when an item is collapsed:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a>optionUpdateRange o <span class="ot">=</span> <span class="kw">let</span></span>
-<span id="cb3-2"><a href="#cb3-2"></a>        (b, _) <span class="ot">=</span> optionRange o</span>
-<span id="cb3-3"><a href="#cb3-3"></a>        l <span class="ot">=</span> <span class="fu">length</span> <span class="op">$</span> <span class="fu">lines</span> <span class="op">$</span> <span class="fu">show</span> <span class="op">$</span> pretty o</span>
-<span id="cb3-4"><a href="#cb3-4"></a>    <span class="kw">in</span> o { optionRange <span class="ot">=</span> (b, b <span class="op">+</span> l <span class="op">-</span> <span class="dv">1</span>) }</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a>optionUpdateRange o <span class="ot">=</span> <span class="kw">let</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>        (b, _) <span class="ot">=</span> optionRange o</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>        l <span class="ot">=</span> <span class="fu">length</span> <span class="op">$</span> <span class="fu">lines</span> <span class="op">$</span> <span class="fu">show</span> <span class="op">$</span> pretty o</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a>    <span class="kw">in</span> o { optionRange <span class="ot">=</span> (b, b <span class="op">+</span> l <span class="op">-</span> <span class="dv">1</span>) }</span></code></pre></div>
 <p>The implementation of <code>optionsIsInRange</code> has to change due to adding the <code>optionCollapsed</code> field. It’ll also be useful to have a few functions for manipulating the collapsed state of an item:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a>optionIsInRange (<span class="dt">Option</span> (b, e) _ _ _) i <span class="ot">=</span> b <span class="op">&lt;=</span> i <span class="op">&amp;&amp;</span> i <span class="op">&lt;=</span> e</span>
-<span id="cb4-2"><a href="#cb4-2"></a></span>
-<span id="cb4-3"><a href="#cb4-3"></a>optionIsCollapsed (<span class="dt">Option</span> _ c _ _) <span class="ot">=</span> c</span>
-<span id="cb4-4"><a href="#cb4-4"></a>optionToggleCollapse o <span class="ot">=</span> o { optionCollapsed <span class="ot">=</span> <span class="fu">not</span> (optionCollapsed o) }</span>
-<span id="cb4-5"><a href="#cb4-5"></a>optionCollapse o <span class="ot">=</span> o { optionCollapsed <span class="ot">=</span> <span class="dt">True</span> }</span>
-<span id="cb4-6"><a href="#cb4-6"></a>optionExpand o <span class="ot">=</span> o { optionCollapsed <span class="ot">=</span> <span class="dt">False</span> }</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a>optionIsInRange (<span class="dt">Option</span> (b, e) _ _ _) i <span class="ot">=</span> b <span class="op">&lt;=</span> i <span class="op">&amp;&amp;</span> i <span class="op">&lt;=</span> e</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a>optionIsCollapsed (<span class="dt">Option</span> _ c _ _) <span class="ot">=</span> c</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a>optionToggleCollapse o <span class="ot">=</span> o { optionCollapsed <span class="ot">=</span> <span class="fu">not</span> (optionCollapsed o) }</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a>optionCollapse o <span class="ot">=</span> o { optionCollapsed <span class="ot">=</span> <span class="dt">True</span> }</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true"></a>optionExpand o <span class="ot">=</span> o { optionCollapsed <span class="ot">=</span> <span class="dt">False</span> }</span></code></pre></div>
 <p>One thing that I didn’t think about until after doing some manual testing was that moving the cursor up in the list should always put the cursor on the line above, even when moving from one item to the previous. This was a bug in the previous version :-)</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1"></a>ozPreviousLine o<span class="op">@</span>(<span class="dt">OptionZipper</span> <span class="dv">0</span> _ _) <span class="ot">=</span> o</span>
-<span id="cb5-2"><a href="#cb5-2"></a>ozPreviousLine o <span class="ot">=</span> <span class="kw">let</span></span>
-<span id="cb5-3"><a href="#cb5-3"></a>        c <span class="ot">=</span> fromJust <span class="op">$</span> ozCursor o</span>
-<span id="cb5-4"><a href="#cb5-4"></a>        i <span class="ot">=</span> ozIdx o</span>
-<span id="cb5-5"><a href="#cb5-5"></a>    <span class="kw">in</span> <span class="kw">if</span> optionIsInRange c (i <span class="op">-</span> <span class="dv">1</span>)</span>
-<span id="cb5-6"><a href="#cb5-6"></a>        <span class="kw">then</span> o { ozIdx <span class="ot">=</span> i <span class="op">-</span> <span class="dv">1</span> }</span>
-<span id="cb5-7"><a href="#cb5-7"></a>        <span class="kw">else</span> ozJumpToCursorBottom <span class="op">$</span> ozLeft o</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a>ozPreviousLine o<span class="op">@</span>(<span class="dt">OptionZipper</span> <span class="dv">0</span> _ _) <span class="ot">=</span> o</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a>ozPreviousLine o <span class="ot">=</span> <span class="kw">let</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a>        c <span class="ot">=</span> fromJust <span class="op">$</span> ozCursor o</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a>        i <span class="ot">=</span> ozIdx o</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true"></a>    <span class="kw">in</span> <span class="kw">if</span> optionIsInRange c (i <span class="op">-</span> <span class="dv">1</span>)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true"></a>        <span class="kw">then</span> o { ozIdx <span class="ot">=</span> i <span class="op">-</span> <span class="dv">1</span> }</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true"></a>        <span class="kw">else</span> ozJumpToCursorBottom <span class="op">$</span> ozLeft o</span></code></pre></div>
 <p>I also have to change <code>ozCursorMod</code> due to adding the new field:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1"></a>ozCursorMod f o<span class="op">@</span>(<span class="dt">OptionZipper</span> _ _ (r<span class="op">:</span>rs)) <span class="ot">=</span> <span class="kw">let</span></span>
-<span id="cb6-2"><a href="#cb6-2"></a>        _r <span class="ot">=</span> f r</span>
-<span id="cb6-3"><a href="#cb6-3"></a>    <span class="kw">in</span> o { ozRS <span class="ot">=</span> (_r<span class="op">:</span>rs) }</span>
-<span id="cb6-4"><a href="#cb6-4"></a>ozCursorMod _ o <span class="ot">=</span> o</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a>ozCursorMod f o<span class="op">@</span>(<span class="dt">OptionZipper</span> _ _ (r<span class="op">:</span>rs)) <span class="ot">=</span> <span class="kw">let</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a>        _r <span class="ot">=</span> f r</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a>    <span class="kw">in</span> o { ozRS <span class="ot">=</span> (_r<span class="op">:</span>rs) }</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true"></a>ozCursorMod _ o <span class="ot">=</span> o</span></code></pre></div>
 <p>It turns out the be useful to be able to jump to the top and bottom of an item (there’s already an example of the latter above):</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1"></a>ozJumpToCursorTop o<span class="op">@</span>(<span class="dt">OptionZipper</span> _ _ (r<span class="op">:</span>rs)) <span class="ot">=</span> <span class="kw">let</span></span>
-<span id="cb7-2"><a href="#cb7-2"></a>        (newIdx, _) <span class="ot">=</span> optionRange r</span>
-<span id="cb7-3"><a href="#cb7-3"></a>    <span class="kw">in</span> o { ozIdx <span class="ot">=</span> newIdx }</span>
-<span id="cb7-4"><a href="#cb7-4"></a></span>
-<span id="cb7-5"><a href="#cb7-5"></a>ozJumpToCursorBottom o<span class="op">@</span>(<span class="dt">OptionZipper</span> _ _ (r<span class="op">:</span>rs)) <span class="ot">=</span> <span class="kw">let</span></span>
-<span id="cb7-6"><a href="#cb7-6"></a>        (_, newIdx) <span class="ot">=</span> optionRange r</span>
-<span id="cb7-7"><a href="#cb7-7"></a>    <span class="kw">in</span> o { ozIdx <span class="ot">=</span> newIdx }</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a>ozJumpToCursorTop o<span class="op">@</span>(<span class="dt">OptionZipper</span> _ _ (r<span class="op">:</span>rs)) <span class="ot">=</span> <span class="kw">let</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a>        (newIdx, _) <span class="ot">=</span> optionRange r</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true"></a>    <span class="kw">in</span> o { ozIdx <span class="ot">=</span> newIdx }</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true"></a></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true"></a>ozJumpToCursorBottom o<span class="op">@</span>(<span class="dt">OptionZipper</span> _ _ (r<span class="op">:</span>rs)) <span class="ot">=</span> <span class="kw">let</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true"></a>        (_, newIdx) <span class="ot">=</span> optionRange r</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true"></a>    <span class="kw">in</span> o { ozIdx <span class="ot">=</span> newIdx }</span></code></pre></div>
 <p>Creating the list of items need a slight modification as well:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1"></a>options <span class="ot">=</span> ozFromListWithMod (optionSetRange <span class="dv">0</span>) [<span class="dt">Option</span> (<span class="dv">0</span>, <span class="dv">0</span>) <span class="dt">False</span> ((<span class="fu">show</span> i) <span class="op">++</span> <span class="st">&quot; Foo&quot;</span>) <span class="st">&quot;Bar&quot;</span> <span class="op">|</span> i <span class="ot">&lt;-</span> [<span class="dv">0</span><span class="op">..</span><span class="dv">2</span>]]</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a>options <span class="ot">=</span> ozFromListWithMod (optionSetRange <span class="dv">0</span>) [<span class="dt">Option</span> (<span class="dv">0</span>, <span class="dv">0</span>) <span class="dt">False</span> ((<span class="fu">show</span> i) <span class="op">++</span> <span class="st">&quot; Foo&quot;</span>) <span class="st">&quot;Bar&quot;</span> <span class="op">|</span> i <span class="ot">&lt;-</span> [<span class="dv">0</span><span class="op">..</span><span class="dv">2</span>]]</span></code></pre></div>
 <p>The last change is adding actually collapsing of an item in the UI controller code:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1"></a>_getChoice vt opts sx sy <span class="ot">=</span></span>
-<span id="cb9-2"><a href="#cb9-2"></a>    <span class="kw">let</span></span>
-<span id="cb9-3"><a href="#cb9-3"></a>        _converted_opts <span class="ot">=</span> <span class="fu">lines</span> <span class="op">$</span> <span class="fu">show</span> <span class="op">$</span> pretty opts</span>
-<span id="cb9-4"><a href="#cb9-4"></a>        _idx <span class="ot">=</span> ozIdx opts</span>
-<span id="cb9-5"><a href="#cb9-5"></a>        _calcTop winHeight listLength idx <span class="ot">=</span> <span class="fu">max</span> <span class="dv">0</span> ((<span class="fu">min</span> listLength ((<span class="fu">max</span> <span class="dv">0</span> (idx <span class="op">-</span> winHeight <span class="ot">`div`</span> <span class="dv">2</span>)) <span class="op">+</span> winHeight)) <span class="op">-</span> winHeight)</span>
-<span id="cb9-6"><a href="#cb9-6"></a>        _top <span class="ot">=</span> _calcTop sy (<span class="fu">length</span> _converted_opts) _idx</span>
-<span id="cb9-7"><a href="#cb9-7"></a>        _visible_opts <span class="ot">=</span> <span class="fu">take</span> sy (<span class="fu">drop</span> _top _converted_opts)</span>
-<span id="cb9-8"><a href="#cb9-8"></a>    <span class="kw">in</span> <span class="kw">do</span></span>
-<span id="cb9-9"><a href="#cb9-9"></a>        update vt (render _visible_opts (_idx <span class="op">-</span> _top) sx)</span>
-<span id="cb9-10"><a href="#cb9-10"></a>        k <span class="ot">&lt;-</span> getEvent vt</span>
-<span id="cb9-11"><a href="#cb9-11"></a>        <span class="kw">case</span> k <span class="kw">of</span></span>
-<span id="cb9-12"><a href="#cb9-12"></a>            <span class="dt">EvKey</span> (<span class="dt">KASCII</span> <span class="ch">' '</span>) [] <span class="ot">-&gt;</span> <span class="kw">let</span></span>
-<span id="cb9-13"><a href="#cb9-13"></a>                    newOpts <span class="ot">=</span> ozJumpToCursorTop <span class="op">$</span> ozCursorMod (optionUpdateRange <span class="op">.</span> optionToggleCollapse) opts</span>
-<span id="cb9-14"><a href="#cb9-14"></a>                <span class="kw">in</span> _getChoice vt newOpts sx sy</span>
-<span id="cb9-15"><a href="#cb9-15"></a>            <span class="dt">EvKey</span> <span class="dt">KDown</span> [] <span class="ot">-&gt;</span> _getChoice vt (ozNextLine opts) sx sy</span>
-<span id="cb9-16"><a href="#cb9-16"></a>            <span class="dt">EvKey</span> <span class="dt">KUp</span> [] <span class="ot">-&gt;</span> _getChoice vt (ozPreviousLine opts) sx sy</span>
-<span id="cb9-17"><a href="#cb9-17"></a>            <span class="dt">EvKey</span> <span class="dt">KEsc</span> [] <span class="ot">-&gt;</span> shutdown vt <span class="op">&gt;&gt;</span> <span class="fu">return</span> <span class="dt">Nothing</span></span>
-<span id="cb9-18"><a href="#cb9-18"></a>            <span class="dt">EvKey</span> <span class="dt">KEnter</span> [] <span class="ot">-&gt;</span> shutdown vt <span class="op">&gt;&gt;</span> <span class="fu">return</span> (<span class="dt">Just</span> <span class="op">$</span> (_idx, ozCursor opts))</span>
-<span id="cb9-19"><a href="#cb9-19"></a>            <span class="dt">EvResize</span> nx ny <span class="ot">-&gt;</span> _getChoice vt opts nx ny</span>
-<span id="cb9-20"><a href="#cb9-20"></a>            _ <span class="ot">-&gt;</span> _getChoice vt opts sx sy</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a>_getChoice vt opts sx sy <span class="ot">=</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true"></a>    <span class="kw">let</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true"></a>        _converted_opts <span class="ot">=</span> <span class="fu">lines</span> <span class="op">$</span> <span class="fu">show</span> <span class="op">$</span> pretty opts</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true"></a>        _idx <span class="ot">=</span> ozIdx opts</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true"></a>        _calcTop winHeight listLength idx <span class="ot">=</span> <span class="fu">max</span> <span class="dv">0</span> ((<span class="fu">min</span> listLength ((<span class="fu">max</span> <span class="dv">0</span> (idx <span class="op">-</span> winHeight <span class="ot">`div`</span> <span class="dv">2</span>)) <span class="op">+</span> winHeight)) <span class="op">-</span> winHeight)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true"></a>        _top <span class="ot">=</span> _calcTop sy (<span class="fu">length</span> _converted_opts) _idx</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true"></a>        _visible_opts <span class="ot">=</span> <span class="fu">take</span> sy (<span class="fu">drop</span> _top _converted_opts)</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true"></a>    <span class="kw">in</span> <span class="kw">do</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true"></a>        update vt (render _visible_opts (_idx <span class="op">-</span> _top) sx)</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true"></a>        k <span class="ot">&lt;-</span> getEvent vt</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true"></a>        <span class="kw">case</span> k <span class="kw">of</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true"></a>            <span class="dt">EvKey</span> (<span class="dt">KASCII</span> <span class="ch">' '</span>) [] <span class="ot">-&gt;</span> <span class="kw">let</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true"></a>                    newOpts <span class="ot">=</span> ozJumpToCursorTop <span class="op">$</span> ozCursorMod (optionUpdateRange <span class="op">.</span> optionToggleCollapse) opts</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true"></a>                <span class="kw">in</span> _getChoice vt newOpts sx sy</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true"></a>            <span class="dt">EvKey</span> <span class="dt">KDown</span> [] <span class="ot">-&gt;</span> _getChoice vt (ozNextLine opts) sx sy</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true"></a>            <span class="dt">EvKey</span> <span class="dt">KUp</span> [] <span class="ot">-&gt;</span> _getChoice vt (ozPreviousLine opts) sx sy</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true"></a>            <span class="dt">EvKey</span> <span class="dt">KEsc</span> [] <span class="ot">-&gt;</span> shutdown vt <span class="op">&gt;&gt;</span> <span class="fu">return</span> <span class="dt">Nothing</span></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true"></a>            <span class="dt">EvKey</span> <span class="dt">KEnter</span> [] <span class="ot">-&gt;</span> shutdown vt <span class="op">&gt;&gt;</span> <span class="fu">return</span> (<span class="dt">Just</span> <span class="op">$</span> (_idx, ozCursor opts))</span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true"></a>            <span class="dt">EvResize</span> nx ny <span class="ot">-&gt;</span> _getChoice vt opts nx ny</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true"></a>            _ <span class="ot">-&gt;</span> _getChoice vt opts sx sy</span></code></pre></div>
 <p>That’s it.</p>
 
 

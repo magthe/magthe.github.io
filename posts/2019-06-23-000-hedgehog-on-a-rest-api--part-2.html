@@ -77,23 +77,23 @@
   
   ✗ 1 failed.</code></pre>
 <p>It’s easy to verify this using <a href="https://httpie.org/">httpie</a>:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1"></a>$ <span class="ex">http</span> -p b POST :3000/users userId:=0 <span class="st">&quot;userName=&quot;</span></span>
-<span id="cb2-2"><a href="#cb2-2"></a><span class="kw">{</span></span>
-<span id="cb2-3"><a href="#cb2-3"></a>    <span class="st">&quot;userId&quot;</span>: <span class="ex">0</span>,</span>
-<span id="cb2-4"><a href="#cb2-4"></a>    <span class="st">&quot;userName&quot;</span>: <span class="st">&quot;&quot;</span></span>
-<span id="cb2-5"><a href="#cb2-5"></a><span class="kw">}</span></span>
-<span id="cb2-6"><a href="#cb2-6"></a>$ <span class="ex">http</span> -p b GET :3000/users/1</span>
-<span id="cb2-7"><a href="#cb2-7"></a>[]</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a>$ <span class="ex">http</span> -p b POST :3000/users userId:=0 <span class="st">&quot;userName=&quot;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a><span class="kw">{</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a>    <span class="st">&quot;userId&quot;</span>: <span class="ex">0</span>,</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a>    <span class="st">&quot;userName&quot;</span>: <span class="st">&quot;&quot;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a><span class="kw">}</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a>$ <span class="ex">http</span> -p b GET :3000/users/1</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a>[]</span></code></pre></div>
 <p>It’s clear that my assumption that <em>User ID</em> starts at 1 is wrong. Luckily fixing that isn’t too difficult. Instead of defining the update function for <code>addUser</code> as</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a>u (<span class="dt">State</span> m) (<span class="dt">AddUser</span> n) _o <span class="ot">=</span> <span class="dt">State</span> <span class="op">$</span> M.insert k n m</span>
-<span id="cb3-2"><a href="#cb3-2"></a>  <span class="kw">where</span></span>
-<span id="cb3-3"><a href="#cb3-3"></a>    k <span class="ot">=</span> <span class="fu">succ</span> <span class="op">$</span> <span class="fu">foldl</span> <span class="fu">max</span> <span class="dv">0</span> (M.keys m)</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a>u (<span class="dt">State</span> m) (<span class="dt">AddUser</span> n) _o <span class="ot">=</span> <span class="dt">State</span> <span class="op">$</span> M.insert k n m</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>  <span class="kw">where</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>    k <span class="ot">=</span> <span class="fu">succ</span> <span class="op">$</span> <span class="fu">foldl</span> <span class="fu">max</span> <span class="dv">0</span> (M.keys m)</span></code></pre></div>
 <p>I define it as</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a>u (<span class="dt">State</span> m) (<span class="dt">AddUser</span> n) _o <span class="ot">=</span> <span class="dt">State</span> <span class="op">$</span> M.insert k n m</span>
-<span id="cb4-2"><a href="#cb4-2"></a>  <span class="kw">where</span></span>
-<span id="cb4-3"><a href="#cb4-3"></a>    k <span class="ot">=</span> <span class="kw">case</span> M.keys m <span class="kw">of</span></span>
-<span id="cb4-4"><a href="#cb4-4"></a>      [] <span class="ot">-&gt;</span> <span class="dv">0</span></span>
-<span id="cb4-5"><a href="#cb4-5"></a>      ks <span class="ot">-&gt;</span> <span class="fu">succ</span> <span class="op">$</span> <span class="fu">foldl</span> <span class="fu">max</span> <span class="dv">0</span> ks</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a>u (<span class="dt">State</span> m) (<span class="dt">AddUser</span> n) _o <span class="ot">=</span> <span class="dt">State</span> <span class="op">$</span> M.insert k n m</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>  <span class="kw">where</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a>    k <span class="ot">=</span> <span class="kw">case</span> M.keys m <span class="kw">of</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a>      [] <span class="ot">-&gt;</span> <span class="dv">0</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a>      ks <span class="ot">-&gt;</span> <span class="fu">succ</span> <span class="op">$</span> <span class="fu">foldl</span> <span class="fu">max</span> <span class="dv">0</span> ks</span></code></pre></div>
 <p>The complete code at this point can be found <a href="https://gist.github.com/8cbbfdb130a173bb51c317df0c00aa15">here</a>.</p>
 <h2 id="fixing-another-issue-with-the-model">Fixing another issue with the model</h2>
 <p>With that fix in place another issue with the model shows up</p>
@@ -144,26 +144,26 @@
   
   ✗ 1 failed.</code></pre>
 <p>Again, verifying this using <a href="https://httpie.org/">httpie</a> shows what the issue is</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1"></a>$ <span class="ex">http</span> -p b POST :3000/users userId:=0 <span class="st">&quot;userName=&quot;</span></span>
-<span id="cb6-2"><a href="#cb6-2"></a><span class="kw">{</span></span>
-<span id="cb6-3"><a href="#cb6-3"></a>    <span class="st">&quot;userId&quot;</span>: <span class="ex">0</span>,</span>
-<span id="cb6-4"><a href="#cb6-4"></a>    <span class="st">&quot;userName&quot;</span>: <span class="st">&quot;&quot;</span></span>
-<span id="cb6-5"><a href="#cb6-5"></a><span class="kw">}</span></span>
-<span id="cb6-6"><a href="#cb6-6"></a>$ <span class="ex">http</span> -p b DELETE :3000/users/0                  </span>
-<span id="cb6-7"><a href="#cb6-7"></a>$ <span class="ex">http</span> -p b POST :3000/users userId:=0 <span class="st">&quot;userName=&quot;</span></span>
-<span id="cb6-8"><a href="#cb6-8"></a><span class="kw">{</span></span>
-<span id="cb6-9"><a href="#cb6-9"></a>    <span class="st">&quot;userId&quot;</span>: <span class="ex">1</span>,</span>
-<span id="cb6-10"><a href="#cb6-10"></a>    <span class="st">&quot;userName&quot;</span>: <span class="st">&quot;&quot;</span></span>
-<span id="cb6-11"><a href="#cb6-11"></a><span class="kw">}</span></span>
-<span id="cb6-12"><a href="#cb6-12"></a>$ <span class="ex">http</span> -p b GET :3000/users/0</span>
-<span id="cb6-13"><a href="#cb6-13"></a>[]</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a>$ <span class="ex">http</span> -p b POST :3000/users userId:=0 <span class="st">&quot;userName=&quot;</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a><span class="kw">{</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a>    <span class="st">&quot;userId&quot;</span>: <span class="ex">0</span>,</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true"></a>    <span class="st">&quot;userName&quot;</span>: <span class="st">&quot;&quot;</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true"></a><span class="kw">}</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true"></a>$ <span class="ex">http</span> -p b DELETE :3000/users/0                  </span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true"></a>$ <span class="ex">http</span> -p b POST :3000/users userId:=0 <span class="st">&quot;userName=&quot;</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true"></a><span class="kw">{</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true"></a>    <span class="st">&quot;userId&quot;</span>: <span class="ex">1</span>,</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true"></a>    <span class="st">&quot;userName&quot;</span>: <span class="st">&quot;&quot;</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true"></a><span class="kw">}</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true"></a>$ <span class="ex">http</span> -p b GET :3000/users/0</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true"></a>[]</span></code></pre></div>
 <p>In other words, the model assumes that the 0 <em>User ID</em> get’s re-used.</p>
 <p>To fix this I need a bigger change. The central bit is that the state is changed to keep track of the index more explicitly. That is, it changes from</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">newtype</span> <span class="dt">State</span> (<span class="ot">v ::</span> <span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span>)<span class="ot">=</span> <span class="dt">State</span> (<span class="dt">M.Map</span> <span class="dt">Int</span> <span class="dt">Text</span>)</span>
-<span id="cb7-2"><a href="#cb7-2"></a>  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a><span class="kw">newtype</span> <span class="dt">State</span> (<span class="ot">v ::</span> <span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span>)<span class="ot">=</span> <span class="dt">State</span> (<span class="dt">M.Map</span> <span class="dt">Int</span> <span class="dt">Text</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a>  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span></code></pre></div>
 <p>to</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">data</span> <span class="dt">State</span> (<span class="ot">v ::</span> <span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span>)<span class="ot">=</span> <span class="dt">State</span> <span class="dt">Int</span> (<span class="dt">M.Map</span> <span class="dt">Int</span> <span class="dt">Text</span>)</span>
-<span id="cb8-2"><a href="#cb8-2"></a>  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">State</span> (<span class="ot">v ::</span> <span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span>)<span class="ot">=</span> <span class="dt">State</span> <span class="dt">Int</span> (<span class="dt">M.Map</span> <span class="dt">Int</span> <span class="dt">Text</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a>  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span></code></pre></div>
 <p>That change does, quite obviously, require a bunch of other changes in the other functions dealing with the state. The complete file can be viewed <a href="https://gist.github.com/e3c3f4a3c35ab8a529045f90f9f4ba71">here</a>.</p>
 <h2 id="all-is-well-or-is-it">All is well, or is it?</h2>
 <p>After this the tests pass, so all is good in the world, right?</p>

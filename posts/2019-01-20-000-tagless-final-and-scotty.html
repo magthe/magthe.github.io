@@ -35,93 +35,93 @@
 <h2 id="use-tagless-final-with-scotty">1 - Use tagless final with <code>Scotty</code></h2>
 <p>As a first simple little experiment I wrote a tiny little web server that would print a string to <code>stdout</code> when receiving the request to <code>GET /route0</code>.</p>
 <p>The printing to <code>stdout</code> is the operation I want to make abstract.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">class</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">MonadPrinter</span> m <span class="kw">where</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="ot">  mPutStrLn ::</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> m ()</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">class</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">MonadPrinter</span> m <span class="kw">where</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a><span class="ot">  mPutStrLn ::</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> m ()</span></code></pre></div>
 <p>I then created an application type that is an instance of that class.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">newtype</span> <span class="dt">AppM</span> a <span class="ot">=</span> <span class="dt">AppM</span> {<span class="ot"> unAppM ::</span> <span class="dt">IO</span> a }</span>
-<span id="cb2-2"><a href="#cb2-2"></a>  <span class="kw">deriving</span> (<span class="dt">Functor</span>, <span class="dt">Applicative</span>, <span class="dt">Monad</span>, <span class="dt">MonadIO</span>)</span>
-<span id="cb2-3"><a href="#cb2-3"></a></span>
-<span id="cb2-4"><a href="#cb2-4"></a><span class="kw">instance</span> <span class="dt">MonadPrinter</span> <span class="dt">AppM</span> <span class="kw">where</span></span>
-<span id="cb2-5"><a href="#cb2-5"></a>  mPutStrLn t <span class="ot">=</span> liftIO <span class="op">$</span> <span class="fu">putStrLn</span> (unpack t)</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="kw">newtype</span> <span class="dt">AppM</span> a <span class="ot">=</span> <span class="dt">AppM</span> {<span class="ot"> unAppM ::</span> <span class="dt">IO</span> a }</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>  <span class="kw">deriving</span> (<span class="dt">Functor</span>, <span class="dt">Applicative</span>, <span class="dt">Monad</span>, <span class="dt">MonadIO</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">MonadPrinter</span> <span class="dt">AppM</span> <span class="kw">where</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a>  mPutStrLn t <span class="ot">=</span> liftIO <span class="op">$</span> <span class="fu">putStrLn</span> (unpack t)</span></code></pre></div>
 <p>Then I added a bit of <code>Scotty</code> boilerplate. It’s not strictly necessary, but does make the code a bit nicer to read.</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">type</span> <span class="dt">FooM</span> <span class="ot">=</span> <span class="dt">ScottyT</span> <span class="dt">Text</span> <span class="dt">AppM</span></span>
-<span id="cb3-2"><a href="#cb3-2"></a><span class="kw">type</span> <span class="dt">FooActionM</span> <span class="ot">=</span> <span class="dt">ActionT</span> <span class="dt">Text</span> <span class="dt">AppM</span></span>
-<span id="cb3-3"><a href="#cb3-3"></a></span>
-<span id="cb3-4"><a href="#cb3-4"></a><span class="ot">foo ::</span> <span class="dt">MonadIO</span> m <span class="ot">=&gt;</span> <span class="dt">Port</span> <span class="ot">-&gt;</span> <span class="dt">ScottyT</span> <span class="dt">Text</span> <span class="dt">AppM</span> () <span class="ot">-&gt;</span> m ()</span>
-<span id="cb3-5"><a href="#cb3-5"></a>foo port <span class="ot">=</span> scottyT port unAppM</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="kw">type</span> <span class="dt">FooM</span> <span class="ot">=</span> <span class="dt">ScottyT</span> <span class="dt">Text</span> <span class="dt">AppM</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a><span class="kw">type</span> <span class="dt">FooActionM</span> <span class="ot">=</span> <span class="dt">ActionT</span> <span class="dt">Text</span> <span class="dt">AppM</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a><span class="ot">foo ::</span> <span class="dt">MonadIO</span> m <span class="ot">=&gt;</span> <span class="dt">Port</span> <span class="ot">-&gt;</span> <span class="dt">ScottyT</span> <span class="dt">Text</span> <span class="dt">AppM</span> () <span class="ot">-&gt;</span> m ()</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a>foo port <span class="ot">=</span> scottyT port unAppM</span></code></pre></div>
 <p>With that in place the web server itself is just a matter of tying it all together.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
-<span id="cb4-2"><a href="#cb4-2"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb4-3"><a href="#cb4-3"></a>  foo <span class="dv">3000</span> <span class="op">$</span> <span class="kw">do</span></span>
-<span id="cb4-4"><a href="#cb4-4"></a>    get <span class="st">&quot;/route0&quot;</span> <span class="op">$</span> <span class="kw">do</span></span>
-<span id="cb4-5"><a href="#cb4-5"></a>      lift <span class="op">$</span> mPutStrLn <span class="st">&quot;getting /route0&quot;</span></span>
-<span id="cb4-6"><a href="#cb4-6"></a>      json <span class="op">$</span> object [<span class="st">&quot;route0&quot;</span> <span class="op">.=</span> (<span class="st">&quot;ok&quot;</span><span class="ot"> ::</span> <span class="dt">String</span>)]</span>
-<span id="cb4-7"><a href="#cb4-7"></a>    notFound <span class="op">$</span> json <span class="op">$</span> object [<span class="st">&quot;error&quot;</span> <span class="op">.=</span> (<span class="st">&quot;not found&quot;</span><span class="ot"> ::</span> <span class="dt">String</span>)]</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a>  foo <span class="dv">3000</span> <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a>    get <span class="st">&quot;/route0&quot;</span> <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a>      lift <span class="op">$</span> mPutStrLn <span class="st">&quot;getting /route0&quot;</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true"></a>      json <span class="op">$</span> object [<span class="st">&quot;route0&quot;</span> <span class="op">.=</span> (<span class="st">&quot;ok&quot;</span><span class="ot"> ::</span> <span class="dt">String</span>)]</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true"></a>    notFound <span class="op">$</span> json <span class="op">$</span> object [<span class="st">&quot;error&quot;</span> <span class="op">.=</span> (<span class="st">&quot;not found&quot;</span><span class="ot"> ::</span> <span class="dt">String</span>)]</span></code></pre></div>
 <p>That was simple enough.</p>
 <h2 id="add-configuration">2 - Add configuration</h2>
 <p>In order to try out how to deal with configuration I added a class for doing some simple logging</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">class</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">MonadLogger</span> m <span class="kw">where</span></span>
-<span id="cb5-2"><a href="#cb5-2"></a><span class="ot">  mLog ::</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> m ()</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="kw">class</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> <span class="dt">MonadLogger</span> m <span class="kw">where</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a><span class="ot">  mLog ::</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> m ()</span></code></pre></div>
 <p>The straight forward way to deal with configuration is to create a monad stack with <code>ReaderT</code> and since it’s logging I want to do the configuration consists of a single <code>LoggerSet</code> (from <a href="https://hackage.haskell.org/package/fast-logger"><code>fast-logger</code></a>).</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">newtype</span> <span class="dt">AppM</span> a <span class="ot">=</span> <span class="dt">AppM</span> {<span class="ot"> unAppM ::</span> <span class="dt">ReaderT</span> <span class="dt">LoggerSet</span> <span class="dt">IO</span> a }</span>
-<span id="cb6-2"><a href="#cb6-2"></a>  <span class="kw">deriving</span> (<span class="dt">Functor</span>, <span class="dt">Applicative</span>, <span class="dt">Monad</span>, <span class="dt">MonadIO</span>, <span class="dt">MonadReader</span> <span class="dt">LoggerSet</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a><span class="kw">newtype</span> <span class="dt">AppM</span> a <span class="ot">=</span> <span class="dt">AppM</span> {<span class="ot"> unAppM ::</span> <span class="dt">ReaderT</span> <span class="dt">LoggerSet</span> <span class="dt">IO</span> a }</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a>  <span class="kw">deriving</span> (<span class="dt">Functor</span>, <span class="dt">Applicative</span>, <span class="dt">Monad</span>, <span class="dt">MonadIO</span>, <span class="dt">MonadReader</span> <span class="dt">LoggerSet</span>)</span></code></pre></div>
 <p>That means the class instance can be implemented like this</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">instance</span> <span class="dt">MonadLogger</span> <span class="dt">AppM</span> <span class="kw">where</span></span>
-<span id="cb7-2"><a href="#cb7-2"></a>  mLog msg <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb7-3"><a href="#cb7-3"></a>    ls <span class="ot">&lt;-</span> ask</span>
-<span id="cb7-4"><a href="#cb7-4"></a>    liftIO <span class="op">$</span> pushLogStrLn ls <span class="op">$</span> toLogStr msg</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">MonadLogger</span> <span class="dt">AppM</span> <span class="kw">where</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a>  mLog msg <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true"></a>    ls <span class="ot">&lt;-</span> ask</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true"></a>    liftIO <span class="op">$</span> pushLogStrLn ls <span class="op">$</span> toLogStr msg</span></code></pre></div>
 <p>Of course <code>foo</code> has to be changed too, and it becomes a little easier with a wrapper for <code>runReaderT</code> and <code>unAppM</code>.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1"></a><span class="ot">foo ::</span> <span class="dt">MonadIO</span> m <span class="ot">=&gt;</span> <span class="dt">LoggerSet</span> <span class="ot">-&gt;</span> <span class="dt">Port</span> <span class="ot">-&gt;</span> <span class="dt">ScottyT</span> <span class="dt">Text</span> <span class="dt">AppM</span> () <span class="ot">-&gt;</span> m ()</span>
-<span id="cb8-2"><a href="#cb8-2"></a>foo ls port <span class="ot">=</span> scottyT port (<span class="ot">`runAppM`</span> ls)</span>
-<span id="cb8-3"><a href="#cb8-3"></a></span>
-<span id="cb8-4"><a href="#cb8-4"></a><span class="ot">runAppM ::</span> <span class="dt">AppM</span> a <span class="ot">-&gt;</span> <span class="dt">LoggerSet</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span>
-<span id="cb8-5"><a href="#cb8-5"></a>runAppM app ls <span class="ot">=</span> runReaderT (unAppM app) ls</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a><span class="ot">foo ::</span> <span class="dt">MonadIO</span> m <span class="ot">=&gt;</span> <span class="dt">LoggerSet</span> <span class="ot">-&gt;</span> <span class="dt">Port</span> <span class="ot">-&gt;</span> <span class="dt">ScottyT</span> <span class="dt">Text</span> <span class="dt">AppM</span> () <span class="ot">-&gt;</span> m ()</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a>foo ls port <span class="ot">=</span> scottyT port (<span class="ot">`runAppM`</span> ls)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true"></a><span class="ot">runAppM ::</span> <span class="dt">AppM</span> a <span class="ot">-&gt;</span> <span class="dt">LoggerSet</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true"></a>runAppM app ls <span class="ot">=</span> runReaderT (unAppM app) ls</span></code></pre></div>
 <p>With that in place the printing to <code>stdout</code> can be replaced by a writing to the log.</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
-<span id="cb9-2"><a href="#cb9-2"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb9-3"><a href="#cb9-3"></a>  ls <span class="ot">&lt;-</span> newStdoutLoggerSet defaultBufSize</span>
-<span id="cb9-4"><a href="#cb9-4"></a>  foo ls <span class="dv">3000</span> <span class="op">$</span> <span class="kw">do</span></span>
-<span id="cb9-5"><a href="#cb9-5"></a>    get <span class="st">&quot;/route0&quot;</span> <span class="op">$</span> <span class="kw">do</span></span>
-<span id="cb9-6"><a href="#cb9-6"></a>      lift <span class="op">$</span> mLog <span class="st">&quot;log: getting /route0&quot;</span></span>
-<span id="cb9-7"><a href="#cb9-7"></a>      json <span class="op">$</span> object [<span class="st">&quot;route0&quot;</span> <span class="op">.=</span> (<span class="st">&quot;ok&quot;</span><span class="ot"> ::</span> <span class="dt">String</span>)]</span>
-<span id="cb9-8"><a href="#cb9-8"></a>    notFound <span class="op">$</span> json <span class="op">$</span> object [<span class="st">&quot;error&quot;</span> <span class="op">.=</span> (<span class="st">&quot;not found&quot;</span><span class="ot"> ::</span> <span class="dt">String</span>)]</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true"></a>  ls <span class="ot">&lt;-</span> newStdoutLoggerSet defaultBufSize</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true"></a>  foo ls <span class="dv">3000</span> <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true"></a>    get <span class="st">&quot;/route0&quot;</span> <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true"></a>      lift <span class="op">$</span> mLog <span class="st">&quot;log: getting /route0&quot;</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true"></a>      json <span class="op">$</span> object [<span class="st">&quot;route0&quot;</span> <span class="op">.=</span> (<span class="st">&quot;ok&quot;</span><span class="ot"> ::</span> <span class="dt">String</span>)]</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true"></a>    notFound <span class="op">$</span> json <span class="op">$</span> object [<span class="st">&quot;error&quot;</span> <span class="op">.=</span> (<span class="st">&quot;not found&quot;</span><span class="ot"> ::</span> <span class="dt">String</span>)]</span></code></pre></div>
 <p>Not really a big change, I’d say. Extending the configuration is clearly straight forward too.</p>
 <h2 id="per-request-configuration">3 - Per-request configuration</h2>
 <p>At work we use correlation IDs<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> and I think that the most convenient way to deal with it is to put the correlation ID into the configuration after extracting it. That is, I want to modify the configuration on each request. Luckily it turns out to be possible to do that, despite using <code>ReaderT</code> for holding the configuration.</p>
 <p>I can’t be bothered with a full implementation of correlation ID for this little experiment, but as long as I can get a new <code>AppM</code> by running a function on the configuration it’s just a matter of extracting the correct header from the request. For this experiment it’ll do to just modify an integer in the configuration.</p>
 <p>I start with defining a type for the configuration and changing <code>AppM</code>.</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1"></a><span class="kw">type</span> <span class="dt">Config</span> <span class="ot">=</span> (<span class="dt">LoggerSet</span>, <span class="dt">Int</span>)</span>
-<span id="cb10-2"><a href="#cb10-2"></a></span>
-<span id="cb10-3"><a href="#cb10-3"></a><span class="kw">newtype</span> <span class="dt">AppM</span> a <span class="ot">=</span> <span class="dt">AppM</span> {<span class="ot"> unAppM ::</span> <span class="dt">ReaderT</span> <span class="dt">Config</span> <span class="dt">IO</span> a }</span>
-<span id="cb10-4"><a href="#cb10-4"></a>  <span class="kw">deriving</span> (<span class="dt">Functor</span>, <span class="dt">Applicative</span>, <span class="dt">Monad</span>, <span class="dt">MonadIO</span>, <span class="dt">MonadReader</span> <span class="dt">Config</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true"></a><span class="kw">type</span> <span class="dt">Config</span> <span class="ot">=</span> (<span class="dt">LoggerSet</span>, <span class="dt">Int</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true"></a></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true"></a><span class="kw">newtype</span> <span class="dt">AppM</span> a <span class="ot">=</span> <span class="dt">AppM</span> {<span class="ot"> unAppM ::</span> <span class="dt">ReaderT</span> <span class="dt">Config</span> <span class="dt">IO</span> a }</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true"></a>  <span class="kw">deriving</span> (<span class="dt">Functor</span>, <span class="dt">Applicative</span>, <span class="dt">Monad</span>, <span class="dt">MonadIO</span>, <span class="dt">MonadReader</span> <span class="dt">Config</span>)</span></code></pre></div>
 <p>The logger instance has to be changed accordingly of course.</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1"></a><span class="kw">instance</span> <span class="dt">MonadLogger</span> <span class="dt">AppM</span> <span class="kw">where</span></span>
-<span id="cb11-2"><a href="#cb11-2"></a>  mLog msg <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb11-3"><a href="#cb11-3"></a>    (ls, i) <span class="ot">&lt;-</span> ask</span>
-<span id="cb11-4"><a href="#cb11-4"></a>    liftIO <span class="op">$</span> pushLogStrLn ls <span class="op">$</span> toLogStr msg <span class="op">&lt;&gt;</span> toLogStr (<span class="st">&quot;:&quot;</span><span class="ot"> ::</span> <span class="dt">String</span>) <span class="op">&lt;&gt;</span> toLogStr (<span class="fu">show</span> i)</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">MonadLogger</span> <span class="dt">AppM</span> <span class="kw">where</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true"></a>  mLog msg <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true"></a>    (ls, i) <span class="ot">&lt;-</span> ask</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true"></a>    liftIO <span class="op">$</span> pushLogStrLn ls <span class="op">$</span> toLogStr msg <span class="op">&lt;&gt;</span> toLogStr (<span class="st">&quot;:&quot;</span><span class="ot"> ::</span> <span class="dt">String</span>) <span class="op">&lt;&gt;</span> toLogStr (<span class="fu">show</span> i)</span></code></pre></div>
 <p>The <code>get</code> function that comes with <code>scotty</code> isn’t going to cut it, since it has no way of modifying the configuration, so I’ll need a new one.</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1"></a><span class="ot">mGet ::</span> <span class="dt">ScottyError</span> e <span class="ot">=&gt;</span> <span class="dt">RoutePattern</span> <span class="ot">-&gt;</span> <span class="dt">ActionT</span> e <span class="dt">AppM</span> () <span class="ot">-&gt;</span> <span class="dt">ScottyT</span> e <span class="dt">AppM</span> ()</span>
-<span id="cb12-2"><a href="#cb12-2"></a>mGet p a <span class="ot">=</span> get p <span class="op">$</span> <span class="kw">do</span></span>
-<span id="cb12-3"><a href="#cb12-3"></a>  withCfg (\ (ls, i) <span class="ot">-&gt;</span> (ls, <span class="fu">succ</span> i)) a</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true"></a><span class="ot">mGet ::</span> <span class="dt">ScottyError</span> e <span class="ot">=&gt;</span> <span class="dt">RoutePattern</span> <span class="ot">-&gt;</span> <span class="dt">ActionT</span> e <span class="dt">AppM</span> () <span class="ot">-&gt;</span> <span class="dt">ScottyT</span> e <span class="dt">AppM</span> ()</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true"></a>mGet p a <span class="ot">=</span> get p <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true"></a>  withCfg (\ (ls, i) <span class="ot">-&gt;</span> (ls, <span class="fu">succ</span> i)) a</span></code></pre></div>
 <p>The tricky bit is in the <code>withCfg</code> function. It’s indeed not very easy to read, I think</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1"></a>withCfg <span class="ot">=</span> mapActionT <span class="op">.</span> withAppM</span>
-<span id="cb13-2"><a href="#cb13-2"></a>  <span class="kw">where</span></span>
-<span id="cb13-3"><a href="#cb13-3"></a>    mapActionT f (<span class="dt">ActionT</span> a) <span class="ot">=</span> <span class="dt">ActionT</span> <span class="op">$</span> (mapExceptT <span class="op">.</span> mapReaderT <span class="op">.</span> mapStateT) f a</span>
-<span id="cb13-4"><a href="#cb13-4"></a>    withAppM f a <span class="ot">=</span> <span class="dt">AppM</span> <span class="op">$</span> withReaderT f (unAppM a)</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true"></a>withCfg <span class="ot">=</span> mapActionT <span class="op">.</span> withAppM</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true"></a>  <span class="kw">where</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true"></a>    mapActionT f (<span class="dt">ActionT</span> a) <span class="ot">=</span> <span class="dt">ActionT</span> <span class="op">$</span> (mapExceptT <span class="op">.</span> mapReaderT <span class="op">.</span> mapStateT) f a</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true"></a>    withAppM f a <span class="ot">=</span> <span class="dt">AppM</span> <span class="op">$</span> withReaderT f (unAppM a)</span></code></pre></div>
 <p>Basically it reaches into the guts of <code>scotty</code>’s <code>ActionT</code> type (the details are exposed in <code>Web.Scotty.Internal.Types</code>, thanks for not hiding it completely), and modifies the <code>ReaderT Config</code> I’ve supplied.</p>
 <p>The new server has two routes, the original one and a new one at <code>GET /route1</code>.</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
-<span id="cb14-2"><a href="#cb14-2"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb14-3"><a href="#cb14-3"></a>  <span class="fu">putStrLn</span> <span class="st">&quot;Starting&quot;</span></span>
-<span id="cb14-4"><a href="#cb14-4"></a>  ls <span class="ot">&lt;-</span> newStdoutLoggerSet defaultBufSize</span>
-<span id="cb14-5"><a href="#cb14-5"></a>  foo (ls, <span class="dv">0</span>) <span class="dv">3000</span> <span class="op">$</span> <span class="kw">do</span></span>
-<span id="cb14-6"><a href="#cb14-6"></a>    get <span class="st">&quot;/route0&quot;</span> <span class="op">$</span> <span class="kw">do</span></span>
-<span id="cb14-7"><a href="#cb14-7"></a>      lift <span class="op">$</span> mLog <span class="st">&quot;log: getting /route0&quot;</span></span>
-<span id="cb14-8"><a href="#cb14-8"></a>      json <span class="op">$</span> object [<span class="st">&quot;route0&quot;</span> <span class="op">.=</span> (<span class="st">&quot;ok&quot;</span><span class="ot"> ::</span> <span class="dt">String</span>)]</span>
-<span id="cb14-9"><a href="#cb14-9"></a>    mGet <span class="st">&quot;/route1&quot;</span> <span class="op">$</span> <span class="kw">do</span></span>
-<span id="cb14-10"><a href="#cb14-10"></a>      lift <span class="op">$</span> mLog <span class="st">&quot;log: getting /route1&quot;</span></span>
-<span id="cb14-11"><a href="#cb14-11"></a>      json <span class="op">$</span> object [<span class="st">&quot;route1&quot;</span> <span class="op">.=</span> (<span class="st">&quot;bar&quot;</span><span class="ot"> ::</span> <span class="dt">String</span>)]</span>
-<span id="cb14-12"><a href="#cb14-12"></a>    notFound <span class="op">$</span> json <span class="op">$</span> object [<span class="st">&quot;error&quot;</span> <span class="op">.=</span> (<span class="st">&quot;not found&quot;</span><span class="ot"> ::</span> <span class="dt">String</span>)]</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true"></a>  <span class="fu">putStrLn</span> <span class="st">&quot;Starting&quot;</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true"></a>  ls <span class="ot">&lt;-</span> newStdoutLoggerSet defaultBufSize</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true"></a>  foo (ls, <span class="dv">0</span>) <span class="dv">3000</span> <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true"></a>    get <span class="st">&quot;/route0&quot;</span> <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true"></a>      lift <span class="op">$</span> mLog <span class="st">&quot;log: getting /route0&quot;</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true"></a>      json <span class="op">$</span> object [<span class="st">&quot;route0&quot;</span> <span class="op">.=</span> (<span class="st">&quot;ok&quot;</span><span class="ot"> ::</span> <span class="dt">String</span>)]</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true"></a>    mGet <span class="st">&quot;/route1&quot;</span> <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true"></a>      lift <span class="op">$</span> mLog <span class="st">&quot;log: getting /route1&quot;</span></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true"></a>      json <span class="op">$</span> object [<span class="st">&quot;route1&quot;</span> <span class="op">.=</span> (<span class="st">&quot;bar&quot;</span><span class="ot"> ::</span> <span class="dt">String</span>)]</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true"></a>    notFound <span class="op">$</span> json <span class="op">$</span> object [<span class="st">&quot;error&quot;</span> <span class="op">.=</span> (<span class="st">&quot;not found&quot;</span><span class="ot"> ::</span> <span class="dt">String</span>)]</span></code></pre></div>
 <p>It’s now easy to verify that the original route, <code>GET /route0</code>, logs a string containing the integer ‘0’, while the new route, <code>GET /route1</code>, logs a string containing the integer ‘1’.</p>
 <section class="footnotes" role="doc-endnotes">
 <hr />

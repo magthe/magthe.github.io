@@ -35,11 +35,11 @@
 </blockquote>
 <p>So, just for fun I thought I work out the “noisy and truly harder” bits.</p>
 <p>To begin with I needed two language extensions and two imports</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="ot">{-# LANGUAGE OverloadedStrings#-}</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="ot">{-# LANGUAGE RecordWildCards #-}</span></span>
-<span id="cb1-3"><a href="#cb1-3"></a></span>
-<span id="cb1-4"><a href="#cb1-4"></a><span class="kw">import</span> <span class="dt">Control.Comonad.Traced</span></span>
-<span id="cb1-5"><a href="#cb1-5"></a><span class="kw">import</span> <span class="dt">Data.Text</span></span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="ot">{-# LANGUAGE OverloadedStrings#-}</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a><span class="ot">{-# LANGUAGE RecordWildCards #-}</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Control.Comonad.Traced</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Data.Text</span></span></code></pre></div>
 <p>After that I could copy quite a bit of stuff directly from the other post</p>
 <ul>
 <li><code>Settings</code> definition</li>
@@ -48,51 +48,51 @@
 <li><code>Project</code> definition</li>
 </ul>
 <p>After this everything had only minor changes. First off the <code>ProjectBuilder</code> type had to be changed to</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">type</span> <span class="dt">ProjectBuilder</span> <span class="ot">=</span> <span class="dt">Traced</span> <span class="dt">Settings</span> <span class="dt">Project</span></span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="kw">type</span> <span class="dt">ProjectBuilder</span> <span class="ot">=</span> <span class="dt">Traced</span> <span class="dt">Settings</span> <span class="dt">Project</span></span></code></pre></div>
 <p>With that done the types of all the functions can actually be left as they are, but of course the definitions have to modified. However, it turned out that the necessary modifications were rather smaller than I had expected. First out <code>buildProject</code> which I decided to call <code>buildProjectW</code> to make it possible to keep the original code and the new code in the same file without causing name clashes:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="ot">buildProjectW ::</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> <span class="dt">ProjectBuilder</span></span>
-<span id="cb3-2"><a href="#cb3-2"></a>buildProjectW <span class="ot">=</span> traced <span class="op">.</span> buildProject</span>
-<span id="cb3-3"><a href="#cb3-3"></a>  <span class="kw">where</span></span>
-<span id="cb3-4"><a href="#cb3-4"></a>    buildProject projectName <span class="dt">Settings</span>{<span class="op">..</span>} <span class="ot">=</span> <span class="dt">Project</span></span>
-<span id="cb3-5"><a href="#cb3-5"></a>      { projectHasLibrary <span class="ot">=</span> getAny settingsHasLibrary</span>
-<span id="cb3-6"><a href="#cb3-6"></a>      , projectGitHub     <span class="ot">=</span> getAny settingsGitHub</span>
-<span id="cb3-7"><a href="#cb3-7"></a>      , projectTravis     <span class="ot">=</span> getAny settingsTravis</span>
-<span id="cb3-8"><a href="#cb3-8"></a>      , <span class="op">..</span></span>
-<span id="cb3-9"><a href="#cb3-9"></a>      }</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="ot">buildProjectW ::</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> <span class="dt">ProjectBuilder</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>buildProjectW <span class="ot">=</span> traced <span class="op">.</span> buildProject</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>  <span class="kw">where</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a>    buildProject projectName <span class="dt">Settings</span>{<span class="op">..</span>} <span class="ot">=</span> <span class="dt">Project</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a>      { projectHasLibrary <span class="ot">=</span> getAny settingsHasLibrary</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true"></a>      , projectGitHub     <span class="ot">=</span> getAny settingsGitHub</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true"></a>      , projectTravis     <span class="ot">=</span> getAny settingsTravis</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true"></a>      , <span class="op">..</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true"></a>      }</span></code></pre></div>
 <p>The only difference is the addition of <code>traced .</code> to wrap it up in the <code>newtype</code>, the rest is copied straight from the original article.</p>
 <p>The two simple project combinator functions, which I call <code>hasLibraryBW</code> and <code>gitHubBW</code>, needed a bit of tweaking. In the original version combinators take a <code>builder</code> which is an ordinary function, so it can just be called. Now however, the function is wrapped in a <code>newtype</code> so a bit of unwrapping is necessary:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a><span class="ot">hasLibraryBW ::</span> <span class="dt">ProjectBuilder</span> <span class="ot">-&gt;</span> <span class="dt">Project</span></span>
-<span id="cb4-2"><a href="#cb4-2"></a>hasLibraryBW builder <span class="ot">=</span> runTraced builder <span class="op">$</span> <span class="fu">mempty</span> { settingsHasLibrary <span class="ot">=</span> <span class="dt">Any</span> <span class="dt">True</span> }</span>
-<span id="cb4-3"><a href="#cb4-3"></a></span>
-<span id="cb4-4"><a href="#cb4-4"></a><span class="ot">gitHubBW ::</span> <span class="dt">ProjectBuilder</span> <span class="ot">-&gt;</span> <span class="dt">Project</span></span>
-<span id="cb4-5"><a href="#cb4-5"></a>gitHubBW builder <span class="ot">=</span> runTraced builder <span class="op">$</span> <span class="fu">mempty</span> { settingsGitHub <span class="ot">=</span> <span class="dt">Any</span> <span class="dt">True</span> }</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="ot">hasLibraryBW ::</span> <span class="dt">ProjectBuilder</span> <span class="ot">-&gt;</span> <span class="dt">Project</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>hasLibraryBW builder <span class="ot">=</span> runTraced builder <span class="op">$</span> <span class="fu">mempty</span> { settingsHasLibrary <span class="ot">=</span> <span class="dt">Any</span> <span class="dt">True</span> }</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a><span class="ot">gitHubBW ::</span> <span class="dt">ProjectBuilder</span> <span class="ot">-&gt;</span> <span class="dt">Project</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a>gitHubBW builder <span class="ot">=</span> runTraced builder <span class="op">$</span> <span class="fu">mempty</span> { settingsGitHub <span class="ot">=</span> <span class="dt">Any</span> <span class="dt">True</span> }</span></code></pre></div>
 <p>Once again it’s rather small differences from the code in the article.</p>
 <p>As for the final combinator, which I call <code>travisBW</code>, actually needed no changes at all. I only rewrote it using a <code>when</code> clause, because I prefer that style over <code>let</code>:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1"></a><span class="ot">travisBW ::</span> <span class="dt">ProjectBuilder</span> <span class="ot">-&gt;</span> <span class="dt">Project</span></span>
-<span id="cb5-2"><a href="#cb5-2"></a>travisBW builder <span class="ot">=</span> project { projectTravis <span class="ot">=</span> projectGitHub project }</span>
-<span id="cb5-3"><a href="#cb5-3"></a>  <span class="kw">where</span></span>
-<span id="cb5-4"><a href="#cb5-4"></a>    project <span class="ot">=</span> extract builder</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="ot">travisBW ::</span> <span class="dt">ProjectBuilder</span> <span class="ot">-&gt;</span> <span class="dt">Project</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a>travisBW builder <span class="ot">=</span> project { projectTravis <span class="ot">=</span> projectGitHub project }</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a>  <span class="kw">where</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a>    project <span class="ot">=</span> extract builder</span></code></pre></div>
 <p>Finally, to show that this implementation hasn’t really changed the behaviour</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1"></a>λ extract <span class="op">$</span> buildProjectW <span class="st">&quot;travis&quot;</span> <span class="op">=&gt;&gt;</span> travisBW</span>
-<span id="cb6-2"><a href="#cb6-2"></a><span class="dt">Project</span> { projectName <span class="ot">=</span> <span class="st">&quot;travis&quot;</span></span>
-<span id="cb6-3"><a href="#cb6-3"></a>        , projectHasLibrary <span class="ot">=</span> <span class="dt">False</span></span>
-<span id="cb6-4"><a href="#cb6-4"></a>        , projectGitHub <span class="ot">=</span> <span class="dt">False</span> </span>
-<span id="cb6-5"><a href="#cb6-5"></a>        , projectTravis <span class="ot">=</span> <span class="dt">False</span></span>
-<span id="cb6-6"><a href="#cb6-6"></a>        }</span>
-<span id="cb6-7"><a href="#cb6-7"></a></span>
-<span id="cb6-8"><a href="#cb6-8"></a>λ extract <span class="op">$</span> buildProjectW <span class="st">&quot;github-travis&quot;</span> <span class="op">=&gt;&gt;</span> gitHubBW <span class="op">=&gt;&gt;</span> travisBW</span>
-<span id="cb6-9"><a href="#cb6-9"></a><span class="dt">Project</span> { projectName <span class="ot">=</span> <span class="st">&quot;github-travis&quot;</span></span>
-<span id="cb6-10"><a href="#cb6-10"></a>        , projectHasLibrary <span class="ot">=</span> <span class="dt">False</span></span>
-<span id="cb6-11"><a href="#cb6-11"></a>        , projectGitHub <span class="ot">=</span> <span class="dt">True</span></span>
-<span id="cb6-12"><a href="#cb6-12"></a>        , projectTravis <span class="ot">=</span> <span class="dt">True</span></span>
-<span id="cb6-13"><a href="#cb6-13"></a>        }</span>
-<span id="cb6-14"><a href="#cb6-14"></a></span>
-<span id="cb6-15"><a href="#cb6-15"></a>λ extract <span class="op">$</span> buildProjectW <span class="st">&quot;travis-github&quot;</span> <span class="op">=&gt;&gt;</span> travisBW <span class="op">=&gt;&gt;</span> gitHubBW</span>
-<span id="cb6-16"><a href="#cb6-16"></a><span class="dt">Project</span> { projectName <span class="ot">=</span> <span class="st">&quot;travis-github&quot;</span></span>
-<span id="cb6-17"><a href="#cb6-17"></a>        , projectHasLibrary <span class="ot">=</span> <span class="dt">False</span> </span>
-<span id="cb6-18"><a href="#cb6-18"></a>        , projectGitHub <span class="ot">=</span> <span class="dt">True</span></span>
-<span id="cb6-19"><a href="#cb6-19"></a>        , projectTravis <span class="ot">=</span> <span class="dt">True</span></span>
-<span id="cb6-20"><a href="#cb6-20"></a>        }</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a>λ extract <span class="op">$</span> buildProjectW <span class="st">&quot;travis&quot;</span> <span class="op">=&gt;&gt;</span> travisBW</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a><span class="dt">Project</span> { projectName <span class="ot">=</span> <span class="st">&quot;travis&quot;</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a>        , projectHasLibrary <span class="ot">=</span> <span class="dt">False</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true"></a>        , projectGitHub <span class="ot">=</span> <span class="dt">False</span> </span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true"></a>        , projectTravis <span class="ot">=</span> <span class="dt">False</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true"></a>        }</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true"></a></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true"></a>λ extract <span class="op">$</span> buildProjectW <span class="st">&quot;github-travis&quot;</span> <span class="op">=&gt;&gt;</span> gitHubBW <span class="op">=&gt;&gt;</span> travisBW</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true"></a><span class="dt">Project</span> { projectName <span class="ot">=</span> <span class="st">&quot;github-travis&quot;</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true"></a>        , projectHasLibrary <span class="ot">=</span> <span class="dt">False</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true"></a>        , projectGitHub <span class="ot">=</span> <span class="dt">True</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true"></a>        , projectTravis <span class="ot">=</span> <span class="dt">True</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true"></a>        }</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true"></a></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true"></a>λ extract <span class="op">$</span> buildProjectW <span class="st">&quot;travis-github&quot;</span> <span class="op">=&gt;&gt;</span> travisBW <span class="op">=&gt;&gt;</span> gitHubBW</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true"></a><span class="dt">Project</span> { projectName <span class="ot">=</span> <span class="st">&quot;travis-github&quot;</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true"></a>        , projectHasLibrary <span class="ot">=</span> <span class="dt">False</span> </span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true"></a>        , projectGitHub <span class="ot">=</span> <span class="dt">True</span></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true"></a>        , projectTravis <span class="ot">=</span> <span class="dt">True</span></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true"></a>        }</span></code></pre></div>
 
 
 </div>

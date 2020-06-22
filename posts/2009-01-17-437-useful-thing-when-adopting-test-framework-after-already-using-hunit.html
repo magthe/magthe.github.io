@@ -30,15 +30,15 @@
 </header>
 
 <p>I found <a href="http://hackage.haskell.org/cgi-bin/hackage-scripts/package/test-framework/">test-framework</a> today. In adopting it with my already existing unit tests I found this function to be rather useful:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">import</span> <span class="dt">Test.HUnit</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Test.Framework.Providers.API</span> <span class="kw">as</span> <span class="dt">TFAPI</span></span>
-<span id="cb1-3"><a href="#cb1-3"></a></span>
-<span id="cb1-4"><a href="#cb1-4"></a><span class="ot">unitTest2TFTest ::</span> <span class="dt">Test</span> <span class="ot">-&gt;</span> [<span class="dt">TFAPI.Test</span>]</span>
-<span id="cb1-5"><a href="#cb1-5"></a>unitTest2TFTest t <span class="ot">=</span> <span class="kw">let</span></span>
-<span id="cb1-6"><a href="#cb1-6"></a>        unitTest2TFTest' desc (<span class="dt">TestCase</span> a) <span class="ot">=</span> [testCase desc a]</span>
-<span id="cb1-7"><a href="#cb1-7"></a>        unitTest2TFTest' desc (<span class="dt">TestLabel</span> s t) <span class="ot">=</span> unitTest2TFTest' (desc <span class="op">++</span> <span class="st">&quot;:&quot;</span> <span class="op">++</span> s) t</span>
-<span id="cb1-8"><a href="#cb1-8"></a>        unitTest2TFTest' desc (<span class="dt">TestList</span> ts) <span class="ot">=</span> <span class="fu">concat</span> <span class="op">$</span> <span class="fu">map</span> (unitTest2TFTest' desc) ts</span>
-<span id="cb1-9"><a href="#cb1-9"></a>    <span class="kw">in</span> unitTest2TFTest' <span class="st">&quot;&quot;</span> t</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Test.HUnit</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Test.Framework.Providers.API</span> <span class="kw">as</span> <span class="dt">TFAPI</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a><span class="ot">unitTest2TFTest ::</span> <span class="dt">Test</span> <span class="ot">-&gt;</span> [<span class="dt">TFAPI.Test</span>]</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>unitTest2TFTest t <span class="ot">=</span> <span class="kw">let</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a>        unitTest2TFTest' desc (<span class="dt">TestCase</span> a) <span class="ot">=</span> [testCase desc a]</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a>        unitTest2TFTest' desc (<span class="dt">TestLabel</span> s t) <span class="ot">=</span> unitTest2TFTest' (desc <span class="op">++</span> <span class="st">&quot;:&quot;</span> <span class="op">++</span> s) t</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a>        unitTest2TFTest' desc (<span class="dt">TestList</span> ts) <span class="ot">=</span> <span class="fu">concat</span> <span class="op">$</span> <span class="fu">map</span> (unitTest2TFTest' desc) ts</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a>    <span class="kw">in</span> unitTest2TFTest' <span class="st">&quot;&quot;</span> t</span></code></pre></div>
 
 
 </div>

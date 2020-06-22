@@ -32,16 +32,16 @@
 <p>After posting the <a href="../posts/2009-06-28-664-making-a-choice-from-a-list-in-haskell-vty-part-0.html">zeroth part</a> of this series I realised I hadn’t said anything about the final goal of this exercise. The first post contained code for choosing one one-line string (<code>String</code>) out of a list of one-line strings (<code>[String]</code>). What I really want is the ability to choose one item out of a list of items, where each may render to be multiple lines. It would also be really cool if an item could be collapsed and expanded in the rendering. This is the first step in my journey towards these loosely specified requriements.</p>
 <p>Rendering items into strings sounds like pretty-printing to me, so I played around a little with a few pretty-printing libraries. Finally I settled on the <a href="http://hackage.haskell.org/package/wl-pprint">Wadler/Leijen Pretty Printer</a> (<code>Text.PrettyPrint.Leijen</code>). I didn’t really have any strong reason for choosing it, beyond that it comes with its own type class whereas the pretty-printing library that ships with GHC (<code>Text.PrettyPrint.HughesPJ</code>) doesn’t (though there is a <a href="http://hackage.haskell.org/package/prettyclass">package on HackageDB</a> with a class for it).</p>
 <p>I did the smallest change I could think of to add pretty-printing. First the module needs to be imported of course:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">import</span> <span class="dt">Text.PrettyPrint.Leijen</span></span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Text.PrettyPrint.Leijen</span></span></code></pre></div>
 <p>Then I added a function to turn a list of items into a document (<code>Doc</code>) where each item is pretty-printed on its own line:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="ot">myPrettyList ::</span> <span class="dt">Pretty</span> a <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">Doc</span></span>
-<span id="cb2-2"><a href="#cb2-2"></a>myPrettyList <span class="ot">=</span> vcat <span class="op">.</span> <span class="fu">map</span> pretty</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="ot">myPrettyList ::</span> <span class="dt">Pretty</span> a <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">Doc</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>myPrettyList <span class="ot">=</span> vcat <span class="op">.</span> <span class="fu">map</span> pretty</span></code></pre></div>
 <p>I then decided that <code>_getChoice</code> should be left unchanged and instead modified <code>getChoice</code> to turn the list of items into a list of strings:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a>getChoice vt opts <span class="ot">=</span> <span class="kw">let</span></span>
-<span id="cb3-2"><a href="#cb3-2"></a>        _converted_opts <span class="ot">=</span> myPrettyList opts</span>
-<span id="cb3-3"><a href="#cb3-3"></a>    <span class="kw">in</span> <span class="kw">do</span></span>
-<span id="cb3-4"><a href="#cb3-4"></a>        (sx, sy) <span class="ot">&lt;-</span> getSize vt</span>
-<span id="cb3-5"><a href="#cb3-5"></a>        _getChoice vt (<span class="fu">lines</span> <span class="op">$</span> <span class="fu">show</span> _converted_opts) <span class="dv">0</span> sx sy</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a>getChoice vt opts <span class="ot">=</span> <span class="kw">let</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>        _converted_opts <span class="ot">=</span> myPrettyList opts</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>    <span class="kw">in</span> <span class="kw">do</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a>        (sx, sy) <span class="ot">&lt;-</span> getSize vt</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a>        _getChoice vt (<span class="fu">lines</span> <span class="op">$</span> <span class="fu">show</span> _converted_opts) <span class="dv">0</span> sx sy</span></code></pre></div>
 <p>That’s it. The first step, albeit a small one.</p>
 
 

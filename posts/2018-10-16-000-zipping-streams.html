@@ -30,12 +30,12 @@
 </header>
 
 <p>Writing the following is easy after glancing through the documentation for <a href="https://hackage.haskell.org/package/conduit">conduit</a>:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a>foo <span class="ot">=</span> <span class="kw">let</span> src <span class="ot">=</span> <span class="fu">mapM_</span> C.yield [<span class="dv">0</span><span class="op">..</span><span class="dv">9</span><span class="ot"> ::</span> <span class="dt">Int</span>]</span>
-<span id="cb1-2"><a href="#cb1-2"></a>          p0 <span class="ot">=</span> CC.map (\ i <span class="ot">-&gt;</span> (<span class="st">&quot;p0&quot;</span>, <span class="fu">succ</span> i))</span>
-<span id="cb1-3"><a href="#cb1-3"></a>          p1 <span class="ot">=</span> CC.filter <span class="fu">odd</span> <span class="op">.|</span> CC.map (\ i <span class="ot">-&gt;</span> (<span class="st">&quot;p1&quot;</span>, i))</span>
-<span id="cb1-4"><a href="#cb1-4"></a>          p <span class="ot">=</span> C.getZipConduit <span class="op">$</span> <span class="dt">C.ZipConduit</span> p0 <span class="op">&lt;*</span> <span class="dt">C.ZipConduit</span> p1</span>
-<span id="cb1-5"><a href="#cb1-5"></a>          sink <span class="ot">=</span> CC.mapM_ <span class="fu">print</span></span>
-<span id="cb1-6"><a href="#cb1-6"></a>      <span class="kw">in</span> C.runConduit <span class="op">$</span> src <span class="op">.|</span> p <span class="op">.|</span> sink</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a>foo <span class="ot">=</span> <span class="kw">let</span> src <span class="ot">=</span> <span class="fu">mapM_</span> C.yield [<span class="dv">0</span><span class="op">..</span><span class="dv">9</span><span class="ot"> ::</span> <span class="dt">Int</span>]</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>          p0 <span class="ot">=</span> CC.map (\ i <span class="ot">-&gt;</span> (<span class="st">&quot;p0&quot;</span>, <span class="fu">succ</span> i))</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>          p1 <span class="ot">=</span> CC.filter <span class="fu">odd</span> <span class="op">.|</span> CC.map (\ i <span class="ot">-&gt;</span> (<span class="st">&quot;p1&quot;</span>, i))</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>          p <span class="ot">=</span> C.getZipConduit <span class="op">$</span> <span class="dt">C.ZipConduit</span> p0 <span class="op">&lt;*</span> <span class="dt">C.ZipConduit</span> p1</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>          sink <span class="ot">=</span> CC.mapM_ <span class="fu">print</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a>      <span class="kw">in</span> C.runConduit <span class="op">$</span> src <span class="op">.|</span> p <span class="op">.|</span> sink</span></code></pre></div>
 <p>Neither <a href="https://hackage.haskell.org/package/pipes">pipes</a> nor <a href="https://hackage.haskell.org/package/streaming">streaming</a> make it as easy to figure out. I must be missing something! What functions should I be looking at?</p>
 
 
@@ -53,16 +53,16 @@ Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell
     <p class="comment-date"><time pubdate="pubdate" datetime="2018-10-17">2018-10-17</time></p>
   </header>
 <p>You can use <code>Streaming.Prelude.copy</code> to process and interleave streams:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Streaming.Prelude</span> <span class="kw">as</span> <span class="dt">S</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a></span>
-<span id="cb1-3"><a href="#cb1-3"></a><span class="ot">fooStreaming ::</span> <span class="dt">IO</span> ()</span>
-<span id="cb1-4"><a href="#cb1-4"></a>fooStreaming <span class="ot">=</span></span>
-<span id="cb1-5"><a href="#cb1-5"></a>  <span class="kw">let</span></span>
-<span id="cb1-6"><a href="#cb1-6"></a>    src <span class="ot">=</span> S.each [<span class="dv">0</span><span class="op">..</span><span class="dv">9</span>]</span>
-<span id="cb1-7"><a href="#cb1-7"></a>    p0 <span class="ot">=</span> S.map (\i <span class="ot">-&gt;</span> (<span class="st">&quot;p0&quot;</span>, <span class="fu">succ</span> i))</span>
-<span id="cb1-8"><a href="#cb1-8"></a>    p1 <span class="ot">=</span> S.map (<span class="st">&quot;p1&quot;</span>,) <span class="op">.</span> S.filter <span class="fu">odd</span></span>
-<span id="cb1-9"><a href="#cb1-9"></a>  <span class="kw">in</span></span>
-<span id="cb1-10"><a href="#cb1-10"></a>    S.print <span class="op">.</span> p1 <span class="op">$</span> S.print <span class="op">.</span> p0 <span class="op">$</span> S.copy src</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Streaming.Prelude</span> <span class="kw">as</span> <span class="dt">S</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a><span class="ot">fooStreaming ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>fooStreaming <span class="ot">=</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>  <span class="kw">let</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a>    src <span class="ot">=</span> S.each [<span class="dv">0</span><span class="op">..</span><span class="dv">9</span>]</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a>    p0 <span class="ot">=</span> S.map (\i <span class="ot">-&gt;</span> (<span class="st">&quot;p0&quot;</span>, <span class="fu">succ</span> i))</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a>    p1 <span class="ot">=</span> S.map (<span class="st">&quot;p1&quot;</span>,) <span class="op">.</span> S.filter <span class="fu">odd</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a>  <span class="kw">in</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a>    S.print <span class="op">.</span> p1 <span class="op">$</span> S.print <span class="op">.</span> p0 <span class="op">$</span> S.copy src</span></code></pre></div>
 <p>It comes out in a slightly different order compared to your conduit code.</p>
 </article>
 

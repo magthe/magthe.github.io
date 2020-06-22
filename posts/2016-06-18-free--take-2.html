@@ -39,163 +39,163 @@
 </ul>
 <h3 id="the-first---one-algebra">The first - one algebra</h3>
 <p>I’m re-using the algebras from my previous posts, but I believe it makes it easier to follow along if the amount of jumping between posts is minimized so here is the first one once again:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">data</span> <span class="dt">SimpleFileF</span> a</span>
-<span id="cb1-2"><a href="#cb1-2"></a>  <span class="ot">=</span> <span class="dt">LoadFile</span> <span class="dt">FilePath</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> a)</span>
-<span id="cb1-3"><a href="#cb1-3"></a>  <span class="op">|</span> <span class="dt">SaveFile</span> <span class="dt">FilePath</span> <span class="dt">String</span> a</span>
-<span id="cb1-4"><a href="#cb1-4"></a>  <span class="kw">deriving</span>(<span class="dt">Functor</span>)</span>
-<span id="cb1-5"><a href="#cb1-5"></a></span>
-<span id="cb1-6"><a href="#cb1-6"></a><span class="kw">type</span> <span class="dt">SimpleFileAPI</span> <span class="ot">=</span> <span class="dt">Free</span> <span class="dt">SimpleFileF</span></span>
-<span id="cb1-7"><a href="#cb1-7"></a></span>
-<span id="cb1-8"><a href="#cb1-8"></a><span class="ot">loadFile ::</span> <span class="dt">FilePath</span> <span class="ot">-&gt;</span> <span class="dt">SimpleFileAPI</span> <span class="dt">String</span></span>
-<span id="cb1-9"><a href="#cb1-9"></a>loadFile fp <span class="ot">=</span> liftF <span class="op">$</span> <span class="dt">LoadFile</span> fp <span class="fu">id</span></span>
-<span id="cb1-10"><a href="#cb1-10"></a></span>
-<span id="cb1-11"><a href="#cb1-11"></a><span class="ot">saveFile ::</span> <span class="dt">FilePath</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">SimpleFileAPI</span> ()</span>
-<span id="cb1-12"><a href="#cb1-12"></a>saveFile fp d <span class="ot">=</span> liftF <span class="op">$</span> <span class="dt">SaveFile</span> fp d ()</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">SimpleFileF</span> a</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>  <span class="ot">=</span> <span class="dt">LoadFile</span> <span class="dt">FilePath</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> a)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>  <span class="op">|</span> <span class="dt">SaveFile</span> <span class="dt">FilePath</span> <span class="dt">String</span> a</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>  <span class="kw">deriving</span>(<span class="dt">Functor</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a><span class="kw">type</span> <span class="dt">SimpleFileAPI</span> <span class="ot">=</span> <span class="dt">Free</span> <span class="dt">SimpleFileF</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a><span class="ot">loadFile ::</span> <span class="dt">FilePath</span> <span class="ot">-&gt;</span> <span class="dt">SimpleFileAPI</span> <span class="dt">String</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a>loadFile fp <span class="ot">=</span> liftF <span class="op">$</span> <span class="dt">LoadFile</span> fp <span class="fu">id</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a><span class="ot">saveFile ::</span> <span class="dt">FilePath</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">SimpleFileAPI</span> ()</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a>saveFile fp d <span class="ot">=</span> liftF <span class="op">$</span> <span class="dt">SaveFile</span> fp d ()</span></code></pre></div>
 <p>It’s a ridiculously small one, but I believe it’s good enough to work with. In the previous posts I implemented the <code>Functor</code> instances manually. I couldn’t be bothered this time around; I think I pretty much know how to do that for this kind of types now.</p>
 <p>Having a type for the algebra, <code>SimpleFileAPI</code>, is convenient already now, even more so in the other examples.</p>
 <p>The two convenience functions on the end makes it straight forward to write functions using the algebra:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="ot">withSimpleFile ::</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>) <span class="ot">-&gt;</span> <span class="dt">FilePath</span> <span class="ot">-&gt;</span> <span class="dt">SimpleFileAPI</span> ()</span>
-<span id="cb2-2"><a href="#cb2-2"></a>withSimpleFile f fp <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb2-3"><a href="#cb2-3"></a>  d <span class="ot">&lt;-</span> loadFile fp</span>
-<span id="cb2-4"><a href="#cb2-4"></a>  <span class="kw">let</span> result <span class="ot">=</span> f d</span>
-<span id="cb2-5"><a href="#cb2-5"></a>  saveFile (fp <span class="op">++</span> <span class="st">&quot;_new&quot;</span>) result</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="ot">withSimpleFile ::</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>) <span class="ot">-&gt;</span> <span class="dt">FilePath</span> <span class="ot">-&gt;</span> <span class="dt">SimpleFileAPI</span> ()</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>withSimpleFile f fp <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a>  d <span class="ot">&lt;-</span> loadFile fp</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a>  <span class="kw">let</span> result <span class="ot">=</span> f d</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a>  saveFile (fp <span class="op">++</span> <span class="st">&quot;_new&quot;</span>) result</span></code></pre></div>
 <p>This is simple, straight forward monadic code. Easy to read and work with. Of course it doesn’t actually do anything at all yet. For that I need need an interpreter, something that translates (reduces) the algebra, the API, the commands, call them what you will, into the (side-)effects I want. For <a href="http://hackage.haskell.org/package/free-4.12.4/docs/Control-Monad-Free.html#t:Free"><code>Free</code></a> that is <a href="http://hackage.haskell.org/package/free-4.12.4/docs/Control-Monad-Free.html#v:foldFree"><code>foldFree</code></a> together with a suitable function <code class="sourceCode haskell"><span class="ot">f ::</span> <span class="dt">SimpleFileF</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</code>.</p>
 <p>I want <code>LoadFile</code> to translate to a file being read and <code>SaveFile</code> to some data being saved to a file. That makes it pretty obvious how that <code>f</code> needs to be written:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="ot">runSimpleFile ::</span> <span class="dt">SimpleFileAPI</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span>
-<span id="cb3-2"><a href="#cb3-2"></a>runSimpleFile <span class="ot">=</span> foldFree f</span>
-<span id="cb3-3"><a href="#cb3-3"></a>  <span class="kw">where</span></span>
-<span id="cb3-4"><a href="#cb3-4"></a>    f (<span class="dt">LoadFile</span> fp f') <span class="ot">=</span> f' <span class="op">&lt;$&gt;</span> <span class="fu">readFile</span> fp</span>
-<span id="cb3-5"><a href="#cb3-5"></a>    f (<span class="dt">SaveFile</span> fp d r) <span class="ot">=</span> <span class="fu">writeFile</span> fp d <span class="op">&gt;&gt;</span> <span class="fu">return</span> r</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="ot">runSimpleFile ::</span> <span class="dt">SimpleFileAPI</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>runSimpleFile <span class="ot">=</span> foldFree f</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>  <span class="kw">where</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a>    f (<span class="dt">LoadFile</span> fp f') <span class="ot">=</span> f' <span class="op">&lt;$&gt;</span> <span class="fu">readFile</span> fp</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a>    f (<span class="dt">SaveFile</span> fp d r) <span class="ot">=</span> <span class="fu">writeFile</span> fp d <span class="op">&gt;&gt;</span> <span class="fu">return</span> r</span></code></pre></div>
 <p>At this point it might be good to explain the constructors of <code>SimpleFileF</code> a bit more. At first I thought they looked a bit funny. I mean, why does <code>SaveFile</code> have an <code>a</code> at all since it obviously always should result in <code>()</code>? And what’s up with that function in <code>Loadfile</code>?</p>
 <p>It did become a little clearer to me after some thought and having a look at <code>Free</code>:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">data</span> <span class="dt">Free</span> f a <span class="ot">=</span> <span class="dt">Pure</span> a <span class="op">|</span> <span class="dt">Free</span> (f (<span class="dt">Free</span> f a))</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Free</span> f a <span class="ot">=</span> <span class="dt">Pure</span> a <span class="op">|</span> <span class="dt">Free</span> (f (<span class="dt">Free</span> f a))</span></code></pre></div>
 <p>I personally find the latter constructor a bit mind-bending. I can handle recursive functions fairly well, but recursive types have a tendency to confuse me. From what I understand one can think of <code>Free</code> as similar to a list. <code>Pure</code> ends the list (<code>Nil</code>) and <code>Free</code> one instance of <code>f</code> to the rest of the list (<code>Cons</code>). Since <code>Free f a</code> is a monad one can think of <code>a</code> as the result of the command.</p>
 <p>If I were to write <code>saveFile</code> explicitly it’d look like this</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1"></a>saveFile fp d <span class="ot">=</span> <span class="dt">Free</span> (<span class="dt">SaveFile</span> fp d (<span class="dt">Pure</span> ()))</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a>saveFile fp d <span class="ot">=</span> <span class="dt">Free</span> (<span class="dt">SaveFile</span> fp d (<span class="dt">Pure</span> ()))</span></code></pre></div>
 <p>and for <code>loadFile</code>:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1"></a>loadFile fp <span class="ot">=</span> <span class="dt">Free</span> (<span class="dt">LoadFile</span> fp (\ s <span class="ot">-&gt;</span> <span class="dt">Pure</span> s))</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a>loadFile fp <span class="ot">=</span> <span class="dt">Free</span> (<span class="dt">LoadFile</span> fp (\ s <span class="ot">-&gt;</span> <span class="dt">Pure</span> s))</span></code></pre></div>
 <p>But let’s get back to the type and why ‘a’ occurs like it does in the two constructors. As Gabriel G shows in his post <a href="http://www.haskellforall.com/2012/06/you-could-have-invented-free-monads.html">Why free monads matter</a> a constructor without <code>a</code> would result in termination. In other words, if <code>SaveFile</code> didn’t hold an <code>a</code> I’d not be able to write, in a natural way, a function that saves two files.</p>
 <p>Another limiting factor is that <code>foldFree</code> of the <code>Free</code> implementation I’m using has the type <code class="sourceCode haskell"><span class="dt">Monad</span> m <span class="ot">=&gt;</span> (<span class="kw">forall</span> x<span class="op">.</span> f x <span class="ot">-&gt;</span> m x) <span class="ot">-&gt;</span> <span class="dt">Free</span> f a <span class="ot">-&gt;</span> m a</code>. This sets a requirement on what the function translating from my API into effects may look like, i.e. what <code>f</code> in <code>runSimpleFile</code> may look like. If <code>SaveFile</code> had no <code>a</code> to return what would <code>f (SaveFile {})</code> return, how could it ever satisfy the required type?</p>
 <p>The reason for <code>LoadFile</code> having a function <code>String -&gt; a</code> is simply that there is no data yet, but I still want to be able to manipulate it. Using a function and function composition is the ticket then.</p>
 <p>I think that’s all there is to say about to the first piece of code. To run it take a look at the comment at the end of <a href="https://gist.github.com/magthe/9fd7fa6c0a5a5b63cdc84d5c81cc50b5#file-free1-hs">the file</a> and then play with it. If you want to turn all characters of a file <code>foo</code> into upper case you can use</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1"></a>runSimpleFile <span class="op">$</span> withSimpleFile (<span class="fu">map</span> <span class="fu">toUpper</span>) <span class="st">&quot;foo&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a>runSimpleFile <span class="op">$</span> withSimpleFile (<span class="fu">map</span> <span class="fu">toUpper</span>) <span class="st">&quot;foo&quot;</span></span></code></pre></div>
 <h3 id="the-second---two-algebras-one-decorating-the-other">The second - two algebras, one decorating the other</h3>
 <p>The second piece of code almost only adds to the first one. There is one exception though, the function <code>runSimpleFile</code> is removed. Instead I’ve taken the transformation function, which used to be called <code>f</code> and was internal to <code>runSimpleFile</code> and moved it out. It’s called <code>stepSimpleFile</code>:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1"></a><span class="ot">stepSimpleFile ::</span> <span class="dt">SimpleFileF</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span>
-<span id="cb8-2"><a href="#cb8-2"></a>stepSimpleFile (<span class="dt">LoadFile</span> fp f') <span class="ot">=</span> f' <span class="op">&lt;$&gt;</span> <span class="fu">readFile</span> fp</span>
-<span id="cb8-3"><a href="#cb8-3"></a>stepSimpleFile (<span class="dt">SaveFile</span> fp d r) <span class="ot">=</span> <span class="fu">writeFile</span> fp d <span class="op">&gt;&gt;</span> <span class="fu">return</span> r</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a><span class="ot">stepSimpleFile ::</span> <span class="dt">SimpleFileF</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a>stepSimpleFile (<span class="dt">LoadFile</span> fp f') <span class="ot">=</span> f' <span class="op">&lt;$&gt;</span> <span class="fu">readFile</span> fp</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true"></a>stepSimpleFile (<span class="dt">SaveFile</span> fp d r) <span class="ot">=</span> <span class="fu">writeFile</span> fp d <span class="op">&gt;&gt;</span> <span class="fu">return</span> r</span></code></pre></div>
 <p>The logging API, <code>LogAPI</code>, follows the same pattern as <code>SimpleFileAPI</code> and I’m counting on the description above being clear enough to not have to repeat myself. For completeness I include the code:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">data</span> <span class="dt">LogF</span> a <span class="ot">=</span> <span class="dt">Log</span> <span class="dt">String</span> a</span>
-<span id="cb9-2"><a href="#cb9-2"></a>          <span class="kw">deriving</span>(<span class="dt">Functor</span>)</span>
-<span id="cb9-3"><a href="#cb9-3"></a></span>
-<span id="cb9-4"><a href="#cb9-4"></a><span class="kw">type</span> <span class="dt">LogAPI</span> <span class="ot">=</span> <span class="dt">Free</span> <span class="dt">LogF</span></span>
-<span id="cb9-5"><a href="#cb9-5"></a></span>
-<span id="cb9-6"><a href="#cb9-6"></a><span class="ot">stepLog ::</span> <span class="dt">LogF</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span>
-<span id="cb9-7"><a href="#cb9-7"></a>stepLog (<span class="dt">Log</span> s r) <span class="ot">=</span> <span class="fu">putStrLn</span> s <span class="op">&gt;&gt;</span> <span class="fu">return</span> r</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">LogF</span> a <span class="ot">=</span> <span class="dt">Log</span> <span class="dt">String</span> a</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true"></a>          <span class="kw">deriving</span>(<span class="dt">Functor</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true"></a><span class="kw">type</span> <span class="dt">LogAPI</span> <span class="ot">=</span> <span class="dt">Free</span> <span class="dt">LogF</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true"></a></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true"></a><span class="ot">stepLog ::</span> <span class="dt">LogF</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true"></a>stepLog (<span class="dt">Log</span> s r) <span class="ot">=</span> <span class="fu">putStrLn</span> s <span class="op">&gt;&gt;</span> <span class="fu">return</span> r</span></code></pre></div>
 <p>I intend the <code>LogAPI</code> to be used as embellishments on the <code>SimpleFileAPI</code>, in other words I somehow have to turn an operation of <code>SimpleFileAPI</code> into an operation of <code>LogAPI</code>, i.e. I need a transformation. I called it <code>logSimpleFileT</code> and let it turn operations in <code>SimpleFileF</code> (i.e. not exactly <code>SimpleFileAPI</code>) into <code>LogAPI</code> (if you are wondering about my choice of type I hope it’ll become clear below, just trust me for now that this is a good choice):</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1"></a><span class="ot">logSimpleFileT ::</span> <span class="dt">SimpleFileF</span> a <span class="ot">-&gt;</span> <span class="dt">LogAPI</span> ()</span>
-<span id="cb10-2"><a href="#cb10-2"></a>logSimpleFileT (<span class="dt">LoadFile</span> fp _) <span class="ot">=</span> liftF <span class="op">$</span> <span class="dt">Log</span> (<span class="st">&quot;** load file &quot;</span> <span class="op">++</span> fp) ()</span>
-<span id="cb10-3"><a href="#cb10-3"></a>logSimpleFileT (<span class="dt">SaveFile</span> fp _ _) <span class="ot">=</span> liftF <span class="op">$</span> <span class="dt">Log</span> (<span class="st">&quot;** save file &quot;</span> <span class="op">++</span> fp) ()</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true"></a><span class="ot">logSimpleFileT ::</span> <span class="dt">SimpleFileF</span> a <span class="ot">-&gt;</span> <span class="dt">LogAPI</span> ()</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true"></a>logSimpleFileT (<span class="dt">LoadFile</span> fp _) <span class="ot">=</span> liftF <span class="op">$</span> <span class="dt">Log</span> (<span class="st">&quot;** load file &quot;</span> <span class="op">++</span> fp) ()</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true"></a>logSimpleFileT (<span class="dt">SaveFile</span> fp _ _) <span class="ot">=</span> liftF <span class="op">$</span> <span class="dt">Log</span> (<span class="st">&quot;** save file &quot;</span> <span class="op">++</span> fp) ()</span></code></pre></div>
 <p>So far everything is hopefully very straight forward and unsurprising. Now I need to combine the two APIs, I need to add them, in other words, I need a sum type:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1"></a><span class="kw">data</span> <span class="dt">S</span> a1 a2 t <span class="ot">=</span> <span class="dt">A1</span> (a1 t) <span class="op">|</span> <span class="dt">A2</span> (a2 t)</span>
-<span id="cb11-2"><a href="#cb11-2"></a>              <span class="kw">deriving</span>(<span class="dt">Functor</span>)</span>
-<span id="cb11-3"><a href="#cb11-3"></a></span>
-<span id="cb11-4"><a href="#cb11-4"></a><span class="kw">type</span> <span class="dt">SumAPI</span> <span class="ot">=</span> <span class="dt">Free</span> (<span class="dt">S</span> <span class="dt">LogF</span> <span class="dt">SimpleFileF</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">S</span> a1 a2 t <span class="ot">=</span> <span class="dt">A1</span> (a1 t) <span class="op">|</span> <span class="dt">A2</span> (a2 t)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true"></a>              <span class="kw">deriving</span>(<span class="dt">Functor</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true"></a></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true"></a><span class="kw">type</span> <span class="dt">SumAPI</span> <span class="ot">=</span> <span class="dt">Free</span> (<span class="dt">S</span> <span class="dt">LogF</span> <span class="dt">SimpleFileF</span>)</span></code></pre></div>
 <p>The next question is how to turn my two original APIs, <code>SimpleFileAPI</code> and <code>LogAPI</code>, into <code>SumAPI</code>. Luckily that’s already solved by the function <a href="http://hackage.haskell.org/package/free-4.12.4/docs/Control-Monad-Free.html#v:hoistFree"><code>hoistFree</code></a>:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1"></a><span class="ot">hoistFree ::</span> <span class="dt">Functor</span> g <span class="ot">=&gt;</span> (<span class="kw">forall</span> a<span class="op">.</span> f a <span class="ot">-&gt;</span> g a) <span class="ot">-&gt;</span> <span class="dt">Free</span> f b <span class="ot">-&gt;</span> <span class="dt">Free</span> g b </span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true"></a><span class="ot">hoistFree ::</span> <span class="dt">Functor</span> g <span class="ot">=&gt;</span> (<span class="kw">forall</span> a<span class="op">.</span> f a <span class="ot">-&gt;</span> g a) <span class="ot">-&gt;</span> <span class="dt">Free</span> f b <span class="ot">-&gt;</span> <span class="dt">Free</span> g b </span></code></pre></div>
 <p>With this and <code>logSimpleFileT</code> from above I can use <code>foldFree</code> to decorate each operation with a logging operation like this:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1"></a><span class="ot">logSimpleFile ::</span> <span class="dt">SimpleFileAPI</span> a <span class="ot">-&gt;</span> <span class="dt">SumAPI</span> a</span>
-<span id="cb13-2"><a href="#cb13-2"></a>logSimpleFile <span class="ot">=</span> foldFree f</span>
-<span id="cb13-3"><a href="#cb13-3"></a><span class="kw">where</span></span>
-<span id="cb13-4"><a href="#cb13-4"></a>  f op <span class="ot">=</span> hoistFree <span class="dt">A1</span> (logSimpleFileT op) <span class="op">*&gt;</span> hoistFree <span class="dt">A2</span> (liftF op)</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true"></a><span class="ot">logSimpleFile ::</span> <span class="dt">SimpleFileAPI</span> a <span class="ot">-&gt;</span> <span class="dt">SumAPI</span> a</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true"></a>logSimpleFile <span class="ot">=</span> foldFree f</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true"></a><span class="kw">where</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true"></a>  f op <span class="ot">=</span> hoistFree <span class="dt">A1</span> (logSimpleFileT op) <span class="op">*&gt;</span> hoistFree <span class="dt">A2</span> (liftF op)</span></code></pre></div>
 <p>This is where the type of <code>logSimpleFileT</code> hopefully makes sense!</p>
 <p>Just as in the first section of this post, I need an interpreter for my API (<code>SumAPI</code> this time). Once again it’s written using <code>foldFree</code>, but this time I provide the interpreters for the sub-algegras (what I’ve chosen to call step functions):</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1"></a><span class="ot">runSum ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> (<span class="kw">forall</span> a<span class="op">.</span> <span class="dt">LogF</span> a <span class="ot">-&gt;</span> m a) <span class="ot">-&gt;</span> (<span class="kw">forall</span> a<span class="op">.</span> <span class="dt">SimpleFileF</span> a <span class="ot">-&gt;</span> m a) <span class="ot">-&gt;</span> <span class="dt">SumAPI</span> b <span class="ot">-&gt;</span> m b</span>
-<span id="cb14-2"><a href="#cb14-2"></a>runSum f1 f2 <span class="ot">=</span> foldFree f</span>
-<span id="cb14-3"><a href="#cb14-3"></a><span class="kw">where</span></span>
-<span id="cb14-4"><a href="#cb14-4"></a>  f (<span class="dt">A1</span> op) <span class="ot">=</span> f1 op</span>
-<span id="cb14-5"><a href="#cb14-5"></a>  f (<span class="dt">A2</span> op) <span class="ot">=</span> f2 op</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true"></a><span class="ot">runSum ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> (<span class="kw">forall</span> a<span class="op">.</span> <span class="dt">LogF</span> a <span class="ot">-&gt;</span> m a) <span class="ot">-&gt;</span> (<span class="kw">forall</span> a<span class="op">.</span> <span class="dt">SimpleFileF</span> a <span class="ot">-&gt;</span> m a) <span class="ot">-&gt;</span> <span class="dt">SumAPI</span> b <span class="ot">-&gt;</span> m b</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true"></a>runSum f1 f2 <span class="ot">=</span> foldFree f</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true"></a><span class="kw">where</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true"></a>  f (<span class="dt">A1</span> op) <span class="ot">=</span> f1 op</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true"></a>  f (<span class="dt">A2</span> op) <span class="ot">=</span> f2 op</span></code></pre></div>
 <p><a href="https://gist.github.com/magthe/9fd7fa6c0a5a5b63cdc84d5c81cc50b5#file-free2-hs">The file</a> has a comment at the end for how to run it. The same example as in the previous section, but now with logging, looks like this</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1"></a>runSum stepLog stepSimpleFile <span class="op">$</span> logSimpleFile <span class="op">$</span> withSimpleFile (<span class="fu">map</span> <span class="fu">toUpper</span>) <span class="st">&quot;foo&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true"></a>runSum stepLog stepSimpleFile <span class="op">$</span> logSimpleFile <span class="op">$</span> withSimpleFile (<span class="fu">map</span> <span class="fu">toUpper</span>) <span class="st">&quot;foo&quot;</span></span></code></pre></div>
 <h3 id="the-third---three-algebras-one-decorating-the-other-two">The third - three algebras, one decorating the other two</h3>
 <p>To combine three algebras I simply take what’s in the previous section and extend it, i.e. a sum type with three constructors:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1"></a><span class="kw">data</span> <span class="dt">S</span> a1 a2 a3 t <span class="ot">=</span> <span class="dt">A1</span> (a1 t) <span class="op">|</span> <span class="dt">A2</span> (a2 t) <span class="op">|</span> <span class="dt">A3</span> (a3 t)</span>
-<span id="cb16-2"><a href="#cb16-2"></a>                <span class="kw">deriving</span>(<span class="dt">Functor</span>)</span>
-<span id="cb16-3"><a href="#cb16-3"></a></span>
-<span id="cb16-4"><a href="#cb16-4"></a><span class="kw">type</span> <span class="dt">SumAPI</span> <span class="ot">=</span> <span class="dt">Free</span> (<span class="dt">S</span> <span class="dt">LogF</span> <span class="dt">SimpleFileF</span> <span class="dt">StdIoF</span>)</span>
-<span id="cb16-5"><a href="#cb16-5"></a></span>
-<span id="cb16-6"><a href="#cb16-6"></a><span class="ot">runSum ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> (<span class="kw">forall</span> a<span class="op">.</span> <span class="dt">LogF</span> a <span class="ot">-&gt;</span> m a)</span>
-<span id="cb16-7"><a href="#cb16-7"></a>      <span class="ot">-&gt;</span> (<span class="kw">forall</span> a<span class="op">.</span> <span class="dt">SimpleFileF</span> a <span class="ot">-&gt;</span> m a)</span>
-<span id="cb16-8"><a href="#cb16-8"></a>      <span class="ot">-&gt;</span> (<span class="kw">forall</span> a<span class="op">.</span> <span class="dt">StdIoF</span> a <span class="ot">-&gt;</span> m a)</span>
-<span id="cb16-9"><a href="#cb16-9"></a>      <span class="ot">-&gt;</span> <span class="dt">SumAPI</span> b <span class="ot">-&gt;</span> m b</span>
-<span id="cb16-10"><a href="#cb16-10"></a>runSum f1 f2 f3 <span class="ot">=</span> foldFree f</span>
-<span id="cb16-11"><a href="#cb16-11"></a><span class="kw">where</span></span>
-<span id="cb16-12"><a href="#cb16-12"></a>  f (<span class="dt">A1</span> op) <span class="ot">=</span> f1 op</span>
-<span id="cb16-13"><a href="#cb16-13"></a>  f (<span class="dt">A2</span> op) <span class="ot">=</span> f2 op</span>
-<span id="cb16-14"><a href="#cb16-14"></a>  f (<span class="dt">A3</span> op) <span class="ot">=</span> f3 op</span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">S</span> a1 a2 a3 t <span class="ot">=</span> <span class="dt">A1</span> (a1 t) <span class="op">|</span> <span class="dt">A2</span> (a2 t) <span class="op">|</span> <span class="dt">A3</span> (a3 t)</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true"></a>                <span class="kw">deriving</span>(<span class="dt">Functor</span>)</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true"></a></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true"></a><span class="kw">type</span> <span class="dt">SumAPI</span> <span class="ot">=</span> <span class="dt">Free</span> (<span class="dt">S</span> <span class="dt">LogF</span> <span class="dt">SimpleFileF</span> <span class="dt">StdIoF</span>)</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true"></a></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true"></a><span class="ot">runSum ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> (<span class="kw">forall</span> a<span class="op">.</span> <span class="dt">LogF</span> a <span class="ot">-&gt;</span> m a)</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true"></a>      <span class="ot">-&gt;</span> (<span class="kw">forall</span> a<span class="op">.</span> <span class="dt">SimpleFileF</span> a <span class="ot">-&gt;</span> m a)</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true"></a>      <span class="ot">-&gt;</span> (<span class="kw">forall</span> a<span class="op">.</span> <span class="dt">StdIoF</span> a <span class="ot">-&gt;</span> m a)</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true"></a>      <span class="ot">-&gt;</span> <span class="dt">SumAPI</span> b <span class="ot">-&gt;</span> m b</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true"></a>runSum f1 f2 f3 <span class="ot">=</span> foldFree f</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true"></a><span class="kw">where</span></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true"></a>  f (<span class="dt">A1</span> op) <span class="ot">=</span> f1 op</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true"></a>  f (<span class="dt">A2</span> op) <span class="ot">=</span> f2 op</span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true"></a>  f (<span class="dt">A3</span> op) <span class="ot">=</span> f3 op</span></code></pre></div>
 <p>With this I’ve already revealed that my three APIs are the two from previous sections, <code>LogAPI</code> (for decorating the other APIs), <code>SimpleFileAPI</code> and a new one, <code>StdIoAPI</code>.</p>
 <p>I want to combine them in such a wat that I can write functions using both APIs at the same time. Then I modify <code>withSimpleFile</code> into</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1"></a><span class="ot">withSimpleFile ::</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>) <span class="ot">-&gt;</span> <span class="dt">FilePath</span> <span class="ot">-&gt;</span>  <span class="dt">SumAPI</span> ()</span>
-<span id="cb17-2"><a href="#cb17-2"></a>withSimpleFile f fp <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb17-3"><a href="#cb17-3"></a>  d <span class="ot">&lt;-</span> loadFile fp</span>
-<span id="cb17-4"><a href="#cb17-4"></a>  <span class="kw">let</span> result <span class="ot">=</span> f d</span>
-<span id="cb17-5"><a href="#cb17-5"></a>  saveFile (fp <span class="op">++</span> <span class="st">&quot;_new&quot;</span>) result</span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true"></a><span class="ot">withSimpleFile ::</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>) <span class="ot">-&gt;</span> <span class="dt">FilePath</span> <span class="ot">-&gt;</span>  <span class="dt">SumAPI</span> ()</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true"></a>withSimpleFile f fp <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true"></a>  d <span class="ot">&lt;-</span> loadFile fp</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true"></a>  <span class="kw">let</span> result <span class="ot">=</span> f d</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true"></a>  saveFile (fp <span class="op">++</span> <span class="st">&quot;_new&quot;</span>) result</span></code></pre></div>
 <p>and I can add another function that uses it with <code>StdIoAPI</code>:</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb18-1"><a href="#cb18-1"></a><span class="ot">prog ::</span> <span class="dt">FilePath</span> <span class="ot">-&gt;</span> <span class="dt">SumAPI</span> ()</span>
-<span id="cb18-2"><a href="#cb18-2"></a>prog fn <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb18-3"><a href="#cb18-3"></a>  stdioPut <span class="st">&quot;About to start&quot;</span></span>
-<span id="cb18-4"><a href="#cb18-4"></a>  withSimpleFile (<span class="fu">map</span> <span class="fu">toUpper</span>) fn</span>
-<span id="cb18-5"><a href="#cb18-5"></a>  stdioPut <span class="st">&quot;Done!&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true"></a><span class="ot">prog ::</span> <span class="dt">FilePath</span> <span class="ot">-&gt;</span> <span class="dt">SumAPI</span> ()</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true"></a>prog fn <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true"></a>  stdioPut <span class="st">&quot;About to start&quot;</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true"></a>  withSimpleFile (<span class="fu">map</span> <span class="fu">toUpper</span>) fn</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true"></a>  stdioPut <span class="st">&quot;Done!&quot;</span></span></code></pre></div>
 <p>The way to allow the APIs to be combined this way is to bake in <code>S</code> already in the convenience functions. This means the code for <code>SimpleFileAPI</code> has to change slightly (note the use of <code>A2</code> in <code>loadFile</code> and <code>saveFile</code>):</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb19-1"><a href="#cb19-1"></a><span class="kw">data</span> <span class="dt">SimpleFileF</span> a</span>
-<span id="cb19-2"><a href="#cb19-2"></a><span class="ot">=</span> <span class="dt">LoadFile</span> <span class="dt">FilePath</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> a)</span>
-<span id="cb19-3"><a href="#cb19-3"></a><span class="op">|</span> <span class="dt">SaveFile</span> <span class="dt">FilePath</span> <span class="dt">String</span> a</span>
-<span id="cb19-4"><a href="#cb19-4"></a><span class="kw">deriving</span>(<span class="dt">Functor</span>)</span>
-<span id="cb19-5"><a href="#cb19-5"></a></span>
-<span id="cb19-6"><a href="#cb19-6"></a><span class="ot">loadFile ::</span> <span class="dt">FilePath</span> <span class="ot">-&gt;</span> <span class="dt">SumAPI</span> <span class="dt">String</span></span>
-<span id="cb19-7"><a href="#cb19-7"></a>loadFile fp <span class="ot">=</span> liftF <span class="op">$</span> <span class="dt">A2</span> <span class="op">$</span> <span class="dt">LoadFile</span> fp <span class="fu">id</span></span>
-<span id="cb19-8"><a href="#cb19-8"></a></span>
-<span id="cb19-9"><a href="#cb19-9"></a><span class="ot">saveFile ::</span> <span class="dt">FilePath</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">SumAPI</span> ()</span>
-<span id="cb19-10"><a href="#cb19-10"></a>saveFile fp d <span class="ot">=</span> liftF <span class="op">$</span> <span class="dt">A2</span> <span class="op">$</span> <span class="dt">SaveFile</span> fp d ()</span>
-<span id="cb19-11"><a href="#cb19-11"></a></span>
-<span id="cb19-12"><a href="#cb19-12"></a><span class="ot">stepSimpleFile ::</span> <span class="dt">SimpleFileF</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span>
-<span id="cb19-13"><a href="#cb19-13"></a>stepSimpleFile (<span class="dt">LoadFile</span> fp f') <span class="ot">=</span> f' <span class="op">&lt;$&gt;</span> <span class="fu">readFile</span> fp</span>
-<span id="cb19-14"><a href="#cb19-14"></a>stepSimpleFile (<span class="dt">SaveFile</span> fp d r) <span class="ot">=</span> <span class="fu">writeFile</span> fp d <span class="op">&gt;&gt;</span> <span class="fu">return</span> r</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">SimpleFileF</span> a</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true"></a><span class="ot">=</span> <span class="dt">LoadFile</span> <span class="dt">FilePath</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> a)</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true"></a><span class="op">|</span> <span class="dt">SaveFile</span> <span class="dt">FilePath</span> <span class="dt">String</span> a</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true"></a><span class="kw">deriving</span>(<span class="dt">Functor</span>)</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true"></a></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true"></a><span class="ot">loadFile ::</span> <span class="dt">FilePath</span> <span class="ot">-&gt;</span> <span class="dt">SumAPI</span> <span class="dt">String</span></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true"></a>loadFile fp <span class="ot">=</span> liftF <span class="op">$</span> <span class="dt">A2</span> <span class="op">$</span> <span class="dt">LoadFile</span> fp <span class="fu">id</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true"></a></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true"></a><span class="ot">saveFile ::</span> <span class="dt">FilePath</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">SumAPI</span> ()</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true"></a>saveFile fp d <span class="ot">=</span> liftF <span class="op">$</span> <span class="dt">A2</span> <span class="op">$</span> <span class="dt">SaveFile</span> fp d ()</span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true"></a></span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true"></a><span class="ot">stepSimpleFile ::</span> <span class="dt">SimpleFileF</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true"></a>stepSimpleFile (<span class="dt">LoadFile</span> fp f') <span class="ot">=</span> f' <span class="op">&lt;$&gt;</span> <span class="fu">readFile</span> fp</span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true"></a>stepSimpleFile (<span class="dt">SaveFile</span> fp d r) <span class="ot">=</span> <span class="fu">writeFile</span> fp d <span class="op">&gt;&gt;</span> <span class="fu">return</span> r</span></code></pre></div>
 <p>The new API, <code>StdIoAPI</code>, has only one operation:</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb20-1"><a href="#cb20-1"></a><span class="kw">data</span> <span class="dt">StdIoF</span> a <span class="ot">=</span> <span class="dt">PutStrLn</span> <span class="dt">String</span> a</span>
-<span id="cb20-2"><a href="#cb20-2"></a>              <span class="kw">deriving</span>(<span class="dt">Functor</span>)</span>
-<span id="cb20-3"><a href="#cb20-3"></a></span>
-<span id="cb20-4"><a href="#cb20-4"></a><span class="ot">stdioPut ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">SumAPI</span> ()</span>
-<span id="cb20-5"><a href="#cb20-5"></a>stdioPut s <span class="ot">=</span> liftF <span class="op">$</span> <span class="dt">A3</span> <span class="op">$</span> <span class="dt">PutStrLn</span> s ()</span>
-<span id="cb20-6"><a href="#cb20-6"></a></span>
-<span id="cb20-7"><a href="#cb20-7"></a><span class="ot">stepStdIo ::</span> <span class="dt">StdIoF</span> b <span class="ot">-&gt;</span> <span class="dt">IO</span> b</span>
-<span id="cb20-8"><a href="#cb20-8"></a>stepStdIo (<span class="dt">PutStrLn</span> s a) <span class="ot">=</span> <span class="fu">putStrLn</span> s <span class="op">&gt;&gt;</span> <span class="fu">return</span> a</span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">StdIoF</span> a <span class="ot">=</span> <span class="dt">PutStrLn</span> <span class="dt">String</span> a</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true"></a>              <span class="kw">deriving</span>(<span class="dt">Functor</span>)</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true"></a></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true"></a><span class="ot">stdioPut ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">SumAPI</span> ()</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true"></a>stdioPut s <span class="ot">=</span> liftF <span class="op">$</span> <span class="dt">A3</span> <span class="op">$</span> <span class="dt">PutStrLn</span> s ()</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true"></a></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true"></a><span class="ot">stepStdIo ::</span> <span class="dt">StdIoF</span> b <span class="ot">-&gt;</span> <span class="dt">IO</span> b</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true"></a>stepStdIo (<span class="dt">PutStrLn</span> s a) <span class="ot">=</span> <span class="fu">putStrLn</span> s <span class="op">&gt;&gt;</span> <span class="fu">return</span> a</span></code></pre></div>
 <p>The logging API, <code>LogAPI</code>, looks exactly the same but I now need two transformation functions, one for <code>SimpleFileAPI</code> and one for <code>StdIoAPI</code>.</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb21-1"><a href="#cb21-1"></a><span class="kw">data</span> <span class="dt">LogF</span> a <span class="ot">=</span> <span class="dt">Log</span> <span class="dt">String</span> a</span>
-<span id="cb21-2"><a href="#cb21-2"></a>            <span class="kw">deriving</span>(<span class="dt">Functor</span>)</span>
-<span id="cb21-3"><a href="#cb21-3"></a></span>
-<span id="cb21-4"><a href="#cb21-4"></a><span class="kw">type</span> <span class="dt">LogAPI</span> <span class="ot">=</span> <span class="dt">Free</span> <span class="dt">LogF</span></span>
-<span id="cb21-5"><a href="#cb21-5"></a></span>
-<span id="cb21-6"><a href="#cb21-6"></a><span class="ot">stepLog ::</span> <span class="dt">LogF</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span>
-<span id="cb21-7"><a href="#cb21-7"></a>stepLog (<span class="dt">Log</span> s r) <span class="ot">=</span> <span class="fu">putStrLn</span> s <span class="op">&gt;&gt;</span> <span class="fu">return</span> r</span>
-<span id="cb21-8"><a href="#cb21-8"></a></span>
-<span id="cb21-9"><a href="#cb21-9"></a><span class="ot">logSimpleFileT ::</span> <span class="dt">SimpleFileF</span> a <span class="ot">-&gt;</span> <span class="dt">LogAPI</span> ()</span>
-<span id="cb21-10"><a href="#cb21-10"></a>logSimpleFileT (<span class="dt">LoadFile</span> fp _) <span class="ot">=</span> liftF <span class="op">$</span> <span class="dt">Log</span> (<span class="st">&quot;** load file &quot;</span> <span class="op">++</span> fp) ()</span>
-<span id="cb21-11"><a href="#cb21-11"></a>logSimpleFileT (<span class="dt">SaveFile</span> fp _ _) <span class="ot">=</span> liftF <span class="op">$</span> <span class="dt">Log</span> (<span class="st">&quot;** save file &quot;</span> <span class="op">++</span> fp) ()</span>
-<span id="cb21-12"><a href="#cb21-12"></a></span>
-<span id="cb21-13"><a href="#cb21-13"></a><span class="ot">logStdIoT ::</span> <span class="dt">StdIoF</span> a <span class="ot">-&gt;</span> <span class="dt">LogAPI</span> ()</span>
-<span id="cb21-14"><a href="#cb21-14"></a>logStdIoT (<span class="dt">PutStrLn</span> s _) <span class="ot">=</span> liftF <span class="op">$</span> <span class="dt">Log</span> (<span class="st">&quot;** on stdio &quot;</span> <span class="op">++</span> s) ()</span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">LogF</span> a <span class="ot">=</span> <span class="dt">Log</span> <span class="dt">String</span> a</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true"></a>            <span class="kw">deriving</span>(<span class="dt">Functor</span>)</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true"></a></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true"></a><span class="kw">type</span> <span class="dt">LogAPI</span> <span class="ot">=</span> <span class="dt">Free</span> <span class="dt">LogF</span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true"></a></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true"></a><span class="ot">stepLog ::</span> <span class="dt">LogF</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true"></a>stepLog (<span class="dt">Log</span> s r) <span class="ot">=</span> <span class="fu">putStrLn</span> s <span class="op">&gt;&gt;</span> <span class="fu">return</span> r</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true"></a></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true"></a><span class="ot">logSimpleFileT ::</span> <span class="dt">SimpleFileF</span> a <span class="ot">-&gt;</span> <span class="dt">LogAPI</span> ()</span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true"></a>logSimpleFileT (<span class="dt">LoadFile</span> fp _) <span class="ot">=</span> liftF <span class="op">$</span> <span class="dt">Log</span> (<span class="st">&quot;** load file &quot;</span> <span class="op">++</span> fp) ()</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true"></a>logSimpleFileT (<span class="dt">SaveFile</span> fp _ _) <span class="ot">=</span> liftF <span class="op">$</span> <span class="dt">Log</span> (<span class="st">&quot;** save file &quot;</span> <span class="op">++</span> fp) ()</span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true"></a></span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true"></a><span class="ot">logStdIoT ::</span> <span class="dt">StdIoF</span> a <span class="ot">-&gt;</span> <span class="dt">LogAPI</span> ()</span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true"></a>logStdIoT (<span class="dt">PutStrLn</span> s _) <span class="ot">=</span> liftF <span class="op">$</span> <span class="dt">Log</span> (<span class="st">&quot;** on stdio &quot;</span> <span class="op">++</span> s) ()</span></code></pre></div>
 <p>The new version of <code>logT</code> needs to operate on <code>S</code> in order to decorate both APIs.</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb22-1"><a href="#cb22-1"></a><span class="ot">logT ::</span> <span class="dt">SumAPI</span> a <span class="ot">-&gt;</span> <span class="dt">SumAPI</span> a</span>
-<span id="cb22-2"><a href="#cb22-2"></a>logT <span class="ot">=</span> foldFree f</span>
-<span id="cb22-3"><a href="#cb22-3"></a>  <span class="kw">where</span></span>
-<span id="cb22-4"><a href="#cb22-4"></a>    f (<span class="dt">A2</span> op) <span class="ot">=</span> hoistFree <span class="dt">A1</span> (logSimpleFileT op) <span class="op">*&gt;</span> hoistFree <span class="dt">A2</span> (liftF op)</span>
-<span id="cb22-5"><a href="#cb22-5"></a>    f (<span class="dt">A3</span> op) <span class="ot">=</span> hoistFree <span class="dt">A1</span> (logStdIoT op) <span class="op">*&gt;</span> hoistFree <span class="dt">A3</span> (liftF op)</span>
-<span id="cb22-6"><a href="#cb22-6"></a>    f a<span class="op">@</span>(<span class="dt">A1</span> _) <span class="ot">=</span> liftF a</span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true"></a><span class="ot">logT ::</span> <span class="dt">SumAPI</span> a <span class="ot">-&gt;</span> <span class="dt">SumAPI</span> a</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true"></a>logT <span class="ot">=</span> foldFree f</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true"></a>  <span class="kw">where</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true"></a>    f (<span class="dt">A2</span> op) <span class="ot">=</span> hoistFree <span class="dt">A1</span> (logSimpleFileT op) <span class="op">*&gt;</span> hoistFree <span class="dt">A2</span> (liftF op)</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true"></a>    f (<span class="dt">A3</span> op) <span class="ot">=</span> hoistFree <span class="dt">A1</span> (logStdIoT op) <span class="op">*&gt;</span> hoistFree <span class="dt">A3</span> (liftF op)</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true"></a>    f a<span class="op">@</span>(<span class="dt">A1</span> _) <span class="ot">=</span> liftF a</span></code></pre></div>
 <p><a href="https://gist.github.com/magthe/9fd7fa6c0a5a5b63cdc84d5c81cc50b5#file-free3-hs">This file</a> also has comments on how to run it at the end. This time there are two examples, one on how to run it without logging</p>
-<div class="sourceCode" id="cb23"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb23-1"><a href="#cb23-1"></a>runSum <span class="fu">undefined</span> stepSimpleFile stepStdIo <span class="op">$</span> prog <span class="st">&quot;foo&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true"></a>runSum <span class="fu">undefined</span> stepSimpleFile stepStdIo <span class="op">$</span> prog <span class="st">&quot;foo&quot;</span></span></code></pre></div>
 <p>and one with logging</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb24-1"><a href="#cb24-1"></a>runSum stepLog stepSimpleFile stepStdIo (logT <span class="op">$</span> prog <span class="st">&quot;foo&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true"></a>runSum stepLog stepSimpleFile stepStdIo (logT <span class="op">$</span> prog <span class="st">&quot;foo&quot;</span>)</span></code></pre></div>
 
 
 </div>

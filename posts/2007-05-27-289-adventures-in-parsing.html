@@ -34,41 +34,41 @@
 <pre><code>address           perms offset  dev   inode      pathname
 08048000-08056000 r-xp 00000000 03:0c 64593      /usr/sbin/gpm</code></pre>
 <p>So, I started putting together some datatypes. First off the address range:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">data</span> <span class="dt">Address</span> <span class="ot">=</span> <span class="dt">Address</span> {<span class="ot"> start ::</span> <span class="dt">Integer</span>,<span class="ot"> end ::</span> <span class="dt">Integer</span> }</span>
-<span id="cb2-2"><a href="#cb2-2"></a>    <span class="kw">deriving</span> <span class="dt">Show</span></span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Address</span> <span class="ot">=</span> <span class="dt">Address</span> {<span class="ot"> start ::</span> <span class="dt">Integer</span>,<span class="ot"> end ::</span> <span class="dt">Integer</span> }</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>    <span class="kw">deriving</span> <span class="dt">Show</span></span></code></pre></div>
 <p>Then I decided that the ‘s’/‘p’ in the permissions should be called <code>Access</code>:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">data</span> <span class="dt">Access</span> <span class="ot">=</span> <span class="dt">Shared</span> <span class="op">|</span> <span class="dt">Private</span></span>
-<span id="cb3-2"><a href="#cb3-2"></a>    <span class="kw">deriving</span> <span class="dt">Show</span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Access</span> <span class="ot">=</span> <span class="dt">Shared</span> <span class="op">|</span> <span class="dt">Private</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>    <span class="kw">deriving</span> <span class="dt">Show</span></span></code></pre></div>
 <p>The basic permissions (<code>rwx</code>) are simply represented as booleans:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">data</span> <span class="dt">Perms</span> <span class="ot">=</span> <span class="dt">Perms</span> {</span>
-<span id="cb4-2"><a href="#cb4-2"></a><span class="ot">        read ::</span> <span class="dt">Bool</span>,</span>
-<span id="cb4-3"><a href="#cb4-3"></a><span class="ot">        write ::</span> <span class="dt">Bool</span>,</span>
-<span id="cb4-4"><a href="#cb4-4"></a><span class="ot">        executable ::</span> <span class="dt">Bool</span>,</span>
-<span id="cb4-5"><a href="#cb4-5"></a><span class="ot">        access ::</span> <span class="dt">Access</span></span>
-<span id="cb4-6"><a href="#cb4-6"></a>    }</span>
-<span id="cb4-7"><a href="#cb4-7"></a>    <span class="kw">deriving</span> <span class="dt">Show</span></span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Perms</span> <span class="ot">=</span> <span class="dt">Perms</span> {</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a><span class="ot">        read ::</span> <span class="dt">Bool</span>,</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a><span class="ot">        write ::</span> <span class="dt">Bool</span>,</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a><span class="ot">        executable ::</span> <span class="dt">Bool</span>,</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a><span class="ot">        access ::</span> <span class="dt">Access</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true"></a>    }</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true"></a>    <span class="kw">deriving</span> <span class="dt">Show</span></span></code></pre></div>
 <p>The device is straightforward as well:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">data</span> <span class="dt">Device</span> <span class="ot">=</span> <span class="dt">Device</span> {<span class="ot"> major ::</span> <span class="dt">Integer</span>,<span class="ot"> minor ::</span> <span class="dt">Integer</span> }</span>
-<span id="cb5-2"><a href="#cb5-2"></a>    <span class="kw">deriving</span> <span class="dt">Show</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Device</span> <span class="ot">=</span> <span class="dt">Device</span> {<span class="ot"> major ::</span> <span class="dt">Integer</span>,<span class="ot"> minor ::</span> <span class="dt">Integer</span> }</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a>    <span class="kw">deriving</span> <span class="dt">Show</span></span></code></pre></div>
 <p>At last I tie it all together in a final datatype that represents a memory region:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">data</span> <span class="dt">MemRegion</span> <span class="ot">=</span> <span class="dt">MemRegion</span> {</span>
-<span id="cb6-2"><a href="#cb6-2"></a><span class="ot">        address ::</span> <span class="dt">Address</span>,</span>
-<span id="cb6-3"><a href="#cb6-3"></a><span class="ot">        perms ::</span> <span class="dt">Perms</span>,</span>
-<span id="cb6-4"><a href="#cb6-4"></a><span class="ot">        offset ::</span> <span class="dt">Integer</span>,</span>
-<span id="cb6-5"><a href="#cb6-5"></a><span class="ot">        device ::</span> <span class="dt">Device</span>,</span>
-<span id="cb6-6"><a href="#cb6-6"></a><span class="ot">        inode ::</span> <span class="dt">Integer</span>,</span>
-<span id="cb6-7"><a href="#cb6-7"></a><span class="ot">        pathname ::</span> <span class="dt">String</span></span>
-<span id="cb6-8"><a href="#cb6-8"></a>    }</span>
-<span id="cb6-9"><a href="#cb6-9"></a>    <span class="kw">deriving</span> <span class="dt">Show</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">MemRegion</span> <span class="ot">=</span> <span class="dt">MemRegion</span> {</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a><span class="ot">        address ::</span> <span class="dt">Address</span>,</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a><span class="ot">        perms ::</span> <span class="dt">Perms</span>,</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true"></a><span class="ot">        offset ::</span> <span class="dt">Integer</span>,</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true"></a><span class="ot">        device ::</span> <span class="dt">Device</span>,</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true"></a><span class="ot">        inode ::</span> <span class="dt">Integer</span>,</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true"></a><span class="ot">        pathname ::</span> <span class="dt">String</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true"></a>    }</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true"></a>    <span class="kw">deriving</span> <span class="dt">Show</span></span></code></pre></div>
 <p>All types derive <code>Show</code> (and receive default implementations of <code>show</code>, at least when using GHC) so that they are easy to print.</p>
 <p>Now, on to the actual “parsec-ing”. Faced with the option of writing it top-down or bottom-up I chose the latter. However, since the format of a single line in the <code>maps</code> file is so simple it’s easy to imagine what the final function will look like. I settled on bottom-up since the datatypes provide me with such an obvious splitting of the line. First off, parsing the address range:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1"></a>parseAddress <span class="ot">=</span> <span class="kw">let</span></span>
-<span id="cb7-2"><a href="#cb7-2"></a>        hexStr2Int <span class="ot">=</span> Prelude.read <span class="op">.</span> (<span class="st">&quot;0x&quot;</span> <span class="op">++</span>)</span>
-<span id="cb7-3"><a href="#cb7-3"></a>    <span class="kw">in</span> <span class="kw">do</span></span>
-<span id="cb7-4"><a href="#cb7-4"></a>        start <span class="ot">&lt;-</span> many1 hexDigit</span>
-<span id="cb7-5"><a href="#cb7-5"></a>        char <span class="ch">'-'</span></span>
-<span id="cb7-6"><a href="#cb7-6"></a>        end <span class="ot">&lt;-</span> many1 hexDigit</span>
-<span id="cb7-7"><a href="#cb7-7"></a>        <span class="fu">return</span> <span class="op">$</span> <span class="dt">Address</span> (hexStr2Int start) (hexStr2Int end)</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a>parseAddress <span class="ot">=</span> <span class="kw">let</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a>        hexStr2Int <span class="ot">=</span> Prelude.read <span class="op">.</span> (<span class="st">&quot;0x&quot;</span> <span class="op">++</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true"></a>    <span class="kw">in</span> <span class="kw">do</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true"></a>        start <span class="ot">&lt;-</span> many1 hexDigit</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true"></a>        char <span class="ch">'-'</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true"></a>        end <span class="ot">&lt;-</span> many1 hexDigit</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true"></a>        <span class="fu">return</span> <span class="op">$</span> <span class="dt">Address</span> (hexStr2Int start) (hexStr2Int end)</span></code></pre></div>
 <p>Since the addresses themselves are in hexadecimal and always are of at least length 1 I use <code>many1 hexDigit</code> to read them. I think it would be safe to assume the addresses always are 8 characters (at least on a 32-bit machine) so it would be possible to use <code>count 8 hexDigit</code> but I haven’t tried it. I’ve found two ways of converting a string representation of a hexadecimal number into an <code>Integer</code>. Above I use the fact that <code>Prelude.read</code> interprets a string beginning with <code>0x</code> as a hexadecimal number. The other way I’ve found is the slightly less readable <code>fst . (!! 0) . readHex</code>. According to the man-page the addresses are separated by a single dash so I’ve hardcoded that in there.</p>
 <p>Testing the function is fairly simple. Using <code>gchi</code>, first load the source file then use <code>parse</code>:</p>
 <pre><code>*Main&gt; parse parseAddress &quot;&quot; &quot;0-1&quot;
@@ -77,71 +77,71 @@ Right (Address {start = 0, end = 1})
 Right (Address {start = 19088743, end = 2309737967})</code></pre>
 <p>Seems to work well enough. :-)</p>
 <p>Next up, parsing the permissions. This is so very straightforward that I don’t think I need to comment on it:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1"></a>parsePerms <span class="ot">=</span> <span class="kw">let</span></span>
-<span id="cb9-2"><a href="#cb9-2"></a>        cA a <span class="ot">=</span> <span class="kw">case</span> a <span class="kw">of</span></span>
-<span id="cb9-3"><a href="#cb9-3"></a>            <span class="ch">'p'</span> <span class="ot">-&gt;</span> <span class="dt">Private</span></span>
-<span id="cb9-4"><a href="#cb9-4"></a>            <span class="ch">'s'</span> <span class="ot">-&gt;</span> <span class="dt">Shared</span></span>
-<span id="cb9-5"><a href="#cb9-5"></a>    <span class="kw">in</span> <span class="kw">do</span></span>
-<span id="cb9-6"><a href="#cb9-6"></a>        r <span class="ot">&lt;-</span> anyChar</span>
-<span id="cb9-7"><a href="#cb9-7"></a>        w <span class="ot">&lt;-</span> anyChar</span>
-<span id="cb9-8"><a href="#cb9-8"></a>        x <span class="ot">&lt;-</span> anyChar</span>
-<span id="cb9-9"><a href="#cb9-9"></a>        a <span class="ot">&lt;-</span> anyChar</span>
-<span id="cb9-10"><a href="#cb9-10"></a>        <span class="fu">return</span> <span class="op">$</span> <span class="dt">Perms</span> (r <span class="op">==</span> <span class="ch">'r'</span>) (w <span class="op">==</span> <span class="ch">'w'</span>) (x <span class="op">==</span> <span class="ch">'x'</span>) (cA a)</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a>parsePerms <span class="ot">=</span> <span class="kw">let</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true"></a>        cA a <span class="ot">=</span> <span class="kw">case</span> a <span class="kw">of</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true"></a>            <span class="ch">'p'</span> <span class="ot">-&gt;</span> <span class="dt">Private</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true"></a>            <span class="ch">'s'</span> <span class="ot">-&gt;</span> <span class="dt">Shared</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true"></a>    <span class="kw">in</span> <span class="kw">do</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true"></a>        r <span class="ot">&lt;-</span> anyChar</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true"></a>        w <span class="ot">&lt;-</span> anyChar</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true"></a>        x <span class="ot">&lt;-</span> anyChar</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true"></a>        a <span class="ot">&lt;-</span> anyChar</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true"></a>        <span class="fu">return</span> <span class="op">$</span> <span class="dt">Perms</span> (r <span class="op">==</span> <span class="ch">'r'</span>) (w <span class="op">==</span> <span class="ch">'w'</span>) (x <span class="op">==</span> <span class="ch">'x'</span>) (cA a)</span></code></pre></div>
 <p>For parsing the device information I use the same strategy as for the address range above, this time however the separating charachter is a colon:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1"></a>parseDevice <span class="ot">=</span> <span class="kw">let</span></span>
-<span id="cb10-2"><a href="#cb10-2"></a>        hexStr2Int <span class="ot">=</span> Prelude.read <span class="op">.</span> (<span class="st">&quot;0x&quot;</span> <span class="op">++</span>)</span>
-<span id="cb10-3"><a href="#cb10-3"></a>    <span class="kw">in</span> <span class="kw">do</span></span>
-<span id="cb10-4"><a href="#cb10-4"></a>        maj <span class="ot">&lt;-</span> many1 digit</span>
-<span id="cb10-5"><a href="#cb10-5"></a>        char <span class="ch">':'</span></span>
-<span id="cb10-6"><a href="#cb10-6"></a>        <span class="fu">min</span> <span class="ot">&lt;-</span> many1 digit</span>
-<span id="cb10-7"><a href="#cb10-7"></a>        <span class="fu">return</span> <span class="op">$</span> <span class="dt">Device</span> (hexStr2Int maj) (hexStr2Int <span class="fu">min</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true"></a>parseDevice <span class="ot">=</span> <span class="kw">let</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true"></a>        hexStr2Int <span class="ot">=</span> Prelude.read <span class="op">.</span> (<span class="st">&quot;0x&quot;</span> <span class="op">++</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true"></a>    <span class="kw">in</span> <span class="kw">do</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true"></a>        maj <span class="ot">&lt;-</span> many1 digit</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true"></a>        char <span class="ch">':'</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true"></a>        <span class="fu">min</span> <span class="ot">&lt;-</span> many1 digit</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true"></a>        <span class="fu">return</span> <span class="op">$</span> <span class="dt">Device</span> (hexStr2Int maj) (hexStr2Int <span class="fu">min</span>)</span></code></pre></div>
 <p>Next is to tie it all together and create a MemRegion instance:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1"></a>parseRegion <span class="ot">=</span> <span class="kw">let</span></span>
-<span id="cb11-2"><a href="#cb11-2"></a>        hexStr2Int <span class="ot">=</span> Prelude.read <span class="op">.</span> (<span class="st">&quot;0x&quot;</span> <span class="op">++</span>)</span>
-<span id="cb11-3"><a href="#cb11-3"></a>        parsePath <span class="ot">=</span> (many1 <span class="op">$</span> char <span class="ch">' '</span>) <span class="op">&gt;&gt;</span> (many1 <span class="op">$</span> anyChar)</span>
-<span id="cb11-4"><a href="#cb11-4"></a>    <span class="kw">in</span> <span class="kw">do</span></span>
-<span id="cb11-5"><a href="#cb11-5"></a>        addr <span class="ot">&lt;-</span> parseAddress</span>
-<span id="cb11-6"><a href="#cb11-6"></a>        char <span class="ch">' '</span></span>
-<span id="cb11-7"><a href="#cb11-7"></a>        perm <span class="ot">&lt;-</span> parsePerms</span>
-<span id="cb11-8"><a href="#cb11-8"></a>        char <span class="ch">' '</span></span>
-<span id="cb11-9"><a href="#cb11-9"></a>        offset <span class="ot">&lt;-</span> many1 hexDigit</span>
-<span id="cb11-10"><a href="#cb11-10"></a>        char <span class="ch">' '</span></span>
-<span id="cb11-11"><a href="#cb11-11"></a>        dev <span class="ot">&lt;-</span> parseDevice</span>
-<span id="cb11-12"><a href="#cb11-12"></a>        char <span class="ch">' '</span></span>
-<span id="cb11-13"><a href="#cb11-13"></a>        inode <span class="ot">&lt;-</span> many1 digit</span>
-<span id="cb11-14"><a href="#cb11-14"></a>        char <span class="ch">' '</span></span>
-<span id="cb11-15"><a href="#cb11-15"></a>        path <span class="ot">&lt;-</span> parsePath <span class="op">&lt;|&gt;</span> string <span class="st">&quot;&quot;</span></span>
-<span id="cb11-16"><a href="#cb11-16"></a>        <span class="fu">return</span> <span class="op">$</span> <span class="dt">MemRegion</span> addr perm (hexStr2Int offset) dev (Prelude.read inode) path</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true"></a>parseRegion <span class="ot">=</span> <span class="kw">let</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true"></a>        hexStr2Int <span class="ot">=</span> Prelude.read <span class="op">.</span> (<span class="st">&quot;0x&quot;</span> <span class="op">++</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true"></a>        parsePath <span class="ot">=</span> (many1 <span class="op">$</span> char <span class="ch">' '</span>) <span class="op">&gt;&gt;</span> (many1 <span class="op">$</span> anyChar)</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true"></a>    <span class="kw">in</span> <span class="kw">do</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true"></a>        addr <span class="ot">&lt;-</span> parseAddress</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true"></a>        char <span class="ch">' '</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true"></a>        perm <span class="ot">&lt;-</span> parsePerms</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true"></a>        char <span class="ch">' '</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true"></a>        offset <span class="ot">&lt;-</span> many1 hexDigit</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true"></a>        char <span class="ch">' '</span></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true"></a>        dev <span class="ot">&lt;-</span> parseDevice</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true"></a>        char <span class="ch">' '</span></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true"></a>        inode <span class="ot">&lt;-</span> many1 digit</span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true"></a>        char <span class="ch">' '</span></span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true"></a>        path <span class="ot">&lt;-</span> parsePath <span class="op">&lt;|&gt;</span> string <span class="st">&quot;&quot;</span></span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true"></a>        <span class="fu">return</span> <span class="op">$</span> <span class="dt">MemRegion</span> addr perm (hexStr2Int offset) dev (Prelude.read inode) path</span></code></pre></div>
 <p>The only little trick here is that there are lines that lack the pathname. Here’s an example from the man-page:</p>
 <pre><code>address           perms offset  dev   inode      pathname
 08058000-0805b000 rwxp 00000000 00:00 0</code></pre>
 <p>It should be noted that it seems there is a space after the inode entry so I keep a <code>char ' '</code> in the main function. Then I try to parse the line for a path, if there is none that attempt will fail immediately and instead I parse for an empty string, <code>parsePath &lt;|&gt; string ""</code>. The pathname seems to be prefixed with a fixed number of spaces, but I’m lazy and just consume one or more. I’m not sure exactly what characters are allowed in the pathname itself so I’m lazy once more and just gobble up whatever I find.</p>
 <p>To exercise what I had so far I decided to write a function that reads the <code>maps</code> file for a specific process, based on its <code>pid</code>, parses the contents and collects all the <code>MemRegion</code> instances in a list.</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1"></a>getMemRegions pid <span class="ot">=</span> <span class="kw">let</span></span>
-<span id="cb13-2"><a href="#cb13-2"></a>        fp <span class="ot">=</span> <span class="st">&quot;/proc&quot;</span> <span class="op">&lt;/&gt;</span> <span class="fu">show</span> pid <span class="op">&lt;/&gt;</span> <span class="st">&quot;maps&quot;</span></span>
-<span id="cb13-3"><a href="#cb13-3"></a>        doParseLine' <span class="ot">=</span> parse parseRegion <span class="st">&quot;parseRegion&quot;</span></span>
-<span id="cb13-4"><a href="#cb13-4"></a>        doParseLine l <span class="ot">=</span> <span class="kw">case</span> (doParseLine' l) <span class="kw">of</span></span>
-<span id="cb13-5"><a href="#cb13-5"></a>            <span class="dt">Left</span> _ <span class="ot">-&gt;</span> <span class="fu">error</span> <span class="st">&quot;Failed to parse line&quot;</span></span>
-<span id="cb13-6"><a href="#cb13-6"></a>            <span class="dt">Right</span> x <span class="ot">-&gt;</span> x</span>
-<span id="cb13-7"><a href="#cb13-7"></a>    <span class="kw">in</span> <span class="kw">do</span></span>
-<span id="cb13-8"><a href="#cb13-8"></a>        mapContent <span class="ot">&lt;-</span> liftM <span class="fu">lines</span> <span class="op">$</span> <span class="fu">readFile</span> fp</span>
-<span id="cb13-9"><a href="#cb13-9"></a>        <span class="fu">return</span> <span class="op">$</span> <span class="fu">map</span> doParseLine mapContent</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true"></a>getMemRegions pid <span class="ot">=</span> <span class="kw">let</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true"></a>        fp <span class="ot">=</span> <span class="st">&quot;/proc&quot;</span> <span class="op">&lt;/&gt;</span> <span class="fu">show</span> pid <span class="op">&lt;/&gt;</span> <span class="st">&quot;maps&quot;</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true"></a>        doParseLine' <span class="ot">=</span> parse parseRegion <span class="st">&quot;parseRegion&quot;</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true"></a>        doParseLine l <span class="ot">=</span> <span class="kw">case</span> (doParseLine' l) <span class="kw">of</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true"></a>            <span class="dt">Left</span> _ <span class="ot">-&gt;</span> <span class="fu">error</span> <span class="st">&quot;Failed to parse line&quot;</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true"></a>            <span class="dt">Right</span> x <span class="ot">-&gt;</span> x</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true"></a>    <span class="kw">in</span> <span class="kw">do</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true"></a>        mapContent <span class="ot">&lt;-</span> liftM <span class="fu">lines</span> <span class="op">$</span> <span class="fu">readFile</span> fp</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true"></a>        <span class="fu">return</span> <span class="op">$</span> <span class="fu">map</span> doParseLine mapContent</span></code></pre></div>
 <p>The only thing that really is going on here is that the lines are passed from inside an IO monad into the Parser monad and then back again. After this I can try it out by:</p>
 <pre><code>*Main&gt; getMemRegions 1</code></pre>
 <p>This produces a lot of output so while playing with it I limited the mapping to the four first lines by using <code>take</code>. The last line then becomes:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1"></a><span class="fu">return</span> <span class="op">$</span> <span class="fu">map</span> doParseLine (<span class="fu">take</span> <span class="dv">4</span> mapContent)</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true"></a><span class="fu">return</span> <span class="op">$</span> <span class="fu">map</span> doParseLine (<span class="fu">take</span> <span class="dv">4</span> mapContent)</span></code></pre></div>
 <p>Now it’s easy to add a <code>main</code> that uses the first command line argument as the <code>pid</code>:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb16-2"><a href="#cb16-2"></a>    pid <span class="ot">&lt;-</span> liftM (Prelude.read <span class="op">.</span> (<span class="op">!!</span> <span class="dv">0</span>)) getArgs</span>
-<span id="cb16-3"><a href="#cb16-3"></a>    regs <span class="ot">&lt;-</span> getMemRegions pid</span>
-<span id="cb16-4"><a href="#cb16-4"></a>    <span class="fu">mapM_</span> (<span class="fu">putStrLn</span> <span class="op">.</span> <span class="fu">show</span>) regs</span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true"></a>    pid <span class="ot">&lt;-</span> liftM (Prelude.read <span class="op">.</span> (<span class="op">!!</span> <span class="dv">0</span>)) getArgs</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true"></a>    regs <span class="ot">&lt;-</span> getMemRegions pid</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true"></a>    <span class="fu">mapM_</span> (<span class="fu">putStrLn</span> <span class="op">.</span> <span class="fu">show</span>) regs</span></code></pre></div>
 <p>Well, that concludes my first adventure in parsing :-)</p>
 <p><em>[Edit 27-05-2007 13:15]</em></p>
 <p>I received an email asking for it so here are the import statements I ended up with:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1"></a><span class="kw">import</span> <span class="dt">Control.Monad</span></span>
-<span id="cb17-2"><a href="#cb17-2"></a><span class="kw">import</span> <span class="dt">System</span></span>
-<span id="cb17-3"><a href="#cb17-3"></a><span class="kw">import</span> <span class="dt">System.FilePath</span></span>
-<span id="cb17-4"><a href="#cb17-4"></a><span class="kw">import</span> <span class="dt">Text.ParserCombinators.Parsec</span></span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Control.Monad</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">System</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">System.FilePath</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Text.ParserCombinators.Parsec</span></span></code></pre></div>
 
 
 </div>
@@ -172,9 +172,9 @@ Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell
 <p>Conal,</p>
 <p>Good suggestion. At least if I understand what you mean :-)</p>
 <p>Something along the lines of</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a>thenChar c f <span class="ot">=</span> f <span class="op">&gt;&gt;=</span> (\ r <span class="ot">-&gt;</span> char c <span class="op">&gt;&gt;</span> <span class="fu">return</span> r)</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a>thenChar c f <span class="ot">=</span> f <span class="op">&gt;&gt;=</span> (\ r <span class="ot">-&gt;</span> char c <span class="op">&gt;&gt;</span> <span class="fu">return</span> r)</span></code></pre></div>
 <p>with a specialised one for spaces maybe</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a>thenSpace <span class="ot">=</span> thenChar <span class="ch">' '</span></span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a>thenSpace <span class="ot">=</span> thenChar <span class="ch">' '</span></span></code></pre></div>
 <p>I suppose <code>liftM</code> and friends can be employed to remove the function calling in the creation of <code>Address</code>, <code>Device</code> and <code>MemRegion</code>. I’ll try to venture into <code>Parsec</code> territory once again soon and report on my findings. :-)</p>
 </article>
 

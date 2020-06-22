@@ -31,47 +31,47 @@
 
 <p>I received a few comments on <a href="../posts/2007-06-03-295-adventures-in-parsing-part-3.html">part 3</a> of this little mini-series and I just wanted to address them. While doing this I still want the main functions of the parser <code>parseXxx</code> to read like the <code>maps</code> file itself. That means I want to avoid “reversing order” like <code>thenChar</code> and <code>thenSpace</code> did in <a href="../posts/2007-05-29-290-more-adventures-in-parsing.html">part2</a>. I also don’t want to hide things, e.g. I don’t want to introduce a function that turns <code>(a &lt;* char ' ') &lt;*&gt; b</code> into <code>a &lt;#&gt; b</code>.</p>
 <p>So, first up is to do something about <code>hexStr2Int &lt;$&gt; many1 hexDigit</code> which appears all over the place. I made it appear in even more places by moving around a few parentheses; the following two functions are the same:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a>foo <span class="ot">=</span> a <span class="op">&lt;$&gt;</span> (b <span class="op">&lt;*</span> c)</span>
-<span id="cb1-2"><a href="#cb1-2"></a>bar <span class="ot">=</span> (a <span class="op">&lt;$&gt;</span> b) <span class="op">&lt;*</span> c</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a>foo <span class="ot">=</span> a <span class="op">&lt;$&gt;</span> (b <span class="op">&lt;*</span> c)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>bar <span class="ot">=</span> (a <span class="op">&lt;$&gt;</span> b) <span class="op">&lt;*</span> c</span></code></pre></div>
 <p>Then I scrapped <code>hexStr2Int</code> completely and instead introduced <code>hexStr</code>:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a>hexStr <span class="ot">=</span> Prelude.read <span class="op">.</span> (<span class="st">&quot;0x&quot;</span> <span class="op">++</span>) <span class="op">&lt;$&gt;</span> many1 hexDigit</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a>hexStr <span class="ot">=</span> Prelude.read <span class="op">.</span> (<span class="st">&quot;0x&quot;</span> <span class="op">++</span>) <span class="op">&lt;$&gt;</span> many1 hexDigit</span></code></pre></div>
 <p>This means that <code>parseAddress</code> can be rewritten to:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a>parseAddress <span class="ot">=</span> <span class="dt">Address</span> <span class="op">&lt;$&gt;</span></span>
-<span id="cb3-2"><a href="#cb3-2"></a>    hexStr <span class="op">&lt;*</span> char <span class="ch">'-'</span> <span class="op">&lt;*&gt;</span></span>
-<span id="cb3-3"><a href="#cb3-3"></a>    hexStr</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a>parseAddress <span class="ot">=</span> <span class="dt">Address</span> <span class="op">&lt;$&gt;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>    hexStr <span class="op">&lt;*</span> char <span class="ch">'-'</span> <span class="op">&lt;*&gt;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>    hexStr</span></code></pre></div>
 <p>Rather than, as Conal suggested, introduce an infix operation that addresses the pattern <code>(a &lt;* char ' ') &lt;*&gt; b</code> I decided to do something about <code>a &lt;* char c</code>. I feel Conal’s suggestion, while shortening the code more than my solution, goes against my wish to not hide things. This is the definition of <code>&lt;##&gt;</code>:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a>(<span class="op">&lt;##&gt;</span>) l r <span class="ot">=</span> l <span class="op">&lt;*</span> char r</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a>(<span class="op">&lt;##&gt;</span>) l r <span class="ot">=</span> l <span class="op">&lt;*</span> char r</span></code></pre></div>
 <p>After this I rewrote <code>parseAddress</code> into:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1"></a>parseAddress <span class="ot">=</span> <span class="dt">Address</span> <span class="op">&lt;$&gt;</span></span>
-<span id="cb5-2"><a href="#cb5-2"></a>    hexStr <span class="op">&lt;##&gt;</span> <span class="ch">'-'</span> <span class="op">&lt;*&gt;</span></span>
-<span id="cb5-3"><a href="#cb5-3"></a>    hexStr</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a>parseAddress <span class="ot">=</span> <span class="dt">Address</span> <span class="op">&lt;$&gt;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a>    hexStr <span class="op">&lt;##&gt;</span> <span class="ch">'-'</span> <span class="op">&lt;*&gt;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a>    hexStr</span></code></pre></div>
 <p>The pattern <code>(== c) &lt;$&gt; anyChar</code> appears three times in <code>parsePerms</code> so it got a name and moved down into the <code>where</code> clause. I also modified <code>cA</code> to use pattern matching. I haven’t spent much time considering error handling in the parser, so I didn’t introduce a pattern matching everything else.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1"></a>parsePerms <span class="ot">=</span> <span class="dt">Perms</span> <span class="op">&lt;$&gt;</span></span>
-<span id="cb6-2"><a href="#cb6-2"></a>    pP <span class="ch">'r'</span> <span class="op">&lt;*&gt;</span></span>
-<span id="cb6-3"><a href="#cb6-3"></a>    pP <span class="ch">'w'</span> <span class="op">&lt;*&gt;</span></span>
-<span id="cb6-4"><a href="#cb6-4"></a>    pP <span class="ch">'x'</span> <span class="op">&lt;*&gt;</span></span>
-<span id="cb6-5"><a href="#cb6-5"></a>    (cA <span class="op">&lt;$&gt;</span> anyChar)</span>
-<span id="cb6-6"><a href="#cb6-6"></a></span>
-<span id="cb6-7"><a href="#cb6-7"></a>    <span class="kw">where</span></span>
-<span id="cb6-8"><a href="#cb6-8"></a>        pP c <span class="ot">=</span> (<span class="op">==</span> c) <span class="op">&lt;$&gt;</span> anyChar</span>
-<span id="cb6-9"><a href="#cb6-9"></a>        cA <span class="ch">'p'</span> <span class="ot">=</span> <span class="dt">Private</span></span>
-<span id="cb6-10"><a href="#cb6-10"></a>        cA <span class="ch">'s'</span> <span class="ot">=</span> <span class="dt">Shared</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a>parsePerms <span class="ot">=</span> <span class="dt">Perms</span> <span class="op">&lt;$&gt;</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a>    pP <span class="ch">'r'</span> <span class="op">&lt;*&gt;</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a>    pP <span class="ch">'w'</span> <span class="op">&lt;*&gt;</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true"></a>    pP <span class="ch">'x'</span> <span class="op">&lt;*&gt;</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true"></a>    (cA <span class="op">&lt;$&gt;</span> anyChar)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true"></a>    <span class="kw">where</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true"></a>        pP c <span class="ot">=</span> (<span class="op">==</span> c) <span class="op">&lt;$&gt;</span> anyChar</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true"></a>        cA <span class="ch">'p'</span> <span class="ot">=</span> <span class="dt">Private</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true"></a>        cA <span class="ch">'s'</span> <span class="ot">=</span> <span class="dt">Shared</span></span></code></pre></div>
 <p>The last change I did was remove a bunch of parentheses. I’m always a little hesitant removing parentheses and relying on precedence rules, I find I’m even more hesitant doing it when programming Haskell. Probably due to Haskell having <em>a lot</em> of infix operators that I’m unused to.</p>
 <p>The rest of the parser now looks like this:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1"></a>parseDevice <span class="ot">=</span> <span class="dt">Device</span> <span class="op">&lt;$&gt;</span></span>
-<span id="cb7-2"><a href="#cb7-2"></a>    hexStr <span class="op">&lt;##&gt;</span> <span class="ch">':'</span> <span class="op">&lt;*&gt;</span></span>
-<span id="cb7-3"><a href="#cb7-3"></a>    hexStr</span>
-<span id="cb7-4"><a href="#cb7-4"></a></span>
-<span id="cb7-5"><a href="#cb7-5"></a>parseRegion <span class="ot">=</span> <span class="dt">MemRegion</span> <span class="op">&lt;$&gt;</span></span>
-<span id="cb7-6"><a href="#cb7-6"></a>    parseAddress <span class="op">&lt;##&gt;</span> <span class="ch">' '</span> <span class="op">&lt;*&gt;</span></span>
-<span id="cb7-7"><a href="#cb7-7"></a>    parsePerms <span class="op">&lt;##&gt;</span> <span class="ch">' '</span> <span class="op">&lt;*&gt;</span></span>
-<span id="cb7-8"><a href="#cb7-8"></a>    hexStr <span class="op">&lt;##&gt;</span> <span class="ch">' '</span> <span class="op">&lt;*&gt;</span></span>
-<span id="cb7-9"><a href="#cb7-9"></a>    parseDevice <span class="op">&lt;##&gt;</span> <span class="ch">' '</span> <span class="op">&lt;*&gt;</span></span>
-<span id="cb7-10"><a href="#cb7-10"></a>    (Prelude.read <span class="op">&lt;$&gt;</span> many1 digit) <span class="op">&lt;##&gt;</span> <span class="ch">' '</span> <span class="op">&lt;*&gt;</span></span>
-<span id="cb7-11"><a href="#cb7-11"></a>    (parsePath <span class="op">&lt;|&gt;</span> string <span class="st">&quot;&quot;</span>)</span>
-<span id="cb7-12"><a href="#cb7-12"></a></span>
-<span id="cb7-13"><a href="#cb7-13"></a>    <span class="kw">where</span></span>
-<span id="cb7-14"><a href="#cb7-14"></a>        parsePath <span class="ot">=</span> (many1 <span class="op">$</span> char <span class="ch">' '</span>) <span class="op">*&gt;</span> (many1 anyChar)</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a>parseDevice <span class="ot">=</span> <span class="dt">Device</span> <span class="op">&lt;$&gt;</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a>    hexStr <span class="op">&lt;##&gt;</span> <span class="ch">':'</span> <span class="op">&lt;*&gt;</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true"></a>    hexStr</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true"></a></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true"></a>parseRegion <span class="ot">=</span> <span class="dt">MemRegion</span> <span class="op">&lt;$&gt;</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true"></a>    parseAddress <span class="op">&lt;##&gt;</span> <span class="ch">' '</span> <span class="op">&lt;*&gt;</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true"></a>    parsePerms <span class="op">&lt;##&gt;</span> <span class="ch">' '</span> <span class="op">&lt;*&gt;</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true"></a>    hexStr <span class="op">&lt;##&gt;</span> <span class="ch">' '</span> <span class="op">&lt;*&gt;</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true"></a>    parseDevice <span class="op">&lt;##&gt;</span> <span class="ch">' '</span> <span class="op">&lt;*&gt;</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true"></a>    (Prelude.read <span class="op">&lt;$&gt;</span> many1 digit) <span class="op">&lt;##&gt;</span> <span class="ch">' '</span> <span class="op">&lt;*&gt;</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true"></a>    (parsePath <span class="op">&lt;|&gt;</span> string <span class="st">&quot;&quot;</span>)</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true"></a></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true"></a>    <span class="kw">where</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true"></a>        parsePath <span class="ot">=</span> (many1 <span class="op">$</span> char <span class="ch">' '</span>) <span class="op">*&gt;</span> (many1 anyChar)</span></code></pre></div>
 <p>I think these changes address most of the comments Conal and Twan made on the previous part. Where they don’t I hope I’ve explained why I decided not to take their advice.</p>
 
 
@@ -114,9 +114,9 @@ Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell
     <p class="comment-date"><time pubdate="pubdate" datetime="2007-06-06">2007-06-06</time></p>
   </header>
 <p>Conal, you are right and I was unclear in what I meant. Basically I like the idea of reading the <code>parseXxx</code> functions and see the structure of the original <code>maps</code> file. At the moment I think that</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a>parseAddress <span class="ot">=</span> <span class="dt">Address</span> <span class="op">&lt;$&gt;</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a>    hexStr <span class="op">&lt;##&gt;</span> <span class="ch">'-'</span> <span class="op">&lt;*&gt;</span></span>
-<span id="cb1-3"><a href="#cb1-3"></a>    hexStr</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a>parseAddress <span class="ot">=</span> <span class="dt">Address</span> <span class="op">&lt;$&gt;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>    hexStr <span class="op">&lt;##&gt;</span> <span class="ch">'-'</span> <span class="op">&lt;*&gt;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>    hexStr</span></code></pre></div>
 <p>better reflects the structure of the <code>maps</code> file than hiding away the separator inside an operator. I also find it doesn’t require me to carry a lot of “mental baggage” when reading the code (I suspect this is the thing that’s been bothering me with the love of introducing operators that seems so prevalent among Haskell developers, thanks for helping me put a finger on it). However, your persistence might be paying off ;-) I’m warming to the idea. I just have to come up with a scheme for naming operators that allows easy reading of the code.</p>
 </article>
 
@@ -129,12 +129,12 @@ Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell
 <p>Oh! I’m finally getting what you’ve meant about “hiding things” vs “reflect[ing] the structure of the <code>maps</code> file”. I think you want the separator characters to show up in the parser, and between the sub-parsers that they separate.</p>
 <p>Maybe what’s missing in my <code>&lt;#&gt;</code> suggestion is that the choice of the space character as a separator is far from obvious, and I guess that’s what you’re saying about “mental baggage” naming the operators for easy reading.</p>
 <p>I suppose you could use <code>sepSpace</code> and <code>sepColon</code> as operator names.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a>parseAddress <span class="ot">=</span> <span class="dt">Address</span> <span class="op">&lt;$&gt;</span> hexStr <span class="ot">`sepColon`</span> hexStr</span>
-<span id="cb1-2"><a href="#cb1-2"></a></span>
-<span id="cb1-3"><a href="#cb1-3"></a>parseRegion <span class="ot">=</span> <span class="dt">MemRegion</span> <span class="op">&lt;$&gt;</span></span>
-<span id="cb1-4"><a href="#cb1-4"></a>    parseAddress <span class="ot">`sepSpace`</span></span>
-<span id="cb1-5"><a href="#cb1-5"></a>    parsePerms <span class="ot">`sepSpace`</span></span>
-<span id="cb1-6"><a href="#cb1-6"></a>    <span class="op">...</span></span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a>parseAddress <span class="ot">=</span> <span class="dt">Address</span> <span class="op">&lt;$&gt;</span> hexStr <span class="ot">`sepColon`</span> hexStr</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>parseRegion <span class="ot">=</span> <span class="dt">MemRegion</span> <span class="op">&lt;$&gt;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>    parseAddress <span class="ot">`sepSpace`</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>    parsePerms <span class="ot">`sepSpace`</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a>    <span class="op">...</span></span></code></pre></div>
 <p>Still, an actual space/colon character would probably be clearer. For colon, you could use <code>&lt;:&gt;</code>, but what for space?</p>
 </article>
 

@@ -33,37 +33,37 @@
 <p>Unfortunately Docker doesn’t make it easy to do that, but I found an article on <a href="http://blog.oddbit.com/2014/08/11/four-ways-to-connect-a-docker/">four ways to connect a docker container to a local network</a>. What follows is my take on the instruction for how to use a <code>macvlan</code> device to achieve it.</p>
 <h2 id="an-image-for-testing">An image for testing</h2>
 <p>First I looked around for a simple echo server to run in my testing image:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">module</span> <span class="dt">Main</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a>       <span class="kw">where</span></span>
-<span id="cb1-3"><a href="#cb1-3"></a></span>
-<span id="cb1-4"><a href="#cb1-4"></a><span class="kw">import</span> <span class="dt">Control.Concurrent</span></span>
-<span id="cb1-5"><a href="#cb1-5"></a><span class="kw">import</span> <span class="dt">Control.Monad</span></span>
-<span id="cb1-6"><a href="#cb1-6"></a><span class="kw">import</span> <span class="dt">Network.Socket</span></span>
-<span id="cb1-7"><a href="#cb1-7"></a><span class="kw">import</span> <span class="dt">System.IO</span></span>
-<span id="cb1-8"><a href="#cb1-8"></a></span>
-<span id="cb1-9"><a href="#cb1-9"></a><span class="ot">srvPort ::</span> <span class="dt">PortNumber</span></span>
-<span id="cb1-10"><a href="#cb1-10"></a>srvPort <span class="ot">=</span> <span class="dv">2048</span></span>
-<span id="cb1-11"><a href="#cb1-11"></a></span>
-<span id="cb1-12"><a href="#cb1-12"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
-<span id="cb1-13"><a href="#cb1-13"></a>main <span class="ot">=</span> withSocketsDo <span class="op">$</span> <span class="kw">do</span></span>
-<span id="cb1-14"><a href="#cb1-14"></a>  newSocket <span class="ot">&lt;-</span> socket <span class="dt">AF_INET</span> <span class="dt">Stream</span> defaultProtocol</span>
-<span id="cb1-15"><a href="#cb1-15"></a>  setSocketOption newSocket <span class="dt">ReuseAddr</span> <span class="dv">1</span></span>
-<span id="cb1-16"><a href="#cb1-16"></a>  bindSocket newSocket <span class="op">$</span> <span class="dt">SockAddrInet</span> srvPort iNADDR_ANY</span>
-<span id="cb1-17"><a href="#cb1-17"></a>  listen newSocket <span class="dv">2</span></span>
-<span id="cb1-18"><a href="#cb1-18"></a>  runServer echo newSocket</span>
-<span id="cb1-19"><a href="#cb1-19"></a></span>
-<span id="cb1-20"><a href="#cb1-20"></a><span class="ot">runServer ::</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>) <span class="ot">-&gt;</span> <span class="dt">Socket</span> <span class="ot">-&gt;</span> <span class="dt">IO</span>()</span>
-<span id="cb1-21"><a href="#cb1-21"></a>runServer f s <span class="ot">=</span> forever <span class="op">$</span> <span class="kw">do</span></span>
-<span id="cb1-22"><a href="#cb1-22"></a>  (usableSocket,_) <span class="ot">&lt;-</span> accept s</span>
-<span id="cb1-23"><a href="#cb1-23"></a>  forkIO <span class="op">$</span> interactWithSocket f usableSocket</span>
-<span id="cb1-24"><a href="#cb1-24"></a></span>
-<span id="cb1-25"><a href="#cb1-25"></a><span class="ot">interactWithSocket ::</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>) <span class="ot">-&gt;</span> <span class="dt">Socket</span> <span class="ot">-&gt;</span> <span class="dt">IO</span>()</span>
-<span id="cb1-26"><a href="#cb1-26"></a>interactWithSocket f s <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb1-27"><a href="#cb1-27"></a>  handle <span class="ot">&lt;-</span> socketToHandle s <span class="dt">ReadWriteMode</span></span>
-<span id="cb1-28"><a href="#cb1-28"></a>  forever <span class="op">$</span> f <span class="op">&lt;$&gt;</span> hGetLine handle <span class="op">&gt;&gt;=</span> hPutStrLn handle</span>
-<span id="cb1-29"><a href="#cb1-29"></a></span>
-<span id="cb1-30"><a href="#cb1-30"></a><span class="ot">echo ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span></span>
-<span id="cb1-31"><a href="#cb1-31"></a>echo <span class="ot">=</span> (<span class="st">&quot;R: &quot;</span> <span class="op">++</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">module</span> <span class="dt">Main</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>       <span class="kw">where</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Control.Concurrent</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Control.Monad</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Network.Socket</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">System.IO</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a><span class="ot">srvPort ::</span> <span class="dt">PortNumber</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a>srvPort <span class="ot">=</span> <span class="dv">2048</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true"></a>main <span class="ot">=</span> withSocketsDo <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true"></a>  newSocket <span class="ot">&lt;-</span> socket <span class="dt">AF_INET</span> <span class="dt">Stream</span> defaultProtocol</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true"></a>  setSocketOption newSocket <span class="dt">ReuseAddr</span> <span class="dv">1</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true"></a>  bindSocket newSocket <span class="op">$</span> <span class="dt">SockAddrInet</span> srvPort iNADDR_ANY</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true"></a>  listen newSocket <span class="dv">2</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true"></a>  runServer echo newSocket</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true"></a></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true"></a><span class="ot">runServer ::</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>) <span class="ot">-&gt;</span> <span class="dt">Socket</span> <span class="ot">-&gt;</span> <span class="dt">IO</span>()</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true"></a>runServer f s <span class="ot">=</span> forever <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true"></a>  (usableSocket,_) <span class="ot">&lt;-</span> accept s</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true"></a>  forkIO <span class="op">$</span> interactWithSocket f usableSocket</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true"></a></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true"></a><span class="ot">interactWithSocket ::</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>) <span class="ot">-&gt;</span> <span class="dt">Socket</span> <span class="ot">-&gt;</span> <span class="dt">IO</span>()</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true"></a>interactWithSocket f s <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true"></a>  handle <span class="ot">&lt;-</span> socketToHandle s <span class="dt">ReadWriteMode</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true"></a>  forever <span class="op">$</span> f <span class="op">&lt;$&gt;</span> hGetLine handle <span class="op">&gt;&gt;=</span> hPutStrLn handle</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true"></a></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true"></a><span class="ot">echo ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true"></a>echo <span class="ot">=</span> (<span class="st">&quot;R: &quot;</span> <span class="op">++</span>)</span></code></pre></div>
 <p>Run it and test it by pointing <em>netcat</em> to port 2048.</p>
 <p>Once that was built I put together a <em>Dockerfile</em> that uses Debian Jessie as a base and copies in the echo server (I based it on another image):</p>
 <pre><code>FROM debian:8.2
@@ -83,28 +83,28 @@ USER myuser
 COPY echosrv /home/myuser/
 CMD bash --login</code></pre>
 <p>I popped the <em>Dockerfile</em> and the binary into a folder <code>srv/</code> so I can build the image using</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1"></a>$ <span class="ex">docker</span> build --rm --tag=nw srv</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a>$ <span class="ex">docker</span> build --rm --tag=nw srv</span></code></pre></div>
 <p>and then started using</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1"></a>$ <span class="ex">docker</span> run --rm --interactive --tty --name=echo nw /home/myuser/echosrv</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a>$ <span class="ex">docker</span> run --rm --interactive --tty --name=echo nw /home/myuser/echosrv</span></code></pre></div>
 <h2 id="a-handy-alias">A handy alias</h2>
 <p>The following alias will turn out to be very handy indeed</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1"></a>$ <span class="bu">alias</span> docker-pid=<span class="st">&quot;docker inspect --format '{{ .State.Pid }}'&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a>$ <span class="bu">alias</span> docker-pid=<span class="st">&quot;docker inspect --format '{{ .State.Pid }}'&quot;</span></span></code></pre></div>
 <h2 id="the-network-setup">The network setup</h2>
 <p>The local network is <code>192.168.1.0/24</code> and I found an unused address, <code>192.168.1.199</code> that I decided to use for my experiment. The gateway is on <code>192.168.1.1</code>.</p>
 <p>First create the <code>macvlan</code> device:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1"></a>$ <span class="fu">sudo</span> ip link add mybridge link enp0s25 type macvlan mode bridge</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a>$ <span class="fu">sudo</span> ip link add mybridge link enp0s25 type macvlan mode bridge</span></code></pre></div>
 <p>Then put it into the network namespace of the running container, and bring it up:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1"></a>$ <span class="fu">sudo</span> ip link set netns <span class="va">$(</span><span class="ex">docker-pid</span> echo<span class="va">)</span> mybridge</span>
-<span id="cb7-2"><a href="#cb7-2"></a>$ <span class="fu">sudo</span> nsenter -t <span class="va">$(</span><span class="ex">docker-pid</span> echo<span class="va">)</span> -n ip link set mybridge up</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a>$ <span class="fu">sudo</span> ip link set netns <span class="va">$(</span><span class="ex">docker-pid</span> echo<span class="va">)</span> mybridge</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a>$ <span class="fu">sudo</span> nsenter -t <span class="va">$(</span><span class="ex">docker-pid</span> echo<span class="va">)</span> -n ip link set mybridge up</span></code></pre></div>
 <p>Now the device need its address and the routing has to be set up:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1"></a>$ <span class="fu">sudo</span> nsenter -t <span class="va">$(</span><span class="ex">docker-pid</span> echo<span class="va">)</span> -n ip route del default</span>
-<span id="cb8-2"><a href="#cb8-2"></a>$ <span class="fu">sudo</span> nsenter -t <span class="va">$(</span><span class="ex">docker-pid</span> echo<span class="va">)</span> -n ip addr add 192.168.1.199/24 dev mybridge</span>
-<span id="cb8-3"><a href="#cb8-3"></a>$ <span class="fu">sudo</span> nsenter -t <span class="va">$(</span><span class="ex">docker-pid</span> echo<span class="va">)</span> -n ip route add default via 192.168.1.1 dev mybridge</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a>$ <span class="fu">sudo</span> nsenter -t <span class="va">$(</span><span class="ex">docker-pid</span> echo<span class="va">)</span> -n ip route del default</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a>$ <span class="fu">sudo</span> nsenter -t <span class="va">$(</span><span class="ex">docker-pid</span> echo<span class="va">)</span> -n ip addr add 192.168.1.199/24 dev mybridge</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true"></a>$ <span class="fu">sudo</span> nsenter -t <span class="va">$(</span><span class="ex">docker-pid</span> echo<span class="va">)</span> -n ip route add default via 192.168.1.1 dev mybridge</span></code></pre></div>
 <p>That’s it, now the docker container is reachable on <code>192.168.1.199</code>. Well, it’s reachable on that ip from any computer on the network except for the host. In order for the host to be able to reach it add another route:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1"></a>$ <span class="fu">sudo</span> ip route add 192.168.1.199 dev docker0</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a>$ <span class="fu">sudo</span> ip route add 192.168.1.199 dev docker0</span></code></pre></div>
 <h2 id="dhcp">DHCP</h2>
 <p>If you’d rather have the container on an ip handed out by a DHCP server, then you replace the three commands for setting ip and route with:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1"></a>$ <span class="fu">sudo</span> nsenter -t <span class="va">$(</span><span class="ex">docker-pid</span> echo<span class="va">)</span> -n -- dhclient -d maclan</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true"></a>$ <span class="fu">sudo</span> nsenter -t <span class="va">$(</span><span class="ex">docker-pid</span> echo<span class="va">)</span> -n -- dhclient -d maclan</span></code></pre></div>
 
 
 </div>

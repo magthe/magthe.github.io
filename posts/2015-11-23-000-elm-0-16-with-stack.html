@@ -31,18 +31,18 @@
 
 <p>I just noticed that there’s been a new release of the <a href="http://elm-lang.org">elm tools</a>. The previous release was fairly easy to <a href="../posts/2015-10-13-000-building-elm-with-stack.html">build using stack</a>, but this release made it a little bit easier still.</p>
 <p>The script for cloning should be modified to look like this:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1"></a><span class="co">#! /usr/bin/zsh</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a></span>
-<span id="cb1-3"><a href="#cb1-3"></a><span class="va">repos=(</span><span class="st">&quot;git clone -b 0.16 https://github.com/elm-lang/elm-compiler.git&quot;</span></span>
-<span id="cb1-4"><a href="#cb1-4"></a>       <span class="st">&quot;git clone -b 0.16 https://github.com/elm-lang/elm-package.git&quot;</span></span>
-<span id="cb1-5"><a href="#cb1-5"></a>       <span class="st">&quot;git clone -b 0.16 https://github.com/elm-lang/elm-make.git&quot;</span></span>
-<span id="cb1-6"><a href="#cb1-6"></a>       <span class="st">&quot;git clone -b 0.16 https://github.com/elm-lang/elm-reactor.git&quot;</span></span>
-<span id="cb1-7"><a href="#cb1-7"></a>       <span class="st">&quot;git clone -b 0.16 https://github.com/elm-lang/elm-repl.git&quot;</span></span>
-<span id="cb1-8"><a href="#cb1-8"></a>      )</span>
-<span id="cb1-9"><a href="#cb1-9"></a></span>
-<span id="cb1-10"><a href="#cb1-10"></a><span class="kw">for</span> <span class="ex">r</span> in <span class="va">${repos[@]}</span><span class="kw">;</span> <span class="kw">do</span></span>
-<span id="cb1-11"><a href="#cb1-11"></a>    <span class="bu">eval</span> <span class="va">${r}</span></span>
-<span id="cb1-12"><a href="#cb1-12"></a><span class="kw">done</span></span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="co">#! /usr/bin/zsh</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a><span class="va">repos=(</span><span class="st">&quot;git clone -b 0.16 https://github.com/elm-lang/elm-compiler.git&quot;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>       <span class="st">&quot;git clone -b 0.16 https://github.com/elm-lang/elm-package.git&quot;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>       <span class="st">&quot;git clone -b 0.16 https://github.com/elm-lang/elm-make.git&quot;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a>       <span class="st">&quot;git clone -b 0.16 https://github.com/elm-lang/elm-reactor.git&quot;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a>       <span class="st">&quot;git clone -b 0.16 https://github.com/elm-lang/elm-repl.git&quot;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a>      )</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a><span class="kw">for</span> <span class="ex">r</span> in <span class="va">${repos[@]}</span><span class="kw">;</span> <span class="kw">do</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a>    <span class="bu">eval</span> <span class="va">${r}</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a><span class="kw">done</span></span></code></pre></div>
 <p>When creating the inital <code>stack.yaml</code> tell <em>stack</em> to use release 7.10.2 of <em>ghc</em>:</p>
 <pre><code>% stack init --resolver ghc-7.10.2</code></pre>
 <p>That makes it possible to use the installed version of <em>ghc</em>. It’s also unecessary to provide any flag for <em>aeson</em>, which means there’s no need for any manual changed to <code>stack.yaml</code> prior to running (add <code>--install-ghc</code> if you don’t have it on your system already)</p>

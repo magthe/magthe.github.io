@@ -32,48 +32,48 @@
 <p>At work we’re only now getting around to put <a href="https://hilton.org.uk/blog/microservices-correlation-id">correlation IDs</a> into use. We write most our code in Clojure but since I’d really like to use more Haskell at work I thought I’d dive into <a href="https://hackage.haskell.org/package/scotty">Scotty</a> and see how to deal with logging and then especially how to get correlation IDs into the logs.</p>
 <h2 id="the-types">The types</h2>
 <p>For configuration it decided to use the reader monad inside <code>ActionT</code> from Scotty. Enter Chell:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">type</span> <span class="dt">ChellM</span> c <span class="ot">=</span> <span class="dt">ScottyT</span> <span class="dt">Text</span> (<span class="dt">ReaderT</span> c <span class="dt">IO</span>)</span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="kw">type</span> <span class="dt">ChellActionM</span> c <span class="ot">=</span> <span class="dt">ActionT</span> <span class="dt">Text</span> (<span class="dt">ReaderT</span> c <span class="dt">IO</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">type</span> <span class="dt">ChellM</span> c <span class="ot">=</span> <span class="dt">ScottyT</span> <span class="dt">Text</span> (<span class="dt">ReaderT</span> c <span class="dt">IO</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a><span class="kw">type</span> <span class="dt">ChellActionM</span> c <span class="ot">=</span> <span class="dt">ActionT</span> <span class="dt">Text</span> (<span class="dt">ReaderT</span> c <span class="dt">IO</span>)</span></code></pre></div>
 <p>In order to run it I wrote a function corresponding to <code>scotty</code>:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="ot">chell ::</span> c <span class="ot">-&gt;</span> <span class="dt">Port</span> <span class="ot">-&gt;</span> <span class="dt">ChellM</span> () <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
-<span id="cb2-2"><a href="#cb2-2"></a>chell cfg port a <span class="ot">=</span> scottyOptsT opts (<span class="fu">flip</span> runReaderT cfg) a</span>
-<span id="cb2-3"><a href="#cb2-3"></a>  <span class="kw">where</span></span>
-<span id="cb2-4"><a href="#cb2-4"></a>    opts <span class="ot">=</span> def { verbose <span class="ot">=</span> <span class="dv">0</span></span>
-<span id="cb2-5"><a href="#cb2-5"></a>               , settings <span class="ot">=</span> (settings def) { settingsPort <span class="ot">=</span> port }</span>
-<span id="cb2-6"><a href="#cb2-6"></a>               }</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="ot">chell ::</span> c <span class="ot">-&gt;</span> <span class="dt">Port</span> <span class="ot">-&gt;</span> <span class="dt">ChellM</span> () <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>chell cfg port a <span class="ot">=</span> scottyOptsT opts (<span class="fu">flip</span> runReaderT cfg) a</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a>  <span class="kw">where</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a>    opts <span class="ot">=</span> def { verbose <span class="ot">=</span> <span class="dv">0</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a>               , settings <span class="ot">=</span> (settings def) { settingsPort <span class="ot">=</span> port }</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a>               }</span></code></pre></div>
 <h2 id="correlation-id">Correlation ID</h2>
 <p>To deal with the correlation ID each incoming request should be checked for the HTTP header <code>X-Correlation-Id</code> and if present it should be used during logging. If no such header is present then a new correlation ID should be created. Since it’s per request it feels natural to create a WAI middleware for this.</p>
 <p>The easiest way I could come up with was to push the correlation ID into the request’s headers before it’s passed on:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="ot">requestHeaderCorrelationId ::</span> <span class="dt">Request</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">ByteString</span></span>
-<span id="cb3-2"><a href="#cb3-2"></a>requestHeaderCorrelationId <span class="ot">=</span> <span class="fu">lookup</span> <span class="st">&quot;X-Correlation-Id&quot;</span> <span class="op">.</span> requestHeaders</span>
-<span id="cb3-3"><a href="#cb3-3"></a></span>
-<span id="cb3-4"><a href="#cb3-4"></a><span class="ot">correlationId ::</span>  <span class="dt">Middleware</span></span>
-<span id="cb3-5"><a href="#cb3-5"></a>correlationId app req sendResponse <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb3-6"><a href="#cb3-6"></a>  u <span class="ot">&lt;-</span> (<span class="ot">randomIO ::</span> <span class="dt">IO</span> <span class="dt">UUID</span>)</span>
-<span id="cb3-7"><a href="#cb3-7"></a>  <span class="kw">let</span> corrId <span class="ot">=</span> <span class="fu">maybe</span> (toASCIIBytes u) <span class="fu">id</span> (requestHeaderCorrelationId req)</span>
-<span id="cb3-8"><a href="#cb3-8"></a>      newHeaders <span class="ot">=</span> (<span class="st">&quot;X-Correlation-Id&quot;</span>, corrId) <span class="op">:</span> (requestHeaders req)</span>
-<span id="cb3-9"><a href="#cb3-9"></a>  app (req { requestHeaders <span class="ot">=</span> newHeaders }) <span class="op">$</span> \ res <span class="ot">-&gt;</span> sendResponse res</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="ot">requestHeaderCorrelationId ::</span> <span class="dt">Request</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">ByteString</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>requestHeaderCorrelationId <span class="ot">=</span> <span class="fu">lookup</span> <span class="st">&quot;X-Correlation-Id&quot;</span> <span class="op">.</span> requestHeaders</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a><span class="ot">correlationId ::</span>  <span class="dt">Middleware</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a>correlationId app req sendResponse <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true"></a>  u <span class="ot">&lt;-</span> (<span class="ot">randomIO ::</span> <span class="dt">IO</span> <span class="dt">UUID</span>)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true"></a>  <span class="kw">let</span> corrId <span class="ot">=</span> <span class="fu">maybe</span> (toASCIIBytes u) <span class="fu">id</span> (requestHeaderCorrelationId req)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true"></a>      newHeaders <span class="ot">=</span> (<span class="st">&quot;X-Correlation-Id&quot;</span>, corrId) <span class="op">:</span> (requestHeaders req)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true"></a>  app (req { requestHeaders <span class="ot">=</span> newHeaders }) <span class="op">$</span> \ res <span class="ot">-&gt;</span> sendResponse res</span></code></pre></div>
 <p>It also turns out to be useful to have both a default correlation ID and a function for pulling it out of the headers:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a><span class="ot">defaultCorrelationString ::</span> <span class="dt">ByteString</span></span>
-<span id="cb4-2"><a href="#cb4-2"></a>defaultCorrelationString <span class="ot">=</span> <span class="st">&quot;no-correlation-id&quot;</span></span>
-<span id="cb4-3"><a href="#cb4-3"></a></span>
-<span id="cb4-4"><a href="#cb4-4"></a><span class="ot">getCorrelationId ::</span> <span class="dt">Request</span> <span class="ot">-&gt;</span> <span class="dt">ByteString</span></span>
-<span id="cb4-5"><a href="#cb4-5"></a>getCorrelationId r <span class="ot">=</span> <span class="fu">maybe</span> defaultCorrelationString <span class="fu">id</span> (requestHeaderCorrelationId r)</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="ot">defaultCorrelationString ::</span> <span class="dt">ByteString</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>defaultCorrelationString <span class="ot">=</span> <span class="st">&quot;no-correlation-id&quot;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a><span class="ot">getCorrelationId ::</span> <span class="dt">Request</span> <span class="ot">-&gt;</span> <span class="dt">ByteString</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a>getCorrelationId r <span class="ot">=</span> <span class="fu">maybe</span> defaultCorrelationString <span class="fu">id</span> (requestHeaderCorrelationId r)</span></code></pre></div>
 <h2 id="getting-the-correlation-id-into-the-configuration">Getting the correlation ID into the configuration</h2>
 <p>Since the correlation ID should be picked out of the request on handling of every request it’s useful to have it the configuration when running the <code>ChellActionM</code> actions. However, since the correlation ID isn’t available when running the reader (the call to <code>runReaderT</code> in <code>chell</code>) something else is called for. When looking around I found <code>local</code> (and later I was pointed to the more general <code>withReaderT</code>) but it doesn’t have a suitable type. After some <a href="https://twitter.com/EyalL/status/1046696148218580993">help on Twitter</a> I arrived at <code>withConfig</code> which allows me to run an action in a modified configuration:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1"></a><span class="ot">withConfig ::</span> (c <span class="ot">-&gt;</span> c') <span class="ot">-&gt;</span> <span class="dt">ChellActionM</span> c' () <span class="ot">-&gt;</span> <span class="dt">ChellActionM</span> c ()</span>
-<span id="cb5-2"><a href="#cb5-2"></a>withConfig <span class="ot">=</span> mapActionT <span class="op">.</span> withReaderT</span>
-<span id="cb5-3"><a href="#cb5-3"></a>  <span class="kw">where</span></span>
-<span id="cb5-4"><a href="#cb5-4"></a>    mapActionT f (<span class="dt">ActionT</span> a) <span class="ot">=</span> <span class="dt">ActionT</span> <span class="op">$</span> (mapExceptT <span class="op">.</span> mapReaderT <span class="op">.</span> mapStateT) f a</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="ot">withConfig ::</span> (c <span class="ot">-&gt;</span> c') <span class="ot">-&gt;</span> <span class="dt">ChellActionM</span> c' () <span class="ot">-&gt;</span> <span class="dt">ChellActionM</span> c ()</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a>withConfig <span class="ot">=</span> mapActionT <span class="op">.</span> withReaderT</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a>  <span class="kw">where</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a>    mapActionT f (<span class="dt">ActionT</span> a) <span class="ot">=</span> <span class="dt">ActionT</span> <span class="op">$</span> (mapExceptT <span class="op">.</span> mapReaderT <span class="op">.</span> mapStateT) f a</span></code></pre></div>
 <h2 id="making-it-handy-to-use">Making it handy to use</h2>
 <p>Armed with this I can put together some functions to replace Scotty’s <code>get</code>, <code>post</code>, etc. With a configuration type like this:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">data</span> <span class="dt">Config</span> <span class="ot">=</span> <span class="dt">Cfg</span> <span class="dt">LoggerSet</span> <span class="dt">ByteString</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Config</span> <span class="ot">=</span> <span class="dt">Cfg</span> <span class="dt">LoggerSet</span> <span class="dt">ByteString</span></span></code></pre></div>
 <p>The modified <code>get</code> looks like this (Scotty’s original is <code>S.get</code>)</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1"></a><span class="ot">get ::</span> <span class="dt">RoutePattern</span> <span class="ot">-&gt;</span> <span class="dt">ChellActionM</span> <span class="dt">Config</span> () <span class="ot">-&gt;</span> <span class="dt">ChellM</span> <span class="dt">Config</span> ()</span>
-<span id="cb7-2"><a href="#cb7-2"></a>get p a <span class="ot">=</span> S.get p <span class="op">$</span> <span class="kw">do</span></span>
-<span id="cb7-3"><a href="#cb7-3"></a>  r <span class="ot">&lt;-</span> request</span>
-<span id="cb7-4"><a href="#cb7-4"></a>  <span class="kw">let</span> corrId <span class="ot">=</span> getCorrelationId r</span>
-<span id="cb7-5"><a href="#cb7-5"></a>  withConfig (\ (<span class="dt">Cfg</span> l _) <span class="ot">-&gt;</span> <span class="dt">Cfg</span> l corrId) a</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a><span class="ot">get ::</span> <span class="dt">RoutePattern</span> <span class="ot">-&gt;</span> <span class="dt">ChellActionM</span> <span class="dt">Config</span> () <span class="ot">-&gt;</span> <span class="dt">ChellM</span> <span class="dt">Config</span> ()</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a>get p a <span class="ot">=</span> S.get p <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true"></a>  r <span class="ot">&lt;-</span> request</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true"></a>  <span class="kw">let</span> corrId <span class="ot">=</span> getCorrelationId r</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true"></a>  withConfig (\ (<span class="dt">Cfg</span> l _) <span class="ot">-&gt;</span> <span class="dt">Cfg</span> l corrId) a</span></code></pre></div>
 <p>With this in place I can use the simpler <code>ReaderT Config IO</code> for inner functions that need to log.</p>
 
 

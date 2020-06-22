@@ -34,44 +34,44 @@
 <h2 id="code-changes">Code changes</h2>
 <p>I settled on the following naming scheme for comments. The comments for a post <em>P</em>, which is found at <code>posts/&lt;P&gt;.mkd</code> will be put into files named <code>comments/&lt;P&gt;-c000.mkd</code>, <code>comments/&lt;P&gt;-c001.mkd</code>, and so on. The crucial bits are that, first the post’s name is a prefix of all its comments’ names, and two the identifiers (basically the filenames) of the comments are, just like identifiers for posts, easy to sort in date order.</p>
 <p>Adding a rule for the comments is easy:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a>match <span class="st">&quot;comments/*&quot;</span> <span class="op">$</span> compile pandocCompiler</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a>match <span class="st">&quot;comments/*&quot;</span> <span class="op">$</span> compile pandocCompiler</span></code></pre></div>
 <p>Then it got a little more tricky. The comments for each post needs to be put into the context used to build the posts. Previously I’ve used <code>field</code>, which takes a function turning an <code>Item String</code> into <code>String</code>. I’ve also used <code>listField</code> which is used to tie a key to a list of <code>Item a</code>. What I needed here though doesn’t seem to exist, i.e. a context function that takes an <code>Item a</code> and returns a list of <code>Item s</code>. So after a bit of studying the source of <code>field</code> and <code>listField</code> I came up with <code>listFieldFunc</code>:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="ot">listFieldFunc ::</span> <span class="dt">Show</span> a <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Context</span> a <span class="ot">-&gt;</span> (<span class="dt">Item</span> a <span class="ot">-&gt;</span> <span class="dt">Compiler</span> [<span class="dt">Item</span> a]) <span class="ot">-&gt;</span> <span class="dt">Context</span> a</span>
-<span id="cb2-2"><a href="#cb2-2"></a>listFieldFunc key ctx func <span class="ot">=</span> <span class="dt">Context</span> <span class="op">$</span> \ k i <span class="ot">-&gt;</span> <span class="kw">if</span> k <span class="op">==</span> key <span class="kw">then</span> value i <span class="kw">else</span> empty</span>
-<span id="cb2-3"><a href="#cb2-3"></a>    <span class="kw">where</span></span>
-<span id="cb2-4"><a href="#cb2-4"></a>        value i <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb2-5"><a href="#cb2-5"></a>            is <span class="ot">&lt;-</span> func i</span>
-<span id="cb2-6"><a href="#cb2-6"></a>            <span class="fu">return</span> <span class="op">$</span> <span class="dt">ListField</span> ctx is</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="ot">listFieldFunc ::</span> <span class="dt">Show</span> a <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Context</span> a <span class="ot">-&gt;</span> (<span class="dt">Item</span> a <span class="ot">-&gt;</span> <span class="dt">Compiler</span> [<span class="dt">Item</span> a]) <span class="ot">-&gt;</span> <span class="dt">Context</span> a</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>listFieldFunc key ctx func <span class="ot">=</span> <span class="dt">Context</span> <span class="op">$</span> \ k i <span class="ot">-&gt;</span> <span class="kw">if</span> k <span class="op">==</span> key <span class="kw">then</span> value i <span class="kw">else</span> empty</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a>    <span class="kw">where</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a>        value i <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a>            is <span class="ot">&lt;-</span> func i</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a>            <span class="fu">return</span> <span class="op">$</span> <span class="dt">ListField</span> ctx is</span></code></pre></div>
 <p>The function for extracting a post’s comments can then be written as</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="ot">getComments ::</span> (<span class="dt">Binary</span> a, <span class="dt">Typeable</span> a) <span class="ot">=&gt;</span> <span class="dt">Pattern</span> <span class="ot">-&gt;</span> <span class="dt">Item</span> a <span class="ot">-&gt;</span> <span class="dt">Compiler</span> [<span class="dt">Item</span> a]</span>
-<span id="cb3-2"><a href="#cb3-2"></a>getComments <span class="kw">pattern</span> item <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb3-3"><a href="#cb3-3"></a>    idents <span class="ot">&lt;-</span> getMatches <span class="kw">pattern</span> <span class="op">&gt;&gt;=</span> sortChronological</span>
-<span id="cb3-4"><a href="#cb3-4"></a>    <span class="kw">let</span> iId <span class="ot">=</span> itemIdentifier item</span>
-<span id="cb3-5"><a href="#cb3-5"></a>        comments <span class="ot">=</span> <span class="fu">filter</span> (isCommentForPost iId) idents</span>
-<span id="cb3-6"><a href="#cb3-6"></a>    <span class="fu">mapM</span> load comments</span>
-<span id="cb3-7"><a href="#cb3-7"></a></span>
-<span id="cb3-8"><a href="#cb3-8"></a><span class="ot">isCommentForPost ::</span> <span class="dt">Identifier</span> <span class="ot">-&gt;</span> <span class="dt">Identifier</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
-<span id="cb3-9"><a href="#cb3-9"></a>isCommentForPost post comment <span class="ot">=</span> <span class="kw">let</span></span>
-<span id="cb3-10"><a href="#cb3-10"></a>        postBase <span class="ot">=</span> takeBaseName <span class="op">$</span> toFilePath post</span>
-<span id="cb3-11"><a href="#cb3-11"></a>        cmtBase <span class="ot">=</span> takeBaseName <span class="op">$</span> toFilePath comment</span>
-<span id="cb3-12"><a href="#cb3-12"></a>    <span class="kw">in</span> isPrefixOf postBase cmtBase</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="ot">getComments ::</span> (<span class="dt">Binary</span> a, <span class="dt">Typeable</span> a) <span class="ot">=&gt;</span> <span class="dt">Pattern</span> <span class="ot">-&gt;</span> <span class="dt">Item</span> a <span class="ot">-&gt;</span> <span class="dt">Compiler</span> [<span class="dt">Item</span> a]</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>getComments <span class="kw">pattern</span> item <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>    idents <span class="ot">&lt;-</span> getMatches <span class="kw">pattern</span> <span class="op">&gt;&gt;=</span> sortChronological</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a>    <span class="kw">let</span> iId <span class="ot">=</span> itemIdentifier item</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a>        comments <span class="ot">=</span> <span class="fu">filter</span> (isCommentForPost iId) idents</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true"></a>    <span class="fu">mapM</span> load comments</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true"></a><span class="ot">isCommentForPost ::</span> <span class="dt">Identifier</span> <span class="ot">-&gt;</span> <span class="dt">Identifier</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true"></a>isCommentForPost post comment <span class="ot">=</span> <span class="kw">let</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true"></a>        postBase <span class="ot">=</span> takeBaseName <span class="op">$</span> toFilePath post</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true"></a>        cmtBase <span class="ot">=</span> takeBaseName <span class="op">$</span> toFilePath comment</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true"></a>    <span class="kw">in</span> isPrefixOf postBase cmtBase</span></code></pre></div>
 <p>Adding the key to the context used for the posts results in</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">let</span> postCtx <span class="ot">=</span></span>
-<span id="cb4-2"><a href="#cb4-2"></a>        field <span class="st">&quot;previousPostUrl&quot;</span> (previousPostUrl <span class="st">&quot;posts/*&quot;</span>) <span class="op">&lt;&gt;</span></span>
-<span id="cb4-3"><a href="#cb4-3"></a>        field <span class="st">&quot;previousPostTitle&quot;</span> (previousPostTitle <span class="st">&quot;posts/*&quot;</span>) <span class="op">&lt;&gt;</span></span>
-<span id="cb4-4"><a href="#cb4-4"></a>        field <span class="st">&quot;nextPostUrl&quot;</span> (nextPostUrl <span class="st">&quot;posts/*&quot;</span>) <span class="op">&lt;&gt;</span></span>
-<span id="cb4-5"><a href="#cb4-5"></a>        field <span class="st">&quot;nextPostTitle&quot;</span> (nextPostTitle <span class="st">&quot;posts/*&quot;</span>) <span class="op">&lt;&gt;</span></span>
-<span id="cb4-6"><a href="#cb4-6"></a>        field <span class="st">&quot;postId&quot;</span> getPostId <span class="op">&lt;&gt;</span></span>
-<span id="cb4-7"><a href="#cb4-7"></a>        listFieldFunc <span class="st">&quot;comments&quot;</span> defaultContext (getComments <span class="st">&quot;comments/*&quot;</span>) <span class="op">&lt;&gt;</span></span>
-<span id="cb4-8"><a href="#cb4-8"></a>        baseCtx</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="kw">let</span> postCtx <span class="ot">=</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>        field <span class="st">&quot;previousPostUrl&quot;</span> (previousPostUrl <span class="st">&quot;posts/*&quot;</span>) <span class="op">&lt;&gt;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a>        field <span class="st">&quot;previousPostTitle&quot;</span> (previousPostTitle <span class="st">&quot;posts/*&quot;</span>) <span class="op">&lt;&gt;</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a>        field <span class="st">&quot;nextPostUrl&quot;</span> (nextPostUrl <span class="st">&quot;posts/*&quot;</span>) <span class="op">&lt;&gt;</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a>        field <span class="st">&quot;nextPostTitle&quot;</span> (nextPostTitle <span class="st">&quot;posts/*&quot;</span>) <span class="op">&lt;&gt;</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true"></a>        field <span class="st">&quot;postId&quot;</span> getPostId <span class="op">&lt;&gt;</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true"></a>        listFieldFunc <span class="st">&quot;comments&quot;</span> defaultContext (getComments <span class="st">&quot;comments/*&quot;</span>) <span class="op">&lt;&gt;</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true"></a>        baseCtx</span></code></pre></div>
 <h2 id="template-changes">Template changes</h2>
 <p>The template changes are trivial of course</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode html"><code class="sourceCode html"><span id="cb5-1"><a href="#cb5-1"></a>$for(comments)$</span>
-<span id="cb5-2"><a href="#cb5-2"></a><span class="kw">&lt;div&gt;</span></span>
-<span id="cb5-3"><a href="#cb5-3"></a><span class="kw">&lt;p&gt;</span>$author$<span class="kw">&lt;/p&gt;</span></span>
-<span id="cb5-4"><a href="#cb5-4"></a>$body$</span>
-<span id="cb5-5"><a href="#cb5-5"></a><span class="kw">&lt;/div&gt;</span></span>
-<span id="cb5-6"><a href="#cb5-6"></a>$endfor$</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode html"><code class="sourceCode html"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a>$for(comments)$</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a><span class="kw">&lt;div&gt;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a><span class="kw">&lt;p&gt;</span>$author$<span class="kw">&lt;/p&gt;</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a>$body$</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true"></a><span class="kw">&lt;/div&gt;</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true"></a>$endfor$</span></code></pre></div>
 
 
 </div>

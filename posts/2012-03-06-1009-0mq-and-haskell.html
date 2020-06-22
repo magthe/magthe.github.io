@@ -33,50 +33,50 @@
 <p>I found a simple introduction to it in Nicholas Piël’s post <a href="http://nichol.as/zeromq-an-introduction">ZeroMQ an introduction</a>. The only issue was that it was based on Python, and Python2 at that. So here are my attempts at translating two of the clients to Haskell (using <a href="http://hackage.haskell.org/package/zeromq-haskell">zeromq-haskell</a>).</p>
 <h2 id="req-rep">req-rep</h2>
 <p>Here’s the client in Python3 first:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python lineNumbers"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a><span class="im">import</span> zmq</span>
-<span id="cb1-2"><a href="#cb1-2"></a></span>
-<span id="cb1-3"><a href="#cb1-3"></a>ctx <span class="op">=</span> zmq.Context()</span>
-<span id="cb1-4"><a href="#cb1-4"></a>socket <span class="op">=</span> ctx.socket(zmq.REQ)</span>
-<span id="cb1-5"><a href="#cb1-5"></a>socket.<span class="ex">connect</span>(<span class="st">'tcp://127.0.0.1:5000'</span>)</span>
-<span id="cb1-6"><a href="#cb1-6"></a></span>
-<span id="cb1-7"><a href="#cb1-7"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">10</span>):</span>
-<span id="cb1-8"><a href="#cb1-8"></a>    msg <span class="op">=</span> <span class="st">&quot;msg </span><span class="sc">%s</span><span class="st">&quot;</span> <span class="op">%</span> i</span>
-<span id="cb1-9"><a href="#cb1-9"></a>    socket.send_unicode(msg)</span>
-<span id="cb1-10"><a href="#cb1-10"></a>    <span class="bu">print</span>(<span class="st">'Sending'</span>, msg)</span>
-<span id="cb1-11"><a href="#cb1-11"></a>    msg_in <span class="op">=</span> socket.recv()</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python lineNumbers"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="im">import</span> zmq</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>ctx <span class="op">=</span> zmq.Context()</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>socket <span class="op">=</span> ctx.socket(zmq.REQ)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>socket.<span class="ex">connect</span>(<span class="st">'tcp://127.0.0.1:5000'</span>)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">10</span>):</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a>    msg <span class="op">=</span> <span class="st">&quot;msg </span><span class="sc">%s</span><span class="st">&quot;</span> <span class="op">%</span> i</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a>    socket.send_unicode(msg)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a>    <span class="bu">print</span>(<span class="st">'Sending'</span>, msg)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a>    msg_in <span class="op">=</span> socket.recv()</span></code></pre></div>
 <p>And here in Haskell:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell lineNumbers"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">import</span> <span class="dt">System.ZMQ</span></span>
-<span id="cb2-2"><a href="#cb2-2"></a><span class="kw">import</span> <span class="dt">Data.ByteString.Char8</span> <span class="kw">as</span> <span class="dt">CBS</span></span>
-<span id="cb2-3"><a href="#cb2-3"></a></span>
-<span id="cb2-4"><a href="#cb2-4"></a>main <span class="ot">=</span> withContext <span class="dv">1</span> <span class="op">$</span> \ ctx <span class="ot">-&gt;</span> withSocket ctx <span class="dt">Req</span> <span class="op">$</span> \ soc <span class="ot">-&gt;</span> <span class="kw">do</span></span>
-<span id="cb2-5"><a href="#cb2-5"></a>    connect soc <span class="st">&quot;tcp://127.0.0.1:5000&quot;</span></span>
-<span id="cb2-6"><a href="#cb2-6"></a>    <span class="kw">let</span> msgs <span class="ot">=</span> [<span class="fu">pack</span> (<span class="st">&quot;msg &quot;</span> <span class="op">++</span> <span class="fu">show</span> i) <span class="op">|</span> i <span class="ot">&lt;-</span> [<span class="dv">0</span><span class="op">..</span><span class="dv">9</span>]]</span>
-<span id="cb2-7"><a href="#cb2-7"></a>    <span class="fu">flip</span> <span class="fu">mapM_</span> msgs <span class="op">$</span> \ msg <span class="ot">-&gt;</span> <span class="kw">do</span></span>
-<span id="cb2-8"><a href="#cb2-8"></a>        send soc msg []</span>
-<span id="cb2-9"><a href="#cb2-9"></a>        CBS.putStrLn msg</span>
-<span id="cb2-10"><a href="#cb2-10"></a>        receive soc []</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell lineNumbers"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">System.ZMQ</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Data.ByteString.Char8</span> <span class="kw">as</span> <span class="dt">CBS</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a>main <span class="ot">=</span> withContext <span class="dv">1</span> <span class="op">$</span> \ ctx <span class="ot">-&gt;</span> withSocket ctx <span class="dt">Req</span> <span class="op">$</span> \ soc <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a>    connect soc <span class="st">&quot;tcp://127.0.0.1:5000&quot;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a>    <span class="kw">let</span> msgs <span class="ot">=</span> [<span class="fu">pack</span> (<span class="st">&quot;msg &quot;</span> <span class="op">++</span> <span class="fu">show</span> i) <span class="op">|</span> i <span class="ot">&lt;-</span> [<span class="dv">0</span><span class="op">..</span><span class="dv">9</span>]]</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a>    <span class="fu">flip</span> <span class="fu">mapM_</span> msgs <span class="op">$</span> \ msg <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a>        send soc msg []</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true"></a>        CBS.putStrLn msg</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true"></a>        receive soc []</span></code></pre></div>
 <h2 id="pub-sub">pub-sub</h2>
 <p>In Python3:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python lineNumbers"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1"></a><span class="im">import</span> zmq</span>
-<span id="cb3-2"><a href="#cb3-2"></a></span>
-<span id="cb3-3"><a href="#cb3-3"></a>ctx <span class="op">=</span> zmq.Context()</span>
-<span id="cb3-4"><a href="#cb3-4"></a>socket <span class="op">=</span> ctx.socket(zmq.SUB)</span>
-<span id="cb3-5"><a href="#cb3-5"></a>socket.<span class="ex">connect</span>(<span class="st">'tcp://127.0.0.1:5000'</span>)</span>
-<span id="cb3-6"><a href="#cb3-6"></a>socket.setsockopt(zmq.SUBSCRIBE, b<span class="st">'sweden'</span>)</span>
-<span id="cb3-7"><a href="#cb3-7"></a>socket.setsockopt(zmq.SUBSCRIBE, b<span class="st">'denmark'</span>)</span>
-<span id="cb3-8"><a href="#cb3-8"></a></span>
-<span id="cb3-9"><a href="#cb3-9"></a><span class="cf">while</span> <span class="va">True</span>:</span>
-<span id="cb3-10"><a href="#cb3-10"></a>    <span class="bu">print</span>(socket.recv())</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python lineNumbers"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="im">import</span> zmq</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>ctx <span class="op">=</span> zmq.Context()</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a>socket <span class="op">=</span> ctx.socket(zmq.SUB)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a>socket.<span class="ex">connect</span>(<span class="st">'tcp://127.0.0.1:5000'</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true"></a>socket.setsockopt(zmq.SUBSCRIBE, b<span class="st">'sweden'</span>)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true"></a>socket.setsockopt(zmq.SUBSCRIBE, b<span class="st">'denmark'</span>)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true"></a></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true"></a><span class="cf">while</span> <span class="va">True</span>:</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true"></a>    <span class="bu">print</span>(socket.recv())</span></code></pre></div>
 <p>Haskell:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell lineNumbers"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">import</span> <span class="dt">System.ZMQ</span></span>
-<span id="cb4-2"><a href="#cb4-2"></a><span class="kw">import</span> <span class="dt">Control.Monad</span></span>
-<span id="cb4-3"><a href="#cb4-3"></a><span class="kw">import</span> <span class="dt">Data.ByteString.Char8</span> <span class="kw">as</span> <span class="dt">CBS</span></span>
-<span id="cb4-4"><a href="#cb4-4"></a></span>
-<span id="cb4-5"><a href="#cb4-5"></a>main <span class="ot">=</span> withContext <span class="dv">1</span> <span class="op">$</span> \ ctx <span class="ot">-&gt;</span> withSocket ctx <span class="dt">Sub</span> <span class="op">$</span> \ soc <span class="ot">-&gt;</span> <span class="kw">do</span></span>
-<span id="cb4-6"><a href="#cb4-6"></a>    connect soc <span class="st">&quot;tcp://127.0.0.1:5000&quot;</span></span>
-<span id="cb4-7"><a href="#cb4-7"></a>    subscribe soc <span class="st">&quot;sweden&quot;</span></span>
-<span id="cb4-8"><a href="#cb4-8"></a>    subscribe soc <span class="st">&quot;denmark&quot;</span></span>
-<span id="cb4-9"><a href="#cb4-9"></a>    forever <span class="op">$</span> receive soc [] <span class="op">&gt;&gt;=</span> CBS.putStrLn</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell lineNumbers"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">System.ZMQ</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Control.Monad</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Data.ByteString.Char8</span> <span class="kw">as</span> <span class="dt">CBS</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a>main <span class="ot">=</span> withContext <span class="dv">1</span> <span class="op">$</span> \ ctx <span class="ot">-&gt;</span> withSocket ctx <span class="dt">Sub</span> <span class="op">$</span> \ soc <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true"></a>    connect soc <span class="st">&quot;tcp://127.0.0.1:5000&quot;</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true"></a>    subscribe soc <span class="st">&quot;sweden&quot;</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true"></a>    subscribe soc <span class="st">&quot;denmark&quot;</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true"></a>    forever <span class="op">$</span> receive soc [] <span class="op">&gt;&gt;=</span> CBS.putStrLn</span></code></pre></div>
 <p>Two comments on the Haskell code here:</p>
 <ul>
 <li>I’m not sure why, but the Haskell client dies after receiving just a few messages (they are properly filtered though).</li>

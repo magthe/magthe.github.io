@@ -31,22 +31,22 @@
 
 <p>Dear LazyWeb,</p>
 <p>I’ve recently made some comparisons between <a href="http://hackage.haskell.org/cgi-bin/hackage-scripts/package/haskelldb">HaskellDB</a> and <a href="http://hackage.haskell.org/cgi-bin/hackage-scripts/package/HDBC">HDBC</a>. My gut feeling is that I’d <em>like</em> to use HaskellDB due to its type safety and that it allows me to abstract away from SQL—something in me twitches every time I see strings containing SQL mixed in with other code, no matter what language it is. However there are some things that confuse me with HaskellDB. After overcoming the initial puzzlement that I seem to hit whenever I look at a Haskell API I stumbled on the apparent lack of support for primary keys. This surprised me and to check if I overlooked something I wrote the following code:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a></span>
-<span id="cb1-3"><a href="#cb1-3"></a><span class="kw">import</span> <span class="dt">System.Environment</span></span>
-<span id="cb1-4"><a href="#cb1-4"></a><span class="kw">import</span> <span class="dt">System.IO</span></span>
-<span id="cb1-5"><a href="#cb1-5"></a><span class="kw">import</span> <span class="dt">Database.HaskellDB.HSQL.SQLite3</span></span>
-<span id="cb1-6"><a href="#cb1-6"></a><span class="kw">import</span> <span class="dt">Database.HaskellDB.DBSpec</span></span>
-<span id="cb1-7"><a href="#cb1-7"></a></span>
-<span id="cb1-8"><a href="#cb1-8"></a>testDBOpts <span class="ot">=</span> <span class="dt">DBOptions</span> { useBString<span class="ot">=</span><span class="dt">False</span> }</span>
-<span id="cb1-9"><a href="#cb1-9"></a></span>
-<span id="cb1-10"><a href="#cb1-10"></a>sqliteOptions<span class="ot">=</span> <span class="dt">SQLiteOptions</span> { filepath<span class="ot">=</span><span class="st">&quot;replace me&quot;</span>, mode<span class="ot">=</span><span class="dt">ReadMode</span> }</span>
-<span id="cb1-11"><a href="#cb1-11"></a></span>
-<span id="cb1-12"><a href="#cb1-12"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
-<span id="cb1-13"><a href="#cb1-13"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb1-14"><a href="#cb1-14"></a>    dbfn <span class="ot">&lt;-</span> <span class="fu">fmap</span> (<span class="op">!!</span> <span class="dv">0</span>) getArgs</span>
-<span id="cb1-15"><a href="#cb1-15"></a>    <span class="kw">let</span> options <span class="ot">=</span> sqliteOptions { filepath<span class="ot">=</span>dbfn }</span>
-<span id="cb1-16"><a href="#cb1-16"></a>    sqliteConnect options (dbToDBSpec <span class="dt">False</span> <span class="st">&quot;extracted.db&quot;</span>) <span class="op">&gt;&gt;=</span> <span class="fu">print</span></span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">System.Environment</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">System.IO</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Database.HaskellDB.HSQL.SQLite3</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Database.HaskellDB.DBSpec</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a>testDBOpts <span class="ot">=</span> <span class="dt">DBOptions</span> { useBString<span class="ot">=</span><span class="dt">False</span> }</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a>sqliteOptions<span class="ot">=</span> <span class="dt">SQLiteOptions</span> { filepath<span class="ot">=</span><span class="st">&quot;replace me&quot;</span>, mode<span class="ot">=</span><span class="dt">ReadMode</span> }</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true"></a>    dbfn <span class="ot">&lt;-</span> <span class="fu">fmap</span> (<span class="op">!!</span> <span class="dv">0</span>) getArgs</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true"></a>    <span class="kw">let</span> options <span class="ot">=</span> sqliteOptions { filepath<span class="ot">=</span>dbfn }</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true"></a>    sqliteConnect options (dbToDBSpec <span class="dt">False</span> <span class="st">&quot;extracted.db&quot;</span>) <span class="op">&gt;&gt;=</span> <span class="fu">print</span></span></code></pre></div>
 <p>This is the surprising output when I point this to two different databases. The first database has no primary key:</p>
 <pre><code>% sqlite3 test1.db .dump
 BEGIN TRANSACTION;

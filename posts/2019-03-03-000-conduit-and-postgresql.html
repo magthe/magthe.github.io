@@ -45,43 +45,43 @@
 <p>I started out looking for Conduit components for PostgreSQL on <a href="https://hackage.haskell.org/">Hackage</a> but failed to find something fitting so I started looking into writing them myself using <a href="https://hackage.haskell.org/package/postgresql-simple"><code>postgresql-simple</code></a>.</p>
 <p>The sink wasn’t much of a problem, use <code>await</code> to get an event (a tuple) and write it to the database. My almost complete ignorance of using databases resulted in a first version of the source was rather naive and used busy-waiting. Then I stumbled on PostgreSQL’s support for notifications through the <code>LISTEN</code> and <code>NOTIFY</code> commands. I rather like the result and it seems to work well.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>[]</p>
 <p>It looks like this</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">import</span>           <span class="dt">Control.Monad.IO.Class</span> (<span class="dt">MonadIO</span>, liftIO)</span>
-<span id="cb2-2"><a href="#cb2-2"></a><span class="kw">import</span>           <span class="dt">Data.Aeson</span> (<span class="dt">Value</span>)</span>
-<span id="cb2-3"><a href="#cb2-3"></a><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Data.Conduit</span> <span class="kw">as</span> <span class="dt">C</span></span>
-<span id="cb2-4"><a href="#cb2-4"></a><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Data.Conduit.Combinators</span> <span class="kw">as</span> <span class="dt">CC</span></span>
-<span id="cb2-5"><a href="#cb2-5"></a><span class="kw">import</span>           <span class="dt">Data.Text</span> (<span class="dt">Text</span>)</span>
-<span id="cb2-6"><a href="#cb2-6"></a><span class="kw">import</span>           <span class="dt">Data.Time.Clock</span> (<span class="dt">UTCTime</span>)</span>
-<span id="cb2-7"><a href="#cb2-7"></a><span class="kw">import</span>           <span class="dt">Data.UUID</span> (<span class="dt">UUID</span>)</span>
-<span id="cb2-8"><a href="#cb2-8"></a><span class="kw">import</span>           <span class="dt">Database.PostgreSQL.Simple</span> (<span class="dt">Connection</span>, <span class="dt">Only</span>(..), execute, execute_, query)</span>
-<span id="cb2-9"><a href="#cb2-9"></a><span class="kw">import</span>           <span class="dt">Database.PostgreSQL.Simple.Notification</span> (getNotification)</span>
-<span id="cb2-10"><a href="#cb2-10"></a></span>
-<span id="cb2-11"><a href="#cb2-11"></a><span class="ot">fst8 ::</span> (a, b, c, d, e, f, g, h) <span class="ot">-&gt;</span> a</span>
-<span id="cb2-12"><a href="#cb2-12"></a>fst8 (a, _, _, _, _, _, _, _) <span class="ot">=</span> a</span>
-<span id="cb2-13"><a href="#cb2-13"></a></span>
-<span id="cb2-14"><a href="#cb2-14"></a><span class="ot">dbSource ::</span> <span class="dt">MonadIO</span> m <span class="ot">=&gt;</span> <span class="dt">Connection</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">C.ConduitT</span> () (<span class="dt">Int</span>, <span class="dt">UTCTime</span>, <span class="dt">Int</span>, <span class="dt">Int</span>, <span class="dt">Bool</span>, <span class="dt">UUID</span>, <span class="dt">Text</span>, <span class="dt">Value</span>) m ()</span>
-<span id="cb2-15"><a href="#cb2-15"></a>dbSource conn ver <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb2-16"><a href="#cb2-16"></a>  res <span class="ot">&lt;-</span> liftIO <span class="op">$</span> query conn <span class="st">&quot;SELECT * from events where id &gt; (?) ORDER BY id&quot;</span> (<span class="dt">Only</span> ver)</span>
-<span id="cb2-17"><a href="#cb2-17"></a>  <span class="kw">case</span> res <span class="kw">of</span></span>
-<span id="cb2-18"><a href="#cb2-18"></a>    [] <span class="ot">-&gt;</span> <span class="kw">do</span></span>
-<span id="cb2-19"><a href="#cb2-19"></a>      liftIO <span class="op">$</span> execute_ conn <span class="st">&quot;LISTEN MyEvent&quot;</span></span>
-<span id="cb2-20"><a href="#cb2-20"></a>      liftIO <span class="op">$</span> getNotification conn</span>
-<span id="cb2-21"><a href="#cb2-21"></a>      dbSource conn ver</span>
-<span id="cb2-22"><a href="#cb2-22"></a>    _ <span class="ot">-&gt;</span> <span class="kw">do</span></span>
-<span id="cb2-23"><a href="#cb2-23"></a>      <span class="kw">let</span> ver' <span class="ot">=</span> <span class="fu">maximum</span> <span class="op">$</span> <span class="fu">map</span> fst8 res</span>
-<span id="cb2-24"><a href="#cb2-24"></a>      CC.yieldMany res</span>
-<span id="cb2-25"><a href="#cb2-25"></a>      dbSource conn ver'</span>
-<span id="cb2-26"><a href="#cb2-26"></a></span>
-<span id="cb2-27"><a href="#cb2-27"></a><span class="ot">dbSink ::</span> <span class="dt">MonadIO</span> m <span class="ot">=&gt;</span> <span class="dt">Connection</span> <span class="ot">-&gt;</span> <span class="dt">C.ConduitT</span> (<span class="dt">Int</span>, <span class="dt">Int</span>, <span class="dt">Bool</span>, <span class="dt">UUID</span>, <span class="dt">Text</span>, <span class="dt">Value</span>) <span class="dt">C.Void</span> m ()</span>
-<span id="cb2-28"><a href="#cb2-28"></a>dbSink conn <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb2-29"><a href="#cb2-29"></a>  evt <span class="ot">&lt;-</span> C.await</span>
-<span id="cb2-30"><a href="#cb2-30"></a>  <span class="kw">case</span> evt <span class="kw">of</span></span>
-<span id="cb2-31"><a href="#cb2-31"></a>    <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="fu">return</span> ()</span>
-<span id="cb2-32"><a href="#cb2-32"></a>    <span class="dt">Just</span> event <span class="ot">-&gt;</span> <span class="kw">do</span></span>
-<span id="cb2-33"><a href="#cb2-33"></a>      liftIO <span class="op">$</span> execute conn <span class="st">&quot;INSERT INTO events \</span></span>
-<span id="cb2-34"><a href="#cb2-34"></a><span class="st">                            \(srv_id, stream_id, cmd, cmd_id, correlation_id, event_data) \</span></span>
-<span id="cb2-35"><a href="#cb2-35"></a><span class="st">                            \VALUES (?, ?, ?, ?, ?, ?)&quot;</span> event</span>
-<span id="cb2-36"><a href="#cb2-36"></a>      liftIO <span class="op">$</span> execute_ conn <span class="st">&quot;NOTIFY MyEvent&quot;</span></span>
-<span id="cb2-37"><a href="#cb2-37"></a>      dbSink conn</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="kw">import</span>           <span class="dt">Control.Monad.IO.Class</span> (<span class="dt">MonadIO</span>, liftIO)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a><span class="kw">import</span>           <span class="dt">Data.Aeson</span> (<span class="dt">Value</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Data.Conduit</span> <span class="kw">as</span> <span class="dt">C</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Data.Conduit.Combinators</span> <span class="kw">as</span> <span class="dt">CC</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a><span class="kw">import</span>           <span class="dt">Data.Text</span> (<span class="dt">Text</span>)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a><span class="kw">import</span>           <span class="dt">Data.Time.Clock</span> (<span class="dt">UTCTime</span>)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a><span class="kw">import</span>           <span class="dt">Data.UUID</span> (<span class="dt">UUID</span>)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a><span class="kw">import</span>           <span class="dt">Database.PostgreSQL.Simple</span> (<span class="dt">Connection</span>, <span class="dt">Only</span>(..), execute, execute_, query)</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true"></a><span class="kw">import</span>           <span class="dt">Database.PostgreSQL.Simple.Notification</span> (getNotification)</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true"></a><span class="ot">fst8 ::</span> (a, b, c, d, e, f, g, h) <span class="ot">-&gt;</span> a</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true"></a>fst8 (a, _, _, _, _, _, _, _) <span class="ot">=</span> a</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true"></a></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true"></a><span class="ot">dbSource ::</span> <span class="dt">MonadIO</span> m <span class="ot">=&gt;</span> <span class="dt">Connection</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">C.ConduitT</span> () (<span class="dt">Int</span>, <span class="dt">UTCTime</span>, <span class="dt">Int</span>, <span class="dt">Int</span>, <span class="dt">Bool</span>, <span class="dt">UUID</span>, <span class="dt">Text</span>, <span class="dt">Value</span>) m ()</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true"></a>dbSource conn ver <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true"></a>  res <span class="ot">&lt;-</span> liftIO <span class="op">$</span> query conn <span class="st">&quot;SELECT * from events where id &gt; (?) ORDER BY id&quot;</span> (<span class="dt">Only</span> ver)</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true"></a>  <span class="kw">case</span> res <span class="kw">of</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true"></a>    [] <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true"></a>      liftIO <span class="op">$</span> execute_ conn <span class="st">&quot;LISTEN MyEvent&quot;</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true"></a>      liftIO <span class="op">$</span> getNotification conn</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true"></a>      dbSource conn ver</span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true"></a>    _ <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true"></a>      <span class="kw">let</span> ver' <span class="ot">=</span> <span class="fu">maximum</span> <span class="op">$</span> <span class="fu">map</span> fst8 res</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true"></a>      CC.yieldMany res</span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true"></a>      dbSource conn ver'</span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true"></a></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true"></a><span class="ot">dbSink ::</span> <span class="dt">MonadIO</span> m <span class="ot">=&gt;</span> <span class="dt">Connection</span> <span class="ot">-&gt;</span> <span class="dt">C.ConduitT</span> (<span class="dt">Int</span>, <span class="dt">Int</span>, <span class="dt">Bool</span>, <span class="dt">UUID</span>, <span class="dt">Text</span>, <span class="dt">Value</span>) <span class="dt">C.Void</span> m ()</span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true"></a>dbSink conn <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true"></a>  evt <span class="ot">&lt;-</span> C.await</span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true"></a>  <span class="kw">case</span> evt <span class="kw">of</span></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true"></a>    <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="fu">return</span> ()</span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true"></a>    <span class="dt">Just</span> event <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true"></a>      liftIO <span class="op">$</span> execute conn <span class="st">&quot;INSERT INTO events \</span></span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true"></a><span class="st">                            \(srv_id, stream_id, cmd, cmd_id, correlation_id, event_data) \</span></span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true"></a><span class="st">                            \VALUES (?, ?, ?, ?, ?, ?)&quot;</span> event</span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true"></a>      liftIO <span class="op">$</span> execute_ conn <span class="st">&quot;NOTIFY MyEvent&quot;</span></span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true"></a>      dbSink conn</span></code></pre></div>
 <section class="footnotes" role="doc-endnotes">
 <hr />
 <ol>
@@ -109,23 +109,23 @@ Tags: <a title="All pages tagged 'conduit'." href="../tags/conduit.html">conduit
 </blockquote>
 <p>Furthermore, there’s a race condition in the first invocation of <code>dbSource</code>: a notification that arrives after the SELECT but before the LISTEN would be lost.</p>
 <p>Assuming my understanding is correct, here’s some totally untested code:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="ot">dbSource ::</span> <span class="dt">MonadIO</span> m <span class="ot">=&gt;</span> <span class="dt">Connection</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">C.ConduitT</span> () (<span class="dt">Int</span>, <span class="dt">UTCTime</span>, <span class="dt">Int</span>, <span class="dt">Int</span>, <span class="dt">Bool</span>, <span class="dt">UUID</span>, <span class="dt">Text</span>, <span class="dt">Value</span>) m ()</span>
-<span id="cb1-2"><a href="#cb1-2"></a>dbSource conn initialVer <span class="ot">=</span> CC.bracketP setup teardown loop1</span>
-<span id="cb1-3"><a href="#cb1-3"></a>  <span class="kw">where</span></span>
-<span id="cb1-4"><a href="#cb1-4"></a>    setup       <span class="ot">=</span> execute_ conn <span class="st">&quot;LISTEN   MyEvent&quot;</span> <span class="co">-- Setting up the listener before any SELECTs.</span></span>
-<span id="cb1-5"><a href="#cb1-5"></a>    teardown () <span class="ot">=</span> execute_ conn <span class="st">&quot;UNLISTEN MyEvent&quot;</span></span>
-<span id="cb1-6"><a href="#cb1-6"></a>    loop1 () <span class="ot">=</span></span>
-<span id="cb1-7"><a href="#cb1-7"></a>      <span class="co">-- First iteration of the loop, do a query to look for</span></span>
-<span id="cb1-8"><a href="#cb1-8"></a>      <span class="co">-- events that were alerady in the DB before setup.</span></span>
-<span id="cb1-9"><a href="#cb1-9"></a>      queryAndYield initialVer <span class="op">&gt;&gt;=</span> loop</span>
-<span id="cb1-10"><a href="#cb1-10"></a>    loop ver <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb1-11"><a href="#cb1-11"></a>      <span class="co">-- Listener was already in place, so wait for a notification straight away.</span></span>
-<span id="cb1-12"><a href="#cb1-12"></a>      liftIO <span class="op">$</span> getNotification conn</span>
-<span id="cb1-13"><a href="#cb1-13"></a>      queryAndYield ver <span class="op">&gt;&gt;=</span> loop</span>
-<span id="cb1-14"><a href="#cb1-14"></a>    queryAndYield ver <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb1-15"><a href="#cb1-15"></a>      res <span class="ot">&lt;-</span> liftIO <span class="op">$</span> query conn <span class="st">&quot;SELECT * from events where id &gt; (?) ORDER BY id&quot;</span> (<span class="dt">Only</span> ver)</span>
-<span id="cb1-16"><a href="#cb1-16"></a>      CC.yieldMany res</span>
-<span id="cb1-17"><a href="#cb1-17"></a>      <span class="fu">return</span> <span class="op">$</span> <span class="fu">maximum</span> <span class="op">$</span> ver <span class="op">:</span> <span class="fu">map</span> fst8 res</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="ot">dbSource ::</span> <span class="dt">MonadIO</span> m <span class="ot">=&gt;</span> <span class="dt">Connection</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">C.ConduitT</span> () (<span class="dt">Int</span>, <span class="dt">UTCTime</span>, <span class="dt">Int</span>, <span class="dt">Int</span>, <span class="dt">Bool</span>, <span class="dt">UUID</span>, <span class="dt">Text</span>, <span class="dt">Value</span>) m ()</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>dbSource conn initialVer <span class="ot">=</span> CC.bracketP setup teardown loop1</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>  <span class="kw">where</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>    setup       <span class="ot">=</span> execute_ conn <span class="st">&quot;LISTEN   MyEvent&quot;</span> <span class="co">-- Setting up the listener before any SELECTs.</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>    teardown () <span class="ot">=</span> execute_ conn <span class="st">&quot;UNLISTEN MyEvent&quot;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a>    loop1 () <span class="ot">=</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a>      <span class="co">-- First iteration of the loop, do a query to look for</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a>      <span class="co">-- events that were alerady in the DB before setup.</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a>      queryAndYield initialVer <span class="op">&gt;&gt;=</span> loop</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a>    loop ver <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a>      <span class="co">-- Listener was already in place, so wait for a notification straight away.</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a>      liftIO <span class="op">$</span> getNotification conn</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true"></a>      queryAndYield ver <span class="op">&gt;&gt;=</span> loop</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true"></a>    queryAndYield ver <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true"></a>      res <span class="ot">&lt;-</span> liftIO <span class="op">$</span> query conn <span class="st">&quot;SELECT * from events where id &gt; (?) ORDER BY id&quot;</span> (<span class="dt">Only</span> ver)</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true"></a>      CC.yieldMany res</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true"></a>      <span class="fu">return</span> <span class="op">$</span> <span class="fu">maximum</span> <span class="op">$</span> ver <span class="op">:</span> <span class="fu">map</span> fst8 res</span></code></pre></div>
 </article>
 
 <article class="comment-body">

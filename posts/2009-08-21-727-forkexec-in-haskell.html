@@ -30,34 +30,34 @@
 </header>
 
 <p>Here’s some simple code I put together. I’m mostly posting it so I won’t have any problems finding it in the future.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a></span>
-<span id="cb1-3"><a href="#cb1-3"></a><span class="kw">import</span> <span class="dt">Control.Monad</span></span>
-<span id="cb1-4"><a href="#cb1-4"></a><span class="kw">import</span> <span class="dt">System.Exit</span></span>
-<span id="cb1-5"><a href="#cb1-5"></a><span class="kw">import</span> <span class="dt">System.Posix.IO</span></span>
-<span id="cb1-6"><a href="#cb1-6"></a><span class="kw">import</span> <span class="dt">System.Posix.Process</span></span>
-<span id="cb1-7"><a href="#cb1-7"></a></span>
-<span id="cb1-8"><a href="#cb1-8"></a>executeChild <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb1-9"><a href="#cb1-9"></a>    <span class="fu">mapM_</span> closeFd [stdInput, stdOutput, stdError]</span>
-<span id="cb1-10"><a href="#cb1-10"></a>    devnull <span class="ot">&lt;-</span> openFd <span class="st">&quot;/dev/null&quot;</span> <span class="dt">ReadWrite</span> <span class="dt">Nothing</span> defaultFileFlags</span>
-<span id="cb1-11"><a href="#cb1-11"></a>    dup devnull; dup devnull</span>
-<span id="cb1-12"><a href="#cb1-12"></a>    executeFile <span class="st">&quot;./Child&quot;</span> <span class="dt">False</span> [] <span class="dt">Nothing</span></span>
-<span id="cb1-13"><a href="#cb1-13"></a></span>
-<span id="cb1-14"><a href="#cb1-14"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb1-15"><a href="#cb1-15"></a>    child <span class="ot">&lt;-</span> forkProcess executeChild</span>
-<span id="cb1-16"><a href="#cb1-16"></a>    <span class="fu">putStrLn</span> <span class="st">&quot;ForkExec: main - forked, going to wait&quot;</span></span>
-<span id="cb1-17"><a href="#cb1-17"></a>    s <span class="ot">&lt;-</span> getProcessStatus <span class="dt">True</span> <span class="dt">True</span> child</span>
-<span id="cb1-18"><a href="#cb1-18"></a>    <span class="kw">case</span> s <span class="kw">of</span></span>
-<span id="cb1-19"><a href="#cb1-19"></a>        <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="co">-- this shouldn't happen, ever</span></span>
-<span id="cb1-20"><a href="#cb1-20"></a>            <span class="fu">print</span> s <span class="op">&gt;&gt;</span>  exitFailure</span>
-<span id="cb1-21"><a href="#cb1-21"></a>        <span class="dt">Just</span> s <span class="ot">-&gt;</span> <span class="kw">do</span></span>
-<span id="cb1-22"><a href="#cb1-22"></a>            <span class="fu">print</span> s</span>
-<span id="cb1-23"><a href="#cb1-23"></a>            <span class="kw">case</span> s <span class="kw">of</span></span>
-<span id="cb1-24"><a href="#cb1-24"></a>                <span class="dt">Exited</span> _ <span class="ot">-&gt;</span> <span class="fu">putStrLn</span> <span class="st">&quot;Child exited properly, though possibly unsuccessfully&quot;</span></span>
-<span id="cb1-25"><a href="#cb1-25"></a>                <span class="dt">Terminated</span> _ <span class="ot">-&gt;</span> <span class="fu">putStrLn</span> <span class="st">&quot;Terminated!&quot;</span></span>
-<span id="cb1-26"><a href="#cb1-26"></a>                <span class="dt">Stopped</span> _ <span class="ot">-&gt;</span> <span class="fu">putStrLn</span> <span class="st">&quot;Stopped (only SIGSTOP?)&quot;</span></span>
-<span id="cb1-27"><a href="#cb1-27"></a>            exitSuccess</span>
-<span id="cb1-28"><a href="#cb1-28"></a>    exitFailure</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Control.Monad</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">System.Exit</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">System.Posix.IO</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">System.Posix.Process</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a>executeChild <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a>    <span class="fu">mapM_</span> closeFd [stdInput, stdOutput, stdError]</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a>    devnull <span class="ot">&lt;-</span> openFd <span class="st">&quot;/dev/null&quot;</span> <span class="dt">ReadWrite</span> <span class="dt">Nothing</span> defaultFileFlags</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a>    dup devnull; dup devnull</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a>    executeFile <span class="st">&quot;./Child&quot;</span> <span class="dt">False</span> [] <span class="dt">Nothing</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true"></a></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true"></a>    child <span class="ot">&lt;-</span> forkProcess executeChild</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true"></a>    <span class="fu">putStrLn</span> <span class="st">&quot;ForkExec: main - forked, going to wait&quot;</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true"></a>    s <span class="ot">&lt;-</span> getProcessStatus <span class="dt">True</span> <span class="dt">True</span> child</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true"></a>    <span class="kw">case</span> s <span class="kw">of</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true"></a>        <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="co">-- this shouldn't happen, ever</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true"></a>            <span class="fu">print</span> s <span class="op">&gt;&gt;</span>  exitFailure</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true"></a>        <span class="dt">Just</span> s <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true"></a>            <span class="fu">print</span> s</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true"></a>            <span class="kw">case</span> s <span class="kw">of</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true"></a>                <span class="dt">Exited</span> _ <span class="ot">-&gt;</span> <span class="fu">putStrLn</span> <span class="st">&quot;Child exited properly, though possibly unsuccessfully&quot;</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true"></a>                <span class="dt">Terminated</span> _ <span class="ot">-&gt;</span> <span class="fu">putStrLn</span> <span class="st">&quot;Terminated!&quot;</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true"></a>                <span class="dt">Stopped</span> _ <span class="ot">-&gt;</span> <span class="fu">putStrLn</span> <span class="st">&quot;Stopped (only SIGSTOP?)&quot;</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true"></a>            exitSuccess</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true"></a>    exitFailure</span></code></pre></div>
 <p>It’d be really nice to be able to, after the fork, close <em>all</em> open file descriptors in the child. But how can I find all the open file descriptors in a process? Ideally it should be fairly portable, though portability to major Unix/Linux systems is enough for me.</p>
 
 

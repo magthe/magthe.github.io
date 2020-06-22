@@ -33,65 +33,65 @@
 <p>In the end the most relevant reason for doing this was that I wanted to :-)</p>
 <p>So, what’s involved in it? It turns out, not much!</p>
 <p>First I created a middleware class that extracts the authentication credentials (read username and password) and sticks a ‘user object’ in the <code>request</code> depending on just how successfully it does this:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a><span class="im">from</span> base64 <span class="im">import</span> b64decode</span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="im">from</span> models <span class="im">import</span> User, AnonUser, BadUser</span>
-<span id="cb1-3"><a href="#cb1-3"></a></span>
-<span id="cb1-4"><a href="#cb1-4"></a><span class="kw">class</span> MiniAuthMiddleWare(<span class="bu">object</span>):</span>
-<span id="cb1-5"><a href="#cb1-5"></a>    <span class="kw">def</span> process_request(<span class="va">self</span>, request):</span>
-<span id="cb1-6"><a href="#cb1-6"></a>        auth <span class="op">=</span> request.META.get(<span class="st">'Authorization'</span>, <span class="st">''</span>) <span class="kw">or</span> <span class="op">\</span></span>
-<span id="cb1-7"><a href="#cb1-7"></a>                request.META.get(<span class="st">'HTTP_AUTHORIZATION'</span>, <span class="st">''</span>)</span>
-<span id="cb1-8"><a href="#cb1-8"></a>        <span class="cf">if</span> <span class="kw">not</span> auth:</span>
-<span id="cb1-9"><a href="#cb1-9"></a>            request.user <span class="op">=</span> AnonUser()</span>
-<span id="cb1-10"><a href="#cb1-10"></a>            <span class="cf">return</span></span>
-<span id="cb1-11"><a href="#cb1-11"></a></span>
-<span id="cb1-12"><a href="#cb1-12"></a>        name, pwd <span class="op">=</span> b64decode(auth[<span class="dv">6</span>:]).split(<span class="st">':'</span>)</span>
-<span id="cb1-13"><a href="#cb1-13"></a>        <span class="cf">try</span>:</span>
-<span id="cb1-14"><a href="#cb1-14"></a>            u <span class="op">=</span> User.objects.get(name<span class="op">=</span>name)</span>
-<span id="cb1-15"><a href="#cb1-15"></a>            <span class="cf">if</span> pwd <span class="op">!=</span> u.passwd:</span>
-<span id="cb1-16"><a href="#cb1-16"></a>                request.user <span class="op">=</span> BadUser()</span>
-<span id="cb1-17"><a href="#cb1-17"></a>                <span class="cf">return</span></span>
-<span id="cb1-18"><a href="#cb1-18"></a>            request.user <span class="op">=</span> u</span>
-<span id="cb1-19"><a href="#cb1-19"></a>            <span class="cf">return</span></span>
-<span id="cb1-20"><a href="#cb1-20"></a>        <span class="cf">except</span> User.DoesNotExist, e:</span>
-<span id="cb1-21"><a href="#cb1-21"></a>            request.user <span class="op">=</span> BadUser()</span>
-<span id="cb1-22"><a href="#cb1-22"></a>        <span class="cf">except</span> <span class="pp">AssertionError</span>, e:</span>
-<span id="cb1-23"><a href="#cb1-23"></a>            request.user <span class="op">=</span> BadUser()</span>
-<span id="cb1-24"><a href="#cb1-24"></a></span>
-<span id="cb1-25"><a href="#cb1-25"></a>        <span class="cf">return</span></span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="im">from</span> base64 <span class="im">import</span> b64decode</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a><span class="im">from</span> models <span class="im">import</span> User, AnonUser, BadUser</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a><span class="kw">class</span> MiniAuthMiddleWare(<span class="bu">object</span>):</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>    <span class="kw">def</span> process_request(<span class="va">self</span>, request):</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a>        auth <span class="op">=</span> request.META.get(<span class="st">'Authorization'</span>, <span class="st">''</span>) <span class="kw">or</span> <span class="op">\</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a>                request.META.get(<span class="st">'HTTP_AUTHORIZATION'</span>, <span class="st">''</span>)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a>        <span class="cf">if</span> <span class="kw">not</span> auth:</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a>            request.user <span class="op">=</span> AnonUser()</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a>            <span class="cf">return</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a>        name, pwd <span class="op">=</span> b64decode(auth[<span class="dv">6</span>:]).split(<span class="st">':'</span>)</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true"></a>        <span class="cf">try</span>:</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true"></a>            u <span class="op">=</span> User.objects.get(name<span class="op">=</span>name)</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true"></a>            <span class="cf">if</span> pwd <span class="op">!=</span> u.passwd:</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true"></a>                request.user <span class="op">=</span> BadUser()</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true"></a>                <span class="cf">return</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true"></a>            request.user <span class="op">=</span> u</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true"></a>            <span class="cf">return</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true"></a>        <span class="cf">except</span> User.DoesNotExist, e:</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true"></a>            request.user <span class="op">=</span> BadUser()</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true"></a>        <span class="cf">except</span> <span class="pp">AssertionError</span>, e:</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true"></a>            request.user <span class="op">=</span> BadUser()</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true"></a></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true"></a>        <span class="cf">return</span></span></code></pre></div>
 <p>The model related to this is rather minimal:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1"></a><span class="im">from</span> django.db <span class="im">import</span> models</span>
-<span id="cb2-2"><a href="#cb2-2"></a></span>
-<span id="cb2-3"><a href="#cb2-3"></a><span class="kw">class</span> User(models.Model):</span>
-<span id="cb2-4"><a href="#cb2-4"></a>    name <span class="op">=</span> models.CharField(maxlength<span class="op">=</span><span class="dv">50</span>, primary_key<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb2-5"><a href="#cb2-5"></a>    passwd <span class="op">=</span> models.CharField(maxlength<span class="op">=</span><span class="dv">50</span>)</span>
-<span id="cb2-6"><a href="#cb2-6"></a></span>
-<span id="cb2-7"><a href="#cb2-7"></a>    <span class="kw">def</span> is_authenticated(<span class="va">self</span>):</span>
-<span id="cb2-8"><a href="#cb2-8"></a>        <span class="cf">return</span> <span class="va">True</span></span>
-<span id="cb2-9"><a href="#cb2-9"></a></span>
-<span id="cb2-10"><a href="#cb2-10"></a><span class="kw">class</span> AnonUser:</span>
-<span id="cb2-11"><a href="#cb2-11"></a>    name <span class="op">=</span> <span class="st">'Anonymous'</span></span>
-<span id="cb2-12"><a href="#cb2-12"></a>    passwd <span class="op">=</span> <span class="st">'NoPass'</span></span>
-<span id="cb2-13"><a href="#cb2-13"></a></span>
-<span id="cb2-14"><a href="#cb2-14"></a>    <span class="kw">def</span> is_authenticated(<span class="va">self</span>):</span>
-<span id="cb2-15"><a href="#cb2-15"></a>        <span class="cf">return</span> <span class="va">False</span></span>
-<span id="cb2-16"><a href="#cb2-16"></a></span>
-<span id="cb2-17"><a href="#cb2-17"></a><span class="kw">class</span> BadUser:</span>
-<span id="cb2-18"><a href="#cb2-18"></a>    name <span class="op">=</span> <span class="st">'BadUser'</span></span>
-<span id="cb2-19"><a href="#cb2-19"></a>    passwd <span class="op">=</span> <span class="st">'NoPass'</span></span>
-<span id="cb2-20"><a href="#cb2-20"></a></span>
-<span id="cb2-21"><a href="#cb2-21"></a>    <span class="kw">def</span> is_authenticated(<span class="va">self</span>):</span>
-<span id="cb2-22"><a href="#cb2-22"></a>        <span class="cf">return</span> <span class="va">False</span></span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="im">from</span> django.db <span class="im">import</span> models</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a><span class="kw">class</span> User(models.Model):</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a>    name <span class="op">=</span> models.CharField(maxlength<span class="op">=</span><span class="dv">50</span>, primary_key<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a>    passwd <span class="op">=</span> models.CharField(maxlength<span class="op">=</span><span class="dv">50</span>)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a>    <span class="kw">def</span> is_authenticated(<span class="va">self</span>):</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a>        <span class="cf">return</span> <span class="va">True</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true"></a></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true"></a><span class="kw">class</span> AnonUser:</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true"></a>    name <span class="op">=</span> <span class="st">'Anonymous'</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true"></a>    passwd <span class="op">=</span> <span class="st">'NoPass'</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true"></a></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true"></a>    <span class="kw">def</span> is_authenticated(<span class="va">self</span>):</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true"></a>        <span class="cf">return</span> <span class="va">False</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true"></a></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true"></a><span class="kw">class</span> BadUser:</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true"></a>    name <span class="op">=</span> <span class="st">'BadUser'</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true"></a>    passwd <span class="op">=</span> <span class="st">'NoPass'</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true"></a></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true"></a>    <span class="kw">def</span> is_authenticated(<span class="va">self</span>):</span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true"></a>        <span class="cf">return</span> <span class="va">False</span></span></code></pre></div>
 <p>Then I decorated the functions/urls that required authentication with the following:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">def</span> _RequireAuthorization(func):</span>
-<span id="cb3-2"><a href="#cb3-2"></a>    <span class="kw">def</span> _wrapper(request):</span>
-<span id="cb3-3"><a href="#cb3-3"></a>        <span class="cf">if</span> <span class="kw">not</span> request.user.is_authenticated():</span>
-<span id="cb3-4"><a href="#cb3-4"></a>            response <span class="op">=</span> HttpResponse()</span>
-<span id="cb3-5"><a href="#cb3-5"></a>            response.status_code <span class="op">=</span> <span class="dv">401</span></span>
-<span id="cb3-6"><a href="#cb3-6"></a>            response[<span class="st">'WWW-Authenticate'</span>] <span class="op">=</span> <span class="st">'Basic Realm=&quot;Silly Realm&quot;'</span></span>
-<span id="cb3-7"><a href="#cb3-7"></a>            <span class="cf">return</span> response</span>
-<span id="cb3-8"><a href="#cb3-8"></a>        <span class="cf">else</span>:</span>
-<span id="cb3-9"><a href="#cb3-9"></a>            <span class="cf">return</span> func(request)</span>
-<span id="cb3-10"><a href="#cb3-10"></a>    <span class="cf">return</span> _wrapper</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="kw">def</span> _RequireAuthorization(func):</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>    <span class="kw">def</span> _wrapper(request):</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>        <span class="cf">if</span> <span class="kw">not</span> request.user.is_authenticated():</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a>            response <span class="op">=</span> HttpResponse()</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a>            response.status_code <span class="op">=</span> <span class="dv">401</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true"></a>            response[<span class="st">'WWW-Authenticate'</span>] <span class="op">=</span> <span class="st">'Basic Realm=&quot;Silly Realm&quot;'</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true"></a>            <span class="cf">return</span> response</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true"></a>        <span class="cf">else</span>:</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true"></a>            <span class="cf">return</span> func(request)</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true"></a>    <span class="cf">return</span> _wrapper</span></code></pre></div>
 <p>That all seems to work just fine :-)</p>
 
 

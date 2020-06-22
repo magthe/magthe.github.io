@@ -31,34 +31,34 @@
 
 <p>Just the other day I finally got around to something that I’ve wanted to play around with for a fairly long time—posting web forms using python. As an added bonus I also took a look at dealing with cookies in Python.</p>
 <p>For posting forms there is of course a module that makes things a lot easier, <a href="http://wwwsearch.sourceforge.net/mechanize/">mechanize</a>, but I wanted to first of all understand how to do it myself and secondly to avoid using anything but the standard Python modules. It turns out there isn’t much to understand. Say that we have a very simple form, say it’s a login form containing two text entries:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode html"><code class="sourceCode html"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">&lt;form</span><span class="ot"> method=</span><span class="st">&quot;post&quot;</span><span class="ot"> action=</span><span class="st">&quot;/login&quot;</span><span class="kw">&gt;</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;user_name&quot;</span><span class="kw">&gt;</span>username<span class="kw">&lt;/label&gt;</span></span>
-<span id="cb1-3"><a href="#cb1-3"></a><span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;text&quot;</span><span class="ot"> name=</span><span class="st">&quot;user_name&quot;</span><span class="ot"> id=</span><span class="st">&quot;user_name&quot;</span><span class="ot"> value=</span><span class="st">&quot;&quot;</span> <span class="kw">/&gt;</span></span>
-<span id="cb1-4"><a href="#cb1-4"></a><span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;password&quot;</span><span class="kw">&gt;</span>password<span class="kw">&lt;/label&gt;</span></span>
-<span id="cb1-5"><a href="#cb1-5"></a><span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;password&quot;</span><span class="ot"> name=</span><span class="st">&quot;password&quot;</span><span class="ot"> id=</span><span class="st">&quot;password&quot;</span><span class="ot"> class=</span><span class="st">&quot;sized&quot;</span> <span class="kw">/&gt;</span></span>
-<span id="cb1-6"><a href="#cb1-6"></a><span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;submit&quot;</span><span class="ot"> class=</span><span class="st">&quot;button&quot;</span><span class="ot"> name=</span><span class="st">&quot;login&quot;</span><span class="ot"> value=</span><span class="st">&quot;log in&quot;</span> <span class="kw">/&gt;</span></span>
-<span id="cb1-7"><a href="#cb1-7"></a><span class="kw">&lt;/form&gt;</span></span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode html"><code class="sourceCode html"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">&lt;form</span><span class="ot"> method=</span><span class="st">&quot;post&quot;</span><span class="ot"> action=</span><span class="st">&quot;/login&quot;</span><span class="kw">&gt;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a><span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;user_name&quot;</span><span class="kw">&gt;</span>username<span class="kw">&lt;/label&gt;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a><span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;text&quot;</span><span class="ot"> name=</span><span class="st">&quot;user_name&quot;</span><span class="ot"> id=</span><span class="st">&quot;user_name&quot;</span><span class="ot"> value=</span><span class="st">&quot;&quot;</span> <span class="kw">/&gt;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a><span class="kw">&lt;label</span><span class="ot"> for=</span><span class="st">&quot;password&quot;</span><span class="kw">&gt;</span>password<span class="kw">&lt;/label&gt;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a><span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;password&quot;</span><span class="ot"> name=</span><span class="st">&quot;password&quot;</span><span class="ot"> id=</span><span class="st">&quot;password&quot;</span><span class="ot"> class=</span><span class="st">&quot;sized&quot;</span> <span class="kw">/&gt;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a><span class="kw">&lt;input</span><span class="ot"> type=</span><span class="st">&quot;submit&quot;</span><span class="ot"> class=</span><span class="st">&quot;button&quot;</span><span class="ot"> name=</span><span class="st">&quot;login&quot;</span><span class="ot"> value=</span><span class="st">&quot;log in&quot;</span> <span class="kw">/&gt;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a><span class="kw">&lt;/form&gt;</span></span></code></pre></div>
 <p>One way to post this form would be the following:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1"></a><span class="im">import</span> urllib</span>
-<span id="cb2-2"><a href="#cb2-2"></a><span class="im">import</span> urllib2</span>
-<span id="cb2-3"><a href="#cb2-3"></a></span>
-<span id="cb2-4"><a href="#cb2-4"></a>login_data <span class="op">=</span> urllib.urlencode({<span class="st">'user_name'</span> : <span class="st">'foo'</span>, <span class="st">'password'</span> : <span class="st">'bar'</span>})</span>
-<span id="cb2-5"><a href="#cb2-5"></a>resp <span class="op">=</span> urllib2.urlopen(<span class="st">'http://url.for.my.site/login'</span>, login_data)</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="im">import</span> urllib</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a><span class="im">import</span> urllib2</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a>login_data <span class="op">=</span> urllib.urlencode({<span class="st">'user_name'</span> : <span class="st">'foo'</span>, <span class="st">'password'</span> : <span class="st">'bar'</span>})</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a>resp <span class="op">=</span> urllib2.urlopen(<span class="st">'http://url.for.my.site/login'</span>, login_data)</span></code></pre></div>
 <p>Simple enough, I’d say. <code>urllib2.urlopen</code> automatically switches from <code>GET</code> to <code>POST</code> on the existance of some data.</p>
 <p>On most sites a cookie is used to track whether a user is logged in or not. Extending the example above to deal with this and enable subsequent requests to the site as a logged-in user leads us to the <code>CookieJar</code>:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1"></a><span class="im">import</span> urllib</span>
-<span id="cb3-2"><a href="#cb3-2"></a><span class="im">import</span> urllib2</span>
-<span id="cb3-3"><a href="#cb3-3"></a><span class="im">import</span> cookielib</span>
-<span id="cb3-4"><a href="#cb3-4"></a></span>
-<span id="cb3-5"><a href="#cb3-5"></a>cj <span class="op">=</span> cookielib.CookieJar()</span>
-<span id="cb3-6"><a href="#cb3-6"></a>opener <span class="op">=</span> urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))</span>
-<span id="cb3-7"><a href="#cb3-7"></a>login_data <span class="op">=</span> urllib.urlencode({<span class="st">'user_name'</span> : <span class="st">'foo'</span>, <span class="st">'password'</span> : <span class="st">'bar'</span>})</span>
-<span id="cb3-8"><a href="#cb3-8"></a>resp <span class="op">=</span> opener.<span class="bu">open</span>(<span class="st">'http://url.for.my.site/login'</span>, login_data)</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="im">import</span> urllib</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a><span class="im">import</span> urllib2</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a><span class="im">import</span> cookielib</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a>cj <span class="op">=</span> cookielib.CookieJar()</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true"></a>opener <span class="op">=</span> urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true"></a>login_data <span class="op">=</span> urllib.urlencode({<span class="st">'user_name'</span> : <span class="st">'foo'</span>, <span class="st">'password'</span> : <span class="st">'bar'</span>})</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true"></a>resp <span class="op">=</span> opener.<span class="bu">open</span>(<span class="st">'http://url.for.my.site/login'</span>, login_data)</span></code></pre></div>
 <p>After this <code>cj</code> will hold all the cookies returned in the response. You can enumerate over them like this:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1"></a><span class="cf">for</span> c <span class="kw">in</span> <span class="bu">enumerate</span>(cj):</span>
-<span id="cb4-2"><a href="#cb4-2"></a>    <span class="bu">print</span> c.name, c.value</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="cf">for</span> c <span class="kw">in</span> <span class="bu">enumerate</span>(cj):</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>    <span class="bu">print</span> c.name, c.value</span></code></pre></div>
 <p>Making requests with a cookie <code>c</code> is simple as well, just add <code>c</code> to the cookie jar before making the request:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1"></a>cj.set_cookie(c)</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a>cj.set_cookie(c)</span></code></pre></div>
 <p>The cookie jar also has a <a href="http://www.python.org/doc/2.4.4/lib/cookie-policy-objects.html">policy object</a> and a method, <code>set_cookie_if_ok</code> that will set a cookie for a specific request only if the policy allows it. I.e. it seems fairly simple to make sure there is no cookie leakage when making requests to multiple sites. I’ll leaving playing with that for another day though.</p>
 
 
@@ -130,8 +130,8 @@ Tags: <a title="All pages tagged 'python'." href="../tags/python.html">python</a
     <p class="comment-date"><time pubdate="pubdate" datetime="2009-12-01">2009-12-01</time></p>
   </header>
 <p>I had to use <code>c[1]</code> instead of c because I receive a tuple (at least with Pyhon 2.6).</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a><span class="cf">for</span> c <span class="kw">in</span> <span class="bu">enumerate</span>(cj):</span>
-<span id="cb1-2"><a href="#cb1-2"></a>    <span class="bu">print</span> c[<span class="dv">1</span>].name, c[<span class="dv">1</span>].value</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="cf">for</span> c <span class="kw">in</span> <span class="bu">enumerate</span>(cj):</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>    <span class="bu">print</span> c[<span class="dv">1</span>].name, c[<span class="dv">1</span>].value</span></code></pre></div>
 <p>Thanks for your article!</p>
 </article>
 

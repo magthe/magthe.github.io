@@ -33,76 +33,76 @@
 <p>Somewhat based on Don’s answer to <a href="http://stackoverflow.com/questions/1319705/introduction-or-simple-examples-for-iteratee">my question on Stackoverflow.com</a> I thought I’d try to work through an implementation of my own. I just really hope I’ve got it right :)</p>
 <p>I must admit I used <code>Iteratee</code> for inspiration at times. However, I couldn’t copy it straight off since I decided to first implement iteratee without involving monads. Sure, it’s rather silly to do “input processing” in Haskell without involving monads, but I find that including monads often clouds the problem at hand. So, I left them out to begin with, and add them again once I feel I know what I’m doing. So, here goes nothing…</p>
 <p>The basic idea is to process a stream of data, presented in chunks. Each chunk is handed to an iteratee by an enumerator. For each chunk the iteratee signals to the enumerator whether it’s done or requires more data. These are the types I cooked up for this.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">data</span> <span class="dt">Stream</span> c e</span>
-<span id="cb1-2"><a href="#cb1-2"></a>    <span class="ot">=</span> <span class="dt">Eof</span></span>
-<span id="cb1-3"><a href="#cb1-3"></a>    <span class="op">|</span> <span class="dt">Chunk</span> (c e)</span>
-<span id="cb1-4"><a href="#cb1-4"></a></span>
-<span id="cb1-5"><a href="#cb1-5"></a><span class="kw">data</span> <span class="dt">Stepper</span> c e a</span>
-<span id="cb1-6"><a href="#cb1-6"></a>    <span class="ot">=</span> <span class="dt">Done</span> a (<span class="dt">Stream</span> c e)</span>
-<span id="cb1-7"><a href="#cb1-7"></a>    <span class="op">|</span> <span class="dt">NeedAnotherChunk</span> (<span class="dt">Iteratee</span> c e a)</span>
-<span id="cb1-8"><a href="#cb1-8"></a></span>
-<span id="cb1-9"><a href="#cb1-9"></a><span class="kw">data</span> <span class="dt">Iteratee</span> c e a <span class="ot">=</span> <span class="dt">Iteratee</span></span>
-<span id="cb1-10"><a href="#cb1-10"></a>    {<span class="ot"> runIteratee ::</span> (<span class="dt">Stream</span> c e) <span class="ot">-&gt;</span> (<span class="dt">Stepper</span> c e a) }</span>
-<span id="cb1-11"><a href="#cb1-11"></a></span>
-<span id="cb1-12"><a href="#cb1-12"></a><span class="kw">type</span> <span class="dt">Enumerator</span> c e a <span class="ot">=</span> <span class="dt">Iteratee</span> c e a <span class="ot">-&gt;</span> <span class="dt">Iteratee</span> c e a</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Stream</span> c e</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>    <span class="ot">=</span> <span class="dt">Eof</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>    <span class="op">|</span> <span class="dt">Chunk</span> (c e)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Stepper</span> c e a</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a>    <span class="ot">=</span> <span class="dt">Done</span> a (<span class="dt">Stream</span> c e)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a>    <span class="op">|</span> <span class="dt">NeedAnotherChunk</span> (<span class="dt">Iteratee</span> c e a)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Iteratee</span> c e a <span class="ot">=</span> <span class="dt">Iteratee</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a>    {<span class="ot"> runIteratee ::</span> (<span class="dt">Stream</span> c e) <span class="ot">-&gt;</span> (<span class="dt">Stepper</span> c e a) }</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a><span class="kw">type</span> <span class="dt">Enumerator</span> c e a <span class="ot">=</span> <span class="dt">Iteratee</span> c e a <span class="ot">-&gt;</span> <span class="dt">Iteratee</span> c e a</span></code></pre></div>
 <p>I found it rather useful to implement <code>Show</code> for the two first, but I’ll leave that out of this post since it’s a simple thing to do.</p>
 <p>I should probably point out that the container type for the stream (that’s the ‘c’ in <code>Stream c e</code>) is rather pointless in what I’ve done; it’s always going to be <code>[]</code> in this post. Keeping it in does provide some more similarity with the <code>Iteratee</code> on Hackage.</p>
 <p>At this point I jumped to turning a list into an enumerator. The way I implemented it the list is split up in chunk of 3 items and present each chunk in order to the passed in iteratee.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a>enumList l iter <span class="ot">=</span> loop grouped iter</span>
-<span id="cb2-2"><a href="#cb2-2"></a>    <span class="kw">where</span></span>
-<span id="cb2-3"><a href="#cb2-3"></a>        grouped <span class="ot">=</span> groupList <span class="dv">3</span> l</span>
-<span id="cb2-4"><a href="#cb2-4"></a></span>
-<span id="cb2-5"><a href="#cb2-5"></a>        groupList n l <span class="ot">=</span> <span class="kw">let</span></span>
-<span id="cb2-6"><a href="#cb2-6"></a>                (p, r) <span class="ot">=</span> <span class="fu">splitAt</span> n l</span>
-<span id="cb2-7"><a href="#cb2-7"></a>            <span class="kw">in</span> <span class="kw">case</span> p <span class="kw">of</span></span>
-<span id="cb2-8"><a href="#cb2-8"></a>                [] <span class="ot">-&gt;</span> []</span>
-<span id="cb2-9"><a href="#cb2-9"></a>                xs <span class="ot">-&gt;</span> xs<span class="op">:</span>groupList n r</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a>enumList l iter <span class="ot">=</span> loop grouped iter</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>    <span class="kw">where</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a>        grouped <span class="ot">=</span> groupList <span class="dv">3</span> l</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a>        groupList n l <span class="ot">=</span> <span class="kw">let</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a>                (p, r) <span class="ot">=</span> <span class="fu">splitAt</span> n l</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a>            <span class="kw">in</span> <span class="kw">case</span> p <span class="kw">of</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a>                [] <span class="ot">-&gt;</span> []</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true"></a>                xs <span class="ot">-&gt;</span> xs<span class="op">:</span>groupList n r</span></code></pre></div>
 <p>The <code>loop</code> function is the main part. Ending when the chunks are all used up is the easy part:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a>        loop [] i <span class="ot">=</span> <span class="kw">let</span></span>
-<span id="cb3-2"><a href="#cb3-2"></a>                s <span class="ot">=</span> runIteratee i <span class="dt">Eof</span></span>
-<span id="cb3-3"><a href="#cb3-3"></a>            <span class="kw">in</span> <span class="kw">case</span> s <span class="kw">of</span></span>
-<span id="cb3-4"><a href="#cb3-4"></a>                <span class="dt">Done</span> v str <span class="ot">-&gt;</span> <span class="dt">Iteratee</span> <span class="op">$</span> \ _ <span class="ot">-&gt;</span> s</span>
-<span id="cb3-5"><a href="#cb3-5"></a>                <span class="dt">NeedAnotherChunk</span> i <span class="ot">-&gt;</span> i</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a>        loop [] i <span class="ot">=</span> <span class="kw">let</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>                s <span class="ot">=</span> runIteratee i <span class="dt">Eof</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>            <span class="kw">in</span> <span class="kw">case</span> s <span class="kw">of</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a>                <span class="dt">Done</span> v str <span class="ot">-&gt;</span> <span class="dt">Iteratee</span> <span class="op">$</span> \ _ <span class="ot">-&gt;</span> s</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a>                <span class="dt">NeedAnotherChunk</span> i <span class="ot">-&gt;</span> i</span></code></pre></div>
 <p>It is arguably an error if the iteratee returns <code>NeedAnotherChunk</code> when passed an <code>Eof</code> stream, but for now I’ll leave it the way it is. Doing the recursive step is very similar:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a>        loop (x<span class="op">:</span>xs) i <span class="ot">=</span> <span class="kw">let</span></span>
-<span id="cb4-2"><a href="#cb4-2"></a>                s <span class="ot">=</span> runIteratee i (<span class="dt">Chunk</span> x)</span>
-<span id="cb4-3"><a href="#cb4-3"></a>            <span class="kw">in</span> <span class="kw">case</span> s <span class="kw">of</span></span>
-<span id="cb4-4"><a href="#cb4-4"></a>                <span class="dt">Done</span> v str <span class="ot">-&gt;</span> <span class="dt">Iteratee</span> <span class="op">$</span> \ _ <span class="ot">-&gt;</span> s</span>
-<span id="cb4-5"><a href="#cb4-5"></a>                <span class="dt">NeedAnotherChunk</span> i' <span class="ot">-&gt;</span> loop xs i'</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a>        loop (x<span class="op">:</span>xs) i <span class="ot">=</span> <span class="kw">let</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>                s <span class="ot">=</span> runIteratee i (<span class="dt">Chunk</span> x)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a>            <span class="kw">in</span> <span class="kw">case</span> s <span class="kw">of</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a>                <span class="dt">Done</span> v str <span class="ot">-&gt;</span> <span class="dt">Iteratee</span> <span class="op">$</span> \ _ <span class="ot">-&gt;</span> s</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a>                <span class="dt">NeedAnotherChunk</span> i' <span class="ot">-&gt;</span> loop xs i'</span></code></pre></div>
 <p>Here it is worth noticing that the iteratee is expected to return any part of the chunk that wasn’t processed.</p>
 <p>Next I coded up my first iteratee, a map over the stream:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1"></a>iFMap f <span class="ot">=</span> <span class="kw">let</span></span>
-<span id="cb5-2"><a href="#cb5-2"></a>        doAcc acc <span class="dt">Eof</span> <span class="ot">=</span> <span class="dt">Done</span> acc <span class="dt">Eof</span></span>
-<span id="cb5-3"><a href="#cb5-3"></a>        doAcc acc (<span class="dt">Chunk</span> i) <span class="ot">=</span> <span class="dt">NeedAnotherChunk</span> <span class="op">$</span> <span class="dt">Iteratee</span> <span class="op">$</span> doAcc (acc <span class="ot">`mappend`</span> (<span class="fu">fmap</span> f i))</span>
-<span id="cb5-4"><a href="#cb5-4"></a>    <span class="kw">in</span> <span class="dt">Iteratee</span> <span class="op">$</span> doAcc <span class="fu">mempty</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a>iFMap f <span class="ot">=</span> <span class="kw">let</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a>        doAcc acc <span class="dt">Eof</span> <span class="ot">=</span> <span class="dt">Done</span> acc <span class="dt">Eof</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a>        doAcc acc (<span class="dt">Chunk</span> i) <span class="ot">=</span> <span class="dt">NeedAnotherChunk</span> <span class="op">$</span> <span class="dt">Iteratee</span> <span class="op">$</span> doAcc (acc <span class="ot">`mappend`</span> (<span class="fu">fmap</span> f i))</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a>    <span class="kw">in</span> <span class="dt">Iteratee</span> <span class="op">$</span> doAcc <span class="fu">mempty</span></span></code></pre></div>
 <p>Now I can run the iterator over a list enumerator:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1"></a><span class="op">&gt;</span> runIteratee (enumList [<span class="dv">1</span><span class="op">..</span><span class="dv">9</span>] (iFMap (<span class="op">*</span><span class="dv">2</span>))) <span class="dt">Eof</span></span>
-<span id="cb6-2"><a href="#cb6-2"></a><span class="dt">Stepper</span> <span class="dt">Done</span> <span class="op">&lt;&lt;</span>[<span class="dv">2</span>,<span class="dv">4</span>,<span class="dv">6</span>,<span class="dv">8</span>,<span class="dv">10</span>,<span class="dv">12</span>,<span class="dv">14</span>,<span class="dv">16</span>,<span class="dv">18</span>]<span class="op">&gt;&gt;</span> <span class="op">&lt;&lt;</span><span class="dt">Stream</span><span class="op">:</span> <span class="dt">Eof</span><span class="op">&gt;&gt;</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a><span class="op">&gt;</span> runIteratee (enumList [<span class="dv">1</span><span class="op">..</span><span class="dv">9</span>] (iFMap (<span class="op">*</span><span class="dv">2</span>))) <span class="dt">Eof</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a><span class="dt">Stepper</span> <span class="dt">Done</span> <span class="op">&lt;&lt;</span>[<span class="dv">2</span>,<span class="dv">4</span>,<span class="dv">6</span>,<span class="dv">8</span>,<span class="dv">10</span>,<span class="dv">12</span>,<span class="dv">14</span>,<span class="dv">16</span>,<span class="dv">18</span>]<span class="op">&gt;&gt;</span> <span class="op">&lt;&lt;</span><span class="dt">Stream</span><span class="op">:</span> <span class="dt">Eof</span><span class="op">&gt;&gt;</span></span></code></pre></div>
 <p>I found that a bit verbose, especially for interactive experimentation so the following simplifies it a bit</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1"></a>run iter <span class="ot">=</span> <span class="kw">case</span> (runIteratee iter) <span class="dt">Eof</span> <span class="kw">of</span></span>
-<span id="cb7-2"><a href="#cb7-2"></a>    <span class="dt">Done</span> a _ <span class="ot">-&gt;</span> a</span>
-<span id="cb7-3"><a href="#cb7-3"></a>    <span class="dt">NeedAnotherChunk</span> _ <span class="ot">-&gt;</span> <span class="fu">error</span> <span class="st">&quot;run: Iterator didn't finish on Eof&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a>run iter <span class="ot">=</span> <span class="kw">case</span> (runIteratee iter) <span class="dt">Eof</span> <span class="kw">of</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a>    <span class="dt">Done</span> a _ <span class="ot">-&gt;</span> a</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true"></a>    <span class="dt">NeedAnotherChunk</span> _ <span class="ot">-&gt;</span> <span class="fu">error</span> <span class="st">&quot;run: Iterator didn't finish on Eof&quot;</span></span></code></pre></div>
 <p>As Oleg pointed out in his writings it turns out that <code>Iteratee c e</code> is a monad.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">instance</span> <span class="dt">Monad</span> (<span class="dt">Iteratee</span> c e) <span class="kw">where</span></span>
-<span id="cb8-2"><a href="#cb8-2"></a>    <span class="fu">return</span> x <span class="ot">=</span> <span class="dt">Iteratee</span> <span class="op">$</span> \ s <span class="ot">-&gt;</span> <span class="dt">Done</span> x s</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">Monad</span> (<span class="dt">Iteratee</span> c e) <span class="kw">where</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a>    <span class="fu">return</span> x <span class="ot">=</span> <span class="dt">Iteratee</span> <span class="op">$</span> \ s <span class="ot">-&gt;</span> <span class="dt">Done</span> x s</span></code></pre></div>
 <p>The implementation of <code>return</code> is obvious, there really isn’t any other option than to encode is a continuation that returns <code>Done</code> irrespective of what is offered, and passes along the rest of the stream no matter what’s passed in. Bind (<code>&gt;&gt;=</code>) is a bit more complicated:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1"></a>    i <span class="op">&gt;&gt;=</span> f <span class="ot">=</span> <span class="dt">Iteratee</span> <span class="op">$</span> \ s <span class="ot">-&gt;</span></span>
-<span id="cb9-2"><a href="#cb9-2"></a>        <span class="kw">let</span></span>
-<span id="cb9-3"><a href="#cb9-3"></a>            c <span class="ot">=</span> runIteratee i s</span>
-<span id="cb9-4"><a href="#cb9-4"></a>        <span class="kw">in</span> <span class="kw">case</span> c <span class="kw">of</span></span>
-<span id="cb9-5"><a href="#cb9-5"></a>            <span class="dt">Done</span> v str <span class="ot">-&gt;</span> runIteratee (f v) str</span>
-<span id="cb9-6"><a href="#cb9-6"></a>            <span class="dt">NeedAnotherChunk</span> i' <span class="ot">-&gt;</span> <span class="dt">NeedAnotherChunk</span> <span class="op">$</span> i' <span class="op">&gt;&gt;=</span> f</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a>    i <span class="op">&gt;&gt;=</span> f <span class="ot">=</span> <span class="dt">Iteratee</span> <span class="op">$</span> \ s <span class="ot">-&gt;</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true"></a>        <span class="kw">let</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true"></a>            c <span class="ot">=</span> runIteratee i s</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true"></a>        <span class="kw">in</span> <span class="kw">case</span> c <span class="kw">of</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true"></a>            <span class="dt">Done</span> v str <span class="ot">-&gt;</span> runIteratee (f v) str</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true"></a>            <span class="dt">NeedAnotherChunk</span> i' <span class="ot">-&gt;</span> <span class="dt">NeedAnotherChunk</span> <span class="op">$</span> i' <span class="op">&gt;&gt;=</span> f</span></code></pre></div>
 <p>My understanding is that the left iteratee should be stepped along until it returns <code>Done</code>, at that point the result is passed to the right-side function, which results in an iteratee. The rest of the stream is then passed on to the new iteratee.</p>
 <p>I implemented two other iteratees, <code>iDrop :: Int -&gt; Iteratee [] e ()</code> and <code>iTakeWhile :: (e -&gt; Bool) -&gt; Iteratee [] e [e]</code> with the obvious implementations. This then allows me to write a little test like this:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1"></a>iTest <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb10-2"><a href="#cb10-2"></a>    iDrop <span class="dv">2</span></span>
-<span id="cb10-3"><a href="#cb10-3"></a>    t <span class="ot">&lt;-</span> iTakeWhile (<span class="op">&lt;</span> <span class="dv">5</span>)</span>
-<span id="cb10-4"><a href="#cb10-4"></a>    a <span class="ot">&lt;-</span> <span class="fu">return</span> <span class="ch">'c'</span></span>
-<span id="cb10-5"><a href="#cb10-5"></a>    m <span class="ot">&lt;-</span> iFMap (<span class="op">+</span> <span class="dv">3</span>)</span>
-<span id="cb10-6"><a href="#cb10-6"></a>    <span class="fu">return</span> (t, a, m)</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true"></a>iTest <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true"></a>    iDrop <span class="dv">2</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true"></a>    t <span class="ot">&lt;-</span> iTakeWhile (<span class="op">&lt;</span> <span class="dv">5</span>)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true"></a>    a <span class="ot">&lt;-</span> <span class="fu">return</span> <span class="ch">'c'</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true"></a>    m <span class="ot">&lt;-</span> iFMap (<span class="op">+</span> <span class="dv">3</span>)</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true"></a>    <span class="fu">return</span> (t, a, m)</span></code></pre></div>
 <p>Running it gives the expected result:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1"></a><span class="op">&gt;</span> run (enumList [<span class="dv">1</span><span class="op">..</span><span class="dv">9</span>] iTest)</span>
-<span id="cb11-2"><a href="#cb11-2"></a>([<span class="dv">3</span>,<span class="dv">4</span>],<span class="ch">'c'</span>,[<span class="dv">8</span>,<span class="dv">9</span>,<span class="dv">10</span>,<span class="dv">11</span>,<span class="dv">12</span>])</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true"></a><span class="op">&gt;</span> run (enumList [<span class="dv">1</span><span class="op">..</span><span class="dv">9</span>] iTest)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true"></a>([<span class="dv">3</span>,<span class="dv">4</span>],<span class="ch">'c'</span>,[<span class="dv">8</span>,<span class="dv">9</span>,<span class="dv">10</span>,<span class="dv">11</span>,<span class="dv">12</span>])</span></code></pre></div>
 <p>That’s pretty much it. Not that much to it. At least not as long as I’ve actually understood iteratees.</p>
 
 

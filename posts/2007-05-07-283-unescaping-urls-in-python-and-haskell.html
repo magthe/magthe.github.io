@@ -30,20 +30,20 @@
 </header>
 
 <p>A while ago I decided that in order to learn Haskell I should make an attempt to stop reaching for Python whenever I needed to solve a “small problem” and use Haskell instead. This morning I found a need to unescape URLs inside <a href="http://www.vim.org/">Vim</a> and I didn’t catch myself until after I had written the following Python code:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a><span class="co">#! /usr/bin/env python</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a></span>
-<span id="cb1-3"><a href="#cb1-3"></a><span class="im">import</span> urllib</span>
-<span id="cb1-4"><a href="#cb1-4"></a><span class="im">import</span> sys</span>
-<span id="cb1-5"><a href="#cb1-5"></a></span>
-<span id="cb1-6"><a href="#cb1-6"></a><span class="cf">for</span> l <span class="kw">in</span> sys.stdin:</span>
-<span id="cb1-7"><a href="#cb1-7"></a>    <span class="bu">print</span> urllib.unquote(l),</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="co">#! /usr/bin/env python</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a><span class="im">import</span> urllib</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a><span class="im">import</span> sys</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a><span class="cf">for</span> l <span class="kw">in</span> sys.stdin:</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a>    <span class="bu">print</span> urllib.unquote(l),</span></code></pre></div>
 <p>After a little bit of cursing I started browsing <a href="http://haskell.org/hoogle/">Hoogle</a> and after bit of searching I found the <code>Network.URI</code> module. My Haskell solution ended up looking like this:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></span>
-<span id="cb2-2"><a href="#cb2-2"></a></span>
-<span id="cb2-3"><a href="#cb2-3"></a><span class="kw">import</span> <span class="dt">Network.URI</span></span>
-<span id="cb2-4"><a href="#cb2-4"></a></span>
-<span id="cb2-5"><a href="#cb2-5"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
-<span id="cb2-6"><a href="#cb2-6"></a>main <span class="ot">=</span> <span class="fu">interact</span> <span class="op">$</span> <span class="fu">unlines</span> <span class="op">.</span> (<span class="fu">map</span> unEscapeString) <span class="op">.</span> <span class="fu">lines</span></span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Network.URI</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a>main <span class="ot">=</span> <span class="fu">interact</span> <span class="op">$</span> <span class="fu">unlines</span> <span class="op">.</span> (<span class="fu">map</span> unEscapeString) <span class="op">.</span> <span class="fu">lines</span></span></code></pre></div>
 <p>Short, sweet, and easy to understand, I think.</p>
 <p>In case you want to go the other direction, i.e. to escape strings in Haskell then combining <code>escapeURIString</code> and <code>isUnreserved</code> is the right thing to do.</p>
 
@@ -62,8 +62,8 @@ Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell
     <p class="comment-date"><time pubdate="pubdate" datetime="2009-05-01">2009-05-01</time></p>
   </header>
 <p>For a quick-‘n’-dirty app like this one, you don’t have to bother with the module or type declarations:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">import</span> <span class="dt">Network.URI</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a>main <span class="ot">=</span> <span class="fu">interact</span> <span class="op">$</span> <span class="fu">unlines</span> <span class="op">.</span> <span class="fu">map</span> unEscapeString <span class="op">.</span> <span class="fu">lines</span></span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Network.URI</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>main <span class="ot">=</span> <span class="fu">interact</span> <span class="op">$</span> <span class="fu">unlines</span> <span class="op">.</span> <span class="fu">map</span> unEscapeString <span class="op">.</span> <span class="fu">lines</span></span></code></pre></div>
 <p>Because shorter can be sweeter. :)</p>
 <p>N.B. Function application binds more tightly than anything else, so you never need brackets around it except to override its associativity.</p>
 </article>

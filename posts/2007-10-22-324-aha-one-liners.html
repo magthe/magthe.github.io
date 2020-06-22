@@ -31,7 +31,7 @@
 
 <p>I’ve been working with computers for more than seven years now and before that I spent five and a half years in university studying computer science and engineering. During these years I’ve learnt a lot and had many aha-moments. However, since starting learning Haskell I’ve had aha-moments that manifest themselves in a single line of code. This has never happened before. Ever! I’m not sure what that says about Haskell. Maybe it’s computer science distilled, who knows?</p>
 <p>Anyway, my latest aha-one-liner is this:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a>liftM dec <span class="op">$</span> <span class="fu">sequence</span> <span class="op">$</span> <span class="fu">map</span> (<span class="fu">flip</span> M.lookup decodeMap) s</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a>liftM dec <span class="op">$</span> <span class="fu">sequence</span> <span class="op">$</span> <span class="fu">map</span> (<span class="fu">flip</span> M.lookup decodeMap) s</span></code></pre></div>
 <p>I’ll try to recount how I got to it.</p>
 <p>When writing <a href="http://hackage.haskell.org/cgi-bin/hackage-scripts/package/dataenc-0.9">dataenc</a> I wrote a function <code>decode :: String -&gt; [Word8]</code>. In a discussion on the <a href="http://www.haskell.org/pipermail/libraries/2007-October/008301.html">Haskell libraries list</a> apfelmus pointed out the necessity of allowing <code>decode</code> to fail. The obvious solution is to change the type to <code>String -&gt; Maybe [Word8]</code>.</p>
 <p>The decoding is done using a look-up table, with some twiddling of bits to get the original data back from the encoded string. The first version used <code>!</code> to do the lookup, but when this fails it throws an exception. There have been many emails on <a href="http://www.mail-archive.com/search?l=haskell-cafe%40haskell.org&amp;q=exception+OR+error">Haskell Cafe</a> and several <a href="http://haskell.org/haskellwiki/Blog_articles/Errors">articles</a> written on exceptions in Haskell, and as anyone who’s read them know: it’s better to avoid ever getting exceptions than dealing with them (I suspect this is true for any language). The function <code>lookup</code> offers a nice way of looking up a value without risking getting an exception. By mapping it over the string I end up with a list of possible values (<code>[Maybe Word8]</code>). The next step was to find a function that converts this list of possible values to possibly a list (<code>Maybe [Word8]</code>). <code>sequence</code> is just that function. The most important thing is that a single <code>Nothing</code> in the list of possible values results in a result of <code>Nothing</code> from <code>sequence</code> too. At this point I have a list of values, e.g. <code>Just [1,2,3]</code>, or <code>Nothing</code>. All that’s left to do now is the bit twiddling part, and that’s of course what lifting <code>dec</code> does, and of course lifting <code>dec</code> into <code>Nothing</code> produces <code>Nothing</code>.</p>
@@ -72,10 +72,10 @@ Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell
     <p class="comment-date"><time pubdate="pubdate" datetime="2007-10-23">2007-10-23</time></p>
   </header>
 <p>Sorry, but it is not trivial at all to get the formatting right.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="fu">mapM</span> f <span class="ot">=</span> <span class="fu">sequence</span> <span class="op">.</span> <span class="fu">map</span> f</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="fu">mapM</span> f <span class="ot">=</span> <span class="fu">sequence</span> <span class="op">.</span> <span class="fu">map</span> f</span></code></pre></div>
 <p><code>liftM</code> can be replaced by the more abstract <code>fmap</code>, or even better: the applicative combinator <code>&lt;$&gt;</code>.</p>
 <p>And we can strip <code>flip</code> by using a section:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a>dec <span class="op">&lt;$&gt;</span> <span class="fu">mapM</span> (<span class="ot">`M.lookup`</span> decodeMap) s</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a>dec <span class="op">&lt;$&gt;</span> <span class="fu">mapM</span> (<span class="ot">`M.lookup`</span> decodeMap) s</span></code></pre></div>
 </article>
 
 <article class="comment-body">
@@ -95,7 +95,7 @@ Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell
   </header>
 <p>You could also use <code>mapM</code> in place of your combination of <code>sequence</code> and <code>map</code>. I think of it as “map, sequenced within the monad”. If you think about how IO would use it (“do each of these operations in sequence, collecting the results”) it makes the translation into the Maybe monad more obvious.</p>
 <p>I’d maybe write your code as as:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a>decode <span class="ot">=</span> liftM dec <span class="op">.</span> <span class="fu">mapM</span> (<span class="fu">flip</span> M.lookup decodeMap)</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a>decode <span class="ot">=</span> liftM dec <span class="op">.</span> <span class="fu">mapM</span> (<span class="fu">flip</span> M.lookup decodeMap)</span></code></pre></div>
 </article>
 
 <article class="comment-body">
@@ -134,7 +134,7 @@ Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell
     <p><b>Ben</b></p>
     <p class="comment-date"><time pubdate="pubdate" datetime="2007-11-25">2007-11-25</time></p>
   </header>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a>liftM dec <span class="op">.</span> <span class="fu">mapM</span> (<span class="fu">flip</span> M.lookup decodeMap)</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a>liftM dec <span class="op">.</span> <span class="fu">mapM</span> (<span class="fu">flip</span> M.lookup decodeMap)</span></code></pre></div>
 </article>
 
 

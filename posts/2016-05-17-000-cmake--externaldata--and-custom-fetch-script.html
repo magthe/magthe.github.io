@@ -47,10 +47,10 @@
 </ul>
 <h3 id="the-object-store">The object store</h3>
 <p>We do our building in <a href="https://www.docker.com/">docker</a> images that do have our shared storage mapped in, so I’d like them to take advantage of that. At the same time I want the builds performed off-site to download the files. To get this behaviour I defined two object stores:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode cmake"><code class="sourceCode cmake"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">set</span>(<span class="dv">ExternalData_OBJECT_STORES</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a>  <span class="dv">${CMAKE_BINARY_DIR}</span>/ExternalData/Objects</span>
-<span id="cb1-3"><a href="#cb1-3"></a>  /mnt/shared/over/nfs/Objects</span>
-<span id="cb1-4"><a href="#cb1-4"></a>  )</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cmake"><code class="sourceCode cmake"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">set</span>(<span class="dv">ExternalData_OBJECT_STORES</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>  <span class="dv">${CMAKE_BINARY_DIR}</span>/ExternalData/Objects</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>  /mnt/shared/over/nfs/Objects</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>  )</span></code></pre></div>
 <p>The module will search each of these for the required files and download only if they aren’t found. Downloaded files will be put into the first of the stores. Oh, and it’s <em>very</em> important that the first store is given with an absolute path!</p>
 <p>The store on the shared storage looks something like this:</p>
 <pre><code>/mnt/share/over/nfs/Objects
@@ -68,25 +68,25 @@
 <li>The fetch script itself.</li>
 </ol>
 <p>The first two steps are done by providing a URL template and pointing to the script via a special variable:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode cmake"><code class="sourceCode cmake"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">set</span>(<span class="dv">ExternalData_URL_TEMPLATES</span> <span class="st">&quot;ExternalDataCustomScript://sftp/mnt/shared/over/nfs/Objects/%(algo)/%(hash)&quot;</span>)</span>
-<span id="cb3-2"><a href="#cb3-2"></a><span class="kw">set</span>(<span class="dv">ExternalData_CUSTOM_SCRIPT_sftp</span> <span class="dv">${CMAKE_SOURCE_DIR}</span>/cmake/FetchFromSftp.cmake)</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cmake"><code class="sourceCode cmake"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="kw">set</span>(<span class="dv">ExternalData_URL_TEMPLATES</span> <span class="st">&quot;ExternalDataCustomScript://sftp/mnt/shared/over/nfs/Objects/%(algo)/%(hash)&quot;</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a><span class="kw">set</span>(<span class="dv">ExternalData_CUSTOM_SCRIPT_sftp</span> <span class="dv">${CMAKE_SOURCE_DIR}</span>/cmake/FetchFromSftp.cmake)</span></code></pre></div>
 <p>It took me a ridiculous amount of time to work out how to write a script that turns out to be rather short. This is an experience that seems to repeat itself when using CMake; it could say something about me, or something about CMake.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode cmake"><code class="sourceCode cmake"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">get_filename_component</span>(FFS_ObjStoreDir <span class="dv">${ExternalData_CUSTOM_FILE}</span> <span class="ot">DIRECTORY</span>)</span>
-<span id="cb4-2"><a href="#cb4-2"></a><span class="kw">get_filename_component</span>(FFS_InputFilename <span class="dv">${ExternalData_CUSTOM_LOCATION}</span> <span class="ot">NAME</span>)</span>
-<span id="cb4-3"><a href="#cb4-3"></a><span class="kw">get_filename_component</span>(FFS_OutputFilename <span class="dv">${ExternalData_CUSTOM_FILE}</span> <span class="ot">NAME</span>)</span>
-<span id="cb4-4"><a href="#cb4-4"></a></span>
-<span id="cb4-5"><a href="#cb4-5"></a><span class="kw">execute_process</span>(<span class="ot">COMMAND</span> sftp sftp.company.com:/<span class="dv">${ExternalData_CUSTOM_LOCATION}</span></span>
-<span id="cb4-6"><a href="#cb4-6"></a>  <span class="ot">RESULT_VARIABLE</span> FFS_SftpResult</span>
-<span id="cb4-7"><a href="#cb4-7"></a>  <span class="ot">OUTPUT_QUIET</span></span>
-<span id="cb4-8"><a href="#cb4-8"></a>  <span class="ot">ERROR_VARIABLE</span> FFS_SftpErr</span>
-<span id="cb4-9"><a href="#cb4-9"></a>  )</span>
-<span id="cb4-10"><a href="#cb4-10"></a></span>
-<span id="cb4-11"><a href="#cb4-11"></a><span class="kw">if</span>(FFS_SftpResult)</span>
-<span id="cb4-12"><a href="#cb4-12"></a>  <span class="kw">set</span>(<span class="dv">ExternalData_CUSTOM_ERROR</span> <span class="st">&quot;Failed to fetch from SFTP - </span><span class="dv">${</span>FFS_SftpErr<span class="dv">}</span><span class="st">&quot;</span>)</span>
-<span id="cb4-13"><a href="#cb4-13"></a><span class="kw">else</span>(FFS_SftpResult)</span>
-<span id="cb4-14"><a href="#cb4-14"></a>  <span class="kw">file</span>(<span class="ot">MAKE_DIRECTORY</span> <span class="dv">${</span>FFS_ObjStoreDir<span class="dv">}</span>)</span>
-<span id="cb4-15"><a href="#cb4-15"></a>  <span class="kw">file</span>(<span class="ot">RENAME</span> <span class="dv">${</span>FFS_InputFilename<span class="dv">}</span> <span class="dv">${</span>FFS_ObjStoreDir<span class="dv">}</span>/<span class="dv">${</span>FFS_OutputFilename<span class="dv">}</span>)</span>
-<span id="cb4-16"><a href="#cb4-16"></a><span class="kw">endif</span>(FFS_SftpResult)</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cmake"><code class="sourceCode cmake"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="kw">get_filename_component</span>(FFS_ObjStoreDir <span class="dv">${ExternalData_CUSTOM_FILE}</span> <span class="ot">DIRECTORY</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a><span class="kw">get_filename_component</span>(FFS_InputFilename <span class="dv">${ExternalData_CUSTOM_LOCATION}</span> <span class="ot">NAME</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a><span class="kw">get_filename_component</span>(FFS_OutputFilename <span class="dv">${ExternalData_CUSTOM_FILE}</span> <span class="ot">NAME</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a><span class="kw">execute_process</span>(<span class="ot">COMMAND</span> sftp sftp.company.com:/<span class="dv">${ExternalData_CUSTOM_LOCATION}</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true"></a>  <span class="ot">RESULT_VARIABLE</span> FFS_SftpResult</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true"></a>  <span class="ot">OUTPUT_QUIET</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true"></a>  <span class="ot">ERROR_VARIABLE</span> FFS_SftpErr</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true"></a>  )</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true"></a></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true"></a><span class="kw">if</span>(FFS_SftpResult)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true"></a>  <span class="kw">set</span>(<span class="dv">ExternalData_CUSTOM_ERROR</span> <span class="st">&quot;Failed to fetch from SFTP - </span><span class="dv">${</span>FFS_SftpErr<span class="dv">}</span><span class="st">&quot;</span>)</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true"></a><span class="kw">else</span>(FFS_SftpResult)</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true"></a>  <span class="kw">file</span>(<span class="ot">MAKE_DIRECTORY</span> <span class="dv">${</span>FFS_ObjStoreDir<span class="dv">}</span>)</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true"></a>  <span class="kw">file</span>(<span class="ot">RENAME</span> <span class="dv">${</span>FFS_InputFilename<span class="dv">}</span> <span class="dv">${</span>FFS_ObjStoreDir<span class="dv">}</span>/<span class="dv">${</span>FFS_OutputFilename<span class="dv">}</span>)</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true"></a><span class="kw">endif</span>(FFS_SftpResult)</span></code></pre></div>
 <p>This script is run with <code>cmake -P</code> in the binary dir of the <code>CMakeLists.txt</code> where the test is defined, which means it’s oblivious about the project it’s part of. <code>PROJECT_BINARY_DIR</code> is empty and <code>CMAKE_BINARY_DIR</code> is the same as <code>CMAKE_CURRENT_BINARY_DIR</code>. This is the reason why the first store in <code>ExternalData_OBJECT_STORES</code> has to be an absolute path – it’s very difficult, if not impossible, to find the correct placement of the object store otherwise.</p>
 
 

@@ -35,59 +35,59 @@
 <p>Then I decided to attempt to explore having more but simpler parts in the <code>conduit</code> pipeline. I think that strategy resulted in a much cleaner and simpler design.</p>
 <h3 id="a-state-machine-for-timing-out">A state machine for timing out</h3>
 <p>The state machine for the addition is unchanged from the <a href="../posts/2015-01-06-000-adder-as-a-state-machine.html">earlier post</a> and the timing out is added via a second state machine:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">data</span> <span class="dt">TOState</span> <span class="ot">=</span> <span class="dt">TOGood</span> <span class="dt">Int</span> <span class="op">|</span> <span class="dt">TOTimedOut</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a>    <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span>
-<span id="cb1-3"><a href="#cb1-3"></a></span>
-<span id="cb1-4"><a href="#cb1-4"></a><span class="kw">data</span> <span class="dt">TOSignal</span> a <span class="ot">=</span> <span class="dt">TONoop</span> <span class="op">|</span> <span class="dt">TOVal</span> a <span class="op">|</span> <span class="dt">TOTime</span></span>
-<span id="cb1-5"><a href="#cb1-5"></a></span>
-<span id="cb1-6"><a href="#cb1-6"></a><span class="ot">toMachine ::</span> <span class="dt">Machine</span> <span class="dt">TOState</span> (<span class="dt">Either</span> t a) (<span class="dt">TOSignal</span> a)</span>
-<span id="cb1-7"><a href="#cb1-7"></a>toMachine <span class="ot">=</span> createMachine (<span class="dt">TOGood</span> <span class="dv">0</span>) go</span>
-<span id="cb1-8"><a href="#cb1-8"></a>    <span class="kw">where</span></span>
-<span id="cb1-9"><a href="#cb1-9"></a>        go (<span class="dt">TOGood</span> _) (<span class="dt">Right</span> e) <span class="ot">=</span> (<span class="dt">TOGood</span> <span class="dv">0</span>, <span class="dt">TOVal</span> e)</span>
-<span id="cb1-10"><a href="#cb1-10"></a></span>
-<span id="cb1-11"><a href="#cb1-11"></a>        go (<span class="dt">TOGood</span> n) (<span class="dt">Left</span> _)</span>
-<span id="cb1-12"><a href="#cb1-12"></a>            <span class="op">|</span> n <span class="op">&gt;</span> <span class="dv">3</span> <span class="ot">=</span> (<span class="dt">TOTimedOut</span>, <span class="dt">TOTime</span>)</span>
-<span id="cb1-13"><a href="#cb1-13"></a>            <span class="op">|</span> <span class="fu">otherwise</span> <span class="ot">=</span> (<span class="dt">TOGood</span> (n <span class="op">+</span> <span class="dv">1</span>), <span class="dt">TONoop</span>)</span>
-<span id="cb1-14"><a href="#cb1-14"></a></span>
-<span id="cb1-15"><a href="#cb1-15"></a>        go <span class="dt">TOTimedOut</span> _ <span class="ot">=</span> (<span class="dt">TOTimedOut</span>, <span class="dt">TOTime</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">TOState</span> <span class="ot">=</span> <span class="dt">TOGood</span> <span class="dt">Int</span> <span class="op">|</span> <span class="dt">TOTimedOut</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>    <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">TOSignal</span> a <span class="ot">=</span> <span class="dt">TONoop</span> <span class="op">|</span> <span class="dt">TOVal</span> a <span class="op">|</span> <span class="dt">TOTime</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a><span class="ot">toMachine ::</span> <span class="dt">Machine</span> <span class="dt">TOState</span> (<span class="dt">Either</span> t a) (<span class="dt">TOSignal</span> a)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a>toMachine <span class="ot">=</span> createMachine (<span class="dt">TOGood</span> <span class="dv">0</span>) go</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a>    <span class="kw">where</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a>        go (<span class="dt">TOGood</span> _) (<span class="dt">Right</span> e) <span class="ot">=</span> (<span class="dt">TOGood</span> <span class="dv">0</span>, <span class="dt">TOVal</span> e)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a>        go (<span class="dt">TOGood</span> n) (<span class="dt">Left</span> _)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a>            <span class="op">|</span> n <span class="op">&gt;</span> <span class="dv">3</span> <span class="ot">=</span> (<span class="dt">TOTimedOut</span>, <span class="dt">TOTime</span>)</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true"></a>            <span class="op">|</span> <span class="fu">otherwise</span> <span class="ot">=</span> (<span class="dt">TOGood</span> (n <span class="op">+</span> <span class="dv">1</span>), <span class="dt">TONoop</span>)</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true"></a></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true"></a>        go <span class="dt">TOTimedOut</span> _ <span class="ot">=</span> (<span class="dt">TOTimedOut</span>, <span class="dt">TOTime</span>)</span></code></pre></div>
 <p>It’s a tiny machine of only two states. The ticks come in via <code>Left _</code> values and cause the counter to be increased each time. The <code>Right e</code> values are simply re-wrapped and passed on together with a resetting of the counter.</p>
 <h3 id="the-process">The process</h3>
 <p>The process is built up by combing the users input with a ticker source, the combination is passed through the time-out machine. After that the signal is inspected to see if it’s time to terminate, if not the inner value is extracted so it can be shown to the user.</p>
 <p>The ticker source is a source that repeatedly waits followed by yielding a <code>Tick</code>:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="ot">sourceTick ::</span> <span class="dt">MonadIO</span> m <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Source</span> m <span class="dt">Tick</span></span>
-<span id="cb2-2"><a href="#cb2-2"></a>sourceTick w <span class="ot">=</span> forever <span class="op">$</span> <span class="kw">do</span></span>
-<span id="cb2-3"><a href="#cb2-3"></a>    liftIO <span class="op">$</span> threadDelay w</span>
-<span id="cb2-4"><a href="#cb2-4"></a>    C.yield (<span class="dt">Tick</span> w)</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="ot">sourceTick ::</span> <span class="dt">MonadIO</span> m <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Source</span> m <span class="dt">Tick</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>sourceTick w <span class="ot">=</span> forever <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a>    liftIO <span class="op">$</span> threadDelay w</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a>    C.yield (<span class="dt">Tick</span> w)</span></code></pre></div>
 <p>The full process can then be written like this:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="ot">process ::</span> <span class="dt">ResourceT</span> <span class="dt">IO</span> ()</span>
-<span id="cb3-2"><a href="#cb3-2"></a>process <span class="ot">=</span> ticker source <span class="op">$=</span> timerOuter <span class="op">$=</span> calcRes <span class="op">$$</span> output</span>
-<span id="cb3-3"><a href="#cb3-3"></a>    <span class="kw">where</span></span>
-<span id="cb3-4"><a href="#cb3-4"></a>        source <span class="ot">=</span> stdinC <span class="op">$=</span> concatMapC unpack <span class="op">$=</span> calculator <span class="op">$=</span> mapC <span class="dt">Right</span></span>
-<span id="cb3-5"><a href="#cb3-5"></a></span>
-<span id="cb3-6"><a href="#cb3-6"></a>        calculator <span class="ot">=</span> wrapMachine calcMachine</span>
-<span id="cb3-7"><a href="#cb3-7"></a></span>
-<span id="cb3-8"><a href="#cb3-8"></a>        ticker s <span class="ot">=</span> whyTMVar s tickSource <span class="op">=$=</span> wrapMachine toMachine</span>
-<span id="cb3-9"><a href="#cb3-9"></a>            <span class="kw">where</span></span>
-<span id="cb3-10"><a href="#cb3-10"></a>                tickSource <span class="ot">=</span> sourceTick <span class="dv">1000000</span> <span class="op">$=</span> mapC <span class="dt">Left</span></span>
-<span id="cb3-11"><a href="#cb3-11"></a></span>
-<span id="cb3-12"><a href="#cb3-12"></a>        timerOuter <span class="ot">=</span> takeWhileC p1 <span class="op">=$=</span> filterC p2 <span class="op">=$=</span> mapC u</span>
-<span id="cb3-13"><a href="#cb3-13"></a>            <span class="kw">where</span></span>
-<span id="cb3-14"><a href="#cb3-14"></a>                p1 <span class="dt">TOTime</span> <span class="ot">=</span> <span class="dt">False</span></span>
-<span id="cb3-15"><a href="#cb3-15"></a>                p1 _ <span class="ot">=</span> <span class="dt">True</span></span>
-<span id="cb3-16"><a href="#cb3-16"></a></span>
-<span id="cb3-17"><a href="#cb3-17"></a>                p2 (<span class="dt">TOVal</span> _) <span class="ot">=</span> <span class="dt">True</span></span>
-<span id="cb3-18"><a href="#cb3-18"></a>                p2 _ <span class="ot">=</span> <span class="dt">False</span></span>
-<span id="cb3-19"><a href="#cb3-19"></a></span>
-<span id="cb3-20"><a href="#cb3-20"></a>                u (<span class="dt">TOVal</span> a) <span class="ot">=</span> a</span>
-<span id="cb3-21"><a href="#cb3-21"></a>                u _ <span class="ot">=</span> <span class="fu">undefined</span> <span class="co">-- partial, but all right</span></span>
-<span id="cb3-22"><a href="#cb3-22"></a></span>
-<span id="cb3-23"><a href="#cb3-23"></a>        calcRes <span class="ot">=</span> mapC f</span>
-<span id="cb3-24"><a href="#cb3-24"></a>            <span class="kw">where</span></span>
-<span id="cb3-25"><a href="#cb3-25"></a>                f <span class="dt">CalcNothing</span> <span class="ot">=</span> <span class="st">&quot;&quot;</span></span>
-<span id="cb3-26"><a href="#cb3-26"></a>                f (<span class="dt">CalcResult</span> n) <span class="ot">=</span> <span class="st">&quot; =&quot;</span> <span class="op">++</span> <span class="fu">show</span> n <span class="op">++</span> <span class="st">&quot;\n&quot;</span></span>
-<span id="cb3-27"><a href="#cb3-27"></a>                f e<span class="op">@</span>(<span class="dt">CalcError</span> {}) <span class="ot">=</span> <span class="st">&quot;\n*** &quot;</span> <span class="op">++</span> <span class="fu">show</span> e <span class="op">++</span> <span class="st">&quot;\n&quot;</span></span>
-<span id="cb3-28"><a href="#cb3-28"></a></span>
-<span id="cb3-29"><a href="#cb3-29"></a>        output <span class="ot">=</span> mapC <span class="fu">pack</span> <span class="op">=$</span> stdoutC</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="ot">process ::</span> <span class="dt">ResourceT</span> <span class="dt">IO</span> ()</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>process <span class="ot">=</span> ticker source <span class="op">$=</span> timerOuter <span class="op">$=</span> calcRes <span class="op">$$</span> output</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>    <span class="kw">where</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a>        source <span class="ot">=</span> stdinC <span class="op">$=</span> concatMapC unpack <span class="op">$=</span> calculator <span class="op">$=</span> mapC <span class="dt">Right</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true"></a>        calculator <span class="ot">=</span> wrapMachine calcMachine</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true"></a>        ticker s <span class="ot">=</span> whyTMVar s tickSource <span class="op">=$=</span> wrapMachine toMachine</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true"></a>            <span class="kw">where</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true"></a>                tickSource <span class="ot">=</span> sourceTick <span class="dv">1000000</span> <span class="op">$=</span> mapC <span class="dt">Left</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true"></a></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true"></a>        timerOuter <span class="ot">=</span> takeWhileC p1 <span class="op">=$=</span> filterC p2 <span class="op">=$=</span> mapC u</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true"></a>            <span class="kw">where</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true"></a>                p1 <span class="dt">TOTime</span> <span class="ot">=</span> <span class="dt">False</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true"></a>                p1 _ <span class="ot">=</span> <span class="dt">True</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true"></a></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true"></a>                p2 (<span class="dt">TOVal</span> _) <span class="ot">=</span> <span class="dt">True</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true"></a>                p2 _ <span class="ot">=</span> <span class="dt">False</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true"></a></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true"></a>                u (<span class="dt">TOVal</span> a) <span class="ot">=</span> a</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true"></a>                u _ <span class="ot">=</span> <span class="fu">undefined</span> <span class="co">-- partial, but all right</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true"></a></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true"></a>        calcRes <span class="ot">=</span> mapC f</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true"></a>            <span class="kw">where</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true"></a>                f <span class="dt">CalcNothing</span> <span class="ot">=</span> <span class="st">&quot;&quot;</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true"></a>                f (<span class="dt">CalcResult</span> n) <span class="ot">=</span> <span class="st">&quot; =&quot;</span> <span class="op">++</span> <span class="fu">show</span> n <span class="op">++</span> <span class="st">&quot;\n&quot;</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true"></a>                f e<span class="op">@</span>(<span class="dt">CalcError</span> {}) <span class="ot">=</span> <span class="st">&quot;\n*** &quot;</span> <span class="op">++</span> <span class="fu">show</span> e <span class="op">++</span> <span class="st">&quot;\n&quot;</span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true"></a></span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true"></a>        output <span class="ot">=</span> mapC <span class="fu">pack</span> <span class="op">=$</span> stdoutC</span></code></pre></div>
 <p>Using the same definition of <code>main</code> as from the earlier post results in the following behaviour:</p>
 <pre><code>% runhaskell CalculatorTimeOut.hs
 5 6 + =11

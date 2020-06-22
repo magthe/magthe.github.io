@@ -32,15 +32,15 @@
 <p>I’ve found myself getting confused over the <a href="http://hackage.haskell.org/packages/archive/time/1.1.2.1/doc/html/Data-Time.html">Data.Time</a> modules a few times now. Today I wanted to do something that I ought to be simple both to do (it was) and find out how to do (it wasn’t, at least not for me). I thought I’d write it down, because I’m bound to forget about it otherwise, and it might be helpful for some other poor soul out there.</p>
 <p>I wanted to store a date in a database (<a href="http://sqlite.org/">SQLite</a>) using Haskell (<a href="http://hackage.haskell.org/cgi-bin/hackage-scripts/package/HDBC">HDBC</a>). Since I’m only interested in the date and not the time I chose to represent it in Haskell as a <a href="http://hackage.haskell.org/packages/archive/time/1.1.2.1/doc/html/Data-Time-Calendar.html#t%3ADay">Date.Time.Calendar.Day</a>. For <code>Day</code> 0 means 1858-11-17. HDBC on the other hand needs the date in seconds since epoch (1970-01-01 00:00 UTC), which conveniently can be represented with a single <code>Integer</code>. <a href="http://hackage.haskell.org/packages/archive/time/1.1.2.1/doc/html/Data-Time-Clock-POSIX.html">Time.Data.Clock.POSIX</a> contains a few handy functions to convert between <code>POSIXTime</code> (<code>NominalDiffTime</code>) and <code>UTCTime</code>. However, there are no special functions for converting between an <code>Integer</code> and <code>NominalDiffTime</code>. The way I found was to do it via the class types that <code>NominalDiffTime</code> implements.</p>
 <p>First I thought that <code>Enum</code> might offer the solution, but my experiments with that was a bit confusing:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="op">&gt;</span> pt <span class="ot">&lt;-</span> getPOSIXTime</span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="fl">1221603766.526661</span>s</span>
-<span id="cb1-3"><a href="#cb1-3"></a><span class="op">&gt;</span> <span class="fu">fromEnum</span> pt</span>
-<span id="cb1-4"><a href="#cb1-4"></a><span class="dv">4118657661830593344</span></span>
-<span id="cb1-5"><a href="#cb1-5"></a><span class="op">&gt;</span> <span class="fu">toEnum</span> <span class="dv">4118657661830593344</span><span class="ot"> ::</span> <span class="dt">POSIXTime</span> </span>
-<span id="cb1-6"><a href="#cb1-6"></a><span class="fl">4118657.661830593344</span>s</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="op">&gt;</span> pt <span class="ot">&lt;-</span> getPOSIXTime</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a><span class="fl">1221603766.526661</span>s</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a><span class="op">&gt;</span> <span class="fu">fromEnum</span> pt</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a><span class="dv">4118657661830593344</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a><span class="op">&gt;</span> <span class="fu">toEnum</span> <span class="dv">4118657661830593344</span><span class="ot"> ::</span> <span class="dt">POSIXTime</span> </span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a><span class="fl">4118657.661830593344</span>s</span></code></pre></div>
 <p>Not really the result I had hoped for. No, instead the function to use to get the <code>Integer</code> is <code>floor</code>, and the only way I found to convert a <code>NominalDiffTime</code> from an <code>Integer</code> is to go via a <code>Ratio</code>:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="op">&gt;</span> <span class="fu">fromRational</span> (<span class="dv">1221603766</span> <span class="op">%</span> <span class="dv">1</span>)<span class="ot"> ::</span> <span class="dt">POSIXTime</span></span>
-<span id="cb2-2"><a href="#cb2-2"></a>1221603766s</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="op">&gt;</span> <span class="fu">fromRational</span> (<span class="dv">1221603766</span> <span class="op">%</span> <span class="dv">1</span>)<span class="ot"> ::</span> <span class="dt">POSIXTime</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>1221603766s</span></code></pre></div>
 <p>Have I missed something or is this the best way to achieve this?</p>
 
 

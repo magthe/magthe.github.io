@@ -32,33 +32,33 @@
 <p>When I read John A De Goes post <a href="http://degoes.net/articles/modern-fp">A Modern Architecture for FP</a> I found it to be a bit too vague for me, but the topic was just interesting enough to finally push me to play a little with <em>free monads</em>. It’s not the first post I’ve read on the topic, there have <a href="http://www.haskellforall.com/2012/06/you-could-have-invented-free-monads.html">been</a> <a href="https://www.schoolofhaskell.com/user/dolio/many-roads-to-free-monads">many</a> <a href="http://okmij.org/ftp/Computation/free-monad.html">before</a>. None have quite managed to push me into actually doing something though!</p>
 <h3 id="a-file-api">A file API</h3>
 <p>To make it concrete but still short enough to not bore readers I came up with a small API for working with files:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">data</span> <span class="dt">SimpleFileF</span> a <span class="ot">=</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a>  <span class="dt">LoadFile</span> <span class="dt">FilePath</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> a)</span>
-<span id="cb1-3"><a href="#cb1-3"></a>  <span class="op">|</span> <span class="dt">SaveFile</span> <span class="dt">FilePath</span> <span class="dt">String</span> a</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">SimpleFileF</span> a <span class="ot">=</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>  <span class="dt">LoadFile</span> <span class="dt">FilePath</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> a)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>  <span class="op">|</span> <span class="dt">SaveFile</span> <span class="dt">FilePath</span> <span class="dt">String</span> a</span></code></pre></div>
 <p>The free monad wraps a <em>functor</em>, so here’s an implementation of that</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">instance</span> <span class="dt">Functor</span> <span class="dt">SimpleFileF</span> <span class="kw">where</span></span>
-<span id="cb2-2"><a href="#cb2-2"></a>  <span class="fu">fmap</span> f (<span class="dt">LoadFile</span> fp f')<span class="ot">=</span> <span class="dt">LoadFile</span> fp (f <span class="op">.</span> f')</span>
-<span id="cb2-3"><a href="#cb2-3"></a>  <span class="fu">fmap</span> f (<span class="dt">SaveFile</span> fp d a) <span class="ot">=</span> <span class="dt">SaveFile</span> fp d (f a)</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">Functor</span> <span class="dt">SimpleFileF</span> <span class="kw">where</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>  <span class="fu">fmap</span> f (<span class="dt">LoadFile</span> fp f')<span class="ot">=</span> <span class="dt">LoadFile</span> fp (f <span class="op">.</span> f')</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a>  <span class="fu">fmap</span> f (<span class="dt">SaveFile</span> fp d a) <span class="ot">=</span> <span class="dt">SaveFile</span> fp d (f a)</span></code></pre></div>
 <p>Now for some convenient functions to work with the API type</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="ot">loadFile ::</span> <span class="dt">FilePath</span> <span class="ot">-&gt;</span> <span class="dt">Free</span> <span class="dt">SimpleFileF</span> <span class="dt">String</span></span>
-<span id="cb3-2"><a href="#cb3-2"></a>loadFile fp <span class="ot">=</span> liftF <span class="op">$</span> <span class="dt">LoadFile</span> fp <span class="fu">id</span></span>
-<span id="cb3-3"><a href="#cb3-3"></a></span>
-<span id="cb3-4"><a href="#cb3-4"></a><span class="ot">saveFile ::</span> <span class="dt">FilePath</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Free</span> <span class="dt">SimpleFileF</span> ()</span>
-<span id="cb3-5"><a href="#cb3-5"></a>saveFile fp d <span class="ot">=</span> liftF <span class="op">$</span> <span class="dt">SaveFile</span> fp d ()</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="ot">loadFile ::</span> <span class="dt">FilePath</span> <span class="ot">-&gt;</span> <span class="dt">Free</span> <span class="dt">SimpleFileF</span> <span class="dt">String</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>loadFile fp <span class="ot">=</span> liftF <span class="op">$</span> <span class="dt">LoadFile</span> fp <span class="fu">id</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a><span class="ot">saveFile ::</span> <span class="dt">FilePath</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Free</span> <span class="dt">SimpleFileF</span> ()</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a>saveFile fp d <span class="ot">=</span> liftF <span class="op">$</span> <span class="dt">SaveFile</span> fp d ()</span></code></pre></div>
 <p>With this in place I can write a somewhat more complex one</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a><span class="ot">withSimpleFile ::</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>) <span class="ot">-&gt;</span> <span class="dt">FilePath</span> <span class="ot">-&gt;</span> <span class="dt">Free</span> <span class="dt">SimpleFileF</span> ()</span>
-<span id="cb4-2"><a href="#cb4-2"></a>withSimpleFile f fp <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb4-3"><a href="#cb4-3"></a>  d <span class="ot">&lt;-</span> loadFile fp</span>
-<span id="cb4-4"><a href="#cb4-4"></a>  <span class="kw">let</span> result <span class="ot">=</span> f d</span>
-<span id="cb4-5"><a href="#cb4-5"></a>  saveFile (fp <span class="op">++</span> <span class="st">&quot;_new&quot;</span>) result</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="ot">withSimpleFile ::</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>) <span class="ot">-&gt;</span> <span class="dt">FilePath</span> <span class="ot">-&gt;</span> <span class="dt">Free</span> <span class="dt">SimpleFileF</span> ()</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>withSimpleFile f fp <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a>  d <span class="ot">&lt;-</span> loadFile fp</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a>  <span class="kw">let</span> result <span class="ot">=</span> f d</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a>  saveFile (fp <span class="op">++</span> <span class="st">&quot;_new&quot;</span>) result</span></code></pre></div>
 <p>Now I need a way to run programs using the API</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1"></a><span class="ot">runSimpleFile ::</span> <span class="dt">Free</span> <span class="dt">SimpleFileF</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span>
-<span id="cb5-2"><a href="#cb5-2"></a>runSimpleFile <span class="ot">=</span> foldFree f</span>
-<span id="cb5-3"><a href="#cb5-3"></a>  <span class="kw">where</span></span>
-<span id="cb5-4"><a href="#cb5-4"></a>    f (<span class="dt">LoadFile</span> fp f') <span class="ot">=</span> liftM f' <span class="op">$</span> <span class="fu">readFile</span> fp</span>
-<span id="cb5-5"><a href="#cb5-5"></a>    f (<span class="dt">SaveFile</span> fp d r) <span class="ot">=</span> <span class="fu">writeFile</span> fp d <span class="op">&gt;&gt;</span> <span class="fu">return</span> r</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="ot">runSimpleFile ::</span> <span class="dt">Free</span> <span class="dt">SimpleFileF</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a>runSimpleFile <span class="ot">=</span> foldFree f</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a>  <span class="kw">where</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a>    f (<span class="dt">LoadFile</span> fp f') <span class="ot">=</span> liftM f' <span class="op">$</span> <span class="fu">readFile</span> fp</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true"></a>    f (<span class="dt">SaveFile</span> fp d r) <span class="ot">=</span> <span class="fu">writeFile</span> fp d <span class="op">&gt;&gt;</span> <span class="fu">return</span> r</span></code></pre></div>
 <p>If this code was save in the file <code>FreePlay.hs</code> I can now convert it all to upper case by using</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1"></a>runSimpleFile <span class="op">$</span> withSimpleFile <span class="fu">toUpper</span> <span class="st">&quot;FreePlay.hs&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a>runSimpleFile <span class="op">$</span> withSimpleFile <span class="fu">toUpper</span> <span class="st">&quot;FreePlay.hs&quot;</span></span></code></pre></div>
 <p>which of course will create the file <code>FreePlay.hs_new</code>.</p>
 <h3 id="what-have-i-bought-so-far">What have I bought so far?</h3>
 <p>Well, not much really.</p>

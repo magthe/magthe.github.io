@@ -30,19 +30,19 @@
 </header>
 
 <p>Just in case you ever need one:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="ot">xmlCharDeref ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a>xmlCharDeref [] <span class="ot">=</span> []</span>
-<span id="cb1-3"><a href="#cb1-3"></a>xmlCharDeref (<span class="ch">'&amp;'</span><span class="op">:</span><span class="ch">'#'</span><span class="op">:</span><span class="ch">'x'</span><span class="op">:</span>r) <span class="ot">=</span> <span class="kw">let</span></span>
-<span id="cb1-4"><a href="#cb1-4"></a>        (digits, remainder) <span class="ot">=</span> <span class="fu">span</span> (<span class="op">/=</span> <span class="ch">';'</span>) r</span>
-<span id="cb1-5"><a href="#cb1-5"></a>        c <span class="ot">=</span> <span class="fu">chr</span> (<span class="fu">read</span> (<span class="st">&quot;0x&quot;</span> <span class="op">++</span> digits))</span>
-<span id="cb1-6"><a href="#cb1-6"></a>    <span class="kw">in</span></span>
-<span id="cb1-7"><a href="#cb1-7"></a>        c <span class="op">:</span> xmlCharDeref (<span class="fu">tail</span> remainder)</span>
-<span id="cb1-8"><a href="#cb1-8"></a>xmlCharDeref (<span class="ch">'&amp;'</span><span class="op">:</span><span class="ch">'#'</span><span class="op">:</span>r) <span class="ot">=</span> <span class="kw">let</span></span>
-<span id="cb1-9"><a href="#cb1-9"></a>        (digits, remainder) <span class="ot">=</span> <span class="fu">span</span> (<span class="op">/=</span> <span class="ch">';'</span>) r</span>
-<span id="cb1-10"><a href="#cb1-10"></a>        c <span class="ot">=</span> <span class="fu">chr</span> (<span class="fu">read</span> digits)</span>
-<span id="cb1-11"><a href="#cb1-11"></a>    <span class="kw">in</span></span>
-<span id="cb1-12"><a href="#cb1-12"></a>        c <span class="op">:</span> xmlCharDeref (<span class="fu">tail</span> remainder)</span>
-<span id="cb1-13"><a href="#cb1-13"></a>xmlCharDeref (c<span class="op">:</span>r) <span class="ot">=</span> c <span class="op">:</span> xmlCharDeref r</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="ot">xmlCharDeref ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>xmlCharDeref [] <span class="ot">=</span> []</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>xmlCharDeref (<span class="ch">'&amp;'</span><span class="op">:</span><span class="ch">'#'</span><span class="op">:</span><span class="ch">'x'</span><span class="op">:</span>r) <span class="ot">=</span> <span class="kw">let</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>        (digits, remainder) <span class="ot">=</span> <span class="fu">span</span> (<span class="op">/=</span> <span class="ch">';'</span>) r</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>        c <span class="ot">=</span> <span class="fu">chr</span> (<span class="fu">read</span> (<span class="st">&quot;0x&quot;</span> <span class="op">++</span> digits))</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a>    <span class="kw">in</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a>        c <span class="op">:</span> xmlCharDeref (<span class="fu">tail</span> remainder)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a>xmlCharDeref (<span class="ch">'&amp;'</span><span class="op">:</span><span class="ch">'#'</span><span class="op">:</span>r) <span class="ot">=</span> <span class="kw">let</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a>        (digits, remainder) <span class="ot">=</span> <span class="fu">span</span> (<span class="op">/=</span> <span class="ch">';'</span>) r</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a>        c <span class="ot">=</span> <span class="fu">chr</span> (<span class="fu">read</span> digits)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a>    <span class="kw">in</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a>        c <span class="op">:</span> xmlCharDeref (<span class="fu">tail</span> remainder)</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true"></a>xmlCharDeref (c<span class="op">:</span>r) <span class="ot">=</span> c <span class="op">:</span> xmlCharDeref r</span></code></pre></div>
 <p>In ghci:</p>
 <pre><code>*Foo&gt; xmlCharDeref &quot;hello there&quot;
 &quot;hello there&quot;
@@ -66,9 +66,9 @@ Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell
     <p class="comment-date"><time pubdate="pubdate" datetime="2010-08-14">2010-08-14</time></p>
   </header>
 <p>How about:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">newtype</span> <span class="dt">XMLString</span> <span class="ot">=</span> <span class="dt">XMLString</span> <span class="dt">String</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a></span>
-<span id="cb1-3"><a href="#cb1-3"></a><span class="ot">xmlCharDeref ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">XMLString</span></span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">newtype</span> <span class="dt">XMLString</span> <span class="ot">=</span> <span class="dt">XMLString</span> <span class="dt">String</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a><span class="ot">xmlCharDeref ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">XMLString</span></span></code></pre></div>
 <p>Now there’s no way you can accidentally encode twice. :-)</p>
 </article>
 
@@ -79,7 +79,7 @@ Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell
     <p class="comment-date"><time pubdate="pubdate" datetime="2010-08-24">2010-08-24</time></p>
   </header>
 <p><em><span class="citation" data-cites="Chris">@Chris</span>:</em> Except of course that the type would be</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="ot">xmlCharDeref ::</span> <span class="dt">XMLString</span> <span class="ot">-&gt;</span> <span class="dt">String</span></span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="ot">xmlCharDeref ::</span> <span class="dt">XMLString</span> <span class="ot">-&gt;</span> <span class="dt">String</span></span></code></pre></div>
 <p>In any case it’s hardly worth doing for the particular case where I had use for this function.</p>
 </article>
 

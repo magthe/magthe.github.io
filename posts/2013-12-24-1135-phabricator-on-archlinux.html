@@ -46,11 +46,11 @@
 </ul>
 <h2 id="setup-of-mariadb">Setup of <em>mariadb</em></h2>
 <p>Following the instructions on the <a href="https://wiki.archlinux.org/index.php/MySQL">ArchLinux wiki page on <code>mariadb</code></a> is first started the service and then finished the installation:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1"></a><span class="co"># systemctl start mysqld.service</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="co"># mysql_secure_installation</span></span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="co"># systemctl start mysqld.service</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a><span class="co"># mysql_secure_installation</span></span></code></pre></div>
 <p>After this I restarted the service, and made sure it’ll restart on system start:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1"></a><span class="co"># systemctl restart mysqld.service</span></span>
-<span id="cb2-2"><a href="#cb2-2"></a><span class="co"># systemctl enable mysqld.service</span></span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="co"># systemctl restart mysqld.service</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a><span class="co"># systemctl enable mysqld.service</span></span></code></pre></div>
 <p>I picked the root password <em>mariaroot</em>.</p>
 <h2 id="setup-of-lighttpd">Setup of <em>lighttpd</em></h2>
 <p>Modify <code>/etc/lighttpd/lighttp.conf</code> to look something like this:</p>
@@ -119,30 +119,30 @@ $HTTP[&quot;host&quot;] =~ &quot;phabarch(\.vbox\.net)?&quot; {
 <h2 id="getting-and-setting-up-phabricator">Getting and setting up <em>Phabricator</em></h2>
 <h3 id="checking-it-out">Checking it out</h3>
 <p>I placed it in <code>/srv/http</code>:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1"></a><span class="co"># cd /srv/http</span></span>
-<span id="cb4-2"><a href="#cb4-2"></a><span class="co"># git clone git://github.com/facebook/libphutil.git</span></span>
-<span id="cb4-3"><a href="#cb4-3"></a><span class="co"># git clone git://github.com/facebook/arcanist.git</span></span>
-<span id="cb4-4"><a href="#cb4-4"></a><span class="co"># git clone git://github.com/facebook/phabricator.git</span></span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="co"># cd /srv/http</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a><span class="co"># git clone git://github.com/facebook/libphutil.git</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a><span class="co"># git clone git://github.com/facebook/arcanist.git</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a><span class="co"># git clone git://github.com/facebook/phabricator.git</span></span></code></pre></div>
 <h3 id="database-configuration">Database configuration</h3>
-<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1"></a><span class="co"># cd /srv/http/phabricator</span></span>
-<span id="cb5-2"><a href="#cb5-2"></a><span class="co"># ./bin/storage upgrade --user root --password mariaroot</span></span>
-<span id="cb5-3"><a href="#cb5-3"></a><span class="co"># ./bin/config set mysql.user root</span></span>
-<span id="cb5-4"><a href="#cb5-4"></a><span class="co"># ./bin/config set mysql.pass mariaroot</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="co"># cd /srv/http/phabricator</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a><span class="co"># ./bin/storage upgrade --user root --password mariaroot</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a><span class="co"># ./bin/config set mysql.user root</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a><span class="co"># ./bin/config set mysql.pass mariaroot</span></span></code></pre></div>
 <h3 id="set-the-base-uri">Set the base URI</h3>
-<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1"></a><span class="co"># cd /srv/http/phabricator</span></span>
-<span id="cb6-2"><a href="#cb6-2"></a><span class="co"># ./bin/config set phabricator.base-uri 'http://phabarch.vbox.net/'</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a><span class="co"># cd /srv/http/phabricator</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a><span class="co"># ./bin/config set phabricator.base-uri 'http://phabarch.vbox.net/'</span></span></code></pre></div>
 <h3 id="diffusion-configuration"><em>Diffusion</em> configuration</h3>
-<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1"></a><span class="co"># mkdir /var/repo</span></span>
-<span id="cb7-2"><a href="#cb7-2"></a><span class="co"># ./bin/config set diffusion.allow-http-auth true</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a><span class="co"># mkdir /var/repo</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a><span class="co"># ./bin/config set diffusion.allow-http-auth true</span></span></code></pre></div>
 <p>At this point I started <em>lighttpd</em> and used the web interface to configure <code>environment.append-paths</code> to include the path of <code>git-core</code>, <code>/usr/lib/git-core</code>.</p>
 <h3 id="phd-configuration"><em>phd</em> configuration</h3>
 <p>First create the daemon user</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1"></a><span class="co"># useradd -r -M -d /tmp phabd</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a><span class="co"># useradd -r -M -d /tmp phabd</span></span></code></pre></div>
 <p>Then create the <em>phd</em> log dir and set its owner and group:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1"></a><span class="co"># mkdir /var/tmp/phd/log</span></span>
-<span id="cb9-2"><a href="#cb9-2"></a><span class="co"># chown -R phabd:phabd /var/tmp/phd/</span></span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a><span class="co"># mkdir /var/tmp/phd/log</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true"></a><span class="co"># chown -R phabd:phabd /var/tmp/phd/</span></span></code></pre></div>
 <p>Also make the daemon user the owner of the repo folder used by <em>Diffusion</em>:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1"></a><span class="co"># chown phabd:phabd /var/repo</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true"></a><span class="co"># chown phabd:phabd /var/repo</span></span></code></pre></div>
 <h3 id="configure-sudo">Configure <em>sudo</em></h3>
 <p>Create the file <code>/etc/sudoers.d/phabricator</code> with this content:</p>
 <pre><code>http ALL=(phabd) SETENV: NOPASSWD: /usr/lib/git-core/git-http-backend</code></pre>

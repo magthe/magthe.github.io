@@ -90,11 +90,11 @@
 </table>
 <h2 id="the-model-state">The model state</h2>
 <p>Just like last time I’m using as simple a model as I think I can get away with, based on the API above:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">newtype</span> <span class="dt">State</span> (<span class="ot">v ::</span> <span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span>)<span class="ot">=</span> <span class="dt">State</span> (<span class="dt">M.Map</span> <span class="dt">Int</span> <span class="dt">Text</span>)</span>
-<span id="cb1-2"><a href="#cb1-2"></a>  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span>
-<span id="cb1-3"><a href="#cb1-3"></a></span>
-<span id="cb1-4"><a href="#cb1-4"></a><span class="ot">initialState ::</span> <span class="dt">State</span> v</span>
-<span id="cb1-5"><a href="#cb1-5"></a>initialState <span class="ot">=</span> <span class="dt">State</span> M.empty</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">newtype</span> <span class="dt">State</span> (<span class="ot">v ::</span> <span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span>)<span class="ot">=</span> <span class="dt">State</span> (<span class="dt">M.Map</span> <span class="dt">Int</span> <span class="dt">Text</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a><span class="ot">initialState ::</span> <span class="dt">State</span> v</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>initialState <span class="ot">=</span> <span class="dt">State</span> M.empty</span></code></pre></div>
 <p>That extra <code>v</code> is something that <em>hedgehog</em> requires. Why? I don’t really know, and luckily I don’t have to care to make it all work. One thing though, the language pragma <code>KindSignatures</code> is necessary to use that kind of syntax.</p>
 <h2 id="representing-api-calls">Representing API calls</h2>
 <p>Representing an API call requires three things</p>
@@ -104,50 +104,50 @@
 <li>a function producing a <a href="https://hackage.haskell.org/package/hedgehog-1.0/docs/Hedgehog.html#t:Command"><code>Command</code></a> for the type</li>
 </ol>
 <p>I represent the three API calls with these three types</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">newtype</span> <span class="dt">AddUser</span> (<span class="ot">v ::</span> <span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span>) <span class="ot">=</span> <span class="dt">AddUser</span> <span class="dt">Text</span></span>
-<span id="cb2-2"><a href="#cb2-2"></a>  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span>
-<span id="cb2-3"><a href="#cb2-3"></a></span>
-<span id="cb2-4"><a href="#cb2-4"></a><span class="kw">newtype</span> <span class="dt">DeleteUser</span> (<span class="ot">v ::</span> <span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span>) <span class="ot">=</span> <span class="dt">DeleteUser</span> <span class="dt">Int</span></span>
-<span id="cb2-5"><a href="#cb2-5"></a>  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span>
-<span id="cb2-6"><a href="#cb2-6"></a></span>
-<span id="cb2-7"><a href="#cb2-7"></a><span class="kw">newtype</span> <span class="dt">GetUser</span> (<span class="ot">v ::</span> <span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span>) <span class="ot">=</span> <span class="dt">GetUser</span> <span class="dt">Int</span></span>
-<span id="cb2-8"><a href="#cb2-8"></a>  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="kw">newtype</span> <span class="dt">AddUser</span> (<span class="ot">v ::</span> <span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span>) <span class="ot">=</span> <span class="dt">AddUser</span> <span class="dt">Text</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a><span class="kw">newtype</span> <span class="dt">DeleteUser</span> (<span class="ot">v ::</span> <span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span>) <span class="ot">=</span> <span class="dt">DeleteUser</span> <span class="dt">Int</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a>  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a><span class="kw">newtype</span> <span class="dt">GetUser</span> (<span class="ot">v ::</span> <span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span>) <span class="ot">=</span> <span class="dt">GetUser</span> <span class="dt">Int</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a>  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span></code></pre></div>
 <p>Again that <code>v</code> pops up, but as with the model state, there’s no need to pay any attention to it.</p>
 <p>For the implementation of <code>HTraversable</code> I was greatly helped by the <a href="https://github.com/hedgehogqa/haskell-hedgehog/blob/master/hedgehog-example/src/Test/Example/Registry.hs">registry example</a>. Their implementations are fairly straight forward, which is a good thing since the need for them is internal to <em>hedgehog</em>.</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">instance</span> <span class="dt">HTraversable</span> <span class="dt">AddUser</span> <span class="kw">where</span></span>
-<span id="cb3-2"><a href="#cb3-2"></a>  htraverse _ (<span class="dt">AddUser</span> n) <span class="ot">=</span> <span class="dt">AddUser</span> <span class="op">&lt;$&gt;</span> <span class="fu">pure</span> n</span>
-<span id="cb3-3"><a href="#cb3-3"></a></span>
-<span id="cb3-4"><a href="#cb3-4"></a><span class="kw">instance</span> <span class="dt">HTraversable</span> <span class="dt">DeleteUser</span> <span class="kw">where</span></span>
-<span id="cb3-5"><a href="#cb3-5"></a>  htraverse _ (<span class="dt">DeleteUser</span> i) <span class="ot">=</span> <span class="dt">DeleteUser</span> <span class="op">&lt;$&gt;</span> <span class="fu">pure</span> i</span>
-<span id="cb3-6"><a href="#cb3-6"></a></span>
-<span id="cb3-7"><a href="#cb3-7"></a><span class="kw">instance</span> <span class="dt">HTraversable</span> <span class="dt">GetUser</span> <span class="kw">where</span></span>
-<span id="cb3-8"><a href="#cb3-8"></a>  htraverse _ (<span class="dt">GetUser</span> i) <span class="ot">=</span> <span class="dt">GetUser</span> <span class="op">&lt;$&gt;</span> <span class="fu">pure</span> i</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">HTraversable</span> <span class="dt">AddUser</span> <span class="kw">where</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>  htraverse _ (<span class="dt">AddUser</span> n) <span class="ot">=</span> <span class="dt">AddUser</span> <span class="op">&lt;$&gt;</span> <span class="fu">pure</span> n</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">HTraversable</span> <span class="dt">DeleteUser</span> <span class="kw">where</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a>  htraverse _ (<span class="dt">DeleteUser</span> i) <span class="ot">=</span> <span class="dt">DeleteUser</span> <span class="op">&lt;$&gt;</span> <span class="fu">pure</span> i</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">HTraversable</span> <span class="dt">GetUser</span> <span class="kw">where</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true"></a>  htraverse _ (<span class="dt">GetUser</span> i) <span class="ot">=</span> <span class="dt">GetUser</span> <span class="op">&lt;$&gt;</span> <span class="fu">pure</span> i</span></code></pre></div>
 <p>Once these two things are out of the way we get to the meat of the implementation of the API calls, a function creating a <a href="https://hackage.haskell.org/package/hedgehog-1.0/docs/Hedgehog.html#t:Command"><code>Command</code></a> instance for each type of API call. The exact type for all three functions will be</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a>(<span class="dt">MonadGen</span> n, <span class="dt">MonadIO</span> m) <span class="ot">=&gt;</span> <span class="dt">Command</span> n m <span class="dt">State</span></span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a>(<span class="dt">MonadGen</span> n, <span class="dt">MonadIO</span> m) <span class="ot">=&gt;</span> <span class="dt">Command</span> n m <span class="dt">State</span></span></code></pre></div>
 <p>which doesn’t say a whole lot, I think. After reading the documentation I found it a little clearer, but the two examples, <a href="https://teh.id.au/posts/2017/07/15/state-machine-testing/index.html">state machine testing</a> and <a href="https://github.com/hedgehogqa/haskell-hedgehog/blob/master/hedgehog-example/src/Test/Example/Registry.hs">registry</a>, was what cleared things up for me.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> In an attempt at being overly explicit I wrote these functions in the same style. This is what it ended up looking like for the <code>AddUser</code> type:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1"></a><span class="ot">addUser ::</span> (<span class="dt">MonadGen</span> n, <span class="dt">MonadIO</span> m) <span class="ot">=&gt;</span> <span class="dt">Command</span> n m <span class="dt">State</span></span>
-<span id="cb5-2"><a href="#cb5-2"></a>addUser <span class="ot">=</span> <span class="dt">Command</span> gen exec [ <span class="dt">Update</span> u</span>
-<span id="cb5-3"><a href="#cb5-3"></a>                           , <span class="dt">Ensure</span> e</span>
-<span id="cb5-4"><a href="#cb5-4"></a>                           ]</span>
-<span id="cb5-5"><a href="#cb5-5"></a>  <span class="kw">where</span></span>
-<span id="cb5-6"><a href="#cb5-6"></a>    gen _ <span class="ot">=</span> <span class="dt">Just</span> <span class="op">$</span> <span class="dt">AddUser</span> <span class="op">&lt;$&gt;</span> Gen.text (Range.linear <span class="dv">0</span> <span class="dv">42</span>) Gen.alpha</span>
-<span id="cb5-7"><a href="#cb5-7"></a></span>
-<span id="cb5-8"><a href="#cb5-8"></a>    exec (<span class="dt">AddUser</span> n) <span class="ot">=</span> liftIO <span class="op">$</span> <span class="kw">do</span></span>
-<span id="cb5-9"><a href="#cb5-9"></a>      mgr <span class="ot">&lt;-</span> newManager defaultManagerSettings</span>
-<span id="cb5-10"><a href="#cb5-10"></a>      addReq <span class="ot">&lt;-</span> parseRequest <span class="st">&quot;POST http://localhost:3000/users&quot;</span></span>
-<span id="cb5-11"><a href="#cb5-11"></a>      <span class="kw">let</span> addReq' <span class="ot">=</span> addReq { requestBody <span class="ot">=</span> <span class="dt">RequestBodyLBS</span> (encode <span class="op">$</span> <span class="dt">User</span> <span class="dv">0</span> n)}</span>
-<span id="cb5-12"><a href="#cb5-12"></a>      addResp <span class="ot">&lt;-</span> httpLbs addReq' mgr</span>
-<span id="cb5-13"><a href="#cb5-13"></a>      <span class="kw">let</span> user <span class="ot">=</span> decode (responseBody addResp)<span class="ot"> ::</span> <span class="dt">Maybe</span> <span class="dt">User</span></span>
-<span id="cb5-14"><a href="#cb5-14"></a>      <span class="fu">return</span> (responseStatus addResp, user)</span>
-<span id="cb5-15"><a href="#cb5-15"></a></span>
-<span id="cb5-16"><a href="#cb5-16"></a>    u (<span class="dt">State</span> m) (<span class="dt">AddUser</span> n) _o <span class="ot">=</span> <span class="dt">State</span> <span class="op">$</span> M.insert k n m</span>
-<span id="cb5-17"><a href="#cb5-17"></a>      <span class="kw">where</span></span>
-<span id="cb5-18"><a href="#cb5-18"></a>        k <span class="ot">=</span> <span class="fu">succ</span> <span class="op">$</span> <span class="fu">foldl</span> <span class="fu">max</span> <span class="dv">0</span> (M.keys m)</span>
-<span id="cb5-19"><a href="#cb5-19"></a></span>
-<span id="cb5-20"><a href="#cb5-20"></a>    e _ _ (<span class="dt">AddUser</span> n) (r, ui) <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb5-21"><a href="#cb5-21"></a>      r <span class="op">===</span> status201</span>
-<span id="cb5-22"><a href="#cb5-22"></a>      assert <span class="op">$</span> isJust ui</span>
-<span id="cb5-23"><a href="#cb5-23"></a>      (userName <span class="op">&lt;$&gt;</span> ui) <span class="op">===</span> <span class="dt">Just</span> n</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="ot">addUser ::</span> (<span class="dt">MonadGen</span> n, <span class="dt">MonadIO</span> m) <span class="ot">=&gt;</span> <span class="dt">Command</span> n m <span class="dt">State</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a>addUser <span class="ot">=</span> <span class="dt">Command</span> gen exec [ <span class="dt">Update</span> u</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a>                           , <span class="dt">Ensure</span> e</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a>                           ]</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true"></a>  <span class="kw">where</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true"></a>    gen _ <span class="ot">=</span> <span class="dt">Just</span> <span class="op">$</span> <span class="dt">AddUser</span> <span class="op">&lt;$&gt;</span> Gen.text (Range.linear <span class="dv">0</span> <span class="dv">42</span>) Gen.alpha</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true"></a></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true"></a>    exec (<span class="dt">AddUser</span> n) <span class="ot">=</span> liftIO <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true"></a>      mgr <span class="ot">&lt;-</span> newManager defaultManagerSettings</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true"></a>      addReq <span class="ot">&lt;-</span> parseRequest <span class="st">&quot;POST http://localhost:3000/users&quot;</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true"></a>      <span class="kw">let</span> addReq' <span class="ot">=</span> addReq { requestBody <span class="ot">=</span> <span class="dt">RequestBodyLBS</span> (encode <span class="op">$</span> <span class="dt">User</span> <span class="dv">0</span> n)}</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true"></a>      addResp <span class="ot">&lt;-</span> httpLbs addReq' mgr</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true"></a>      <span class="kw">let</span> user <span class="ot">=</span> decode (responseBody addResp)<span class="ot"> ::</span> <span class="dt">Maybe</span> <span class="dt">User</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true"></a>      <span class="fu">return</span> (responseStatus addResp, user)</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true"></a></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true"></a>    u (<span class="dt">State</span> m) (<span class="dt">AddUser</span> n) _o <span class="ot">=</span> <span class="dt">State</span> <span class="op">$</span> M.insert k n m</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true"></a>      <span class="kw">where</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true"></a>        k <span class="ot">=</span> <span class="fu">succ</span> <span class="op">$</span> <span class="fu">foldl</span> <span class="fu">max</span> <span class="dv">0</span> (M.keys m)</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true"></a></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true"></a>    e _ _ (<span class="dt">AddUser</span> n) (r, ui) <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true"></a>      r <span class="op">===</span> status201</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true"></a>      assert <span class="op">$</span> isJust ui</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true"></a>      (userName <span class="op">&lt;$&gt;</span> ui) <span class="op">===</span> <span class="dt">Just</span> n</span></code></pre></div>
 <p>Piece by piece:</p>
 <ol type="1">
 <li><code>gen</code> is the generator of data. It takes one argument, the current state, but for <code>AddUser</code> I have no use for it. The user name is generated using a generator for <code>Text</code>, and rather arbitrarily I limit the names to 42 characters.</li>
@@ -156,55 +156,55 @@
 <li><code>e</code> is a function for checking post-conditions, in other words checking properties that must hold after <code>exec</code> has run and the state has been updated. It’s given four arguments, the previous state, the updated state, the command and the <em>output</em>. The tests here are on the HTTP response code and the returned user name. I think that will do for the time being.</li>
 </ol>
 <p>The function for <code>DeleteUser</code> follows the same pattern</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1"></a><span class="ot">deleteUser ::</span> (<span class="dt">MonadGen</span> n, <span class="dt">MonadIO</span> m) <span class="ot">=&gt;</span> <span class="dt">Command</span> n m <span class="dt">State</span></span>
-<span id="cb6-2"><a href="#cb6-2"></a>deleteUser <span class="ot">=</span> <span class="dt">Command</span> gen exec [ <span class="dt">Update</span> u</span>
-<span id="cb6-3"><a href="#cb6-3"></a>                              , <span class="dt">Require</span> r</span>
-<span id="cb6-4"><a href="#cb6-4"></a>                              , <span class="dt">Ensure</span> e</span>
-<span id="cb6-5"><a href="#cb6-5"></a>                              ]</span>
-<span id="cb6-6"><a href="#cb6-6"></a>  <span class="kw">where</span></span>
-<span id="cb6-7"><a href="#cb6-7"></a>    gen (<span class="dt">State</span> m) <span class="ot">=</span> <span class="kw">case</span> M.keys m <span class="kw">of</span></span>
-<span id="cb6-8"><a href="#cb6-8"></a>      [] <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span>
-<span id="cb6-9"><a href="#cb6-9"></a>      ks <span class="ot">-&gt;</span> <span class="dt">Just</span> <span class="op">$</span> <span class="dt">DeleteUser</span> <span class="op">&lt;$&gt;</span> Gen.element ks</span>
-<span id="cb6-10"><a href="#cb6-10"></a></span>
-<span id="cb6-11"><a href="#cb6-11"></a>    exec (<span class="dt">DeleteUser</span> i) <span class="ot">=</span> liftIO <span class="op">$</span> <span class="kw">do</span></span>
-<span id="cb6-12"><a href="#cb6-12"></a>      mgr <span class="ot">&lt;-</span> newManager defaultManagerSettings</span>
-<span id="cb6-13"><a href="#cb6-13"></a>      delReq <span class="ot">&lt;-</span> parseRequest <span class="op">$</span> <span class="st">&quot;DELETE http://localhost:3000/users/&quot;</span> <span class="op">++</span> <span class="fu">show</span> i</span>
-<span id="cb6-14"><a href="#cb6-14"></a>      delResp <span class="ot">&lt;-</span> httpNoBody delReq mgr</span>
-<span id="cb6-15"><a href="#cb6-15"></a>      <span class="fu">return</span> <span class="op">$</span> responseStatus delResp</span>
-<span id="cb6-16"><a href="#cb6-16"></a></span>
-<span id="cb6-17"><a href="#cb6-17"></a>    u (<span class="dt">State</span> m) (<span class="dt">DeleteUser</span> i) _ <span class="ot">=</span> <span class="dt">State</span> <span class="op">$</span> M.delete i m</span>
-<span id="cb6-18"><a href="#cb6-18"></a></span>
-<span id="cb6-19"><a href="#cb6-19"></a>    r (<span class="dt">State</span> m) (<span class="dt">DeleteUser</span> i) <span class="ot">=</span> i <span class="ot">`elem`</span> M.keys m</span>
-<span id="cb6-20"><a href="#cb6-20"></a></span>
-<span id="cb6-21"><a href="#cb6-21"></a>    e _ _ (<span class="dt">DeleteUser</span> _) r <span class="ot">=</span> r <span class="op">===</span> status200</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a><span class="ot">deleteUser ::</span> (<span class="dt">MonadGen</span> n, <span class="dt">MonadIO</span> m) <span class="ot">=&gt;</span> <span class="dt">Command</span> n m <span class="dt">State</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a>deleteUser <span class="ot">=</span> <span class="dt">Command</span> gen exec [ <span class="dt">Update</span> u</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a>                              , <span class="dt">Require</span> r</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true"></a>                              , <span class="dt">Ensure</span> e</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true"></a>                              ]</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true"></a>  <span class="kw">where</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true"></a>    gen (<span class="dt">State</span> m) <span class="ot">=</span> <span class="kw">case</span> M.keys m <span class="kw">of</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true"></a>      [] <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true"></a>      ks <span class="ot">-&gt;</span> <span class="dt">Just</span> <span class="op">$</span> <span class="dt">DeleteUser</span> <span class="op">&lt;$&gt;</span> Gen.element ks</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true"></a></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true"></a>    exec (<span class="dt">DeleteUser</span> i) <span class="ot">=</span> liftIO <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true"></a>      mgr <span class="ot">&lt;-</span> newManager defaultManagerSettings</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true"></a>      delReq <span class="ot">&lt;-</span> parseRequest <span class="op">$</span> <span class="st">&quot;DELETE http://localhost:3000/users/&quot;</span> <span class="op">++</span> <span class="fu">show</span> i</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true"></a>      delResp <span class="ot">&lt;-</span> httpNoBody delReq mgr</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true"></a>      <span class="fu">return</span> <span class="op">$</span> responseStatus delResp</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true"></a></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true"></a>    u (<span class="dt">State</span> m) (<span class="dt">DeleteUser</span> i) _ <span class="ot">=</span> <span class="dt">State</span> <span class="op">$</span> M.delete i m</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true"></a></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true"></a>    r (<span class="dt">State</span> m) (<span class="dt">DeleteUser</span> i) <span class="ot">=</span> i <span class="ot">`elem`</span> M.keys m</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true"></a></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true"></a>    e _ _ (<span class="dt">DeleteUser</span> _) r <span class="ot">=</span> r <span class="op">===</span> status200</span></code></pre></div>
 <p>I think only two pieces need further explanation:</p>
 <ol type="1">
 <li><code>gen</code> only returns a <code>DeleteUser</code> with an index actually present in the model state. If there are no users in the model then <code>Nothing</code> is returned. As far as I understand that means that generated programs will only make calls to delete existing users.<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a></li>
 <li><code>r</code> is a pre-condition that programs only delete users that exist. At first I had skipped this pre-condition, thinking that it’d be enough to have <code>gen</code> only create delete calls for existing users. However, after reading the documentation of <a href="https://hackage.haskell.org/package/hedgehog-1.0/docs/Hedgehog.html#t:Command"><code>Command</code></a> and <a href="https://hackage.haskell.org/package/hedgehog-1.0/docs/Hedgehog.html#t:Callback"><code>Callback</code></a> a bit more closely I realised that I might need a pre-condition to make sure that this holds true also while shrinking.</li>
 </ol>
 <p>The final function, for <code>GetUser</code> requires no further explanation so I only present it here</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1"></a><span class="ot">getUser ::</span> (<span class="dt">MonadGen</span> n, <span class="dt">MonadIO</span> m) <span class="ot">=&gt;</span> <span class="dt">Command</span> n m <span class="dt">State</span></span>
-<span id="cb7-2"><a href="#cb7-2"></a>getUser <span class="ot">=</span> <span class="dt">Command</span> gen exec [ <span class="dt">Require</span> r</span>
-<span id="cb7-3"><a href="#cb7-3"></a>                           , <span class="dt">Ensure</span> e</span>
-<span id="cb7-4"><a href="#cb7-4"></a>                           ]</span>
-<span id="cb7-5"><a href="#cb7-5"></a>  <span class="kw">where</span></span>
-<span id="cb7-6"><a href="#cb7-6"></a>    gen (<span class="dt">State</span> m) <span class="ot">=</span> <span class="kw">case</span> M.keys m <span class="kw">of</span></span>
-<span id="cb7-7"><a href="#cb7-7"></a>      [] <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span>
-<span id="cb7-8"><a href="#cb7-8"></a>      ks <span class="ot">-&gt;</span> <span class="dt">Just</span> <span class="op">$</span> <span class="dt">GetUser</span> <span class="op">&lt;$&gt;</span> Gen.element ks</span>
-<span id="cb7-9"><a href="#cb7-9"></a></span>
-<span id="cb7-10"><a href="#cb7-10"></a>    exec (<span class="dt">GetUser</span> i) <span class="ot">=</span> liftIO <span class="op">$</span> <span class="kw">do</span></span>
-<span id="cb7-11"><a href="#cb7-11"></a>      mgr <span class="ot">&lt;-</span> newManager defaultManagerSettings</span>
-<span id="cb7-12"><a href="#cb7-12"></a>      getReq <span class="ot">&lt;-</span> parseRequest <span class="op">$</span> <span class="st">&quot;GET http://localhost:3000/users/&quot;</span> <span class="op">++</span> <span class="fu">show</span> i</span>
-<span id="cb7-13"><a href="#cb7-13"></a>      getResp <span class="ot">&lt;-</span> httpLbs getReq mgr</span>
-<span id="cb7-14"><a href="#cb7-14"></a>      <span class="kw">let</span> us <span class="ot">=</span> decode <span class="op">$</span> responseBody<span class="ot"> getResp ::</span> <span class="dt">Maybe</span> [<span class="dt">User</span>]</span>
-<span id="cb7-15"><a href="#cb7-15"></a>      <span class="fu">return</span> (status200 <span class="op">==</span> responseStatus getResp, us)</span>
-<span id="cb7-16"><a href="#cb7-16"></a></span>
-<span id="cb7-17"><a href="#cb7-17"></a>    r (<span class="dt">State</span> m) (<span class="dt">GetUser</span> i) <span class="ot">=</span> i <span class="ot">`elem`</span> M.keys m</span>
-<span id="cb7-18"><a href="#cb7-18"></a></span>
-<span id="cb7-19"><a href="#cb7-19"></a>    e _ _ (<span class="dt">GetUser</span> _) (r, us) <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb7-20"><a href="#cb7-20"></a>      r <span class="op">===</span> <span class="dt">True</span></span>
-<span id="cb7-21"><a href="#cb7-21"></a>      assert <span class="op">$</span> isJust us</span>
-<span id="cb7-22"><a href="#cb7-22"></a>      (<span class="fu">length</span> <span class="op">&lt;$&gt;</span> us) <span class="op">===</span> <span class="dt">Just</span> <span class="dv">1</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a><span class="ot">getUser ::</span> (<span class="dt">MonadGen</span> n, <span class="dt">MonadIO</span> m) <span class="ot">=&gt;</span> <span class="dt">Command</span> n m <span class="dt">State</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a>getUser <span class="ot">=</span> <span class="dt">Command</span> gen exec [ <span class="dt">Require</span> r</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true"></a>                           , <span class="dt">Ensure</span> e</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true"></a>                           ]</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true"></a>  <span class="kw">where</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true"></a>    gen (<span class="dt">State</span> m) <span class="ot">=</span> <span class="kw">case</span> M.keys m <span class="kw">of</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true"></a>      [] <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true"></a>      ks <span class="ot">-&gt;</span> <span class="dt">Just</span> <span class="op">$</span> <span class="dt">GetUser</span> <span class="op">&lt;$&gt;</span> Gen.element ks</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true"></a></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true"></a>    exec (<span class="dt">GetUser</span> i) <span class="ot">=</span> liftIO <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true"></a>      mgr <span class="ot">&lt;-</span> newManager defaultManagerSettings</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true"></a>      getReq <span class="ot">&lt;-</span> parseRequest <span class="op">$</span> <span class="st">&quot;GET http://localhost:3000/users/&quot;</span> <span class="op">++</span> <span class="fu">show</span> i</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true"></a>      getResp <span class="ot">&lt;-</span> httpLbs getReq mgr</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true"></a>      <span class="kw">let</span> us <span class="ot">=</span> decode <span class="op">$</span> responseBody<span class="ot"> getResp ::</span> <span class="dt">Maybe</span> [<span class="dt">User</span>]</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true"></a>      <span class="fu">return</span> (status200 <span class="op">==</span> responseStatus getResp, us)</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true"></a></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true"></a>    r (<span class="dt">State</span> m) (<span class="dt">GetUser</span> i) <span class="ot">=</span> i <span class="ot">`elem`</span> M.keys m</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true"></a></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true"></a>    e _ _ (<span class="dt">GetUser</span> _) (r, us) <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true"></a>      r <span class="op">===</span> <span class="dt">True</span></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true"></a>      assert <span class="op">$</span> isJust us</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true"></a>      (<span class="fu">length</span> <span class="op">&lt;$&gt;</span> us) <span class="op">===</span> <span class="dt">Just</span> <span class="dv">1</span></span></code></pre></div>
 <h2 id="the-property-and-test">The property and test</h2>
 <p>It looks like there are two obvious top-level properties</p>
 <ol type="1">
@@ -217,23 +217,23 @@
 <li>a <a href="https://hackage.haskell.org/package/hedgehog-1.0/docs/Hedgehog-Gen.html#v:parallel"><code>parallel</code> generator</a> with <a href="https://hackage.haskell.org/package/hedgehog-1.0/docs/Hedgehog.html#v:executeParallel"><code>executeParallel</code></a>.</li>
 </ol>
 <p>I started with the former only</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1"></a><span class="ot">prop_seq ::</span> <span class="dt">Property</span></span>
-<span id="cb8-2"><a href="#cb8-2"></a>prop_seq <span class="ot">=</span> property <span class="op">$</span> <span class="kw">do</span></span>
-<span id="cb8-3"><a href="#cb8-3"></a>  actions <span class="ot">&lt;-</span> forAll <span class="op">$</span> Gen.sequential (Range.linear <span class="dv">1</span> <span class="dv">10</span>) initialState [addUser, deleteUser, getUser]</span>
-<span id="cb8-4"><a href="#cb8-4"></a>  resetWS</span>
-<span id="cb8-5"><a href="#cb8-5"></a>  executeSequential initialState actions</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a><span class="ot">prop_seq ::</span> <span class="dt">Property</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a>prop_seq <span class="ot">=</span> property <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true"></a>  actions <span class="ot">&lt;-</span> forAll <span class="op">$</span> Gen.sequential (Range.linear <span class="dv">1</span> <span class="dv">10</span>) initialState [addUser, deleteUser, getUser]</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true"></a>  resetWS</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true"></a>  executeSequential initialState actions</span></code></pre></div>
 <p>This first creates a generator of programs of at most length 10<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>, then turning that into a <a href="https://hackage.haskell.org/package/hedgehog-1.0/docs/Hedgehog.html#t:Sequential"><code>Sequential</code></a> which can be passed to <a href="https://hackage.haskell.org/package/hedgehog-1.0/docs/Hedgehog.html#v:executeSequential"><code>executeSequential</code></a> to turn into a <a href="https://hackage.haskell.org/package/hedgehog-0.5.3/docs/Hedgehog.html#t:Property"><code>Property</code></a>.</p>
 <p>The function <code>resetWS</code> clears out the web service to make sure that the tests start with a clean slate each time. Its definition is</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1"></a><span class="ot">resetWS ::</span> <span class="dt">MonadIO</span> m <span class="ot">=&gt;</span> m ()</span>
-<span id="cb9-2"><a href="#cb9-2"></a>resetWS <span class="ot">=</span> liftIO <span class="op">$</span> <span class="kw">do</span></span>
-<span id="cb9-3"><a href="#cb9-3"></a>  mgr <span class="ot">&lt;-</span> newManager defaultManagerSettings</span>
-<span id="cb9-4"><a href="#cb9-4"></a>  resetReq <span class="ot">&lt;-</span> parseRequest <span class="st">&quot;POST http://localhost:3000/reset&quot;</span></span>
-<span id="cb9-5"><a href="#cb9-5"></a>  void <span class="op">$</span> httpNoBody resetReq mgr</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a><span class="ot">resetWS ::</span> <span class="dt">MonadIO</span> m <span class="ot">=&gt;</span> m ()</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true"></a>resetWS <span class="ot">=</span> liftIO <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true"></a>  mgr <span class="ot">&lt;-</span> newManager defaultManagerSettings</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true"></a>  resetReq <span class="ot">&lt;-</span> parseRequest <span class="st">&quot;POST http://localhost:3000/reset&quot;</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true"></a>  void <span class="op">$</span> httpNoBody resetReq mgr</span></code></pre></div>
 <p>The final bit is the <code>main</code> function, which I wrote like this</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
-<span id="cb10-2"><a href="#cb10-2"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb10-3"><a href="#cb10-3"></a>  res <span class="ot">&lt;-</span> checkSequential <span class="op">$</span> <span class="dt">Group</span> <span class="st">&quot;Main&quot;</span> [(<span class="st">&quot;sequential&quot;</span>, prop_seq)]</span>
-<span id="cb10-4"><a href="#cb10-4"></a>  unless res exitFailure</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true"></a>  res <span class="ot">&lt;-</span> checkSequential <span class="op">$</span> <span class="dt">Group</span> <span class="st">&quot;Main&quot;</span> [(<span class="st">&quot;sequential&quot;</span>, prop_seq)]</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true"></a>  unless res exitFailure</span></code></pre></div>
 <p>That is, first run the property sequentially (<a href="https://hackage.haskell.org/package/hedgehog-0.5.3/docs/Hedgehog.html#v:checkSequential"><code>checkSequential</code></a>) and if that fails exit with failure.</p>
 <h2 id="running-the-test">Running the test</h2>
 <p>When running the test fails and gives me a program that breaks the property, and exactly what fails:</p>
