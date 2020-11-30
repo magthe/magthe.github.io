@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="../index.html">Top</a> <a href="../archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Haskell, Nix and using packages from GitHub</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2020-11-30">2020-11-30</time> - Magnus Therning</p>
+</header>
+
+<p>The other day I bumped into what turned out to be a <a href="https://mail.haskell.org/pipermail/haskell-cafe/2020-November/133021.html">bug in Amazonka</a> where sockets weren’t closed in a timely fashion and thus the process ran out of file descriptors. Some more digging and an <a href="https://github.com/brendanhay/amazonka/issues/608">issue</a> later I found that a fix most likely already in place (mine was possibly a duplicate of an older <a href="https://github.com/brendanhay/amazonka/issues/490">issue</a>). Now I only had to verify if that was the case by using the most recent, and unreleased code on the <code>develop</code> branch of Amazonka.</p>
+<p>My first thought was to attempt to instruct Cabal to build the bits of Amazonka I need by putting a few <a href="https://cabal.readthedocs.io/en/3.4/cabal-project.html#specifying-packages-from-remote-version-control-locations"><code>source-repository-package</code> stanzas</a> in my config. That quickly started to look like a bit of a rabbit hole, so I decided to use Nix instead. After finding the <a href="https://stackoverflow.com/questions/54810851/how-can-i-build-a-haskell-dependency-from-a-github-source-nix-file-using-nix">perfect SO post</a> and looking up yet again how to do overrides for Haskell I ran <code>cabal2nix</code> for the three packages I need:</p>
+<pre><code>cabal2nix --no-haddock --no-check --subpath amazonka \
+  git://github.com/brendanhay/amazonka.git &gt; amazonka.nix
+cabal2nix --no-haddock --no-check --subpath core \
+  git://github.com/brendanhay/amazonka.git &gt; amazonka-core.nix
+cabal2nix --no-haddock --no-check --subpath amazonka-sqs \
+  git://github.com/brendanhay/amazonka.git &gt; amazonka-sqs.nix
+</code></pre>
+<p>The relevant part of the old Nix expression looked like this:</p>
+<pre><code>thePkg = haskellPackages.developPackage {
+  root = lib.cleanSource ./.;
+  name = name;
+
+  modifier = (t.flip t.pipe)
+    [hl.dontHaddock
+     hl.enableStaticLibraries
+     hl.justStaticExecutables
+     hl.disableLibraryProfiling
+     hl.disableExecutableProfiling];
+};</code></pre>
+<p>After adding the overrides it looked like this</p>
+<pre><code>hp = haskellPackages.override {
+  overrides = self: super: {
+    amazonka-core = self.callPackage ./amazonka-core.nix {};
+    amazonka = self.callPackage ./amazonka.nix {};
+    amazonka-sqs = self.callPackage ./amazonka-sqs.nix {};
+  };
+};
+
+thePkg = hp.developPackage {
+  root = lib.cleanSource ./.;
+  name = name;
+
+  modifier = (t.flip t.pipe)
+    [hl.dontHaddock
+     hl.enableStaticLibraries
+     hl.justStaticExecutables
+     hl.disableLibraryProfiling
+     hl.disableExecutableProfiling];
+};</code></pre>
+<p>After a somewhat longer-than-usual build I could verify that I had indeed bumped into the same issue and my issue was a duplicate.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>, <a title="All pages tagged 'nix'." href="../tags/nix.html">nix</a>
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2020-11-30-1734-haskell__nix_and_using_packages_from_github@therning.org?subject=A comment on Haskell, Nix and using packages from GitHub&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>
