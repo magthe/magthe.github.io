@@ -26,6 +26,38 @@
 
   <div class="post-body">
     <header>
+      <h1 class="post-title"><a href="./posts/2021-03-05-000-flycheck-and-hls.html">Flycheck and HLS</a></h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2021-03-05">2021-03-05</time> - Magnus Therning</p>
+</header>
+
+<p>I’ve been using LSP for most programming languages for a while now. HLS is really very good now, but I’ve found that it doesn’t warn on quite all things I’d like it to so I find myself having to swap between the <code>'lsp</code> and <code>'haskell-ghc</code> checkers. However, since <a href="https://www.flycheck.org/en/latest/">flycheck</a> supports chaining checkers I thought there must be a way to have both checkers active at the same time.</p>
+<p>The naive approach didn’t work due to load order of things in Spacemacs so I had to experiment a bit to find something that works.</p>
+<p>The first issue was to make sure that HLS is available at all. I use <code>shell.nix</code> together with <a href="https://direnv.net/">direnv</a> extensively and I had noticed that <code>lsp-mode</code> tried to load HLS before <code>direnv</code> had put it in the <code>$PATH</code>. I think the <code>'lsp-beforeinitialize-hook</code> is the hook to use for this:</p>
+<pre><code>(add-hook 'lsp-before-initialize-hook #'direnv-update-environment))</code></pre>
+<p>I made a several attempt to chain the checkers but kept on getting errors due to the <code>'lsp</code> checker not being defined yet. Another problem I ran into was that the checkers were chained too late, resulting in having to manually run <code>flycheck-buffer</code> on the first file I opened. (Deferred loading is a brilliant thing, but make some things really difficult to debug.) After quite a bit of experimenting and reading the description of various hooks I did find something that works:</p>
+<pre><code>(with-eval-after-load 'lsp-mode
+  (defun magthe:lsp-next-checker ()
+    (flycheck-add-next-checker 'lsp '(warning . haskell-ghc)))
+  (add-hook 'lsp-lsp-haskell-after-open-hook
+            #'magthe:lsp-next-checker))</code></pre>
+<p>Of course I have no idea if this is the easiest or most elegant solution but it does work for my testcases:</p>
+<ol type="1">
+<li>Open a file in a project, <code>SPC p l</code> - choose project - choose a Haskell file.</li>
+<li>Open a project, <code>SPC p l</code> followed by <code>C-d</code>, and then open a Haskell file.</li>
+</ol>
+<p>Suggestions for improvements are more than welcome, of course.</p>
+
+
+  </div>
+
+</article>
+
+
+<article>
+
+  <div class="post-body">
+    <header>
       <h1 class="post-title"><a href="./posts/2020-11-30-1734-haskell__nix_and_using_packages_from_github.html">Haskell, Nix and using packages from GitHub</a></h1>
 
 <p class="post-date"><time pubdate="pubdate" datetime="2020-11-30">2020-11-30</time> - Magnus Therning</p>
@@ -427,38 +459,6 @@ thePkg = hp.developPackage {
 <li>Switching from one the <code>Main.hs</code> in one executable to the <code>Main.hs</code> of another executable in the same project didn’t work as expected – I had hints and types in the first, but nothing in the second.</li>
 <li>Jump to the definition of a function defined in the package didn’t work – I’m not willing to use <a href="https://www.gnu.org/software/global/">GNU GLOBAL</a> or some other source tagging system.</li>
 </ol>
-
-
-  </div>
-
-</article>
-
-
-<article>
-
-  <div class="post-body">
-    <header>
-      <h1 class="post-title"><a href="./posts/2019-09-15-000-nested-tmux.html">Nested tmux</a></h1>
-
-<p class="post-date"><time pubdate="pubdate" datetime="2019-09-15">2019-09-15</time> - Magnus Therning</p>
-</header>
-
-<p>I’ve finally gotten around to sorting out running nested tmux instances. I found the base for the configuration in the article <a href="https://is.gd/slxE45">Tmux in practice: local and nested remote tmux sessions</a>, which links a few other related resources.</p>
-<p>What I ended up with was this:</p>
-<pre><code># Toggle tmux keybindings on/off, for use with inner tmux
-# https://is.gd/slxE45
-bind -T root F12  \
-  set prefix None \;\
-  set key-table off \;\
-  set status-left &quot;#[fg=black,bg=blue,bold] OFF &quot; \;\
-  refresh-client -S
-
-bind -T off F12 \
-  set -u prefix \;\
-  set -u key-table \;\
-  set -u status-left \;\
-  refresh-client -S</code></pre>
-<p>It’s slightly simpler than what’s in the article above, but it works and it fits rather nicely with the <a href="https://github.com/arcticicestudio/nord-tmux">nord theme</a>.</p>
 
 
   </div>

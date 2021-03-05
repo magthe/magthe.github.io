@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//WC3//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Magnus web site | Random stuff</title>
+    <link rel="stylesheet" type="text/css" href="../css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="../css/hk-kate.css" />
+
+  </head>
+
+  <body>
+    <header class="site-header" role="banner">
+      <h1>Magnus web site</h1>
+      <h2>Random stuff</h2>
+    </header>
+
+    <div class="post-tags">
+      <a href="../index.html">Top</a> <a href="../archive.html">Archive</a>
+    </div>
+
+    <main role="main">
+    <article>
+<div class="post-body">
+  <header>
+    <h1 class="post-title">Flycheck and HLS</h1>
+
+<p class="post-date"><time pubdate="pubdate" datetime="2021-03-05">2021-03-05</time> - Magnus Therning</p>
+</header>
+
+<p>I’ve been using LSP for most programming languages for a while now. HLS is really very good now, but I’ve found that it doesn’t warn on quite all things I’d like it to so I find myself having to swap between the <code>'lsp</code> and <code>'haskell-ghc</code> checkers. However, since <a href="https://www.flycheck.org/en/latest/">flycheck</a> supports chaining checkers I thought there must be a way to have both checkers active at the same time.</p>
+<p>The naive approach didn’t work due to load order of things in Spacemacs so I had to experiment a bit to find something that works.</p>
+<p>The first issue was to make sure that HLS is available at all. I use <code>shell.nix</code> together with <a href="https://direnv.net/">direnv</a> extensively and I had noticed that <code>lsp-mode</code> tried to load HLS before <code>direnv</code> had put it in the <code>$PATH</code>. I think the <code>'lsp-beforeinitialize-hook</code> is the hook to use for this:</p>
+<pre><code>(add-hook 'lsp-before-initialize-hook #'direnv-update-environment))</code></pre>
+<p>I made a several attempt to chain the checkers but kept on getting errors due to the <code>'lsp</code> checker not being defined yet. Another problem I ran into was that the checkers were chained too late, resulting in having to manually run <code>flycheck-buffer</code> on the first file I opened. (Deferred loading is a brilliant thing, but make some things really difficult to debug.) After quite a bit of experimenting and reading the description of various hooks I did find something that works:</p>
+<pre><code>(with-eval-after-load 'lsp-mode
+  (defun magthe:lsp-next-checker ()
+    (flycheck-add-next-checker 'lsp '(warning . haskell-ghc)))
+  (add-hook 'lsp-lsp-haskell-after-open-hook
+            #'magthe:lsp-next-checker))</code></pre>
+<p>Of course I have no idea if this is the easiest or most elegant solution but it does work for my testcases:</p>
+<ol type="1">
+<li>Open a file in a project, <code>SPC p l</code> - choose project - choose a Haskell file.</li>
+<li>Open a project, <code>SPC p l</code> followed by <code>C-d</code>, and then open a Haskell file.</li>
+</ol>
+<p>Suggestions for improvements are more than welcome, of course.</p>
+
+
+</div>
+
+<div class="post-tags">
+Tags: <a title="All pages tagged 'emacs'." href="../tags/emacs.html">emacs</a>, <a title="All pages tagged 'haskell'." href="../tags/haskell.html">haskell</a>, <a title="All pages tagged 'spacemacs'." href="../tags/spacemacs.html">spacemacs</a>
+</div>
+
+
+
+<div class="post-leave-comment">
+  <a href="mailto:magnus+blog.comment.2021-03-05-000-flycheck-and-hls@therning.org?subject=A comment on Flycheck and HLS&body=Write your comment here. Use Markdown to make it pretty.">Leave a comment</a>
+</div>
+
+</article>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>&copy; Magnus Therning</p>
+      <p>Generated using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></p>
+    </footer>
+  </body>
+</html>

@@ -8,8 +8,31 @@
         <name>Magnus Therning</name>
         <email>magnus@therning.org</email>
     </author>
-    <updated>2020-11-30T00:00:00Z</updated>
+    <updated>2021-03-05T00:00:00Z</updated>
     <entry>
+    <title>Flycheck and HLS</title>
+    <link href="http://magnus.therning.org/posts/2021-03-05-000-flycheck-and-hls.html" />
+    <id>http://magnus.therning.org/posts/2021-03-05-000-flycheck-and-hls.html</id>
+    <published>2021-03-05T00:00:00Z</published>
+    <updated>2021-03-05T00:00:00Z</updated>
+    <summary type="html"><![CDATA[<p>I’ve been using LSP for most programming languages for a while now. HLS is really very good now, but I’ve found that it doesn’t warn on quite all things I’d like it to so I find myself having to swap between the <code>'lsp</code> and <code>'haskell-ghc</code> checkers. However, since <a href="https://www.flycheck.org/en/latest/">flycheck</a> supports chaining checkers I thought there must be a way to have both checkers active at the same time.</p>
+<p>The naive approach didn’t work due to load order of things in Spacemacs so I had to experiment a bit to find something that works.</p>
+<p>The first issue was to make sure that HLS is available at all. I use <code>shell.nix</code> together with <a href="https://direnv.net/">direnv</a> extensively and I had noticed that <code>lsp-mode</code> tried to load HLS before <code>direnv</code> had put it in the <code>$PATH</code>. I think the <code>'lsp-beforeinitialize-hook</code> is the hook to use for this:</p>
+<pre><code>(add-hook &#39;lsp-before-initialize-hook #&#39;direnv-update-environment))</code></pre>
+<p>I made a several attempt to chain the checkers but kept on getting errors due to the <code>'lsp</code> checker not being defined yet. Another problem I ran into was that the checkers were chained too late, resulting in having to manually run <code>flycheck-buffer</code> on the first file I opened. (Deferred loading is a brilliant thing, but make some things really difficult to debug.) After quite a bit of experimenting and reading the description of various hooks I did find something that works:</p>
+<pre><code>(with-eval-after-load &#39;lsp-mode
+  (defun magthe:lsp-next-checker ()
+    (flycheck-add-next-checker &#39;lsp &#39;(warning . haskell-ghc)))
+  (add-hook &#39;lsp-lsp-haskell-after-open-hook
+            #&#39;magthe:lsp-next-checker))</code></pre>
+<p>Of course I have no idea if this is the easiest or most elegant solution but it does work for my testcases:</p>
+<ol type="1">
+<li>Open a file in a project, <code>SPC p l</code> - choose project - choose a Haskell file.</li>
+<li>Open a project, <code>SPC p l</code> followed by <code>C-d</code>, and then open a Haskell file.</li>
+</ol>
+<p>Suggestions for improvements are more than welcome, of course.</p>]]></summary>
+</entry>
+<entry>
     <title>Haskell, Nix and using packages from GitHub</title>
     <link href="http://magnus.therning.org/posts/2020-11-30-1734-haskell__nix_and_using_packages_from_github.html" />
     <id>http://magnus.therning.org/posts/2020-11-30-1734-haskell__nix_and_using_packages_from_github.html</id>
@@ -3170,68 +3193,6 @@ CMD bash --login</code></pre>
 <h2 id="dhcp">DHCP</h2>
 <p>If you’d rather have the container on an ip handed out by a DHCP server, then you replace the three commands for setting ip and route with:</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true"></a>$ <span class="fu">sudo</span> nsenter -t <span class="va">$(</span><span class="ex">docker-pid</span> echo<span class="va">)</span> -n -- dhclient -d maclan</span></code></pre></div>]]></summary>
-</entry>
-<entry>
-    <title>Building elm with stack</title>
-    <link href="http://magnus.therning.org/posts/2015-10-13-000-building-elm-with-stack.html" />
-    <id>http://magnus.therning.org/posts/2015-10-13-000-building-elm-with-stack.html</id>
-    <published>2015-10-13T00:00:00Z</published>
-    <updated>2015-10-13T00:00:00Z</updated>
-    <summary type="html"><![CDATA[<p>Building <a href="http://elm-lang.org/">elm</a> is a slightly invasive procedure if your distro doesn’t have any pre-built packages for it and has a non-ancient version of <em>ghc</em>. Removing all haskell packages and installing <a href="https://www.haskell.org/platform/">HaskellPlatform</a> didn’t really appeal to me. Then it occured to me that <a href="http://www.stackage.org/">stack</a> ought to be perfectly suited for this task. It took me a while to sort it out, but here’s how I got a working build of the elm tools installed on Archlinux.</p>
-<h2 id="installing-stack-and-cabal">Installing <em>stack</em> and <em>cabal</em></h2>
-<p>Add the <em>ArchHaskell</em> repo by following the instructions <a href="https://wiki.archlinux.org/index.php/ArchHaskell">on the wiki</a>. Then install the <code>haskell-stack-bin</code> package. For <em>stack</em> to work fully one also needs the <a href="https://aur.archlinux.org/packages/libtinfo/">libtinfo package from AUR</a>.</p>
-<p>If you aren’t using Archlinux there are instructions on the <em>stack</em> page.</p>
-<p>Now build <em>cabal-install</em> using stack:</p>
-<pre><code>% stack --install-ghc install cabal-install</code></pre>
-<p>After this make sure <code>~/.local/bin</code> is in your <code>$PATH</code>.</p>
-<h2 id="cloning-the-elm-tool-repos">Cloning the elm tool repos</h2>
-<p>The elm developers have decided to not use Hackage so to get the tools one has to clone the repos from GitHub. I used the following shell script to get them all cloned in one go:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="co">#! /usr/bin/zsh</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a><span class="va">repos=(</span><span class="st">&quot;git clone https://github.com/elm-lang/elm-compiler.git -b 0.15.1&quot;</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a>       <span class="st">&quot;git clone https://github.com/elm-lang/elm-package.git -b 0.5.1&quot;</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a>       <span class="st">&quot;git clone https://github.com/elm-lang/elm-make.git -b 0.2&quot;</span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a>       <span class="st">&quot;git clone https://github.com/elm-lang/elm-reactor.git -b 0.3.2&quot;</span></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a>       <span class="st">&quot;git clone https://github.com/elm-lang/elm-repl.git -b 0.4.2&quot;</span></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a>      )</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true"></a></span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true"></a><span class="kw">for</span> <span class="ex">r</span> in <span class="va">${repos[@]}</span><span class="kw">;</span> <span class="kw">do</span></span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true"></a>    <span class="bu">eval</span> <span class="va">${r}</span></span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true"></a><span class="kw">done</span></span></code></pre></div>
-<h2 id="creating-stack.yaml">Creating <code>stack.yaml</code></h2>
-<p>To create the initial <code>stack.yalm</code> run</p>
-<pre><code>% stack init --resolver ghc-7.8.4</code></pre>
-<p>Now open it and make a couple of modifications. First add the line</p>
-<pre><code>system-ghc: false</code></pre>
-<p>This is to make sure <em>stack</em> won’t try to use any <em>ghc</em> version already installed on the system. Then add a flag for <code>aeson</code>:</p>
-<pre><code>flags:
-  aeson:
-    old-locale: true</code></pre>
-<p>Now use <em>stack</em> to create the full <code>stack.yaml</code>:</p>
-<pre><code>% stack --install-ghc solver --modify-stack-yaml</code></pre>
-<h2 id="patch-elm-reactor">Patch <em>elm-reactor</em></h2>
-<p>In order to build <em>elm-reactor</em> it first needs a tiny patch:</p>
-<pre><code>diff --git a/backend/Socket.hs b/backend/Socket.hs
-index b80a98f..69fe488 100644
---- a/backend/Socket.hs
-+++ b/backend/Socket.hs
-@@ -18,7 +18,7 @@ fileChangeApp :: FilePath -&gt; WS.ServerApp
- fileChangeApp watchedFile pendingConnection =
-   do  connection &lt;- WS.acceptRequest pendingConnection
-       Notify.withManager $ \notifyManager -&gt;
--        do  _ &lt;- NDevel.treeExtExists notifyManager &quot;.&quot; &quot;elm&quot; (sendHotSwap watchedFile connection)
-+        do  _ &lt;- NDevel.treeExtExists notifyManager &quot;.&quot; &quot;elm&quot; (sendHotSwap watchedFile connection . FP.decodeString)
-             keepAlive connection</code></pre>
-<h2 id="building-the-tools">Building the tools</h2>
-<p>Now build the elm tools (it’s important that <em>elm-reactor</em> is built after <em>elm-make</em>):</p>
-<pre><code>% stack install elm-{compiler,make,package,repl}
-% stack install elm-reactor</code></pre>
-<p>Now just sit back and wait for the building to finish.</p>
-<h2 id="verify-that-it-works">Verify that it works</h2>
-<p>Follow the instructions for running <a href="https://github.com/evancz/elm-architecture-tutorial/tree/master/examples/1">example 1</a> of the <a href="https://github.com/evancz/elm-architecture-tutorial/">elm architecture tutorial</a>. I had to use the following two commands to get it running properly:</p>
-<pre><code>% elm make
-% elm reactor</code></pre>
-<p>Then I can point my browser at <a href="http://localhost:8000/Main.elm?debug" class="uri">http://localhost:8000/Main.elm?debug</a> and play with the counter.</p>]]></summary>
 </entry>
 
 </feed>
