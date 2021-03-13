@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0">
+<channel>
+<title><![CDATA[Magnus web site - pipes]]></title>
+<description><![CDATA[Magnus web site - pipes]]></description>
+<link>https://magnus.therning.org//tag-pipes.html</link>
+<lastBuildDate>Sun, 14 Mar 2021 07:55:28 +0100</lastBuildDate>
+<item>
+  <title><![CDATA[Zipping streams]]></title>
+  <description><![CDATA[
+<p>
+Writing the following is easy after glancing through the documentation for
+<a href="https://hackage.haskell.org/package/conduit">conduit</a>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">foo</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">let</span> src <span class="org-haskell-operator">=</span> mapM_ C.yield <span class="org-rainbow-delimiters-depth-1">[</span><span class="org-highlight-numbers-number">0</span><span class="org-haskell-operator">..</span><span class="org-highlight-numbers-number">9</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Int</span><span class="org-rainbow-delimiters-depth-1">]</span>
+          p0 <span class="org-haskell-operator">=</span> CC.map <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-operator">\</span> i <span class="org-haskell-operator">-&gt;</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"p0"</span>, succ i<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+          p1 <span class="org-haskell-operator">=</span> CC.filter odd <span class="org-haskell-operator">.|</span> CC.map <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-operator">\</span> i <span class="org-haskell-operator">-&gt;</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"p1"</span>, i<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+          p <span class="org-haskell-operator">=</span> C.getZipConduit <span class="org-haskell-operator">$</span> <span class="org-haskell-constructor">C.ZipConduit</span> p0 <span class="org-haskell-operator">&lt;*</span> <span class="org-haskell-constructor">C.ZipConduit</span> p1
+          sink <span class="org-haskell-operator">=</span> CC.mapM_ print
+      <span class="org-haskell-keyword">in</span> C.runConduit <span class="org-haskell-operator">$</span> src <span class="org-haskell-operator">.|</span> p <span class="org-haskell-operator">.|</span> sink
+</pre>
+</div>
+
+<p>
+Neither <a href="https://hackage.haskell.org/package/pipes">pipes</a> nor <a href="https://hackage.haskell.org/package/streaming">streaming</a> make it as easy to figure out. I must be missing
+something! What functions should I be looking at?
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-conduit.html">conduit</a> <a href="https://magnus.therning.org/tag-pipes.html">pipes</a> <a href="https://magnus.therning.org/tag-streaming.html">streaming</a> </div>]]></description>
+  <category><![CDATA[haskell]]></category>
+  <category><![CDATA[conduit]]></category>
+  <category><![CDATA[pipes]]></category>
+  <category><![CDATA[streaming]]></category>
+  <link>https://magnus.therning.org/2018-10-16-000-zipping-streams.html</link>
+  <pubDate>Tue, 16 Oct 2018 12:34:00 +0200</pubDate>
+</item>
+</channel>
+</rss>

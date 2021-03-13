@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="alternate"
+      type="application/rss+xml"
+      href="https://magnus.therning.org/feed.xml"
+      title="RSS feed for https://magnus.therning.org/">
+<title>Choosing a conduit randomly</title>
+<meta name="author" content="Magnus Therning"><meta name="referrer" content="no-referrer"><link href= "static/style.css" rel="stylesheet" type="text/css" /><link href= "static/htmlize.css" rel="stylesheet" type="text/css" /><link href= "static/extra_style.css" rel="stylesheet" type="text/css" /></head>
+<body>
+<div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
+<div id="content">
+<div class="post-date">17 Feb 2019</div><h1 class="post-title"><a href="https://magnus.therning.org/2019-02-17-000-choosing-a-conduit-randomly.html">Choosing a conduit randomly</a></h1>
+<p>
+Lately I've been playing around <a href="https://hackage.haskell.org/package/conduit">conduit</a>. One thing I wanted to try out was to
+set up processing where one processing step was chosen on random from a number
+of components, based on weights. In short I guess I wanted a function with a
+type something like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">foo</span> <span class="org-haskell-operator">::</span> <span class="org-rainbow-delimiters-depth-1">[</span><span class="org-rainbow-delimiters-depth-2">(</span><span class="org-haskell-type">Int</span>, <span class="org-haskell-type">ConduitT</span> i o m r<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">]</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">ConduitT</span> i o m r
+</pre>
+</div>
+
+<p>
+I have to admit I don't even know where to start writing such a function<sup><a id="fnr.1" class="footref" href="#fn.1">1</a></sup>
+but after a little bit of thinking I realised I could get the same effect by
+controlling how chunks of data is routed. That is, instead of choosing a
+component randomly, I can choose a route randomly. It would look something like
+when choosing from three components
+</p>
+
+<pre class="example" id="org60d40ef">
+                        +---------+   +----------+   +-------------+
+                        | Filter  |   | Drop tag |   | Component A |
+                    +--&gt;| Value-0 |--&gt;|          |--&gt;|             |--+
+                    |   +---------+   +----------+   +-------------+  |
++----------------+  |   +---------+   +----------+   +-------------+  |
+| Choose random  |  |   | Filter  |   | Drop tag |   | Component B |  |
+| value based on +-----&gt;| Value-1 |--&gt;|          |--&gt;|             |-----&gt;
+| weights        |  |   +---------+   +----------+   +-------------+  |
++----------------+  |   +---------+   +----------+   +-------------+  |
+                    |   | Filter  |   | Drop tag |   | Component C |  |
+                    +--&gt;| Value-2 |--&gt;|          |--&gt;|             |--+
+                        +---------+   +----------+   +-------------+
+</pre>
+
+<p>
+That is
+</p>
+
+<ol class="org-ol">
+<li>For each chunk that comes in, choose a value randomly based on weights and
+tag the chunk with the choosen value, then</li>
+<li>split the processing into one route for each component,</li>
+<li>in each route filter out chunks tagged with a single value, and</li>
+<li>remove the tag, then</li>
+<li>pass the chunk to the component, and finally</li>
+<li>bring the routes back together again.</li>
+</ol>
+
+<p>
+Out of these steps all but the very first one are already available in <a href="https://hackage.haskell.org/package/conduit">conduit</a>:
+</p>
+
+<ul class="org-ul">
+<li>for splitting routes combining them again, use <a href="https://hackage.haskell.org/package/conduit-1.3.1/docs/Data-Conduit.html#v:sequenceConduits"><code>sequenceConduits</code></a></li>
+<li>for filtering, use <a href="https://hackage.haskell.org/package/conduit-1.3.1/docs/Data-Conduit-Combinators.html#v:filter"><code>filter</code></a></li>
+<li>for dropping the tag, use <a href="https://hackage.haskell.org/package/conduit-1.3.1/docs/Data-Conduit-Combinators.html#v:map"><code>map</code></a></li>
+</ul>
+
+<p>
+What's left is the beginning. I started with a function to pick a value on
+random based on weights<sup><a id="fnr.2" class="footref" href="#fn.2">2</a></sup>
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">pickByWeight</span> <span class="org-haskell-operator">::</span> <span class="org-rainbow-delimiters-depth-1">[</span><span class="org-rainbow-delimiters-depth-2">(</span><span class="org-haskell-type">Int</span>, b<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">]</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">IO</span> b
+<span class="org-haskell-definition">pickByWeight</span> xs <span class="org-haskell-operator">=</span> randomRIO <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-highlight-numbers-number">1</span>, tot<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">&gt;&gt;=</span> <span class="org-haskell-operator">\</span> n <span class="org-haskell-operator">-&gt;</span> return <span class="org-rainbow-delimiters-depth-1">(</span>pick n xs<span class="org-rainbow-delimiters-depth-1">)</span>
+  <span class="org-haskell-keyword">where</span>
+    tot <span class="org-haskell-operator">=</span> sum <span class="org-haskell-operator">$</span> map fst xs
+
+    pick n <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-rainbow-delimiters-depth-2">(</span>k, x<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-haskell-constructor">:</span>xs<span class="org-rainbow-delimiters-depth-1">)</span>
+      <span class="org-haskell-operator">|</span> n <span class="org-haskell-operator">&lt;=</span> k <span class="org-haskell-operator">=</span> x
+      <span class="org-haskell-operator">|</span> otherwise <span class="org-haskell-operator">=</span> pick <span class="org-rainbow-delimiters-depth-1">(</span>n <span class="org-haskell-operator">-</span> k<span class="org-rainbow-delimiters-depth-1">)</span> xs
+    pick <span class="org-haskell-keyword">_</span> <span class="org-haskell-keyword">_</span> <span class="org-haskell-operator">=</span> error <span class="org-string">"pick error"</span>
+</pre>
+</div>
+
+<p>
+Using that I then made a component that tags chunks
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">picker</span> ws <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+  evt <span class="org-haskell-operator">&lt;-</span> await
+  <span class="org-haskell-keyword">case</span> evt <span class="org-haskell-keyword">of</span>
+    <span class="org-haskell-constructor">Nothing</span> <span class="org-haskell-operator">-&gt;</span> return <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+    <span class="org-haskell-constructor">Just</span> e <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-keyword">do</span>
+      p <span class="org-haskell-operator">&lt;-</span> liftIO <span class="org-haskell-operator">$</span> pickByWeight ws
+      yield <span class="org-rainbow-delimiters-depth-1">(</span>p, e<span class="org-rainbow-delimiters-depth-1">)</span>
+      picker ws
+</pre>
+</div>
+
+<p>
+I was rather happy with this&#x2026;
+</p>
+
+<blockquote>
+<p>
+<a href="https://twitter.com/snoyberg">@snoyberg</a> just have to let you know, conduit is a joy to use. Thanks for sharing it.
+</p>
+
+<p>
+&#x2013; Magnus Therning (<a href="https://twitter.com/magthe">@magthe</a>) <a href="https://twitter.com/magthe/status/1093175648993140736">February 6, 2019</a>
+</p>
+</blockquote>
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+
+<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1">1</a></sup> <div class="footpara"><p class="footpara">
+Except maybe by using Template Haskell to generate the code I did come up
+with.
+</p></div></div>
+
+<div class="footdef"><sup><a id="fn.2" class="footnum" href="#fnr.2">2</a></sup> <div class="footpara"><p class="footpara">
+I used <code>Quickcheck</code>'s <a href="https://hackage.haskell.org/package/QuickCheck-2.12.6.1/docs/Test-QuickCheck-Gen.html#v:frequency"><code>frequency</code></a> as inspiration for writing it.
+</p></div></div>
+
+
+</div>
+</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-conduit.html">conduit</a> </div></div>
+<div id="postamble" class="status"><!-- org-static-blog-page-postamble --></div>
+</body>
+</html>

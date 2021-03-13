@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="alternate"
+      type="application/rss+xml"
+      href="https://magnus.therning.org/feed.xml"
+      title="RSS feed for https://magnus.therning.org/">
+<title>Ditaa in Org mode</title>
+<meta name="author" content="Magnus Therning"><meta name="referrer" content="no-referrer"><link href= "static/style.css" rel="stylesheet" type="text/css" /><link href= "static/htmlize.css" rel="stylesheet" type="text/css" /><link href= "static/extra_style.css" rel="stylesheet" type="text/css" /></head>
+<body>
+<div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
+<div id="content">
+<div class="post-date">20 Oct 2019</div><h1 class="post-title"><a href="https://magnus.therning.org/2019-10-20-000-ditaa-in-org-mode.html">Ditaa in Org mode</a></h1>
+<p>
+Just found out that Emacs ships with Babel support for <a href="https://writequit.org/denver-emacs/presentations/2016-04-19-whats-new-emacs25-ditaa-artist.html#orgheadline15">ditaa</a> (yes, I'm late to
+the party).
+</p>
+
+<p>
+Sweet! That is yet another argument for converting all our <code>README.md</code> into
+<code>README.org</code> at work.
+</p>
+
+<p>
+<img src="https://media.giphy.com/media/xl5QdxfNonh3q/giphy.gif" alt="giphy.gif">\
+</p>
+
+<p>
+The changes I made to my Spacemacs config are
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">dotspacemacs/user-config</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  ...
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">with-eval-after-load</span> 'org
+    ...
+    <span class="org-rainbow-delimiters-depth-3">(</span>add-to-list 'org-babel-load-languages '<span class="org-rainbow-delimiters-depth-4">(</span>ditaa . t<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>setq org-ditaa-jar-path <span class="org-string">"/usr/share/java/ditaa/ditaa-0.11.jar"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  ...<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-orgmode.html">orgmode</a> </div></div>
+<div id="postamble" class="status"><!-- org-static-blog-page-postamble --></div>
+</body>
+</html>

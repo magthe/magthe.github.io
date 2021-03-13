@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="alternate"
+      type="application/rss+xml"
+      href="https://magnus.therning.org/feed.xml"
+      title="RSS feed for https://magnus.therning.org/">
+<title>Magnus web site</title>
+<meta name="author" content="Magnus Therning"><meta name="referrer" content="no-referrer"><link href= "static/style.css" rel="stylesheet" type="text/css" /><link href= "static/htmlize.css" rel="stylesheet" type="text/css" /><link href= "static/extra_style.css" rel="stylesheet" type="text/css" /></head>
+<body>
+<div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
+<div id="content">
+<h1 class="title">Posts tagged "postgresql":</h1>
+<div class="post-date">10 Aug 2019</div><h1 class="post-title"><a href="https://magnus.therning.org/2019-08-10-000-architecture-of-a-service.html">Architecture of a service</a></h1>
+<p>
+Early this summer it was finally time to put this one service I've been working
+on into our sandbox environment. It's been running without hickups so last week
+I turned it on for production as well. In this post I thought I'd document the
+how and why of the service in the hope that someone will find it useful.
+</p>
+
+<p>
+The service functions as an interface to external SMS-sending services, offering
+a single place to change if we find that we are unhappy with the service we're
+using.<sup><a id="fnr.1" class="footref" href="#fn.1">1</a></sup> This service replaces an older one, written in Ruby and no one really
+dares touch it. Hopefully the Haskell version will prove to be a joy to work
+with over time.
+</p>
+
+<div id="outline-container-org214f34f" class="outline-2">
+<h2 id="org214f34f">Overview of the architecture</h2>
+<div class="outline-text-2" id="text-org214f34f">
+<p>
+The service is split into two parts, one web server using <a href="https://hackage.haskell.org/package/scotty">scotty</a>, and streaming
+data processing using <a href="https://hackage.haskell.org/package/conduit">conduit</a>. Persistent storage is provided by a <a href="https://www.postgresql.org/">PostgreSQL</a>
+database. The general idea is that events are picked up from the database, acted
+upon, which in turn results in other events which written to the database. Those
+are then picked up and round and round we go. The web service accepts requests,
+turns them into events and writes the to the database.
+</p>
+
+<p>
+Hopefully this crude diagram clarifies it somewhat.
+</p>
+
+
+<figure id="org02f059e">
+<img src="static/2019-08-10-architecture.png" alt="2019-08-10-architecture.png">
+
+<figcaption><span class="figure-number">Figure 1: </span>Diagram of the service architecture</figcaption>
+</figure>
+
+<p>
+There are a few things that might need some explanation
+</p>
+
+<ul class="org-ul">
+<li><p>
+In the past we've wanted to have the option to use multiple external SMS
+services at the same time. One is randomly chosen as the request comes in.
+There's also a possibility to configure the frequency for each external
+service.
+</p>
+
+<p>
+<i>Picker</i> implements the random picking and I've written about that earlier in
+<a href="2019-02-17-000-choosing-a-conduit-randomly.html">Choosing a conduit randomly</a>.
+</p>
+
+<p>
+<i>Success</i> and <i>fail</i> are dummy senders. They don't actually send anything, and
+the former succeeds at it while the latter fails. I found them useful for
+manual testing.
+</p></li>
+
+<li><p>
+Successfully sending off a request to an external SMS service, getting status
+200 back, doesn't actually mean that the SMS has been sent, or even that it
+ever will be. Due to the nature of SMS messaging there are no guarantees of
+timeliness at all. Since we are interested in finding out whether an SMS
+actually is sent a delayed action is scheduled, which will fetch the status of
+a sent SMS after a certain time (currently 2 minutes). If an SMS hasn't been
+sent after that time it might as well never be &#x2013; it's too slow for our
+end-users.
+</p>
+
+<p>
+This is what <i>report-fetcher</i> and <i>fetcher-func</i> do.
+</p></li>
+
+<li>The <i>queue sink</i> and <i>queue src</i> are actually <a href="https://hackage.haskell.org/package/stm-conduit-4.0.1/docs/Data-Conduit-TQueue.html#v:sourceTQueue"><code>sourceTQueue</code></a> and <a href="https://hackage.haskell.org/package/stm-conduit-4.0.1/docs/Data-Conduit-TQueue.html#v:sinkTQueue"><code>sinkTQueue</code></a>.
+Splitting the stream like that makes it trivial to push in events by using
+<a href="https://hackage.haskell.org/package/stm-2.5.0.0/docs/Control-Concurrent-STM-TQueue.html#v:writeTQueue"><code>writeTQueue</code></a>.</li>
+
+<li>I use <a href="https://hackage.haskell.org/package/conduit-1.3.1.1/docs/Data-Conduit.html#v:sequenceConduits"><code>sequenceConduits</code></a> in order to send a single event to multiple
+=Conduit=s and then combine all their results back into a single stream. The
+ease with which this can be done in <a href="https://hackage.haskell.org/package/conduit">conduit</a> is one of the main reasons why I
+choose to use it.<sup><a id="fnr.2" class="footref" href="#fn.2">2</a></sup></li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-org29b0e87" class="outline-2">
+<h2 id="org29b0e87">Effects and tests</h2>
+<div class="outline-text-2" id="text-org29b0e87">
+<p>
+I started out writing everything based on a type like <code>ReaderT &lt;my cfg type&gt; IO</code>
+and using <code>liftIO</code> for effects that needed lifting. This worked nicely while I
+was setting up the basic structure of the service, but as soon as I hooked in
+the database I really wanted to do some testing also of the effectful code.
+</p>
+
+<p>
+After reading <a href="https://serokell.io/blog/2018/12/07/tagless-final">Introduction to Tagless Final</a> and
+<a href="https://www.fpcomplete.com/blog/2017/06/readert-design-pattern">The ReaderT Design Patter</a>, playing a bit with both approaches, and writing
+<a href="2019-01-20-000-tagless-final-and-scotty.html">Tagless final and Scotty</a> and
+<a href="2019-02-02-000-the-readert-design-pattern-or-tagless-final-.html">The ReaderT design pattern or tagless final?</a>, I finally chose to go down the route
+of <i>tagless final</i>. There's no strong reason for that decision, maybe it was
+just because I read about it first and found it very easy to move in that
+direction in small steps.
+</p>
+
+<p>
+There's a split between property tests and unit tests:
+</p>
+
+<ul class="org-ul">
+<li>Data types, their monad instances (like JSON (de-)serialisation), pure
+functions and a few effects are tested using properties. I'm using <a href="https://hackage.haskell.org/package/QuickCheck">QuickCheck</a>
+for that. I've since looked a little closer at <a href="https://hackage.haskell.org/package/hedgehog">hedgehog</a> and if I were to do a
+major overhaul of the property tests I might be tempted to rewrite them using
+that library instead.</li>
+
+<li>Most of the =Conduit=s are tested using <a href="https://hackage.haskell.org/package/HUnit">HUnit</a>.</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-org98fd41b" class="outline-2">
+<h2 id="org98fd41b">Configuration</h2>
+<div class="outline-text-2" id="text-org98fd41b">
+<p>
+The service will be run in a container and we try to follow the <a href="https://12factor.net/">12-factor app
+rules</a>, where the third one says that configuration should be stored in the
+environment. All previous Haskell projects I've worked on have been command line
+tools were configuration is done (mostly) using command line argument. For that
+I usually use <a href="https://hackage.haskell.org/package/optparse-applicative">optparse-applicative</a>, but it's not applicable in this setting.
+</p>
+
+<p>
+After a bit of searching on <a href="https://hackage.haskell.org/">hackage</a> I settled on <a href="https://hackage.haskell.org/package/etc">etc</a>. It turned out to be nice
+an easy to work with. The configuration is written in JSON and only specifies
+environment variables. It's then embedded in the executable using <a href="https://hackage.haskell.org/package/file-embed">file-embed</a>.
+The only thing I miss is a <a href="https://hackage.haskell.org/package/aeson/docs/Data-Aeson.html#t:ToJSON"><code>ToJSON</code></a> instance for <a href="https://hackage.haskell.org/package/etc-0.4.1.0/docs/System-Etc.html#t:Config"><code>Config</code></a> &#x2013; we've found it
+quite useful to log the active configuration when starting a service and that
+log entry would become a bit nicer if the message was JSON rather than the
+(somewhat difficult to read) string that <code>Config</code>'s <code>Show</code> instance produces.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org8788723" class="outline-2">
+<h2 id="org8788723">Logging</h2>
+<div class="outline-text-2" id="text-org8788723">
+<p>
+There are two requirements we have when it comes to logging
+</p>
+
+<ol class="org-ol">
+<li>All log entries tied to a request should have a <a href="https://hilton.org.uk/blog/microservices-correlation-id">correlation ID</a>.</li>
+<li>Log requests and responses</li>
+</ol>
+
+<p>
+I've written about correlation ID before, <a href="2018-10-01-000-using-a-configuration-in-scotty.html">Using a configuration in Scotty</a>.
+</p>
+
+<p>
+Logging requests and responses is an area where I'm not very happy with <a href="https://hackage.haskell.org/package/scotty">scotty</a>.
+It feels natural to solve it using middleware (i.e. using <a href="https://hackage.haskell.org/package/scotty/docs/Web-Scotty.html#v:middleware"><code>middleware</code></a>) but the
+representation, especially of responses, is a bit complicated so for the time
+being I've skipped logging the body of both. I'd be most interested to hear of
+libraries that could make that easier.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org2b55605" class="outline-2">
+<h2 id="org2b55605">Data storage and picking up new events</h2>
+<div class="outline-text-2" id="text-org2b55605">
+<p>
+The data stream processing depends heavily on being able to pick up when new
+events are written to the database. Especially when there are more than one
+instance running (we usually have at least two instance running in the
+production environment). To get that working I've used <a href="https://hackage.haskell.org/package/postgresql-simple">postgresql-simple</a>'s
+support for <a href="https://www.postgresql.org/docs/current/sql-listen.html"><code>LISTEN</code></a> and <a href="https://www.postgresql.org/docs/current/sql-notify.html"><code>NOTIFY</code></a> via the function <a href="https://hackage.haskell.org/package/postgresql-simple-0.6.2/docs/Database-PostgreSQL-Simple-Notification.html#v:getNotification"><code>getNotification</code></a>.
+</p>
+
+<p>
+When I wrote about this earlier, <a href="2019-03-03-000-conduit-and-postgresql.html">Conduit and PostgreSQL</a> I got some really good
+feedback that made my solution more robust.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org2cf7562" class="outline-2">
+<h2 id="org2cf7562">Delayed actions</h2>
+<div class="outline-text-2" id="text-org2cf7562">
+<p>
+Some things in Haskell feel almost like cheating. The light-weight threading
+makes me confident that a <a href="https://hackage.haskell.org/package/base/docs/Control-Concurrent.html#v:forkIO"><code>forkIO</code></a> followed by a <a href="https://hackage.haskell.org/package/base/docs/Control-Concurrent.html#v:threadDelay"><code>threadDelay</code></a> (or in my case,
+the ones from <a href="https://hackage.haskell.org/package/unliftio">unliftio</a>) will suffice.
+</p>
+</div>
+</div>
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+
+<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1">1</a></sup> <div class="footpara"><p class="footpara">
+It has happened in the past that we've changed SMS service after finding
+that they weren't living up to our expectations.
+</p></div></div>
+
+<div class="footdef"><sup><a id="fn.2" class="footnum" href="#fnr.2">2</a></sup> <div class="footpara"><p class="footpara">
+A while ago I was experimenting with other streaming libraries, but I
+gave up on getting re-combination to work &#x2013; <a href="2018-10-16-000-zipping-streams.html">Zipping streams</a>
+</p></div></div>
+
+
+</div>
+</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-conduit.html">conduit</a> <a href="https://magnus.therning.org/tag-scotty.html">scotty</a> <a href="https://magnus.therning.org/tag-postgresql.html">postgresql</a> <a href="https://magnus.therning.org/tag-tagless.html">tagless</a> <a href="https://magnus.therning.org/tag-final.html">final</a> </div>
+<div class="post-date">03 Mar 2019</div><h1 class="post-title"><a href="https://magnus.therning.org/2019-03-03-000-conduit-and-postgresql.html">Conduit and PostgreSQL</a></h1>
+<p>
+For a while now I've been playing around with an event-drive software design
+(<a href="https://en.wikipedia.org/wiki/Event-driven_architecture">EDA</a>) using <a href="https://hackage.haskell.org/package/conduit"><code>conduit</code></a> for processing of events. For this post the processing can
+basically be viewed as the following diagram
+</p>
+
+<pre class="example" id="org234dea9">
++-----------+   +------------+   +---------+
+|           |   |            |   |         |
+| PG source |--&gt;| Processing |--&gt;| PG sink |
+|           |   |            |   |         |
++-----------+   +------------+   +---------+
+     ^                                |
+     |            +------+            |
+     |            |      |            |
+     |            |  PG  |            |
+     +------------|  DB  |&lt;-----------+
+                  |      |
+                  +------+
+</pre>
+
+<p>
+I started out looking for Conduit components for PostgreSQL on <a href="https://hackage.haskell.org/">Hackage</a> but
+failed to find something fitting so I started looking into writing them myself
+using <a href="https://hackage.haskell.org/package/postgresql-simple"><code>postgresql-simple</code></a>.
+</p>
+
+<p>
+The sink wasn't much of a problem, use <code>await</code> to get an event (a tuple) and
+write it to the database. My almost complete ignorance of using databases
+resulted in a first version of the source was rather naive and used
+busy-waiting. Then I stumbled on PostgreSQL's support for notifications through
+the <code>LISTEN</code> and <code>NOTIFY</code> commands. I rather like the result and it seems to
+work well.<sup><a id="fnr.1" class="footref" href="#fn.1">1</a></sup>
+</p>
+
+<p>
+It looks like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-keyword">import</span>           <span class="org-haskell-constructor">Control.Monad.IO.Class</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">MonadIO</span>, liftIO<span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-haskell-keyword">import</span>           <span class="org-haskell-constructor">Data.Aeson</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">Value</span><span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-haskell-keyword">import</span> <span class="org-haskell-keyword">qualified</span> <span class="org-haskell-constructor">Data.Conduit</span> <span class="org-haskell-keyword">as</span> <span class="org-haskell-constructor">C</span>
+<span class="org-haskell-keyword">import</span> <span class="org-haskell-keyword">qualified</span> <span class="org-haskell-constructor">Data.Conduit.Combinators</span> <span class="org-haskell-keyword">as</span> <span class="org-haskell-constructor">CC</span>
+<span class="org-haskell-keyword">import</span>           <span class="org-haskell-constructor">Data.Text</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">Text</span><span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-haskell-keyword">import</span>           <span class="org-haskell-constructor">Data.Time.Clock</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">UTCTime</span><span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-haskell-keyword">import</span>           <span class="org-haskell-constructor">Data.UUID</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">UUID</span><span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-haskell-keyword">import</span>           <span class="org-haskell-constructor">Database.PostgreSQL.Simple</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">Connection</span>, <span class="org-haskell-constructor">Only</span><span class="org-rainbow-delimiters-depth-2">(</span><span class="org-haskell-operator">..</span><span class="org-rainbow-delimiters-depth-2">)</span>, execute, execute_, query<span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-haskell-keyword">import</span>           <span class="org-haskell-constructor">Database.PostgreSQL.Simple.Notification</span> <span class="org-rainbow-delimiters-depth-1">(</span>getNotification<span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-haskell-definition">fst8</span> <span class="org-haskell-operator">::</span> <span class="org-rainbow-delimiters-depth-1">(</span>a, b, c, d, e, f, g, h<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">-&gt;</span> a
+<span class="org-haskell-definition">fst8</span> <span class="org-rainbow-delimiters-depth-1">(</span>a, <span class="org-haskell-keyword">_</span>, <span class="org-haskell-keyword">_</span>, <span class="org-haskell-keyword">_</span>, <span class="org-haskell-keyword">_</span>, <span class="org-haskell-keyword">_</span>, <span class="org-haskell-keyword">_</span>, <span class="org-haskell-keyword">_</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=</span> a
+
+<span class="org-haskell-definition">dbSource</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">MonadIO</span> m <span class="org-haskell-operator">=&gt;</span> <span class="org-haskell-type">Connection</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Int</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">C.ConduitT</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Int</span>, <span class="org-haskell-type">UTCTime</span>, <span class="org-haskell-type">Int</span>, <span class="org-haskell-type">Int</span>, <span class="org-haskell-type">Bool</span>, <span class="org-haskell-type">UUID</span>, <span class="org-haskell-type">Text</span>, <span class="org-haskell-type">Value</span><span class="org-rainbow-delimiters-depth-1">)</span> m <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+<span class="org-haskell-definition">dbSource</span> conn ver <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+  res <span class="org-haskell-operator">&lt;-</span> liftIO <span class="org-haskell-operator">$</span> query conn <span class="org-string">"SELECT * from events where id &gt; (?) ORDER BY id"</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">Only</span> ver<span class="org-rainbow-delimiters-depth-1">)</span>
+  <span class="org-haskell-keyword">case</span> res <span class="org-haskell-keyword">of</span>
+    <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">[]</span></span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-keyword">do</span>
+      liftIO <span class="org-haskell-operator">$</span> execute_ conn <span class="org-string">"LISTEN MyEvent"</span>
+      liftIO <span class="org-haskell-operator">$</span> getNotification conn
+      dbSource conn ver
+    <span class="org-haskell-keyword">_</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-keyword">do</span>
+      <span class="org-haskell-keyword">let</span> ver' <span class="org-haskell-operator">=</span> maximum <span class="org-haskell-operator">$</span> map fst8 res
+      CC.yieldMany res
+      dbSource conn ver'
+
+<span class="org-haskell-definition">dbSink</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">MonadIO</span> m <span class="org-haskell-operator">=&gt;</span> <span class="org-haskell-type">Connection</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">C.ConduitT</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Int</span>, <span class="org-haskell-type">Int</span>, <span class="org-haskell-type">Bool</span>, <span class="org-haskell-type">UUID</span>, <span class="org-haskell-type">Text</span>, <span class="org-haskell-type">Value</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-type">C.Void</span> m <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+<span class="org-haskell-definition">dbSink</span> conn <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+  evt <span class="org-haskell-operator">&lt;-</span> C.await
+  <span class="org-haskell-keyword">case</span> evt <span class="org-haskell-keyword">of</span>
+    <span class="org-haskell-constructor">Nothing</span> <span class="org-haskell-operator">-&gt;</span> return <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+    <span class="org-haskell-constructor">Just</span> event <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-keyword">do</span>
+      liftIO <span class="org-haskell-operator">$</span> execute conn <span class="org-string">"INSERT INTO events \</span>
+<span class="org-string">                            \(srv_id, stream_id, cmd, cmd_id, correlation_id, event_data) \</span>
+<span class="org-string">                            \VALUES (?, ?, ?, ?, ?, ?)"</span> event
+      liftIO <span class="org-haskell-operator">$</span> execute_ conn <span class="org-string">"NOTIFY MyEvent"</span>
+      dbSink conn
+</pre>
+</div>
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+
+<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1">1</a></sup> <div class="footpara"><p class="footpara">
+If I've missed something crucial I would of course love to hear about it.
+</p></div></div>
+
+
+</div>
+</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-conduit.html">conduit</a> <a href="https://magnus.therning.org/tag-event_sourcing.html">event_sourcing</a> <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-postgresql.html">postgresql</a> </div><div id="archive">
+<a href="https://magnus.therning.org/archive.html">Other posts</a>
+</div>
+</div>
+<div id="postamble" class="status"><!-- org-static-blog-page-postamble --></div>
+</body>
+</html>

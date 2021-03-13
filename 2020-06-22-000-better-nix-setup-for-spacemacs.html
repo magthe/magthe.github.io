@@ -13,7 +13,7 @@
 <div id="content">
 <div class="post-date">22 Jun 2020</div><h1 class="post-title"><a href="https://magnus.therning.org/2020-06-22-000-better-nix-setup-for-spacemacs.html">Better Nix setup for Spacemacs</a></h1>
 <p>
-In an <a href="file:///posts/2019-12-07-000-nix-setup-for-spacemacs.html">earlier post</a> I documented my setup for getting <a href="https://www.spacemacs.org/">Spacemacs</a>/Emacs to work
+In an <a href="2019-12-07-000-nix-setup-for-spacemacs.html">earlier post</a> I documented my setup for getting <a href="https://www.spacemacs.org/">Spacemacs</a>/Emacs to work
 with <a href="https://nixos.org/nix/">Nix</a>. I've since found a much more elegant solution based on
 </p>
 
@@ -33,9 +33,9 @@ always drops me at a bash prompt, instead I get a working setup in my shell of
 choice.
 </p>
 
-<div id="outline-container-org0ffa6ad" class="outline-2">
-<h2 id="org0ffa6ad">Setting up <code>direnv</code></h2>
-<div class="outline-text-2" id="text-org0ffa6ad">
+<div id="outline-container-orgd063368" class="outline-2">
+<h2 id="orgd063368">Setting up <code>direnv</code></h2>
+<div class="outline-text-2" id="text-orgd063368">
 <p>
 The steps for setting up <code>direnv</code> depends a bit on your setup, but luckily I
 found the <a href="https://direnv.net/#basic-installation">official instructions for installing <code>direnv</code></a> to be very clear and
@@ -44,9 +44,9 @@ easy to follow. There's not much I can add to that.
 </div>
 </div>
 
-<div id="outline-container-org25fa924" class="outline-2">
-<h2 id="org25fa924">Setting up Spacemacs</h2>
-<div class="outline-text-2" id="text-org25fa924">
+<div id="outline-container-org9ce9cc2" class="outline-2">
+<h2 id="org9ce9cc2">Setting up Spacemacs</h2>
+<div class="outline-text-2" id="text-org9ce9cc2">
 <p>
 Since <code>emacs-direnv</code> isn't included by default in Spacemacs I needed to do a bit
 of setup. I opted to create a layer for it, rather than just drop it in the list
@@ -73,9 +73,9 @@ For now, I put the following in the file
 </div>
 </div>
 
-<div id="outline-container-org0cf0d1c" class="outline-2">
-<h2 id="org0cf0d1c">Setting up the project folders</h2>
-<div class="outline-text-2" id="text-org0cf0d1c">
+<div id="outline-container-org6002225" class="outline-2">
+<h2 id="org6002225">Setting up the project folders</h2>
+<div class="outline-text-2" id="text-org6002225">
 <p>
 In each project folder I then add the file <code>.envrc</code> containing a single line:
 </p>
@@ -92,9 +92,9 @@ function <code>direnv-allow</code> after opening the folder in Emacs.
 </div>
 </div>
 
-<div id="outline-container-org7bac164" class="outline-2">
-<h2 id="org7bac164">Using it</h2>
-<div class="outline-text-2" id="text-org7bac164">
+<div id="outline-container-orgbcb33a0" class="outline-2">
+<h2 id="orgbcb33a0">Using it</h2>
+<div class="outline-text-2" id="text-orgbcb33a0">
 <p>
 It's as simple as moving into the folder in a shell &#x2013; all required envvars are
 set up on entry and unset on exit.

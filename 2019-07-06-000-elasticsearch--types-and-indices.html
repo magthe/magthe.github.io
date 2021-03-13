@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="alternate"
+      type="application/rss+xml"
+      href="https://magnus.therning.org/feed.xml"
+      title="RSS feed for https://magnus.therning.org/">
+<title>Elasticsearch, types and indices</title>
+<meta name="author" content="Magnus Therning"><meta name="referrer" content="no-referrer"><link href= "static/style.css" rel="stylesheet" type="text/css" /><link href= "static/htmlize.css" rel="stylesheet" type="text/css" /><link href= "static/extra_style.css" rel="stylesheet" type="text/css" /></head>
+<body>
+<div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
+<div id="content">
+<div class="post-date">06 Jul 2019</div><h1 class="post-title"><a href="https://magnus.therning.org/2019-07-06-000-elasticsearch--types-and-indices.html">Elasticsearch, types and indices</a></h1>
+<p>
+The other day I added some more logging into a service at work, but not all logs
+appeared in Kibana. Some messages got lost between CloudWatch Logs and
+Elasticsearch. After turning up the logging in the Lambda shuffling log messages
+I was in for a bit of learning about Elasticsearch.
+</p>
+
+<p>
+Running the following in a Kibana console will show what the issue was
+</p>
+
+<pre class="example" id="orgdf8782c">
+PUT idx-0/_doc/1
+{
+  "name": "John",
+  "full_name": "John Doe"
+}
+
+PUT idx-0/_doc/2
+{
+  "name": "Jane",
+  "full_name": {
+    "first": "Jane",
+    "last": "Doe"
+  }
+}
+</pre>
+
+<p>
+Executing them in order results in the following error on the second command
+</p>
+
+<div class="org-src-container">
+<pre class="src src-js"><span class="org-rainbow-delimiters-depth-1">{</span>
+  <span class="org-string">"error"</span>: <span class="org-rainbow-delimiters-depth-2">{</span>
+    <span class="org-string">"root_cause"</span>: <span class="org-rainbow-delimiters-depth-3">[</span>
+      <span class="org-rainbow-delimiters-depth-4">{</span>
+        <span class="org-string">"type"</span>: <span class="org-string">"mapper_parsing_exception"</span>,
+        <span class="org-string">"reason"</span>: <span class="org-string">"failed to parse field [full_name] of type [text]"</span>
+      <span class="org-rainbow-delimiters-depth-4">}</span>
+    <span class="org-rainbow-delimiters-depth-3">]</span>,
+    <span class="org-string">"type"</span>: <span class="org-string">"mapper_parsing_exception"</span>,
+    <span class="org-string">"reason"</span>: <span class="org-string">"failed to parse field [full_name] of type [text]"</span>,
+    <span class="org-string">"caused_by"</span>: <span class="org-rainbow-delimiters-depth-3">{</span>
+      <span class="org-string">"type"</span>: <span class="org-string">"illegal_state_exception"</span>,
+      <span class="org-string">"reason"</span>: <span class="org-string">"Can't get text on a START_OBJECT at 3:16"</span>
+    <span class="org-rainbow-delimiters-depth-3">}</span>
+  <span class="org-rainbow-delimiters-depth-2">}</span>,
+  <span class="org-string">"status"</span>: <span class="org-highlight-numbers-number">400</span>
+<span class="org-rainbow-delimiters-depth-1">}</span>
+</pre>
+</div>
+
+<p>
+The reason for this is that a schema for the data is built up dynamically as
+documents are pushed in.<sup><a id="fnr.1" class="footref" href="#fn.1">1</a></sup> It is possible to turn off dynamic schema
+building for an index using a <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/dynamic-mapping.html">mapping</a>. For the documents above it'd look
+something lik this
+</p>
+
+<pre class="example" id="org38649e6">
+PUT idx-0
+{
+  "mappings": {
+    "_doc": {
+      "dynamic": false
+    }
+  }
+}
+</pre>
+
+<p>
+Now it's possible to push both documents, however searching is not possible,
+because, as the <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/dynamic.html">documentation for <code>dynamic</code></a> says:
+</p>
+
+<blockquote>
+<p>
+fields will not be indexed so will not be searchable but will still appear in
+the _source field of returned hits
+</p>
+</blockquote>
+
+<p>
+If there's something that determines the value of logs it's them being
+searchable.
+</p>
+
+<p>
+As far as I understand one solution to all of this would have been <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping.html#mapping-type">mapping
+types</a>, but that's being removed (see <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/removal-of-types.html">removal of mapping types</a>) so isn't a
+solution. I'm not sure if Elasticsearch offers any <i>good</i> solution to it
+nowadays. There's however a workaround, more indices.
+</p>
+
+<p>
+Using two indices instead of one does work. So modifying the first commands to
+use separate indices works.
+</p>
+
+<pre class="example" id="org79cd6b0">
+PUT idx-0/_doc/1
+{
+  "name": "John",
+  "full_name": "John Doe"
+}
+
+PUT idx-1/_doc/1
+{
+  "name": "Jane",
+  "full_name": {
+    "first": "Jane",
+    "last": "Doe"
+  }
+}
+</pre>
+
+<p>
+When creating an index pattern for <code>idx-*</code> there's a warning about many analysis
+functions not working due to the type conflict. However, searching <i>does</i> work
+and that's all I really care about in this case.
+</p>
+
+<p>
+When shuffling the logs from CloudWatch Logs to Elasticsearch we already use
+multiple indices. They're constructed based on service name, deploy environment
+(<i>staging</i>, <i>production</i>) and date (a new index each day). To deal with these
+type conflicts I added a <i>log type</i> that's taken out of the log message itself.
+It's not an elegant solution &#x2013; it puts the solution into the services
+themselves &#x2013; but it's acceptable.
+</p>
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+
+<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1">1</a></sup> <div class="footpara"><p class="footpara">
+Something that makes me wonder what the definition of <i>schema-free</i> is. I
+sure didn't expect there to ever be a type constraint preventing pushing a
+document into something that's called schema-free (see the <a href="https://en.wikipedia.org/wiki/Elasticsearch">Wikipedia article</a>).
+(The initiated say it's Lucene, not Elasticsearch, but to me that doesn't make
+any difference at all.)
+</p></div></div>
+
+
+</div>
+</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-elasticsearch.html">elasticsearch</a> </div></div>
+<div id="postamble" class="status"><!-- org-static-blog-page-postamble --></div>
+</body>
+</html>

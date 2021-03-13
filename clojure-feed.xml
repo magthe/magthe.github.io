@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0">
+<channel>
+<title><![CDATA[Magnus web site - clojure]]></title>
+<description><![CDATA[Magnus web site - clojure]]></description>
+<link>https://magnus.therning.org//tag-clojure.html</link>
+<lastBuildDate>Sun, 14 Mar 2021 07:55:28 +0100</lastBuildDate>
+<item>
+  <title><![CDATA[Components feel so not FP]]></title>
+  <description><![CDATA[
+<p>
+At work we're writing most of the new stuff using Clojure. That's been going on
+since before I started working there, and from the beginning there's been
+exploration of style and libraries, yes, even of frameworks (ugh!). Now there's
+discussion of standardising. The discussion is still in its infancy, but it
+prompted me to start thinking about what I'm come across in the code base we
+have now, what I like and what I dislike. The first thing that came to mind was
+how our different services are set up. I mean set up internally. Like, what's
+actually in the <code>main</code> function (or in <code>-main</code>, since we're talking Clojure). In
+many services we use <a href="https://clojars.org/com.stuartsierra/component">Stuart Sierra's <code>component</code></a>, in a growing number of
+services we use <a href="https://clojars.org/integrant"><code>integrant</code></a>, and in one we use <a href="https://clojars.org/mount"><code>mount</code></a>.
+</p>
+
+<p>
+The current discussion is going in the direction of <code>integrant</code>, and I don't
+like it!
+</p>
+
+<p>
+AFAICS <code>integrant</code> suffers from all the same things as <code>component</code> (the author
+of <code>mount</code> has put it into words better than I ever could in his text on
+<code>mount</code>'s <a href="https://github.com/tolitius/mount/blob/master/doc/differences-from-component.md#differences-from-component">differences from component</a>') plus one more thing to boot: systems are
+"configured into being". It's touted as "data-driven architecture", I tend to
+see it as <i>architecture defined in a language separate from my functions</i>. The
+<code>integrant</code> README says that one of its strengths over <code>component</code> is that
+</p>
+
+<blockquote>
+<p>
+In Integrant, systems are created from a configuration data structure, typically
+loaded from an edn resource. The architecture of the application is defined
+through data, rather than code.
+</p>
+</blockquote>
+
+<p>
+Somehow that statement makes me think of OO and DI frameworks. I suspect the
+above paragraph is just as true with the two replacements <code>s/Integrant/Spring/</code>
+and <code>s/edn/XML/</code>. I'm not convinced this is a strength at all! My experience
+with DI frameworks in OO is limited (I've never used external configuration),
+but the enduring impression is that it's unwieldy. In particular it was very far
+between cause and effect of errors. So far this is true for <code>integrant</code> as well.
+</p>
+
+<p>
+Also, it makes me think of "functional in the small, OO in the large"<a href="https://www.johndcook.com/blog/2009/03/23/functional-in-the-small-oo-in-the-large/">^1</a>, which
+is a comment coming out of the f-sharp world. Maybe there's a connection here.
+Maybe "OO in the large" is something that resonates with OO-turned-FP
+developers. Maybe that means it's only a quesiton of time (and exposure to FP)
+before they embrace "functional all the way"? Or, maybe I'm simply missing
+something crucial.
+</p>
+
+<p>
+In any case I'm going to have to take a closer look at <code>mount</code> in the near
+future. I'll also have to take a look at its brother <a href="https://github.com/tolitius/yurt"><code>yurt</code></a>, and at its distant
+cousin <a href="https://github.com/aroemers/mount-lite"><code>mount-lite</code></a>.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-clojure.html">clojure</a> <a href="https://magnus.therning.org/tag-functional_programming.html">functional_programming</a> </div>]]></description>
+  <category><![CDATA[clojure]]></category>
+  <category><![CDATA[functional_programming]]></category>
+  <link>https://magnus.therning.org/2019-01-05-000-components-feel-so-not-fp.html</link>
+  <pubDate>Sun, 28 Apr 2019 12:34:00 +0200</pubDate>
+</item>
+</channel>
+</rss>

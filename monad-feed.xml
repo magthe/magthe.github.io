@@ -1,0 +1,558 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0">
+<channel>
+<title><![CDATA[Magnus web site - monad]]></title>
+<description><![CDATA[Magnus web site - monad]]></description>
+<link>https://magnus.therning.org//tag-monad.html</link>
+<lastBuildDate>Sun, 14 Mar 2021 07:55:28 +0100</lastBuildDate>
+<item>
+  <title><![CDATA[The ReaderT design pattern or tagless final?]]></title>
+  <description><![CDATA[
+<p>
+The other week I read V. Kevroletin's <a href="https://serokell.io/blog/2018/12/07/tagless-final">Introduction to Tagless Final</a> and realised
+that a couple of my projects, both at work and at home, would benefit from a
+refactoring to that approach. All in all I was happy with the changes I made,
+even though I haven't made use of all the way. In particular there I could
+further improve the tests in a few places by adding more typeclasses. For now
+it's good enough and I've clearly gotten some value out of it.
+</p>
+
+<p>
+I found mr. Kevroletin's article to be a good introduction so I've been passing
+it on when people on the <a href="https://functionalprogramming.slack.com/">Functional programming slack</a> bring up questions about
+how to organize their code as applications grow. In particular if they mention
+that they're using monad transformers. I did exactly that just the other day
+<i>@solomon</i> wrote
+</p>
+
+<blockquote>
+<p>
+so i've created a rats nest of IO where almost all the functions in my program
+are in <code>ReaderT Env IO ()</code> and I'm not sure how to purify everything and move
+the IO to the edge of the program
+</p>
+</blockquote>
+
+<p>
+I proposed tagless final and passed the URL on, and then I got a pointer to the
+article <a href="https://www.fpcomplete.com/blog/2017/06/readert-design-pattern">The ReaderT Design Patter</a> which I hadn't seen before.
+</p>
+
+<p>
+The two approches are similar, at least to me, and I can't really judge if one's
+better than the other. Just to get a feel for it I thought I'd try to rewrite
+the example in the <code>ReaderT</code> article in a tagless final style.
+</p>
+
+<div id="outline-container-org6b0a206" class="outline-2">
+<h2 id="org6b0a206">A slightly changed example of <code>ReaderT</code> design pattern</h2>
+<div class="outline-text-2" id="text-org6b0a206">
+<p>
+I decided to make a few changes to the example in the article:
+</p>
+
+<ul class="org-ul">
+<li>I removed the <code>modify</code> function, instead the code uses the typeclass function
+<code>modifyBalance</code> directly.</li>
+<li>I separated the instances needed for the tests spatially in the code just to
+make it easier to see what's "production" code and what's test code.</li>
+<li>I combined the <code>main</code> functions from the various examples to that both an
+example (<code>main0</code>) and the test (<code>main1</code>) are run.</li>
+<li>I switched from <code>Control.Concurrent.Async.Lifted.Safe</code> (from <code>monad-control</code>)
+to <code>UnliftIO.Async</code> (from <code>unliftio</code>)</li>
+</ul>
+
+<p>
+After that the code looks like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-pragma">{-# LANGUAGE FlexibleContexts #-}</span>
+<span class="org-haskell-pragma">{-# LANGUAGE FlexibleInstances #-}</span>
+
+<span class="org-haskell-keyword">import</span>           <span class="org-haskell-constructor">Control.Concurrent.STM</span>
+<span class="org-haskell-keyword">import</span>           <span class="org-haskell-constructor">Control.Monad.Reader</span>
+<span class="org-haskell-keyword">import</span> <span class="org-haskell-keyword">qualified</span> <span class="org-haskell-constructor">Control.Monad.State.Strict</span> <span class="org-haskell-keyword">as</span> <span class="org-haskell-constructor">State</span>
+<span class="org-haskell-keyword">import</span>           <span class="org-haskell-constructor">Say</span>
+<span class="org-haskell-keyword">import</span>           <span class="org-haskell-constructor">Test.Hspec</span>
+<span class="org-haskell-keyword">import</span>           <span class="org-haskell-constructor">UnliftIO.Async</span>
+
+<span class="org-haskell-keyword">data</span> <span class="org-haskell-type">Env</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">Env</span>
+  <span class="org-rainbow-delimiters-depth-1">{</span> envLog <span class="org-haskell-operator">::</span> <span class="org-haskell-operator">!</span><span class="org-rainbow-delimiters-depth-2">(</span><span class="org-haskell-type">String</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-3">()</span></span><span class="org-rainbow-delimiters-depth-2">)</span>
+  , envBalance <span class="org-haskell-operator">::</span> <span class="org-haskell-operator">!</span><span class="org-rainbow-delimiters-depth-2">(</span><span class="org-haskell-type">TVar</span> <span class="org-haskell-type">Int</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-1">}</span>
+
+<span class="org-haskell-keyword">class</span> <span class="org-haskell-type">HasLog</span> a <span class="org-haskell-keyword">where</span>
+  getLog <span class="org-haskell-operator">::</span> a <span class="org-haskell-operator">-&gt;</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">String</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-2">()</span></span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-haskell-keyword">instance</span> <span class="org-haskell-type">HasLog</span> <span class="org-haskell-type">Env</span> <span class="org-haskell-keyword">where</span>
+  getLog <span class="org-haskell-operator">=</span> envLog
+
+<span class="org-haskell-keyword">class</span> <span class="org-haskell-type">HasBalance</span> a <span class="org-haskell-keyword">where</span>
+  getBalance <span class="org-haskell-operator">::</span> a <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">TVar</span> <span class="org-haskell-type">Int</span>
+
+<span class="org-haskell-keyword">instance</span> <span class="org-haskell-type">HasBalance</span> <span class="org-haskell-type">Env</span> <span class="org-haskell-keyword">where</span>
+  getBalance <span class="org-haskell-operator">=</span> envBalance
+
+<span class="org-haskell-keyword">class</span> <span class="org-haskell-type">Monad</span> m <span class="org-haskell-operator">=&gt;</span> <span class="org-haskell-type">MonadBalance</span> m <span class="org-haskell-keyword">where</span>
+  modifyBalance <span class="org-haskell-operator">::</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Int</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Int</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">-&gt;</span> m <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+
+<span class="org-haskell-keyword">instance</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">HasBalance</span> env, <span class="org-haskell-type">MonadIO</span> m<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=&gt;</span> <span class="org-haskell-type">MonadBalance</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">ReaderT</span> env m<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-keyword">where</span>
+  modifyBalance f <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+    env <span class="org-haskell-operator">&lt;-</span> ask
+    liftIO <span class="org-haskell-operator">$</span> atomically <span class="org-haskell-operator">$</span> modifyTVar' <span class="org-rainbow-delimiters-depth-1">(</span>getBalance env<span class="org-rainbow-delimiters-depth-1">)</span> f
+
+<span class="org-haskell-definition">logSomething</span> <span class="org-haskell-operator">::</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">MonadReader</span> env m, <span class="org-haskell-type">HasLog</span> env, <span class="org-haskell-type">MonadIO</span> m<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=&gt;</span> <span class="org-haskell-type">String</span> <span class="org-haskell-operator">-&gt;</span> m <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+<span class="org-haskell-definition">logSomething</span> msg <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+  env <span class="org-haskell-operator">&lt;-</span> ask
+  liftIO <span class="org-haskell-operator">$</span> getLog env msg
+
+<span class="org-haskell-definition">main0</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+<span class="org-haskell-definition">main0</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+  ref <span class="org-haskell-operator">&lt;-</span> newTVarIO <span class="org-highlight-numbers-number">4</span>
+  <span class="org-haskell-keyword">let</span> env <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">Env</span> <span class="org-rainbow-delimiters-depth-1">{</span> envLog <span class="org-haskell-operator">=</span> sayString , envBalance <span class="org-haskell-operator">=</span> ref <span class="org-rainbow-delimiters-depth-1">}</span>
+  runReaderT
+    <span class="org-rainbow-delimiters-depth-1">(</span>concurrently_
+      <span class="org-rainbow-delimiters-depth-2">(</span>modifyBalance <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-haskell-operator">+</span> <span class="org-highlight-numbers-number">1</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+      <span class="org-rainbow-delimiters-depth-2">(</span>logSomething <span class="org-string">"Increasing account balance"</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+    env
+  balance <span class="org-haskell-operator">&lt;-</span> readTVarIO ref
+  sayString <span class="org-haskell-operator">$</span> <span class="org-string">"Final balance: "</span> <span class="org-haskell-operator">++</span> show balance
+
+<span class="org-haskell-keyword">instance</span> <span class="org-haskell-type">HasLog</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">String</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-2">()</span></span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-keyword">where</span>
+  getLog <span class="org-haskell-operator">=</span> id
+
+<span class="org-haskell-keyword">instance</span> <span class="org-haskell-type">HasBalance</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">TVar</span> <span class="org-haskell-type">Int</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-keyword">where</span>
+  getBalance <span class="org-haskell-operator">=</span> id
+
+<span class="org-haskell-keyword">instance</span> <span class="org-haskell-type">Monad</span> m <span class="org-haskell-operator">=&gt;</span> <span class="org-haskell-type">MonadBalance</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">State.StateT</span> <span class="org-haskell-type">Int</span> m<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-keyword">where</span>
+  modifyBalance <span class="org-haskell-operator">=</span> State.modify
+
+<span class="org-haskell-definition">main1</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+<span class="org-haskell-definition">main1</span> <span class="org-haskell-operator">=</span> hspec <span class="org-haskell-operator">$</span> <span class="org-haskell-keyword">do</span>
+  describe <span class="org-string">"modify"</span> <span class="org-haskell-operator">$</span> <span class="org-haskell-keyword">do</span>
+    it <span class="org-string">"works, IO"</span> <span class="org-haskell-operator">$</span> <span class="org-haskell-keyword">do</span>
+      var <span class="org-haskell-operator">&lt;-</span> newTVarIO <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-highlight-numbers-number">1</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Int</span><span class="org-rainbow-delimiters-depth-1">)</span>
+      runReaderT <span class="org-rainbow-delimiters-depth-1">(</span>modifyBalance <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-haskell-operator">+</span> <span class="org-highlight-numbers-number">2</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span> var
+      res <span class="org-haskell-operator">&lt;-</span> readTVarIO var
+      res <span class="org-haskell-operator">`shouldBe`</span> <span class="org-highlight-numbers-number">3</span>
+    it <span class="org-string">"works, pure"</span> <span class="org-haskell-operator">$</span> <span class="org-haskell-keyword">do</span>
+      <span class="org-haskell-keyword">let</span> res <span class="org-haskell-operator">=</span> State.execState <span class="org-rainbow-delimiters-depth-1">(</span>modifyBalance <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-haskell-operator">+</span> <span class="org-highlight-numbers-number">2</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-highlight-numbers-number">1</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Int</span><span class="org-rainbow-delimiters-depth-1">)</span>
+      res <span class="org-haskell-operator">`shouldBe`</span> <span class="org-highlight-numbers-number">3</span>
+  describe <span class="org-string">"logSomething"</span> <span class="org-haskell-operator">$</span>
+    it <span class="org-string">"works"</span> <span class="org-haskell-operator">$</span> <span class="org-haskell-keyword">do</span>
+      var <span class="org-haskell-operator">&lt;-</span> newTVarIO <span class="org-string">""</span>
+      <span class="org-haskell-keyword">let</span> logFunc msg <span class="org-haskell-operator">=</span> atomically <span class="org-haskell-operator">$</span> modifyTVar var <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-operator">++</span> msg<span class="org-rainbow-delimiters-depth-1">)</span>
+          msg1 <span class="org-haskell-operator">=</span> <span class="org-string">"Hello "</span>
+          msg2 <span class="org-haskell-operator">=</span> <span class="org-string">"World\n"</span>
+      runReaderT <span class="org-rainbow-delimiters-depth-1">(</span>logSomething msg1 <span class="org-haskell-operator">&gt;&gt;</span> logSomething msg2<span class="org-rainbow-delimiters-depth-1">)</span> logFunc
+      res <span class="org-haskell-operator">&lt;-</span> readTVarIO var
+      res <span class="org-haskell-operator">`shouldBe`</span> <span class="org-rainbow-delimiters-depth-1">(</span>msg1 <span class="org-haskell-operator">++</span> msg2<span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-haskell-definition">main</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+<span class="org-haskell-definition">main</span> <span class="org-haskell-operator">=</span> main0 <span class="org-haskell-operator">&gt;&gt;</span> main1
+</pre>
+</div>
+
+<p>
+I think the distinguising features are
+</p>
+
+<ul class="org-ul">
+<li>The application environmant, <code>Env</code> will contain configuraiton values (not in
+this example), state, <code>envBalance</code>, and functions we might want to vary,
+<code>envLog</code></li>
+<li>There is no explicit type representing the execution context</li>
+<li>Typeclasses are used to abstract over application environment, <code>HasLog</code> and
+<code>HasBalance</code></li>
+<li>Typeclasses are used to abstract over operations, <code>MonadBalance</code></li>
+<li>Typeclasses are implemented for both the application environment, <code>HasLog</code> and
+<code>HasBalance</code>, and the execution context, <code>MonadBalance</code></li>
+</ul>
+
+<p>
+In the end this makes for code with very loose couplings; there's not really any
+single concrete type that implements all the constraints to work in the "real"
+main function (<code>main0</code>). I could of course introduce a type synonym for it
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-keyword">type</span> <span class="org-haskell-type">App</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-type">ReaderT</span> <span class="org-haskell-type">Env</span> <span class="org-haskell-type">IO</span>
+</pre>
+</div>
+
+<p>
+but it brings no value &#x2013; it wouldn't be used explicitly anywhere.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org65b3426" class="outline-2">
+<h2 id="org65b3426">A tagless final version</h2>
+<div class="outline-text-2" id="text-org65b3426">
+<p>
+In order to compare the <code>ReaderT</code> design pattern to tagless final (as I
+understand it) I made an attempt to translate the code above. The code below is
+the result.<sup><a id="fnr.1" class="footref" href="#fn.1">1</a></sup>
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-pragma">{-# LANGUAGE FlexibleContexts #-}</span>
+<span class="org-haskell-pragma">{-# LANGUAGE FlexibleInstances #-}</span>
+<span class="org-haskell-pragma">{-# LANGUAGE GeneralizedNewtypeDeriving #-}</span>
+<span class="org-haskell-pragma">{-# LANGUAGE MultiParamTypeClasses #-}</span>
+<span class="org-haskell-pragma">{-# LANGUAGE TypeFamilies #-}</span>
+
+<span class="org-haskell-keyword">import</span>           <span class="org-haskell-constructor">Control.Concurrent.STM</span>
+<span class="org-haskell-keyword">import</span> <span class="org-haskell-keyword">qualified</span> <span class="org-haskell-constructor">Control.Monad.Identity</span> <span class="org-haskell-keyword">as</span> <span class="org-haskell-constructor">Id</span>
+<span class="org-haskell-keyword">import</span>           <span class="org-haskell-constructor">Control.Monad.Reader</span>
+<span class="org-haskell-keyword">import</span> <span class="org-haskell-keyword">qualified</span> <span class="org-haskell-constructor">Control.Monad.State.Strict</span> <span class="org-haskell-keyword">as</span> <span class="org-haskell-constructor">State</span>
+<span class="org-haskell-keyword">import</span>           <span class="org-haskell-constructor">Say</span>
+<span class="org-haskell-keyword">import</span>           <span class="org-haskell-constructor">Test.Hspec</span>
+<span class="org-haskell-keyword">import</span>           <span class="org-haskell-constructor">UnliftIO</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">MonadUnliftIO</span><span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-haskell-keyword">import</span>           <span class="org-haskell-constructor">UnliftIO.Async</span>
+
+<span class="org-haskell-keyword">newtype</span> <span class="org-haskell-type">Env</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">Env</span> <span class="org-rainbow-delimiters-depth-1">{</span>envBalance <span class="org-haskell-operator">::</span> <span class="org-haskell-type">TVar</span> <span class="org-haskell-type">Int</span><span class="org-rainbow-delimiters-depth-1">}</span>
+
+<span class="org-haskell-keyword">newtype</span> <span class="org-haskell-type">AppM</span> a <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">AppM</span> <span class="org-rainbow-delimiters-depth-1">{</span>unAppM <span class="org-haskell-operator">::</span> <span class="org-haskell-type">ReaderT</span> <span class="org-haskell-type">Env</span> <span class="org-haskell-type">IO</span> a<span class="org-rainbow-delimiters-depth-1">}</span>
+  <span class="org-haskell-keyword">deriving</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">Functor</span>, <span class="org-haskell-constructor">Applicative</span>, <span class="org-haskell-constructor">Monad</span>, <span class="org-haskell-constructor">MonadIO</span>, <span class="org-haskell-constructor">MonadReader</span> <span class="org-haskell-constructor">Env</span>, <span class="org-haskell-constructor">MonadUnliftIO</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-haskell-definition">runAppM</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Env</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">AppM</span> a <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">IO</span> a
+<span class="org-haskell-definition">runAppM</span> env app <span class="org-haskell-operator">=</span> runReaderT <span class="org-rainbow-delimiters-depth-1">(</span>unAppM app<span class="org-rainbow-delimiters-depth-1">)</span> env
+
+<span class="org-haskell-keyword">class</span> <span class="org-haskell-type">Monad</span> m <span class="org-haskell-operator">=&gt;</span> <span class="org-haskell-type">ModifyM</span> m <span class="org-haskell-keyword">where</span>
+  mModify <span class="org-haskell-operator">::</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Int</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Int</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">-&gt;</span> m <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+
+<span class="org-haskell-keyword">class</span> <span class="org-haskell-type">Monad</span> m <span class="org-haskell-operator">=&gt;</span> <span class="org-haskell-type">LogSomethingM</span> m <span class="org-haskell-keyword">where</span>
+  mLogSomething <span class="org-haskell-operator">::</span> <span class="org-haskell-type">String</span> <span class="org-haskell-operator">-&gt;</span> m<span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+
+<span class="org-haskell-keyword">instance</span> <span class="org-haskell-type">ModifyM</span> <span class="org-haskell-type">AppM</span> <span class="org-haskell-keyword">where</span>
+  mModify f <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+    ref <span class="org-haskell-operator">&lt;-</span> asks envBalance
+    liftIO <span class="org-haskell-operator">$</span> atomically <span class="org-haskell-operator">$</span> modifyTVar' ref f
+
+<span class="org-haskell-keyword">instance</span> <span class="org-haskell-type">LogSomethingM</span> <span class="org-haskell-type">AppM</span> <span class="org-haskell-keyword">where</span>
+  mLogSomething <span class="org-haskell-operator">=</span> liftIO <span class="org-haskell-operator">.</span> sayString
+
+<span class="org-haskell-definition">main0</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+<span class="org-haskell-definition">main0</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+  ref <span class="org-haskell-operator">&lt;-</span> newTVarIO <span class="org-highlight-numbers-number">4</span>
+  <span class="org-haskell-keyword">let</span> env <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">Env</span> ref
+  runAppM env
+    <span class="org-rainbow-delimiters-depth-1">(</span>concurrently_
+      <span class="org-rainbow-delimiters-depth-2">(</span>mModify <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-haskell-operator">+</span> <span class="org-highlight-numbers-number">1</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+      <span class="org-rainbow-delimiters-depth-2">(</span>mLogSomething <span class="org-string">"Increasing account balance"</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+  balance <span class="org-haskell-operator">&lt;-</span> readTVarIO ref
+  sayString <span class="org-haskell-operator">$</span> <span class="org-string">"Final balance: "</span> <span class="org-haskell-operator">++</span> show balance
+
+<span class="org-haskell-keyword">newtype</span> <span class="org-haskell-type">ModifyAppM</span> a <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">ModifyAppM</span> <span class="org-rainbow-delimiters-depth-1">{</span>unModifyAppM <span class="org-haskell-operator">::</span> <span class="org-haskell-type">State.StateT</span> <span class="org-haskell-type">Int</span> <span class="org-haskell-type">Id.Identity</span> a<span class="org-rainbow-delimiters-depth-1">}</span>
+  <span class="org-haskell-keyword">deriving</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">Functor</span>, <span class="org-haskell-constructor">Applicative</span>, <span class="org-haskell-constructor">Monad</span>, <span class="org-haskell-constructor">State.MonadState</span> <span class="org-haskell-constructor">Int</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-haskell-definition">runModifyAppM</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Int</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">ModifyAppM</span> a <span class="org-haskell-operator">-&gt;</span> <span class="org-rainbow-delimiters-depth-1">(</span>a, <span class="org-haskell-type">Int</span><span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-haskell-definition">runModifyAppM</span> s app <span class="org-haskell-operator">=</span> Id.runIdentity <span class="org-haskell-operator">$</span> State.runStateT <span class="org-rainbow-delimiters-depth-1">(</span>unModifyAppM app<span class="org-rainbow-delimiters-depth-1">)</span> s
+
+<span class="org-haskell-keyword">instance</span> <span class="org-haskell-type">ModifyM</span> <span class="org-haskell-type">ModifyAppM</span> <span class="org-haskell-keyword">where</span>
+  mModify <span class="org-haskell-operator">=</span> State.modify'
+
+<span class="org-haskell-keyword">newtype</span> <span class="org-haskell-type">LogAppM</span> a <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">LogAppM</span> <span class="org-rainbow-delimiters-depth-1">{</span>unLogAppM <span class="org-haskell-operator">::</span> <span class="org-haskell-type">ReaderT</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-haskell-type">TVar</span> <span class="org-haskell-type">String</span><span class="org-rainbow-delimiters-depth-2">)</span> <span class="org-haskell-type">IO</span> a<span class="org-rainbow-delimiters-depth-1">}</span>
+  <span class="org-haskell-keyword">deriving</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">Functor</span>, <span class="org-haskell-constructor">Applicative</span>, <span class="org-haskell-constructor">Monad</span>, <span class="org-haskell-constructor">MonadIO</span>, <span class="org-haskell-constructor">MonadReader</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-haskell-constructor">TVar</span> <span class="org-haskell-constructor">String</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-haskell-definition">runLogAppM</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">TVar</span> <span class="org-haskell-type">String</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">LogAppM</span> a <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">IO</span> a
+<span class="org-haskell-definition">runLogAppM</span> env app <span class="org-haskell-operator">=</span> runReaderT <span class="org-rainbow-delimiters-depth-1">(</span>unLogAppM app<span class="org-rainbow-delimiters-depth-1">)</span> env
+
+<span class="org-haskell-keyword">instance</span> <span class="org-haskell-type">LogSomethingM</span> <span class="org-haskell-type">LogAppM</span> <span class="org-haskell-keyword">where</span>
+  mLogSomething msg <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+    var <span class="org-haskell-operator">&lt;-</span> ask
+    liftIO <span class="org-haskell-operator">$</span> atomically <span class="org-haskell-operator">$</span> modifyTVar var <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-operator">++</span> msg<span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-haskell-definition">main1</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+<span class="org-haskell-definition">main1</span> <span class="org-haskell-operator">=</span> hspec <span class="org-haskell-operator">$</span> <span class="org-haskell-keyword">do</span>
+  describe <span class="org-string">"mModify"</span> <span class="org-haskell-operator">$</span> <span class="org-haskell-keyword">do</span>
+    it <span class="org-string">"works, IO"</span> <span class="org-haskell-operator">$</span> <span class="org-haskell-keyword">do</span>
+      var <span class="org-haskell-operator">&lt;-</span> newTVarIO <span class="org-highlight-numbers-number">1</span>
+      runAppM <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">Env</span> var<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-rainbow-delimiters-depth-1">(</span>mModify <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-haskell-operator">+</span> <span class="org-highlight-numbers-number">2</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+      res <span class="org-haskell-operator">&lt;-</span> readTVarIO var
+      res <span class="org-haskell-operator">`shouldBe`</span> <span class="org-highlight-numbers-number">3</span>
+    it <span class="org-string">"works, pure"</span> <span class="org-haskell-operator">$</span> <span class="org-haskell-keyword">do</span>
+      <span class="org-haskell-keyword">let</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-keyword">_</span>, res<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=</span> runModifyAppM <span class="org-highlight-numbers-number">1</span> <span class="org-rainbow-delimiters-depth-1">(</span>mModify <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-haskell-operator">+</span> <span class="org-highlight-numbers-number">2</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+      res <span class="org-haskell-operator">`shouldBe`</span> <span class="org-highlight-numbers-number">3</span>
+  describe <span class="org-string">"mLogSomething"</span> <span class="org-haskell-operator">$</span>
+    it <span class="org-string">"works"</span> <span class="org-haskell-operator">$</span> <span class="org-haskell-keyword">do</span>
+      var <span class="org-haskell-operator">&lt;-</span> newTVarIO <span class="org-string">""</span>
+      runLogAppM var <span class="org-rainbow-delimiters-depth-1">(</span>mLogSomething <span class="org-string">"Hello"</span> <span class="org-haskell-operator">&gt;&gt;</span> mLogSomething <span class="org-string">"World!"</span><span class="org-rainbow-delimiters-depth-1">)</span>
+      res <span class="org-haskell-operator">&lt;-</span> readTVarIO var
+      res <span class="org-haskell-operator">`shouldBe`</span> <span class="org-string">"HelloWorld!"</span>
+
+<span class="org-haskell-definition">main</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+<span class="org-haskell-definition">main</span> <span class="org-haskell-operator">=</span> main0 <span class="org-haskell-operator">&gt;&gt;</span> main1
+</pre>
+</div>
+
+<p>
+The steps for the "real" part of the program were
+</p>
+
+<ol class="org-ol">
+<li>Introduce an execution type, <code>AppM</code>, with a convenience function for running
+it, <code>runAppM</code></li>
+<li>Remove the log function from the environment type, <code>envLog</code> in <code>Env</code></li>
+<li>Remove all the <code>HasX</code> classes</li>
+<li>Create a new operations typeclass for logging, <code>LogSomethingM</code></li>
+<li>Rename the operations typeclass for modifying the balance to match the naming
+found in the <a href="https://serokell.io/blog/2018/12/07/tagless-final">tagless article</a> a bit better, <code>ModifyM</code></li>
+<li>Implement instances of both operations typeclasses for <code>AppM</code></li>
+</ol>
+
+<p>
+For testing the steps were
+</p>
+
+<ol class="org-ol">
+<li>Define an execution type for each test, <code>ModifyAppM</code> and <code>LogAppM</code>, with some
+convenience functions for running them, <code>runModifyAppM</code> and <code>runLogAppM</code></li>
+<li>Write instances for the operations typeclasses, one for each</li>
+</ol>
+
+<p>
+So I think the distinguising features are
+</p>
+
+<ul class="org-ul">
+<li>There's both an environment type, <code>Env</code>, and an execution type <code>AppM</code> that
+wraps it</li>
+<li>The environment holds only configuration values (none in this example), and
+state (<code>envBalance</code>)</li>
+<li>Typeclasses are used to abstract over operations, <code>LogSomethingM</code> and
+<code>ModifyM</code></li>
+<li>Typeclasses are only implemented for the execution type</li>
+</ul>
+
+<p>
+This version has slightly more coupling, the execution type specifies the
+environment to use, and the operations are tied directly to the execution type.
+However, this coupling doesn't really make a big difference &#x2013; looking at the
+pure modify test the amount of code don't differ by much.
+</p>
+</div>
+
+<div id="outline-container-org9a9bb0f" class="outline-3">
+<h3 id="org9a9bb0f">A short note (mostly to myself)</h3>
+<div class="outline-text-3" id="text-org9a9bb0f">
+<p>
+I did write it using <code>monad-control</code> first, and then I needed an instance for
+<code>MonadBaseControl IO</code>. Deriving it automatically requires <code>UndecidableInstances</code>
+and I didn't really dare turn that on, so I ended up writing the instance. After
+some help on <a href="https://mail.haskell.org/pipermail/haskell-cafe/2019-February/130667.html">haskell-cafe</a> it ended up looking like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-keyword">instance</span> <span class="org-haskell-type">MonadBaseControl</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-type">AppM</span> <span class="org-haskell-keyword">where</span>
+  <span class="org-haskell-keyword">type</span> <span class="org-haskell-type">StM</span> <span class="org-haskell-type">AppM</span> a <span class="org-haskell-operator">=</span> a
+  liftBaseWith f <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">AppM</span> <span class="org-rainbow-delimiters-depth-1">(</span>liftBaseWith <span class="org-haskell-operator">$</span> <span class="org-haskell-operator">\</span> run <span class="org-haskell-operator">-&gt;</span> f <span class="org-rainbow-delimiters-depth-2">(</span>run <span class="org-haskell-operator">.</span> unAppM<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+  restoreM <span class="org-haskell-operator">=</span> return
+</pre>
+</div>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orge8c9125" class="outline-2">
+<h2 id="orge8c9125">Conclusion</h2>
+<div class="outline-text-2" id="text-orge8c9125">
+<p>
+My theoretical knowledge isn't anywhere near good enough to say anything
+objectively about the difference in expressiveness of the two design patterns.
+That means that my conclusion comes down to taste, do you like the <code>readerT</code>
+patter or tagless final better?
+</p>
+
+<p>
+I like the slightly looser coupling I get with the <code>ReaderT</code> pattern. Loose
+coupling is (almost) always a desirable goal. However, I can see that tying the
+typeclass instances directly to a concrete execution type results in the intent
+being communicated a little more clearly. Clearly communicating intent in code
+is also a desirable goal. In particular I suspect it'll result in more
+actionable error messages when making changes to the code &#x2013; the error will tell
+me that my execution type lacks an instance of a specific typeclass, instead of
+it telling me that a particular transformer stack does. On the other hand, in
+the <code>ReaderT</code> pattern that stack is very shallow.
+</p>
+
+<p>
+One possibility would be that one pattern is better suited for libraries and the
+other for applications. I don't think that's the case though as in both cases
+the library code would be written in a style that results in typeclass
+constraints on the caller and providing instances for those typeclasses is
+roughly an equal amount of work for both styles.
+</p>
+</div>
+</div>
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+
+<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1">1</a></sup> <div class="footpara"><p class="footpara">
+Please do point out any mistakes I've made in this, in particular if they
+stem from me misunderstanding tagless final completely.
+</p></div></div>
+
+
+</div>
+</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-tagless_final.html">tagless_final</a> <a href="https://magnus.therning.org/tag-readert.html">readert</a> <a href="https://magnus.therning.org/tag-monad.html">monad</a> <a href="https://magnus.therning.org/tag-monad_transformers.html">monad_transformers</a> </div>]]></description>
+  <category><![CDATA[haskell]]></category>
+  <category><![CDATA[tagless_final]]></category>
+  <category><![CDATA[readert]]></category>
+  <category><![CDATA[monad]]></category>
+  <category><![CDATA[monad_transformers]]></category>
+  <link>https://magnus.therning.org/2019-02-02-000-the-readert-design-pattern-or-tagless-final-.html</link>
+  <pubDate>Sat, 02 Feb 2019 12:34:00 +0100</pubDate>
+</item>
+<item>
+  <title><![CDATA[Using a configuration in Scotty]]></title>
+  <description><![CDATA[
+<p>
+At work we're only now getting around to put <a href="https://hilton.org.uk/blog/microservices-correlation-id">correlation IDs</a> into use. We write
+most our code in Clojure but since I'd really like to use more Haskell at work I
+thought I'd dive into <a href="https://hackage.haskell.org/package/scotty">Scotty</a> and see how to deal with logging and then
+especially how to get correlation IDs into the logs.
+</p>
+
+<div id="outline-container-org908bdc9" class="outline-2">
+<h2 id="org908bdc9">The types</h2>
+<div class="outline-text-2" id="text-org908bdc9">
+<p>
+For configuration it decided to use the reader monad inside <code>ActionT</code> from
+Scotty. Enter Chell:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-keyword">type</span> <span class="org-haskell-type">ChellM</span> c <span class="org-haskell-operator">=</span> <span class="org-haskell-type">ScottyT</span> <span class="org-haskell-type">Text</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">ReaderT</span> c <span class="org-haskell-type">IO</span><span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-haskell-keyword">type</span> <span class="org-haskell-type">ChellActionM</span> c <span class="org-haskell-operator">=</span> <span class="org-haskell-type">ActionT</span> <span class="org-haskell-type">Text</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">ReaderT</span> c <span class="org-haskell-type">IO</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+In order to run it I wrote a function corresponding to <code>scotty</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">chell</span> <span class="org-haskell-operator">::</span> c <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Port</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">ChellM</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+<span class="org-haskell-definition">chell</span> cfg port a <span class="org-haskell-operator">=</span> scottyOptsT opts <span class="org-rainbow-delimiters-depth-1">(</span>flip runReaderT cfg<span class="org-rainbow-delimiters-depth-1">)</span> a
+  <span class="org-haskell-keyword">where</span>
+    opts <span class="org-haskell-operator">=</span> def <span class="org-rainbow-delimiters-depth-1">{</span> verbose <span class="org-haskell-operator">=</span> <span class="org-highlight-numbers-number">0</span>
+               , settings <span class="org-haskell-operator">=</span> <span class="org-rainbow-delimiters-depth-2">(</span>settings def<span class="org-rainbow-delimiters-depth-2">)</span> <span class="org-rainbow-delimiters-depth-2">{</span> settingsPort <span class="org-haskell-operator">=</span> port <span class="org-rainbow-delimiters-depth-2">}</span>
+               <span class="org-rainbow-delimiters-depth-1">}</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org6fb6127" class="outline-2">
+<h2 id="org6fb6127">Correlation ID</h2>
+<div class="outline-text-2" id="text-org6fb6127">
+<p>
+To deal with the correlation ID each incoming request should be checked for the
+HTTP header <code>X-Correlation-Id</code> and if present it should be used during logging.
+If no such header is present then a new correlation ID should be created. Since
+it's per request it feels natural to create a WAI middleware for this.
+</p>
+
+<p>
+The easiest way I could come up with was to push the correlation ID into the
+request's headers before it's passed on:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">requestHeaderCorrelationId</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Request</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Maybe</span> <span class="org-haskell-type">ByteString</span>
+<span class="org-haskell-definition">requestHeaderCorrelationId</span> <span class="org-haskell-operator">=</span> lookup <span class="org-string">"X-Correlation-Id"</span> <span class="org-haskell-operator">.</span> requestHeaders
+
+<span class="org-haskell-definition">correlationId</span> <span class="org-haskell-operator">::</span>  <span class="org-haskell-type">Middleware</span>
+<span class="org-haskell-definition">correlationId</span> app req sendResponse <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+  u <span class="org-haskell-operator">&lt;-</span> <span class="org-rainbow-delimiters-depth-1">(</span>randomIO <span class="org-haskell-operator">::</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-type">UUID</span><span class="org-rainbow-delimiters-depth-1">)</span>
+  <span class="org-haskell-keyword">let</span> corrId <span class="org-haskell-operator">=</span> maybe <span class="org-rainbow-delimiters-depth-1">(</span>toASCIIBytes u<span class="org-rainbow-delimiters-depth-1">)</span> id <span class="org-rainbow-delimiters-depth-1">(</span>requestHeaderCorrelationId req<span class="org-rainbow-delimiters-depth-1">)</span>
+      newHeaders <span class="org-haskell-operator">=</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-string">"X-Correlation-Id"</span>, corrId<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-constructor">:</span> <span class="org-rainbow-delimiters-depth-1">(</span>requestHeaders req<span class="org-rainbow-delimiters-depth-1">)</span>
+  app <span class="org-rainbow-delimiters-depth-1">(</span>req <span class="org-rainbow-delimiters-depth-2">{</span> requestHeaders <span class="org-haskell-operator">=</span> newHeaders <span class="org-rainbow-delimiters-depth-2">}</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">$</span> <span class="org-haskell-operator">\</span> res <span class="org-haskell-operator">-&gt;</span> sendResponse res
+</pre>
+</div>
+
+<p>
+It also turns out to be useful to have both a default correlation ID and a
+function for pulling it out of the headers:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">defaultCorrelationString</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">ByteString</span>
+<span class="org-haskell-definition">defaultCorrelationString</span> <span class="org-haskell-operator">=</span> <span class="org-string">"no-correlation-id"</span>
+
+<span class="org-haskell-definition">getCorrelationId</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Request</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">ByteString</span>
+<span class="org-haskell-definition">getCorrelationId</span> r <span class="org-haskell-operator">=</span> maybe defaultCorrelationString id <span class="org-rainbow-delimiters-depth-1">(</span>requestHeaderCorrelationId r<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org210c543" class="outline-2">
+<h2 id="org210c543">Getting the correlation ID into the configuration</h2>
+<div class="outline-text-2" id="text-org210c543">
+<p>
+Since the correlation ID should be picked out of the request on handling of
+every request it's useful to have it the configuration when running the
+<code>ChellActionM</code> actions. However, since the correlation ID isn't available when
+running the reader (the call to <code>runReaderT</code> in <code>chell</code>) something else is
+called for. When looking around I found <code>local</code> (and later I was pointed to the
+more general <code>withReaderT</code>) but it doesn't have a suitable type. After some <a href="https://twitter.com/EyalL/status/1046696148218580993">help
+on Twitter</a> I arrived at <code>withConfig</code> which allows me to run an action in a
+modified configuration:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">withConfig</span> <span class="org-haskell-operator">::</span> <span class="org-rainbow-delimiters-depth-1">(</span>c <span class="org-haskell-operator">-&gt;</span> c'<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">ChellActionM</span> c' <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">ChellActionM</span> c <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+<span class="org-haskell-definition">withConfig</span> <span class="org-haskell-operator">=</span> mapActionT <span class="org-haskell-operator">.</span> withReaderT
+  <span class="org-haskell-keyword">where</span>
+    mapActionT f <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">ActionT</span> a<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">ActionT</span> <span class="org-haskell-operator">$</span> <span class="org-rainbow-delimiters-depth-1">(</span>mapExceptT <span class="org-haskell-operator">.</span> mapReaderT <span class="org-haskell-operator">.</span> mapStateT<span class="org-rainbow-delimiters-depth-1">)</span> f a
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org5962f2c" class="outline-2">
+<h2 id="org5962f2c">Making it handy to use</h2>
+<div class="outline-text-2" id="text-org5962f2c">
+<p>
+Armed with this I can put together some functions to replace Scotty's <code>get</code>,
+<code>post</code>, etc. With a configuration type like this:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-keyword">data</span> <span class="org-haskell-type">Config</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">Cfg</span> <span class="org-haskell-constructor">LoggerSet</span> <span class="org-haskell-constructor">ByteString</span>
+</pre>
+</div>
+
+<p>
+The modified <code>get</code> looks like this (Scotty's original is <code>S.get</code>)
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">get</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">RoutePattern</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">ChellActionM</span> <span class="org-haskell-type">Config</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">ChellM</span> <span class="org-haskell-type">Config</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+<span class="org-haskell-definition">get</span> p a <span class="org-haskell-operator">=</span> S.get p <span class="org-haskell-operator">$</span> <span class="org-haskell-keyword">do</span>
+  r <span class="org-haskell-operator">&lt;-</span> request
+  <span class="org-haskell-keyword">let</span> corrId <span class="org-haskell-operator">=</span> getCorrelationId r
+  withConfig <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-operator">\</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-haskell-constructor">Cfg</span> l <span class="org-haskell-keyword">_</span><span class="org-rainbow-delimiters-depth-2">)</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-constructor">Cfg</span> l corrId<span class="org-rainbow-delimiters-depth-1">)</span> a
+</pre>
+</div>
+
+<p>
+With this in place I can use the simpler <code>ReaderT Config IO</code> for inner functions
+that need to log.
+</p>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-scotty.html">scotty</a> <a href="https://magnus.therning.org/tag-monad.html">monad</a> </div>]]></description>
+  <category><![CDATA[haskell]]></category>
+  <category><![CDATA[scotty]]></category>
+  <category><![CDATA[monad]]></category>
+  <link>https://magnus.therning.org/2018-10-01-000-using-a-configuration-in-scotty.html</link>
+  <pubDate>Mon, 01 Oct 2018 12:34:00 +0200</pubDate>
+</item>
+</channel>
+</rss>

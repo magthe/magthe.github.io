@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="alternate"
+      type="application/rss+xml"
+      href="https://magnus.therning.org/feed.xml"
+      title="RSS feed for https://magnus.therning.org/">
+<title>Tagless final and Scotty</title>
+<meta name="author" content="Magnus Therning"><meta name="referrer" content="no-referrer"><link href= "static/style.css" rel="stylesheet" type="text/css" /><link href= "static/htmlize.css" rel="stylesheet" type="text/css" /><link href= "static/extra_style.css" rel="stylesheet" type="text/css" /></head>
+<body>
+<div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
+<div id="content">
+<div class="post-date">20 Jan 2019</div><h1 class="post-title"><a href="https://magnus.therning.org/2019-01-20-000-tagless-final-and-scotty.html">Tagless final and Scotty</a></h1>
+<p>
+For a little while I've been playing around with event sourcing in Haskell using
+<a href="https://hackage.haskell.org/package/conduit"><code>Conduit</code></a> and <a href="https://hackage.haskell.org/package/scotty"><code>Scotty</code></a>. I've come far enough that the basic functionality I'm
+after is there together with all those little bits that make it a piece of
+software that's fit for deployment in production (configuration, logging, etc.).
+There's just one thing that's been nagging me, testability.
+</p>
+
+<p>
+The app is built of two main parts, a web server (<code>Scotty</code>) and a pipeline of
+stream processing components (<code>Conduit</code>). The part using <code>Scotty</code> is utilising a
+simple monad stack, <code>ReaderT Config IO</code>, and the <code>Conduit</code> part is using
+<code>Conduit In Out IO</code>. This means that in both parts the outer edge, the part
+dealing with the outside world, is running in <code>IO</code> directly. Something that
+isn't really aiding in testing.
+</p>
+
+<p>
+I started out thinking that I'd rewrite what I have using a free monad with a
+bunch of interpreters. Then I remembered that I have "check out tagless final".
+This post is a record of the small experiments I did to see how to use it with
+<code>Scotty</code> to achieve (and actually improve) on the code I have in my
+production-ready code.
+</p>
+
+<div id="outline-container-org70bf102" class="outline-2">
+<h2 id="org70bf102">1 - Use tagless final with <code>Scotty</code></h2>
+<div class="outline-text-2" id="text-org70bf102">
+<p>
+As a first simple little experiment I wrote a tiny little web server that would
+print a string to <code>stdout</code> when receiving the request to <code>GET /route0</code>.
+</p>
+
+<p>
+The printing to <code>stdout</code> is the operation I want to make abstract.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-keyword">class</span> <span class="org-haskell-type">Monad</span> m <span class="org-haskell-operator">=&gt;</span> <span class="org-haskell-type">MonadPrinter</span> m <span class="org-haskell-keyword">where</span>
+  mPutStrLn <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Text</span> <span class="org-haskell-operator">-&gt;</span> m <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+</pre>
+</div>
+
+<p>
+I then created an application type that is an instance of that class.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-keyword">newtype</span> <span class="org-haskell-type">AppM</span> a <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">AppM</span> <span class="org-rainbow-delimiters-depth-1">{</span> unAppM <span class="org-haskell-operator">::</span> <span class="org-haskell-type">IO</span> a <span class="org-rainbow-delimiters-depth-1">}</span>
+  <span class="org-haskell-keyword">deriving</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">Functor</span>, <span class="org-haskell-constructor">Applicative</span>, <span class="org-haskell-constructor">Monad</span>, <span class="org-haskell-constructor">MonadIO</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-haskell-keyword">instance</span> <span class="org-haskell-type">MonadPrinter</span> <span class="org-haskell-type">AppM</span> <span class="org-haskell-keyword">where</span>
+  mPutStrLn t <span class="org-haskell-operator">=</span> liftIO <span class="org-haskell-operator">$</span> putStrLn <span class="org-rainbow-delimiters-depth-1">(</span>unpack t<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+Then I added a bit of <code>Scotty</code> boilerplate. It's not strictly necessary, but
+does make the code a bit nicer to read.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-keyword">type</span> <span class="org-haskell-type">FooM</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-type">ScottyT</span> <span class="org-haskell-type">Text</span> <span class="org-haskell-type">AppM</span>
+<span class="org-haskell-keyword">type</span> <span class="org-haskell-type">FooActionM</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-type">ActionT</span> <span class="org-haskell-type">Text</span> <span class="org-haskell-type">AppM</span>
+
+<span class="org-haskell-definition">foo</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">MonadIO</span> m <span class="org-haskell-operator">=&gt;</span> <span class="org-haskell-type">Port</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">ScottyT</span> <span class="org-haskell-type">Text</span> <span class="org-haskell-type">AppM</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span> <span class="org-haskell-operator">-&gt;</span> m <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+<span class="org-haskell-definition">foo</span> port <span class="org-haskell-operator">=</span> scottyT port unAppM
+</pre>
+</div>
+
+<p>
+With that in place the web server itself is just a matter of tying it all
+together.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">main</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+<span class="org-haskell-definition">main</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+  foo <span class="org-highlight-numbers-number">3000</span> <span class="org-haskell-operator">$</span> <span class="org-haskell-keyword">do</span>
+    get <span class="org-string">"/route0"</span> <span class="org-haskell-operator">$</span> <span class="org-haskell-keyword">do</span>
+      lift <span class="org-haskell-operator">$</span> mPutStrLn <span class="org-string">"getting /route0"</span>
+      json <span class="org-haskell-operator">$</span> object <span class="org-rainbow-delimiters-depth-1">[</span><span class="org-string">"route0"</span> <span class="org-haskell-operator">.=</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"ok"</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">String</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">]</span>
+    notFound <span class="org-haskell-operator">$</span> json <span class="org-haskell-operator">$</span> object <span class="org-rainbow-delimiters-depth-1">[</span><span class="org-string">"error"</span> <span class="org-haskell-operator">.=</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"not found"</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">String</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">]</span>
+</pre>
+</div>
+
+<p>
+That was simple enough.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org032b911" class="outline-2">
+<h2 id="org032b911">2 - Add configuration</h2>
+<div class="outline-text-2" id="text-org032b911">
+<p>
+In order to try out how to deal with configuration I added a class for doing
+some simple logging
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-keyword">class</span> <span class="org-haskell-type">Monad</span> m <span class="org-haskell-operator">=&gt;</span> <span class="org-haskell-type">MonadLogger</span> m <span class="org-haskell-keyword">where</span>
+  mLog <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Text</span> <span class="org-haskell-operator">-&gt;</span> m <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+</pre>
+</div>
+
+<p>
+The straight forward way to deal with configuration is to create a monad stack
+with <code>ReaderT</code> and since it's logging I want to do the configuration consists of
+a single <code>LoggerSet</code> (from <a href="https://hackage.haskell.org/package/fast-logger"><code>fast-logger</code></a>).
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-keyword">newtype</span> <span class="org-haskell-type">AppM</span> a <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">AppM</span> <span class="org-rainbow-delimiters-depth-1">{</span> unAppM <span class="org-haskell-operator">::</span> <span class="org-haskell-type">ReaderT</span> <span class="org-haskell-type">LoggerSet</span> <span class="org-haskell-type">IO</span> a <span class="org-rainbow-delimiters-depth-1">}</span>
+  <span class="org-haskell-keyword">deriving</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">Functor</span>, <span class="org-haskell-constructor">Applicative</span>, <span class="org-haskell-constructor">Monad</span>, <span class="org-haskell-constructor">MonadIO</span>, <span class="org-haskell-constructor">MonadReader</span> <span class="org-haskell-constructor">LoggerSet</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+That means the class instance can be implemented like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-keyword">instance</span> <span class="org-haskell-type">MonadLogger</span> <span class="org-haskell-type">AppM</span> <span class="org-haskell-keyword">where</span>
+  mLog msg <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+    ls <span class="org-haskell-operator">&lt;-</span> ask
+    liftIO <span class="org-haskell-operator">$</span> pushLogStrLn ls <span class="org-haskell-operator">$</span> toLogStr msg
+</pre>
+</div>
+
+<p>
+Of course <code>foo</code> has to be changed too, and it becomes a little easier with a
+wrapper for <code>runReaderT</code> and <code>unAppM</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">foo</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">MonadIO</span> m <span class="org-haskell-operator">=&gt;</span> <span class="org-haskell-type">LoggerSet</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Port</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">ScottyT</span> <span class="org-haskell-type">Text</span> <span class="org-haskell-type">AppM</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span> <span class="org-haskell-operator">-&gt;</span> m <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+<span class="org-haskell-definition">foo</span> ls port <span class="org-haskell-operator">=</span> scottyT port <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-operator">`runAppM`</span> ls<span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-haskell-definition">runAppM</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">AppM</span> a <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">LoggerSet</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">IO</span> a
+<span class="org-haskell-definition">runAppM</span> app ls <span class="org-haskell-operator">=</span> runReaderT <span class="org-rainbow-delimiters-depth-1">(</span>unAppM app<span class="org-rainbow-delimiters-depth-1">)</span> ls
+</pre>
+</div>
+
+<p>
+With that in place the printing to <code>stdout</code> can be replaced by a writing to the
+log.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">main</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+<span class="org-haskell-definition">main</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+  ls <span class="org-haskell-operator">&lt;-</span> newStdoutLoggerSet defaultBufSize
+  foo ls <span class="org-highlight-numbers-number">3000</span> <span class="org-haskell-operator">$</span> <span class="org-haskell-keyword">do</span>
+    get <span class="org-string">"/route0"</span> <span class="org-haskell-operator">$</span> <span class="org-haskell-keyword">do</span>
+      lift <span class="org-haskell-operator">$</span> mLog <span class="org-string">"log: getting /route0"</span>
+      json <span class="org-haskell-operator">$</span> object <span class="org-rainbow-delimiters-depth-1">[</span><span class="org-string">"route0"</span> <span class="org-haskell-operator">.=</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"ok"</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">String</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">]</span>
+    notFound <span class="org-haskell-operator">$</span> json <span class="org-haskell-operator">$</span> object <span class="org-rainbow-delimiters-depth-1">[</span><span class="org-string">"error"</span> <span class="org-haskell-operator">.=</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"not found"</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">String</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">]</span>
+</pre>
+</div>
+
+<p>
+Not really a big change, I'd say. Extending the configuration is clearly
+straight forward too.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org9bf256e" class="outline-2">
+<h2 id="org9bf256e">3 - Per-request configuration</h2>
+<div class="outline-text-2" id="text-org9bf256e">
+<p>
+At work we use correlation IDs<sup><a id="fnr.1" class="footref" href="#fn.1">1</a></sup> and I think that the most convenient way to
+deal with it is to put the correlation ID into the configuration after
+extracting it. That is, I want to modify the configuration on each request.
+Luckily it turns out to be possible to do that, despite using <code>ReaderT</code> for
+holding the configuration.
+</p>
+
+<p>
+I can't be bothered with a full implementation of correlation ID for this little
+experiment, but as long as I can get a new <code>AppM</code> by running a function on the
+configuration it's just a matter of extracting the correct header from the
+request. For this experiment it'll do to just modify an integer in the
+configuration.
+</p>
+
+<p>
+I start with defining a type for the configuration and changing <code>AppM</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-keyword">type</span> <span class="org-haskell-type">Config</span> <span class="org-haskell-operator">=</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">LoggerSet</span>, <span class="org-haskell-type">Int</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-haskell-keyword">newtype</span> <span class="org-haskell-type">AppM</span> a <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">AppM</span> <span class="org-rainbow-delimiters-depth-1">{</span> unAppM <span class="org-haskell-operator">::</span> <span class="org-haskell-type">ReaderT</span> <span class="org-haskell-type">Config</span> <span class="org-haskell-type">IO</span> a <span class="org-rainbow-delimiters-depth-1">}</span>
+  <span class="org-haskell-keyword">deriving</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">Functor</span>, <span class="org-haskell-constructor">Applicative</span>, <span class="org-haskell-constructor">Monad</span>, <span class="org-haskell-constructor">MonadIO</span>, <span class="org-haskell-constructor">MonadReader</span> <span class="org-haskell-constructor">Config</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+The logger instance has to be changed accordingly of course.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-keyword">instance</span> <span class="org-haskell-type">MonadLogger</span> <span class="org-haskell-type">AppM</span> <span class="org-haskell-keyword">where</span>
+  mLog msg <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+    <span class="org-rainbow-delimiters-depth-1">(</span>ls, i<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">&lt;-</span> ask
+    liftIO <span class="org-haskell-operator">$</span> pushLogStrLn ls <span class="org-haskell-operator">$</span> toLogStr msg <span class="org-haskell-operator">&lt;&gt;</span> toLogStr <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-string">":"</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">String</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">&lt;&gt;</span> toLogStr <span class="org-rainbow-delimiters-depth-1">(</span>show i<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+The <code>get</code> function that comes with <code>scotty</code> isn't going to cut it, since it has
+no way of modifying the configuration, so I'll need a new one.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">mGet</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">ScottyError</span> e <span class="org-haskell-operator">=&gt;</span> <span class="org-haskell-type">RoutePattern</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">ActionT</span> e <span class="org-haskell-type">AppM</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">ScottyT</span> e <span class="org-haskell-type">AppM</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+<span class="org-haskell-definition">mGet</span> p a <span class="org-haskell-operator">=</span> get p <span class="org-haskell-operator">$</span> <span class="org-haskell-keyword">do</span>
+  withCfg <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-operator">\</span> <span class="org-rainbow-delimiters-depth-2">(</span>ls, i<span class="org-rainbow-delimiters-depth-2">)</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-rainbow-delimiters-depth-2">(</span>ls, succ i<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span> a
+</pre>
+</div>
+
+<p>
+The tricky bit is in the <code>withCfg</code> function. It's indeed not very easy to read,
+I think
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">withCfg</span> <span class="org-haskell-operator">=</span> mapActionT <span class="org-haskell-operator">.</span> withAppM
+  <span class="org-haskell-keyword">where</span>
+    mapActionT f <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">ActionT</span> a<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">ActionT</span> <span class="org-haskell-operator">$</span> <span class="org-rainbow-delimiters-depth-1">(</span>mapExceptT <span class="org-haskell-operator">.</span> mapReaderT <span class="org-haskell-operator">.</span> mapStateT<span class="org-rainbow-delimiters-depth-1">)</span> f a
+    withAppM f a <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">AppM</span> <span class="org-haskell-operator">$</span> withReaderT f <span class="org-rainbow-delimiters-depth-1">(</span>unAppM a<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+Basically it reaches into the guts of <code>scotty</code>'s <code>ActionT</code> type (the details are
+exposed in <code>Web.Scotty.Internal.Types</code>, thanks for not hiding it completely),
+and modifies the <code>ReaderT Config</code> I've supplied.
+</p>
+
+<p>
+The new server has two routes, the original one and a new one at <code>GET /route1</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">main</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+<span class="org-haskell-definition">main</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+  putStrLn <span class="org-string">"Starting"</span>
+  ls <span class="org-haskell-operator">&lt;-</span> newStdoutLoggerSet defaultBufSize
+  foo <span class="org-rainbow-delimiters-depth-1">(</span>ls, <span class="org-highlight-numbers-number">0</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-highlight-numbers-number">3000</span> <span class="org-haskell-operator">$</span> <span class="org-haskell-keyword">do</span>
+    get <span class="org-string">"/route0"</span> <span class="org-haskell-operator">$</span> <span class="org-haskell-keyword">do</span>
+      lift <span class="org-haskell-operator">$</span> mLog <span class="org-string">"log: getting /route0"</span>
+      json <span class="org-haskell-operator">$</span> object <span class="org-rainbow-delimiters-depth-1">[</span><span class="org-string">"route0"</span> <span class="org-haskell-operator">.=</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"ok"</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">String</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">]</span>
+    mGet <span class="org-string">"/route1"</span> <span class="org-haskell-operator">$</span> <span class="org-haskell-keyword">do</span>
+      lift <span class="org-haskell-operator">$</span> mLog <span class="org-string">"log: getting /route1"</span>
+      json <span class="org-haskell-operator">$</span> object <span class="org-rainbow-delimiters-depth-1">[</span><span class="org-string">"route1"</span> <span class="org-haskell-operator">.=</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"bar"</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">String</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">]</span>
+    notFound <span class="org-haskell-operator">$</span> json <span class="org-haskell-operator">$</span> object <span class="org-rainbow-delimiters-depth-1">[</span><span class="org-string">"error"</span> <span class="org-haskell-operator">.=</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"not found"</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">String</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">]</span>
+</pre>
+</div>
+
+<p>
+It's now easy to verify that the original route, <code>GET /route0</code>, logs a string
+containing the integer '0', while the new route, <code>GET /route1</code>, logs a string
+containing the integer '1'.
+</p>
+</div>
+</div>
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+
+<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1">1</a></sup> <div class="footpara"><p class="footpara">
+If you don't know what it is you'll find multiple sources by searching
+for "http correlation-id". <a href="https://theburningmonk.com/2015/05/a-consistent-approach-to-track-correlation-ids-through-microservices/">A consistent approach to track correlation IDs
+through microservices</a> is as good a place to start as any.
+</p></div></div>
+
+
+</div>
+</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-scotty.html">scotty</a> <a href="https://magnus.therning.org/tag-tagless_final.html">tagless_final</a> </div></div>
+<div id="postamble" class="status"><!-- org-static-blog-page-postamble --></div>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="alternate"
+      type="application/rss+xml"
+      href="https://magnus.therning.org/feed.xml"
+      title="RSS feed for https://magnus.therning.org/">
+<title>Magnus web site</title>
+<meta name="author" content="Magnus Therning"><meta name="referrer" content="no-referrer"><link href= "static/style.css" rel="stylesheet" type="text/css" /><link href= "static/htmlize.css" rel="stylesheet" type="text/css" /><link href= "static/extra_style.css" rel="stylesheet" type="text/css" /></head>
+<body>
+<div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
+<div id="content">
+<h1 class="title">Posts tagged "lsp":</h1>
+<div class="post-date">19 Sep 2019</div><h1 class="post-title"><a href="https://magnus.therning.org/2019-09-19-000-haskell--ghcide--and-spacemacs.html">Haskell, ghcide, and Spacemacs</a></h1>
+<p>
+The other day I read Chris Penner's post on <a href="https://chrispenner.ca/posts/hie-core">Haskell IDE Support</a> and thought I'd
+make an attempt to use it with Spacemacs.
+</p>
+
+<p>
+After running <code>stack build hie-bios ghcide haskell-lsp --copy-compiler-tool</code> I
+had a look at the <a href="https://github.com/haskell/haskell-ide-engine#using-hie-with-spacemacs">instructions on using <code>haskell-ide-engine</code> with Spacemacs</a>.
+After a bit of trial and error I came up with these changes to my
+<code>~/.spacemacs</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">dotspacemacs/layers</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">setq-default</span>
+   dotspacemacs-configuration-layers
+   '<span class="org-rainbow-delimiters-depth-3">(</span>
+    ...
+    lsp
+    <span class="org-rainbow-delimiters-depth-4">(</span>haskell <span class="org-builtin">:variables</span>
+             haskell-completion-backend 'lsp
+             <span class="org-rainbow-delimiters-depth-4">)</span>
+    ...<span class="org-rainbow-delimiters-depth-3">)</span>
+  <span class="org-rainbow-delimiters-depth-2">)</span>
+<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">dotspacemacs/user-config</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">setq</span> lsp-haskell-process-args-hie '<span class="org-rainbow-delimiters-depth-3">(</span><span class="org-string">"exec"</span> <span class="org-string">"ghcide"</span> <span class="org-string">"--"</span> <span class="org-string">"--lsp"</span><span class="org-rainbow-delimiters-depth-3">)</span>
+        lsp-haskell-process-path-hie <span class="org-string">"stack"</span>
+        lsp-haskell-process-wrapper-function <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">lambda</span> <span class="org-rainbow-delimiters-depth-4">(</span>argv<span class="org-rainbow-delimiters-depth-4">)</span> <span class="org-rainbow-delimiters-depth-4">(</span>cons <span class="org-rainbow-delimiters-depth-5">(</span>car argv<span class="org-rainbow-delimiters-depth-5">)</span> <span class="org-rainbow-delimiters-depth-5">(</span>cddr argv<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+        <span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>add-hook 'haskell-mode-hook
+            #'lsp<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+The slightly weird looking <code>lsp-haskell-process-wrapper-function</code> is removing
+the pesky <code>--lsp</code> inserted by <a href="https://github.com/emacs-lsp/lsp-haskell/blob/64106be79350f9ce6903d22c66b29761dadb5001/lsp-haskell.el#L179">this line</a>.
+</p>
+
+<p>
+That seems to work. Though I have to say I'm not ready to switch from <a href="https://hackage.haskell.org/package/intero">intero</a>
+just yet. Two things in particular didn't work with =ghcide=/LSP:
+</p>
+
+<ol class="org-ol">
+<li>Switching from one the <code>Main.hs</code> in one executable to the <code>Main.hs</code> of
+another executable in the same project didn't work as expected &#x2013; I had hints
+and types in the first, but nothing in the second.</li>
+<li>Jump to the definition of a function defined in the package didn't work &#x2013;
+I'm not willing to use <a href="https://www.gnu.org/software/global/">GNU GLOBAL</a> or some other source tagging system.</li>
+</ol>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-lsp.html">lsp</a> <a href="https://magnus.therning.org/tag-spacemacs.html">spacemacs</a> </div><div id="archive">
+<a href="https://magnus.therning.org/archive.html">Other posts</a>
+</div>
+</div>
+<div id="postamble" class="status"><!-- org-static-blog-page-postamble --></div>
+</body>
+</html>

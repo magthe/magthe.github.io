@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="alternate"
+      type="application/rss+xml"
+      href="https://magnus.therning.org/feed.xml"
+      title="RSS feed for https://magnus.therning.org/">
+<title>Using a configuration in Scotty</title>
+<meta name="author" content="Magnus Therning"><meta name="referrer" content="no-referrer"><link href= "static/style.css" rel="stylesheet" type="text/css" /><link href= "static/htmlize.css" rel="stylesheet" type="text/css" /><link href= "static/extra_style.css" rel="stylesheet" type="text/css" /></head>
+<body>
+<div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
+<div id="content">
+<div class="post-date">01 Oct 2018</div><h1 class="post-title"><a href="https://magnus.therning.org/2018-10-01-000-using-a-configuration-in-scotty.html">Using a configuration in Scotty</a></h1>
+<p>
+At work we're only now getting around to put <a href="https://hilton.org.uk/blog/microservices-correlation-id">correlation IDs</a> into use. We write
+most our code in Clojure but since I'd really like to use more Haskell at work I
+thought I'd dive into <a href="https://hackage.haskell.org/package/scotty">Scotty</a> and see how to deal with logging and then
+especially how to get correlation IDs into the logs.
+</p>
+
+<div id="outline-container-org908bdc9" class="outline-2">
+<h2 id="org908bdc9">The types</h2>
+<div class="outline-text-2" id="text-org908bdc9">
+<p>
+For configuration it decided to use the reader monad inside <code>ActionT</code> from
+Scotty. Enter Chell:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-keyword">type</span> <span class="org-haskell-type">ChellM</span> c <span class="org-haskell-operator">=</span> <span class="org-haskell-type">ScottyT</span> <span class="org-haskell-type">Text</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">ReaderT</span> c <span class="org-haskell-type">IO</span><span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-haskell-keyword">type</span> <span class="org-haskell-type">ChellActionM</span> c <span class="org-haskell-operator">=</span> <span class="org-haskell-type">ActionT</span> <span class="org-haskell-type">Text</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">ReaderT</span> c <span class="org-haskell-type">IO</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+In order to run it I wrote a function corresponding to <code>scotty</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">chell</span> <span class="org-haskell-operator">::</span> c <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Port</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">ChellM</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+<span class="org-haskell-definition">chell</span> cfg port a <span class="org-haskell-operator">=</span> scottyOptsT opts <span class="org-rainbow-delimiters-depth-1">(</span>flip runReaderT cfg<span class="org-rainbow-delimiters-depth-1">)</span> a
+  <span class="org-haskell-keyword">where</span>
+    opts <span class="org-haskell-operator">=</span> def <span class="org-rainbow-delimiters-depth-1">{</span> verbose <span class="org-haskell-operator">=</span> <span class="org-highlight-numbers-number">0</span>
+               , settings <span class="org-haskell-operator">=</span> <span class="org-rainbow-delimiters-depth-2">(</span>settings def<span class="org-rainbow-delimiters-depth-2">)</span> <span class="org-rainbow-delimiters-depth-2">{</span> settingsPort <span class="org-haskell-operator">=</span> port <span class="org-rainbow-delimiters-depth-2">}</span>
+               <span class="org-rainbow-delimiters-depth-1">}</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org6fb6127" class="outline-2">
+<h2 id="org6fb6127">Correlation ID</h2>
+<div class="outline-text-2" id="text-org6fb6127">
+<p>
+To deal with the correlation ID each incoming request should be checked for the
+HTTP header <code>X-Correlation-Id</code> and if present it should be used during logging.
+If no such header is present then a new correlation ID should be created. Since
+it's per request it feels natural to create a WAI middleware for this.
+</p>
+
+<p>
+The easiest way I could come up with was to push the correlation ID into the
+request's headers before it's passed on:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">requestHeaderCorrelationId</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Request</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Maybe</span> <span class="org-haskell-type">ByteString</span>
+<span class="org-haskell-definition">requestHeaderCorrelationId</span> <span class="org-haskell-operator">=</span> lookup <span class="org-string">"X-Correlation-Id"</span> <span class="org-haskell-operator">.</span> requestHeaders
+
+<span class="org-haskell-definition">correlationId</span> <span class="org-haskell-operator">::</span>  <span class="org-haskell-type">Middleware</span>
+<span class="org-haskell-definition">correlationId</span> app req sendResponse <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+  u <span class="org-haskell-operator">&lt;-</span> <span class="org-rainbow-delimiters-depth-1">(</span>randomIO <span class="org-haskell-operator">::</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-type">UUID</span><span class="org-rainbow-delimiters-depth-1">)</span>
+  <span class="org-haskell-keyword">let</span> corrId <span class="org-haskell-operator">=</span> maybe <span class="org-rainbow-delimiters-depth-1">(</span>toASCIIBytes u<span class="org-rainbow-delimiters-depth-1">)</span> id <span class="org-rainbow-delimiters-depth-1">(</span>requestHeaderCorrelationId req<span class="org-rainbow-delimiters-depth-1">)</span>
+      newHeaders <span class="org-haskell-operator">=</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-string">"X-Correlation-Id"</span>, corrId<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-constructor">:</span> <span class="org-rainbow-delimiters-depth-1">(</span>requestHeaders req<span class="org-rainbow-delimiters-depth-1">)</span>
+  app <span class="org-rainbow-delimiters-depth-1">(</span>req <span class="org-rainbow-delimiters-depth-2">{</span> requestHeaders <span class="org-haskell-operator">=</span> newHeaders <span class="org-rainbow-delimiters-depth-2">}</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">$</span> <span class="org-haskell-operator">\</span> res <span class="org-haskell-operator">-&gt;</span> sendResponse res
+</pre>
+</div>
+
+<p>
+It also turns out to be useful to have both a default correlation ID and a
+function for pulling it out of the headers:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">defaultCorrelationString</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">ByteString</span>
+<span class="org-haskell-definition">defaultCorrelationString</span> <span class="org-haskell-operator">=</span> <span class="org-string">"no-correlation-id"</span>
+
+<span class="org-haskell-definition">getCorrelationId</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Request</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">ByteString</span>
+<span class="org-haskell-definition">getCorrelationId</span> r <span class="org-haskell-operator">=</span> maybe defaultCorrelationString id <span class="org-rainbow-delimiters-depth-1">(</span>requestHeaderCorrelationId r<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org210c543" class="outline-2">
+<h2 id="org210c543">Getting the correlation ID into the configuration</h2>
+<div class="outline-text-2" id="text-org210c543">
+<p>
+Since the correlation ID should be picked out of the request on handling of
+every request it's useful to have it the configuration when running the
+<code>ChellActionM</code> actions. However, since the correlation ID isn't available when
+running the reader (the call to <code>runReaderT</code> in <code>chell</code>) something else is
+called for. When looking around I found <code>local</code> (and later I was pointed to the
+more general <code>withReaderT</code>) but it doesn't have a suitable type. After some <a href="https://twitter.com/EyalL/status/1046696148218580993">help
+on Twitter</a> I arrived at <code>withConfig</code> which allows me to run an action in a
+modified configuration:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">withConfig</span> <span class="org-haskell-operator">::</span> <span class="org-rainbow-delimiters-depth-1">(</span>c <span class="org-haskell-operator">-&gt;</span> c'<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">ChellActionM</span> c' <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">ChellActionM</span> c <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+<span class="org-haskell-definition">withConfig</span> <span class="org-haskell-operator">=</span> mapActionT <span class="org-haskell-operator">.</span> withReaderT
+  <span class="org-haskell-keyword">where</span>
+    mapActionT f <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">ActionT</span> a<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">ActionT</span> <span class="org-haskell-operator">$</span> <span class="org-rainbow-delimiters-depth-1">(</span>mapExceptT <span class="org-haskell-operator">.</span> mapReaderT <span class="org-haskell-operator">.</span> mapStateT<span class="org-rainbow-delimiters-depth-1">)</span> f a
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org5962f2c" class="outline-2">
+<h2 id="org5962f2c">Making it handy to use</h2>
+<div class="outline-text-2" id="text-org5962f2c">
+<p>
+Armed with this I can put together some functions to replace Scotty's <code>get</code>,
+<code>post</code>, etc. With a configuration type like this:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-keyword">data</span> <span class="org-haskell-type">Config</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">Cfg</span> <span class="org-haskell-constructor">LoggerSet</span> <span class="org-haskell-constructor">ByteString</span>
+</pre>
+</div>
+
+<p>
+The modified <code>get</code> looks like this (Scotty's original is <code>S.get</code>)
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">get</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">RoutePattern</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">ChellActionM</span> <span class="org-haskell-type">Config</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">ChellM</span> <span class="org-haskell-type">Config</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+<span class="org-haskell-definition">get</span> p a <span class="org-haskell-operator">=</span> S.get p <span class="org-haskell-operator">$</span> <span class="org-haskell-keyword">do</span>
+  r <span class="org-haskell-operator">&lt;-</span> request
+  <span class="org-haskell-keyword">let</span> corrId <span class="org-haskell-operator">=</span> getCorrelationId r
+  withConfig <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-operator">\</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-haskell-constructor">Cfg</span> l <span class="org-haskell-keyword">_</span><span class="org-rainbow-delimiters-depth-2">)</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-constructor">Cfg</span> l corrId<span class="org-rainbow-delimiters-depth-1">)</span> a
+</pre>
+</div>
+
+<p>
+With this in place I can use the simpler <code>ReaderT Config IO</code> for inner functions
+that need to log.
+</p>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-scotty.html">scotty</a> <a href="https://magnus.therning.org/tag-monad.html">monad</a> </div></div>
+<div id="postamble" class="status"><!-- org-static-blog-page-postamble --></div>
+</body>
+</html>

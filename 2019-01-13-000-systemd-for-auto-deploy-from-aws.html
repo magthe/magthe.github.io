@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="alternate"
+      type="application/rss+xml"
+      href="https://magnus.therning.org/feed.xml"
+      title="RSS feed for https://magnus.therning.org/">
+<title>Systemd for auto deploy from AWS</title>
+<meta name="author" content="Magnus Therning"><meta name="referrer" content="no-referrer"><link href= "static/style.css" rel="stylesheet" type="text/css" /><link href= "static/htmlize.css" rel="stylesheet" type="text/css" /><link href= "static/extra_style.css" rel="stylesheet" type="text/css" /></head>
+<body>
+<div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
+<div id="content">
+<div class="post-date">28 Apr 2019</div><h1 class="post-title"><a href="https://magnus.therning.org/2019-01-13-000-systemd-for-auto-deploy-from-aws.html">Systemd for auto deploy from AWS</a></h1>
+<p>
+Over the last week I've completely rebuilt the the only on-premise system we
+have at work. One of the bits I'm rather happy with is the replacement of
+<a href="https://mmonit.com/">M/Monit</a> with just plain <a href="https://www.freedesktop.org/wiki/Software/systemd/">systemd</a>. We didn't use any of the advanced features of
+M/Monit, we only wanted ordinary process monitoring and restart on a single
+system. It really was a bit of overkill.
+</p>
+
+<p>
+So, instead of
+</p>
+
+<ul class="org-ul">
+<li>using M/Monit to monitor processes</li>
+<li>a monit configuration for the app (both start and stop instructions)</li>
+<li>a script to start the app and capture its PID in a file</li>
+<li>a script to resync the app against the S3 bucket where Travis puts the build
+artifacts, and if a new version has arrived, remove the PID file thereby
+triggering M/Monit to restart the app</li>
+<li>a crontab entry to run the sync/restart script every few minutes</li>
+</ul>
+
+<p>
+we now have
+</p>
+
+<ul class="org-ul">
+<li>a (simplified) script to start the app<sup><a id="fnr.1" class="footref" href="#fn.1">1</a></sup></li>
+<li>a service unit (<code>app.service</code>) for the app</li>
+<li>a timer unit (<code>app-sync.timer</code>) to trigger the resync of the app against the
+S3 bucket</li>
+<li>a oneshot service unit (<code>app-sync.service</code>), triggered by the timer, to
+perform the sync of the app with the latest build, i.e. call <code>aws s3 sync</code></li>
+<li>a path unit (<code>app-restart.path</code>) to monitor one of the build artifacts, i.e.
+to pick up that a new version has arrived</li>
+<li>a oneshot service unit (<code>app-restart.service</code>), triggered by the path unit,
+calling <code>systemctl restart app.service</code></li>
+</ul>
+
+<p>
+There's one more piece to the setup, but
+</p>
+
+<ul class="org-ul">
+<li>the start script is simplified since it no longer needs to push things to the
+background and capture the PID</li>
+<li>the sync/restart script is completely gone (arguably the more complicated of
+the two scripts in the M/Monit setup)</li>
+<li>responsibility is cleanly separated leading to a solution that's easier to
+understand (as long as you know a bit about systemd of course)</li>
+</ul>
+
+<p>
+so I think it's a net improvement.
+</p>
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+
+<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1">1</a></sup> <div class="footpara"><p class="footpara">
+All it does is set a bunch of environment variables and then start the
+app, so I'm planning on moving the environment variables into a separate file
+and put the start command the service unit file instead.
+</p></div></div>
+
+
+</div>
+</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-systemd.html">systemd</a> </div></div>
+<div id="postamble" class="status"><!-- org-static-blog-page-postamble --></div>
+</body>
+</html>

@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="alternate"
+      type="application/rss+xml"
+      href="https://magnus.therning.org/feed.xml"
+      title="RSS feed for https://magnus.therning.org/">
+<title>Using QuickCheck to test C APIs</title>
+<meta name="author" content="Magnus Therning"><meta name="referrer" content="no-referrer"><link href= "static/style.css" rel="stylesheet" type="text/css" /><link href= "static/htmlize.css" rel="stylesheet" type="text/css" /><link href= "static/extra_style.css" rel="stylesheet" type="text/css" /></head>
+<body>
+<div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
+<div id="content">
+<div class="post-date">15 Jun 2015</div><h1 class="post-title"><a href="https://magnus.therning.org/2015-06-15-000-using-quickcheck-to-test-c-apis.html">Using QuickCheck to test C APIs</a></h1>
+<p>
+Last year at ICFP I attended the <a href="http://cufp.org/2014/t12-john-hughes-introduction-to-testing-with-quickcheck.html">tutorial on QuickCheck</a> with John Hughes. We got
+to use the Erlang implementation of QuickCheck to test a C API. Ever since I've
+been planning to do the same thing using Haskell. I've put it off for the better
+part of a year now, but then Francesco Mazzoli wrote about <a href="http://hackage.haskell.org/package/inline-c">inline-c</a> (<a href="https://www.fpcomplete.com/blog/2015/05/inline-c">Call C
+functions from Haskell without bindings</a> and I found the motivation to actually
+start writing some code.
+</p>
+
+<div id="outline-container-orgf105224" class="outline-2">
+<h2 id="orgf105224">The general idea</h2>
+<div class="outline-text-2" id="text-orgf105224">
+<p>
+Many C APIs are rather stateful beasts so to test it I
+</p>
+
+<ol class="org-ol">
+<li>generate a sequence of API calls (a program of sorts),</li>
+<li>run the sequence against a model,</li>
+<li>run the sequence against the real implementation, and</li>
+<li>compare the model against the real state each step of the way.</li>
+</ol>
+</div>
+</div>
+
+<div id="outline-container-org72234d2" class="outline-2">
+<h2 id="org72234d2">The C API</h2>
+<div class="outline-text-2" id="text-org72234d2">
+<p>
+To begin with I hacked up a simple implementation of a stack in C. The
+"specification" is
+</p>
+
+<div class="org-src-container">
+<pre class="src src-c"><span class="org-doc">/**</span>
+<span class="org-doc"> * Create a stack.</span>
+<span class="org-doc"> */</span>
+<span class="org-type">void</span> *<span class="org-function-name">create</span><span class="org-rainbow-delimiters-depth-1">()</span>;
+
+<span class="org-doc">/**</span>
+<span class="org-doc"> * Push a value onto an existing stack.</span>
+<span class="org-doc"> */</span>
+<span class="org-type">void</span> <span class="org-function-name">push</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-type">void</span> *, <span class="org-type">int</span><span class="org-rainbow-delimiters-depth-1">)</span>;
+
+<span class="org-doc">/**</span>
+<span class="org-doc"> * Pop a value off an existing stack.</span>
+<span class="org-doc"> */</span>
+<span class="org-type">int</span> <span class="org-function-name">pop</span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-type">void</span> *<span class="org-rainbow-delimiters-depth-1">)</span>;
+</pre>
+</div>
+
+<p>
+Using <code>inline-c</code> to create bindings for it is amazingly simple:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-pragma">{-# LANGUAGE QuasiQuotes #-}</span>
+<span class="org-haskell-pragma">{-# LANGUAGE TemplateHaskell #-}</span>
+
+<span class="org-haskell-keyword">module</span> <span class="org-haskell-constructor">CApi</span>
+    <span class="org-haskell-keyword">where</span>
+
+<span class="org-haskell-keyword">import</span> <span class="org-haskell-keyword">qualified</span> <span class="org-haskell-constructor">Language.C.Inline</span> <span class="org-haskell-keyword">as</span> <span class="org-haskell-constructor">C</span>
+<span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">Foreign.Ptr</span>
+
+C<span class="org-haskell-definition">.</span>include <span class="org-string">"stack.h"</span>
+
+<span class="org-haskell-definition">create</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">IO</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Ptr</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-2">()</span></span><span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-haskell-definition">create</span> <span class="org-haskell-operator">=</span> <span class="org-rainbow-delimiters-depth-1">[</span>C.exp<span class="org-haskell-quasi-quote">| void * { create() } |</span><span class="org-rainbow-delimiters-depth-1">]</span>
+
+<span class="org-haskell-definition">push</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Ptr</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">C.CInt</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+<span class="org-haskell-definition">push</span> s i <span class="org-haskell-operator">=</span> <span class="org-rainbow-delimiters-depth-1">[</span>C.exp<span class="org-haskell-quasi-quote">| void { push($(void *s), $(int i)) } |</span><span class="org-rainbow-delimiters-depth-1">]</span>
+
+<span class="org-haskell-definition">pop</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Ptr</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-type">C.CInt</span>
+<span class="org-haskell-definition">pop</span> s <span class="org-haskell-operator">=</span> <span class="org-rainbow-delimiters-depth-1">[</span>C.exp<span class="org-haskell-quasi-quote">| int { pop($(void *s)) } |</span><span class="org-rainbow-delimiters-depth-1">]</span>
+</pre>
+</div>
+
+<p>
+In the code below I import this module qualified.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org1752afd" class="outline-2">
+<h2 id="org1752afd">Representing a program</h2>
+<div class="outline-text-2" id="text-org1752afd">
+<p>
+To represent a sequence of calls I first used a custom type, but later realised
+that there really was no reason at all to not use a wrapped list:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-keyword">newtype</span> <span class="org-haskell-type">Program</span> a <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">P</span> <span class="org-rainbow-delimiters-depth-1">[</span>a<span class="org-rainbow-delimiters-depth-1">]</span>
+    <span class="org-haskell-keyword">deriving</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">Eq</span>, <span class="org-haskell-constructor">Foldable</span>, <span class="org-haskell-constructor">Functor</span>, <span class="org-haskell-constructor">Show</span>, <span class="org-haskell-constructor">Traversable</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+Then each of the C API functions can be represented with
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-keyword">data</span> <span class="org-haskell-type">Statement</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">Create</span> <span class="org-haskell-operator">|</span> <span class="org-haskell-constructor">Push</span> <span class="org-haskell-constructor">Int</span> <span class="org-haskell-operator">|</span> <span class="org-haskell-constructor">Pop</span>
+    <span class="org-haskell-keyword">deriving</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">Eq</span>, <span class="org-haskell-constructor">Show</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgce528f7" class="outline-2">
+<h2 id="orgce528f7"><code>Arbitrary</code> for <code>Statement</code></h2>
+<div class="outline-text-2" id="text-orgce528f7">
+<p>
+My implementation of <code>Arbitrary</code> for <code>Statement</code> is very simple:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-keyword">instance</span> <span class="org-haskell-type">Arbitrary</span> <span class="org-haskell-type">Statement</span> <span class="org-haskell-keyword">where</span>
+    arbitrary <span class="org-haskell-operator">=</span> oneof <span class="org-rainbow-delimiters-depth-1">[</span>return <span class="org-haskell-constructor">Create</span>, return <span class="org-haskell-constructor">Pop</span>, liftM <span class="org-haskell-constructor">Push</span> arbitrary<span class="org-rainbow-delimiters-depth-1">]</span>
+    shrink <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">Push</span> i<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">Push</span> <span class="org-haskell-operator">&lt;$&gt;</span> shrink i
+    shrink <span class="org-haskell-keyword">_</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">[]</span></span>
+</pre>
+</div>
+
+<p>
+That is, <code>arbitrary</code> just returns one of the constructors of <code>Statement</code>, and
+shrinking only returns anything for the one constructor that takes an argument,
+<code>Push</code>.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org18df2ec" class="outline-2">
+<h2 id="org18df2ec">Prerequisites of <code>Arbitrary</code> for <code>Program Statement</code></h2>
+<div class="outline-text-2" id="text-org18df2ec">
+<p>
+I want to ensure that all <code>Program Statement</code> are valid, which means I need to
+define the model for running the program and functions for checking the
+precondition of a statement as well as for updating the model (i.e. for running
+the <code>Statement</code>).
+</p>
+
+<p>
+Based on the <a href="#org72234d2">C API</a> above it seems necessary to track creation, the contents of
+the stack, and even if it isn't explicitly mentioned it's probably a good idea
+to track the popped value. Using <a href="http://hackage.haskell.org/package/record"><code>record</code></a> (<code>Record</code> is imported as <code>R</code>, and
+<code>Record.Lens</code> as <code>RL</code>) I defined it like this:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-keyword">type</span> <span class="org-haskell-type">ModelContext</span> <span class="org-haskell-operator">=</span> <span class="org-rainbow-delimiters-depth-1">[</span>R.r<span class="org-haskell-quasi-quote">| { created :: Bool, pop :: Maybe Int, stack :: [Int] } |</span><span class="org-rainbow-delimiters-depth-1">]</span>
+</pre>
+</div>
+
+<p>
+Based on the rather informal specification I coded the pre-conditions for the
+three statements as
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">preCond</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">ModelContext</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Statement</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Bool</span>
+<span class="org-haskell-definition">preCond</span> ctx <span class="org-haskell-constructor">Create</span> <span class="org-haskell-operator">=</span> not <span class="org-haskell-operator">$</span> RL.view <span class="org-rainbow-delimiters-depth-1">[</span>R.l<span class="org-haskell-quasi-quote">| created |</span><span class="org-rainbow-delimiters-depth-1">]</span> ctx
+<span class="org-haskell-definition">preCond</span> ctx <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">Push</span> <span class="org-haskell-keyword">_</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=</span> RL.view <span class="org-rainbow-delimiters-depth-1">[</span>R.l<span class="org-haskell-quasi-quote">| created |</span><span class="org-rainbow-delimiters-depth-1">]</span> ctx
+<span class="org-haskell-definition">preCond</span> ctx <span class="org-haskell-constructor">Pop</span> <span class="org-haskell-operator">=</span> RL.view <span class="org-rainbow-delimiters-depth-1">[</span>R.l<span class="org-haskell-quasi-quote">| created |</span><span class="org-rainbow-delimiters-depth-1">]</span> ctx
+</pre>
+</div>
+
+<p>
+That is
+</p>
+
+<ul class="org-ul">
+<li><code>Create</code> requires that the stack hasn't been created already.</li>
+<li><code>Push i</code> requires that the stack has been created.</li>
+<li><code>Pop</code> also requires that the stack has been created.</li>
+</ul>
+
+<p>
+Furthermore the "specification" suggests the following definition of a function
+for running a statement:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">modelRunStatement</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">ModelContext</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Statement</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">ModelContext</span>
+<span class="org-haskell-definition">modelRunStatement</span> ctx <span class="org-haskell-constructor">Create</span> <span class="org-haskell-operator">=</span> RL.set <span class="org-rainbow-delimiters-depth-1">[</span>R.l<span class="org-haskell-quasi-quote">| created |</span><span class="org-rainbow-delimiters-depth-1">]</span> <span class="org-haskell-constructor">True</span> ctx
+<span class="org-haskell-definition">modelRunStatement</span> ctx <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">Push</span> i<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=</span> RL.over <span class="org-rainbow-delimiters-depth-1">[</span>R.l<span class="org-haskell-quasi-quote">| stack |</span><span class="org-rainbow-delimiters-depth-1">]</span> <span class="org-rainbow-delimiters-depth-1">(</span>i <span class="org-haskell-constructor">:</span><span class="org-rainbow-delimiters-depth-1">)</span> ctx
+<span class="org-haskell-definition">modelRunStatement</span> ctx <span class="org-haskell-constructor">Pop</span> <span class="org-haskell-operator">=</span> <span class="org-rainbow-delimiters-depth-1">[</span>R.r<span class="org-haskell-quasi-quote">| { created = c, pop = headMay s, stack = tail s } |</span><span class="org-rainbow-delimiters-depth-1">]</span>
+    <span class="org-haskell-keyword">where</span>
+        c <span class="org-haskell-operator">=</span> RL.view <span class="org-rainbow-delimiters-depth-1">[</span>R.l<span class="org-haskell-quasi-quote">| created |</span><span class="org-rainbow-delimiters-depth-1">]</span> ctx
+        s <span class="org-haskell-operator">=</span> RL.view <span class="org-rainbow-delimiters-depth-1">[</span>R.l<span class="org-haskell-quasi-quote">| stack |</span><span class="org-rainbow-delimiters-depth-1">]</span> ctx
+</pre>
+</div>
+
+<p>
+(This definition assumes that the model satisfies the pre-conditions, as can be
+seen in the use of <code>tail</code>.)
+</p>
+</div>
+</div>
+
+<div id="outline-container-org81aa1cf" class="outline-2">
+<h2 id="org81aa1cf"><code>Arbitrary</code> for <code>Program Statement</code></h2>
+<div class="outline-text-2" id="text-org81aa1cf">
+<p>
+With this in place I can define <code>Arbitrary</code> for <code>Program Statement</code> as
+follows.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-keyword">instance</span> <span class="org-haskell-type">Arbitrary</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Program</span> <span class="org-haskell-type">Statement</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-keyword">where</span>
+    arbitrary <span class="org-haskell-operator">=</span> liftM <span class="org-haskell-constructor">P</span> <span class="org-haskell-operator">$</span> ar baseModelCtx
+        <span class="org-haskell-keyword">where</span>
+            ar m <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+                push <span class="org-haskell-operator">&lt;-</span> liftM <span class="org-haskell-constructor">Push</span> arbitrary
+                <span class="org-haskell-keyword">let</span> possible <span class="org-haskell-operator">=</span> filter <span class="org-rainbow-delimiters-depth-1">(</span>preCond m<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-rainbow-delimiters-depth-1">[</span><span class="org-haskell-constructor">Create</span>, <span class="org-haskell-constructor">Pop</span>, push<span class="org-rainbow-delimiters-depth-1">]</span>
+                <span class="org-haskell-keyword">if</span> null possible
+                    <span class="org-haskell-keyword">then</span> return <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">[]</span></span>
+                    <span class="org-haskell-keyword">else</span> <span class="org-haskell-keyword">do</span>
+                        s <span class="org-haskell-operator">&lt;-</span> oneof <span class="org-rainbow-delimiters-depth-1">(</span>map return possible<span class="org-rainbow-delimiters-depth-1">)</span>
+                        <span class="org-haskell-keyword">let</span> m' <span class="org-haskell-operator">=</span> modelRunStatement m s
+                        frequency <span class="org-rainbow-delimiters-depth-1">[</span><span class="org-rainbow-delimiters-depth-2">(</span><span class="org-highlight-numbers-number">499</span>, liftM2 <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-haskell-constructor">:</span><span class="org-rainbow-delimiters-depth-3">)</span> <span class="org-rainbow-delimiters-depth-3">(</span>return s<span class="org-rainbow-delimiters-depth-3">)</span> <span class="org-rainbow-delimiters-depth-3">(</span>ar m'<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>, <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-highlight-numbers-number">1</span>, return <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-3">[]</span></span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">]</span>
+</pre>
+</div>
+
+<p>
+The idea is to, in each step, choose a valid statement given the provided model
+and cons it with the result of a recursive call with an updated model. The
+constant 499 is just an arbitrary one I chose after running <code>arbitrary</code> a few
+times to see how long the generated programs were.
+</p>
+
+<p>
+For shrinking I take advantage of the already existing implementation for lists:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">shrink</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">P</span> p<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=</span> filter allowed <span class="org-haskell-operator">$</span> map <span class="org-haskell-constructor">P</span> <span class="org-rainbow-delimiters-depth-1">(</span>shrink p<span class="org-rainbow-delimiters-depth-1">)</span>
+    <span class="org-haskell-keyword">where</span>
+        allowed <span class="org-haskell-operator">=</span> and <span class="org-haskell-operator">.</span> snd <span class="org-haskell-operator">.</span> mapAccumL go baseModelCtx
+            <span class="org-haskell-keyword">where</span>
+                go ctx s <span class="org-haskell-operator">=</span> <span class="org-rainbow-delimiters-depth-1">(</span>modelRunStatement ctx s, preCond ctx s<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org8b68f24" class="outline-2">
+<h2 id="org8b68f24">Some thoughts so far</h2>
+<div class="outline-text-2" id="text-org8b68f24">
+<p>
+I would love making an implementation of <code>Arbitrary s</code>, where <code>s</code> is something
+that implements a type class that contains <code>preCond</code>, <code>modelRunStatement</code> and
+anything else needed. I made an attempt using something like
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-keyword">class</span> <span class="org-haskell-type">S</span> a <span class="org-haskell-keyword">where</span>
+    <span class="org-haskell-keyword">type</span> <span class="org-haskell-type">Ctx</span> a <span class="org-haskell-operator">::</span> <span class="org-haskell-operator">*</span>
+
+    baseCtx <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Ctx</span> a
+    preCond <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Ctx</span> a <span class="org-haskell-operator">-&gt;</span> a <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Bool</span>
+    <span class="org-haskell-operator">...</span>
+</pre>
+</div>
+
+<p>
+However, when trying to use <code>baseCtx</code> in an implementation of <code>arbitrary</code> I ran
+into the issue of injectivity. I'm still not entirely sure what that means, or
+if there is something I can do to work around it. Hopefully someone reading this
+can offer a solution.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org3c9f6e9" class="outline-2">
+<h2 id="org3c9f6e9">Running the C code</h2>
+<div class="outline-text-2" id="text-org3c9f6e9">
+<p>
+When running the sequence of <code>Statement</code> against the C code I catch the results
+in
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-keyword">type</span> <span class="org-haskell-type">RealContext</span> <span class="org-haskell-operator">=</span> <span class="org-rainbow-delimiters-depth-1">[</span>r<span class="org-haskell-quasi-quote">| { o :: Ptr (), pop :: Maybe Int } |</span><span class="org-rainbow-delimiters-depth-1">]</span>
+</pre>
+</div>
+
+<p>
+Actually running a statement and capturing the output in a <code>RealContext</code> is
+easily done using <code>inline-c</code> and <code>record</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">realRunStatement</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">RealContext</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Statement</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-type">RealContext</span>
+<span class="org-haskell-definition">realRunStatement</span> ctx <span class="org-haskell-constructor">Create</span> <span class="org-haskell-operator">=</span> CApi.create <span class="org-haskell-operator">&gt;&gt;=</span> <span class="org-haskell-operator">\</span> ptr <span class="org-haskell-operator">-&gt;</span> return <span class="org-haskell-operator">$</span> RL.set <span class="org-rainbow-delimiters-depth-1">[</span>R.l<span class="org-haskell-quasi-quote">| o |</span><span class="org-rainbow-delimiters-depth-1">]</span> ptr ctx
+<span class="org-haskell-definition">realRunStatement</span> ctx <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">Push</span> i<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=</span> CApi.push o <span class="org-rainbow-delimiters-depth-1">(</span>toEnum i<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">&gt;&gt;</span> return ctx
+    <span class="org-haskell-keyword">where</span>
+        o <span class="org-haskell-operator">=</span> RL.view <span class="org-rainbow-delimiters-depth-1">[</span>R.l<span class="org-haskell-quasi-quote">| o |</span><span class="org-rainbow-delimiters-depth-1">]</span> ctx
+<span class="org-haskell-definition">realRunStatement</span> ctx <span class="org-haskell-constructor">Pop</span> <span class="org-haskell-operator">=</span> CApi.pop o <span class="org-haskell-operator">&gt;&gt;=</span> <span class="org-haskell-operator">\</span> v <span class="org-haskell-operator">-&gt;</span> return <span class="org-haskell-operator">$</span> RL.set <span class="org-rainbow-delimiters-depth-1">[</span>R.l<span class="org-haskell-quasi-quote">| pop |</span><span class="org-rainbow-delimiters-depth-1">]</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">Just</span> <span class="org-rainbow-delimiters-depth-2">(</span>fromEnum v<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span> ctx
+    <span class="org-haskell-keyword">where</span>
+        o <span class="org-haskell-operator">=</span> RL.view <span class="org-rainbow-delimiters-depth-1">[</span>R.l<span class="org-haskell-quasi-quote">| o |</span><span class="org-rainbow-delimiters-depth-1">]</span> ctx
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgc3d17f2" class="outline-2">
+<h2 id="orgc3d17f2">Comparing states</h2>
+<div class="outline-text-2" id="text-orgc3d17f2">
+<p>
+Comparing a <code>ModelContext</code> and a <code>RealContext</code> is easily done:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">compCtx</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">ModelContext</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">RealContext</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Bool</span>
+<span class="org-haskell-definition">compCtx</span> mc rc <span class="org-haskell-operator">=</span> mcC <span class="org-haskell-operator">==</span> rcC <span class="org-haskell-operator">&amp;&amp;</span> mcP <span class="org-haskell-operator">==</span> rcP
+    <span class="org-haskell-keyword">where</span>
+        mcC <span class="org-haskell-operator">=</span> RL.view <span class="org-rainbow-delimiters-depth-1">[</span>R.l<span class="org-haskell-quasi-quote">| created |</span><span class="org-rainbow-delimiters-depth-1">]</span> mc
+        rcC <span class="org-haskell-operator">=</span> RL.view <span class="org-rainbow-delimiters-depth-1">[</span>R.l<span class="org-haskell-quasi-quote">| o |</span><span class="org-rainbow-delimiters-depth-1">]</span> rc <span class="org-haskell-operator">/=</span> nullPtr
+        mcP <span class="org-haskell-operator">=</span> RL.view <span class="org-rainbow-delimiters-depth-1">[</span>R.l<span class="org-haskell-quasi-quote">| pop|</span><span class="org-rainbow-delimiters-depth-1">]</span> mc
+        rcP <span class="org-haskell-operator">=</span> RL.view <span class="org-rainbow-delimiters-depth-1">[</span>R.l<span class="org-haskell-quasi-quote">| pop|</span><span class="org-rainbow-delimiters-depth-1">]</span> rc
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgf4cba17" class="outline-2">
+<h2 id="orgf4cba17">Verifying a <code>Program Statement</code></h2>
+<div class="outline-text-2" id="text-orgf4cba17">
+<p>
+With all that in place I can finally write a function for checking the validity
+of a program:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">validProgram</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Program</span> <span class="org-haskell-type">Statement</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-type">Bool</span>
+<span class="org-haskell-definition">validProgram</span> p <span class="org-haskell-operator">=</span> and <span class="org-haskell-operator">&lt;$&gt;</span> snd <span class="org-haskell-operator">&lt;$&gt;</span> mapAccumM go <span class="org-rainbow-delimiters-depth-1">(</span>baseModelCtx, baseRealContext<span class="org-rainbow-delimiters-depth-1">)</span> p
+    <span class="org-haskell-keyword">where</span>
+        runSingleStatement mc rc s <span class="org-haskell-operator">=</span> realRunStatement rc s <span class="org-haskell-operator">&gt;&gt;=</span> <span class="org-haskell-operator">\</span> rc' <span class="org-haskell-operator">-&gt;</span> return <span class="org-rainbow-delimiters-depth-1">(</span>modelRunStatement mc s, rc'<span class="org-rainbow-delimiters-depth-1">)</span>
+
+        go <span class="org-rainbow-delimiters-depth-1">(</span>mc, rc<span class="org-rainbow-delimiters-depth-1">)</span> s <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+            ctxs<span class="org-haskell-operator">@</span><span class="org-rainbow-delimiters-depth-1">(</span>mc', rc'<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">&lt;-</span> runSingleStatement mc rc s
+            return <span class="org-rainbow-delimiters-depth-1">(</span>ctxs, compCtx mc' rc'<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+(This uses <code>mapAccumM</code> from an <a href="2015-06-09-000-mapaccum-in-monad.html">earlier post of mine</a>.)
+</p>
+</div>
+</div>
+
+<div id="outline-container-org5065044" class="outline-2">
+<h2 id="org5065044">The property, finally!</h2>
+<div class="outline-text-2" id="text-org5065044">
+<p>
+To wrap this all up I then define the property
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">prop_program</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Program</span> <span class="org-haskell-type">Statement</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Property</span>
+<span class="org-haskell-definition">prop_program</span> p <span class="org-haskell-operator">=</span> monadicIO <span class="org-haskell-operator">$</span> run <span class="org-rainbow-delimiters-depth-1">(</span>validProgram p<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">&gt;&gt;=</span> assert
+</pre>
+</div>
+
+<p>
+and a main function
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">main</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+<span class="org-haskell-definition">main</span> <span class="org-haskell-operator">=</span> quickCheck prop_program
+</pre>
+</div>
+
+<hr>
+
+<p>
+<i>Edit 2015-07-17</i>: Adjusted the description of the pre-conditions to match the
+code.
+</p>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-quickcheck.html">quickcheck</a> <a href="https://magnus.therning.org/tag-testing.html">testing</a> </div></div>
+<div id="postamble" class="status"><!-- org-static-blog-page-postamble --></div>
+</body>
+</html>

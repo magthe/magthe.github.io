@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0">
+<channel>
+<title><![CDATA[Magnus web site - comonad]]></title>
+<description><![CDATA[Magnus web site - comonad]]></description>
+<link>https://magnus.therning.org//tag-comonad.html</link>
+<lastBuildDate>Sun, 14 Mar 2021 07:55:27 +0100</lastBuildDate>
+<item>
+  <title><![CDATA[Comonadic builders, minor addition]]></title>
+  <description><![CDATA[
+<p>
+When reading about <a href="https://chshersh.github.io/posts/2019-03-25-comonadic-builders">Comonadic builders</a> the other day I reacted to this comment:
+</p>
+
+<blockquote>
+<p>
+The <code>comonad</code> package has the <a href="https://hackage.haskell.org/package/comonad-5.0.4/docs/Control-Comonad-Trans-Traced.html#t:TracedT">Traced</a> <code>newtype</code> wrapper around the function
+<code>(-&gt;)</code>. The <code>Comonad</code> instance for this <code>newtype</code> gives us the desired
+behaviour. However, dealing with the <code>newtype</code> wrapping and unwrapping makes our
+code noisy and truly harder to understand, so let's use the <code>Comonad</code> instance
+for the arrow <code>(-&gt;)</code> itself
+</p>
+</blockquote>
+
+<p>
+So, just for fun I thought I work out the "noisy and truly harder" bits.
+</p>
+
+<p>
+To begin with I needed two language extensions and two imports
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-pragma">{-# LANGUAGE OverloadedStrings#-}</span>
+<span class="org-haskell-pragma">{-# LANGUAGE RecordWildCards #-}</span>
+
+<span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">Control.Comonad.Traced</span>
+<span class="org-haskell-keyword">import</span> <span class="org-haskell-constructor">Data.Text</span>
+</pre>
+</div>
+
+<p>
+After that I could copy quite a bit of stuff directly from the other post
+</p>
+
+<ul class="org-ul">
+<li><code>Settings</code> definition</li>
+<li>The <code>Semigroup</code> instance for <code>Settings</code></li>
+<li>The <code>Monoid</code> instance for <code>Settings</code></li>
+<li><code>Project</code> definition</li>
+</ul>
+
+<p>
+After this everything had only minor changes. First off the <code>ProjectBuilder</code>
+type had to be changed to
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-keyword">type</span> <span class="org-haskell-type">ProjectBuilder</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-type">Traced</span> <span class="org-haskell-type">Settings</span> <span class="org-haskell-type">Project</span>
+</pre>
+</div>
+
+<p>
+With that done the types of all the functions can actually be left as they are,
+but of course the definitions have to modified. However, it turned out that the
+necessary modifications were rather smaller than I had expected. First out
+<code>buildProject</code> which I decided to call <code>buildProjectW</code> to make it possible to
+keep the original code and the new code in the same file without causing name
+clashes:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">buildProjectW</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Text</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">ProjectBuilder</span>
+<span class="org-haskell-definition">buildProjectW</span> <span class="org-haskell-operator">=</span> traced <span class="org-haskell-operator">.</span> buildProject
+  <span class="org-haskell-keyword">where</span>
+    buildProject projectName <span class="org-haskell-constructor">Settings</span><span class="org-rainbow-delimiters-depth-1">{</span><span class="org-haskell-operator">..</span><span class="org-rainbow-delimiters-depth-1">}</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">Project</span>
+      <span class="org-rainbow-delimiters-depth-1">{</span> projectHasLibrary <span class="org-haskell-operator">=</span> getAny settingsHasLibrary
+      , projectGitHub     <span class="org-haskell-operator">=</span> getAny settingsGitHub
+      , projectTravis     <span class="org-haskell-operator">=</span> getAny settingsTravis
+      , <span class="org-haskell-operator">..</span>
+      <span class="org-rainbow-delimiters-depth-1">}</span>
+</pre>
+</div>
+
+<p>
+The only difference is the addition of <code>traced .</code> to wrap it up in the
+<code>newtype</code>, the rest is copied straight from the original article.
+</p>
+
+<p>
+The two simple project combinator functions, which I call <code>hasLibraryBW</code> and
+<code>gitHubBW</code>, needed a bit of tweaking. In the original version combinators take a
+<code>builder</code> which is an ordinary function, so it can just be called. Now however,
+the function is wrapped in a <code>newtype</code> so a bit of unwrapping is necessary:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">hasLibraryBW</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">ProjectBuilder</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Project</span>
+<span class="org-haskell-definition">hasLibraryBW</span> builder <span class="org-haskell-operator">=</span> runTraced builder <span class="org-haskell-operator">$</span> mempty <span class="org-rainbow-delimiters-depth-1">{</span> settingsHasLibrary <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">Any</span> <span class="org-haskell-constructor">True</span> <span class="org-rainbow-delimiters-depth-1">}</span>
+
+<span class="org-haskell-definition">gitHubBW</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">ProjectBuilder</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Project</span>
+<span class="org-haskell-definition">gitHubBW</span> builder <span class="org-haskell-operator">=</span> runTraced builder <span class="org-haskell-operator">$</span> mempty <span class="org-rainbow-delimiters-depth-1">{</span> settingsGitHub <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">Any</span> <span class="org-haskell-constructor">True</span> <span class="org-rainbow-delimiters-depth-1">}</span>
+</pre>
+</div>
+
+<p>
+Once again it's rather small differences from the code in the article.
+</p>
+
+<p>
+As for the final combinator, which I call <code>travisBW</code>, actually needed no changes
+at all. I only rewrote it using a <code>when</code> clause, because I prefer that style
+over <code>let</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">travisBW</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">ProjectBuilder</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Project</span>
+<span class="org-haskell-definition">travisBW</span> builder <span class="org-haskell-operator">=</span> project <span class="org-rainbow-delimiters-depth-1">{</span> projectTravis <span class="org-haskell-operator">=</span> projectGitHub project <span class="org-rainbow-delimiters-depth-1">}</span>
+  <span class="org-haskell-keyword">where</span>
+    project <span class="org-haskell-operator">=</span> extract builder
+</pre>
+</div>
+
+<p>
+Finally, to show that this implementation hasn't really changed the behaviour
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">&#955;</span> extract <span class="org-haskell-operator">$</span> buildProjectW <span class="org-string">"travis"</span> <span class="org-haskell-operator">=&gt;&gt;</span> travisBW
+<span class="org-haskell-constructor">Project</span> <span class="org-rainbow-delimiters-depth-1">{</span> projectName <span class="org-haskell-operator">=</span> <span class="org-string">"travis"</span>
+        , projectHasLibrary <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">False</span>
+        , projectGitHub <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">False</span>
+        , projectTravis <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">False</span>
+        <span class="org-rainbow-delimiters-depth-1">}</span>
+
+<span class="org-haskell-definition">&#955;</span> extract <span class="org-haskell-operator">$</span> buildProjectW <span class="org-string">"github-travis"</span> <span class="org-haskell-operator">=&gt;&gt;</span> gitHubBW <span class="org-haskell-operator">=&gt;&gt;</span> travisBW
+<span class="org-haskell-constructor">Project</span> <span class="org-rainbow-delimiters-depth-1">{</span> projectName <span class="org-haskell-operator">=</span> <span class="org-string">"github-travis"</span>
+        , projectHasLibrary <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">False</span>
+        , projectGitHub <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">True</span>
+        , projectTravis <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">True</span>
+        <span class="org-rainbow-delimiters-depth-1">}</span>
+
+<span class="org-haskell-definition">&#955;</span> extract <span class="org-haskell-operator">$</span> buildProjectW <span class="org-string">"travis-github"</span> <span class="org-haskell-operator">=&gt;&gt;</span> travisBW <span class="org-haskell-operator">=&gt;&gt;</span> gitHubBW
+<span class="org-haskell-constructor">Project</span> <span class="org-rainbow-delimiters-depth-1">{</span> projectName <span class="org-haskell-operator">=</span> <span class="org-string">"travis-github"</span>
+        , projectHasLibrary <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">False</span>
+        , projectGitHub <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">True</span>
+        , projectTravis <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">True</span>
+        <span class="org-rainbow-delimiters-depth-1">}</span>
+</pre>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-comonad.html">comonad</a> <a href="https://magnus.therning.org/tag-builder_pattern.html">builder_pattern</a> </div>]]></description>
+  <category><![CDATA[haskell]]></category>
+  <category><![CDATA[comonad]]></category>
+  <category><![CDATA[builder_pattern]]></category>
+  <link>https://magnus.therning.org/2019-04-22-000-comonadic-builders--minor-addition.html</link>
+  <pubDate>Mon, 22 Apr 2019 12:34:00 +0200</pubDate>
+</item>
+</channel>
+</rss>

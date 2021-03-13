@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="alternate"
+      type="application/rss+xml"
+      href="https://magnus.therning.org/feed.xml"
+      title="RSS feed for https://magnus.therning.org/">
+<title>Hedgehog on a REST API, part 3</title>
+<meta name="author" content="Magnus Therning"><meta name="referrer" content="no-referrer"><link href= "static/style.css" rel="stylesheet" type="text/css" /><link href= "static/htmlize.css" rel="stylesheet" type="text/css" /><link href= "static/extra_style.css" rel="stylesheet" type="text/css" /></head>
+<body>
+<div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
+<div id="content">
+<div class="post-date">19 Aug 2019</div><h1 class="post-title"><a href="https://magnus.therning.org/2019-08-19-000-hedgehog-on-a-rest-api--part-3.html">Hedgehog on a REST API, part 3</a></h1>
+<p>
+In my previous post on using Hedgehog on a REST API, <a href="2019-06-23-000-hedgehog-on-a-rest-api--part-2.html">Hedgehog on a REST API,
+part 2</a> I ran the test a few times and adjusted the model to deal with the
+incorrect assumptions I had initially made. In particular, I had to adjust how I
+modelled the <i>User ID</i>. Because of the simplicity of the API that wasn't too
+difficult. However, that kind of completely predictable ID isn't found in all
+APIs. In fact, it's not uncommon to have completely random IDs in API (often
+they are <a href="https://en.wikipedia.org/wiki/Universally_unique_identifier">UUID</a>s).
+</p>
+
+<p>
+So, I set out to try to deal with that. I'm still using the simple API from the
+previous posts, but this time I'm pretending that I can't build the ID into the
+model myself, or, put another way, I'm capturing the ID from the responses.
+</p>
+
+<div id="outline-container-orgca4a77b" class="outline-2">
+<h2 id="orgca4a77b">The model state</h2>
+<div class="outline-text-2" id="text-orgca4a77b">
+<p>
+When capturing the ID it's no longer possible to use a simple <code>Map Int Text</code> for
+the state, because I don't actually have the ID until I have an HTTP response.
+However, the ID is playing an important role in the constructing of a sequence
+of actions. The trick is to use <code>Var Int v</code> instead of an ordinary <code>Int</code>. As I
+understand it, and I believe that's a good enough understanding to make use of
+Hedgehog possible, is that this way the ID is an opaque blob in the construction
+phase, and it's turned into a concrete value during execution. When in the
+opaque state it implements enough type classes to be useful for my purposes.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-keyword">newtype</span> <span class="org-haskell-type">State</span> <span class="org-rainbow-delimiters-depth-1">(</span>v <span class="org-haskell-operator">::</span> <span class="org-haskell-operator">*</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-operator">*</span><span class="org-rainbow-delimiters-depth-1">)</span><span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">State</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">M.Map</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-haskell-constructor">Var</span> <span class="org-haskell-constructor">Int</span> v<span class="org-rainbow-delimiters-depth-2">)</span> <span class="org-haskell-constructor">Text</span><span class="org-rainbow-delimiters-depth-1">)</span>
+  <span class="org-haskell-keyword">deriving</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">Eq</span>, <span class="org-haskell-constructor">Show</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orge3fe138" class="outline-2">
+<h2 id="orge3fe138">The API calls: add user</h2>
+<div class="outline-text-2" id="text-orge3fe138">
+<p>
+When taking a closer look at the <a href="https://hackage.haskell.org/package/hedgehog-0.5.3/docs/Hedgehog.html#t:Callback"><code>Callback</code></a> type not all the callbacks will get
+the state in the same form, opaque or concrete, and one of them, <code>Update</code>
+actually receives the state in both states depending on the phase of execution.
+This has the most impact on the add user action. To deal with it there's a need
+to rearrange the code a bit, to be specific, <code>commandExecute</code> can no longer
+return a tuple of both the ID and the status of the HTTP response because the
+update function can't reach into the tuple, which it needs to update the state.
+</p>
+
+<p>
+That means the <code>commandExecute</code> function will have to do tests too. It <i>is</i> nice
+to keep all tests in the callbacks, but by sticking a <code>MonadTest m</code> constraint
+on the <code>commandExecute</code> it turns into a nice solution anyway.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">addUser</span> <span class="org-haskell-operator">::</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">MonadGen</span> n, <span class="org-haskell-type">MonadIO</span> m, <span class="org-haskell-type">MonadTest</span> m<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=&gt;</span> <span class="org-haskell-type">Command</span> n m <span class="org-haskell-type">State</span>
+<span class="org-haskell-definition">addUser</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">Command</span> gen exec <span class="org-rainbow-delimiters-depth-1">[</span> <span class="org-haskell-constructor">Update</span> u
+                           <span class="org-rainbow-delimiters-depth-1">]</span>
+  <span class="org-haskell-keyword">where</span>
+    gen <span class="org-haskell-keyword">_</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">Just</span> <span class="org-haskell-operator">$</span> <span class="org-haskell-constructor">AddUser</span> <span class="org-haskell-operator">&lt;$&gt;</span> Gen.text <span class="org-rainbow-delimiters-depth-1">(</span>Range.linear <span class="org-highlight-numbers-number">0</span> <span class="org-highlight-numbers-number">42</span><span class="org-rainbow-delimiters-depth-1">)</span> Gen.alpha
+
+    exec <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">AddUser</span> n<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+      <span class="org-rainbow-delimiters-depth-1">(</span>s, ui<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">&lt;-</span> liftIO <span class="org-haskell-operator">$</span> <span class="org-haskell-keyword">do</span>
+        mgr <span class="org-haskell-operator">&lt;-</span> newManager defaultManagerSettings
+        addReq <span class="org-haskell-operator">&lt;-</span> parseRequest <span class="org-string">"POST http://localhost:3000/users"</span>
+        <span class="org-haskell-keyword">let</span> addReq' <span class="org-haskell-operator">=</span> addReq <span class="org-rainbow-delimiters-depth-1">{</span> requestBody <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">RequestBodyLBS</span> <span class="org-rainbow-delimiters-depth-2">(</span>encode <span class="org-haskell-operator">$</span> <span class="org-haskell-constructor">User</span> <span class="org-highlight-numbers-number">0</span> n<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">}</span>
+        addResp <span class="org-haskell-operator">&lt;-</span> httpLbs addReq' mgr
+        <span class="org-haskell-keyword">let</span> user <span class="org-haskell-operator">=</span> decode <span class="org-rainbow-delimiters-depth-1">(</span>responseBody addResp<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Maybe</span> <span class="org-haskell-type">User</span>
+        return <span class="org-rainbow-delimiters-depth-1">(</span>responseStatus addResp, user<span class="org-rainbow-delimiters-depth-1">)</span>
+      status201 <span class="org-haskell-operator">===</span> s
+      assert <span class="org-haskell-operator">$</span> isJust ui
+      <span class="org-rainbow-delimiters-depth-1">(</span>userName <span class="org-haskell-operator">&lt;$&gt;</span> ui<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">===</span> <span class="org-haskell-constructor">Just</span> n
+      return <span class="org-haskell-operator">$</span> userId <span class="org-haskell-operator">$</span> fromJust ui
+
+    u <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">State</span> m<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">AddUser</span> n<span class="org-rainbow-delimiters-depth-1">)</span> o <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">State</span> <span class="org-rainbow-delimiters-depth-1">(</span>M.insert o n m<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+I found that once I'd come around to folding the <code>Ensure</code> callback into the
+<code>commandExecute</code> function the rest fell out from the types.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgf9cfdae" class="outline-2">
+<h2 id="orgf9cfdae">The API calls: delete user</h2>
+<div class="outline-text-2" id="text-orgf9cfdae">
+<p>
+The other actions, deleting a user and getting a user, required only minor
+changes and the changes were rather similar in both cases.
+</p>
+
+<p>
+Not the type for the action needs to take a <code>Var Int v</code> instead of just a plain
+<code>Int</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-keyword">newtype</span> <span class="org-haskell-type">DeleteUser</span> <span class="org-rainbow-delimiters-depth-1">(</span>v <span class="org-haskell-operator">::</span> <span class="org-haskell-operator">*</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-operator">*</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">DeleteUser</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">Var</span> <span class="org-haskell-constructor">Int</span> v<span class="org-rainbow-delimiters-depth-1">)</span>
+  <span class="org-haskell-keyword">deriving</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">Eq</span>, <span class="org-haskell-constructor">Show</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+Which in turn affect the implementation of <code>HTraversable</code>
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-keyword">instance</span> <span class="org-haskell-type">HTraversable</span> <span class="org-haskell-type">DeleteUser</span> <span class="org-haskell-keyword">where</span>
+  htraverse f <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">DeleteUser</span> vi<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">DeleteUser</span> <span class="org-haskell-operator">&lt;$&gt;</span> htraverse f vi
+</pre>
+</div>
+
+<p>
+Then the changes to the <code>Command</code> mostly comprise use of <a href="https://hackage.haskell.org/package/hedgehog-0.5.3/docs/Hedgehog.html#v:concrete"><code>concrete</code></a> in places
+where the real ID is needed.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">deleteUser</span> <span class="org-haskell-operator">::</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">MonadGen</span> n, <span class="org-haskell-type">MonadIO</span> m<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=&gt;</span> <span class="org-haskell-type">Command</span> n m <span class="org-haskell-type">State</span>
+<span class="org-haskell-definition">deleteUser</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">Command</span> gen exec <span class="org-rainbow-delimiters-depth-1">[</span> <span class="org-haskell-constructor">Update</span> u
+                              , <span class="org-haskell-constructor">Require</span> r
+                              , <span class="org-haskell-constructor">Ensure</span> e
+                              <span class="org-rainbow-delimiters-depth-1">]</span>
+  <span class="org-haskell-keyword">where</span>
+    gen <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">State</span> m<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">case</span> M.keys m <span class="org-haskell-keyword">of</span>
+      <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">[]</span></span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-constructor">Nothing</span>
+      ks <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-constructor">Just</span> <span class="org-haskell-operator">$</span> <span class="org-haskell-constructor">DeleteUser</span> <span class="org-haskell-operator">&lt;$&gt;</span> Gen.element ks
+
+    exec <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">DeleteUser</span> vi<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=</span> liftIO <span class="org-haskell-operator">$</span> <span class="org-haskell-keyword">do</span>
+      mgr <span class="org-haskell-operator">&lt;-</span> newManager defaultManagerSettings
+      delReq <span class="org-haskell-operator">&lt;-</span> parseRequest <span class="org-haskell-operator">$</span> <span class="org-string">"DELETE http://localhost:3000/users/"</span> <span class="org-haskell-operator">++</span> show <span class="org-rainbow-delimiters-depth-1">(</span>concrete vi<span class="org-rainbow-delimiters-depth-1">)</span>
+      delResp <span class="org-haskell-operator">&lt;-</span> httpNoBody delReq mgr
+      return <span class="org-haskell-operator">$</span> responseStatus delResp
+
+    u <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">State</span> m<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">DeleteUser</span> i<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-keyword">_</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">State</span> <span class="org-haskell-operator">$</span> M.delete i m
+
+    r <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">State</span> m<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">DeleteUser</span> i<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=</span> i <span class="org-haskell-operator">`elem`</span> M.keys m
+
+    e <span class="org-haskell-keyword">_</span> <span class="org-haskell-keyword">_</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">DeleteUser</span> <span class="org-haskell-keyword">_</span><span class="org-rainbow-delimiters-depth-1">)</span> r <span class="org-haskell-operator">=</span> r <span class="org-haskell-operator">===</span> status200
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org24f01b8" class="outline-2">
+<h2 id="org24f01b8">Conclusion</h2>
+<div class="outline-text-2" id="text-org24f01b8">
+<p>
+This post concludes my playing around with state machines in Hedgehog for this
+time. I certainly hope I find the time to put it to use on some larger API soon.
+In particular I'd love to put it to use at work; I think it'd be an excellent
+addition to the integration tests we currently have.
+</p>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-hedgehog.html">hedgehog</a> <a href="https://magnus.therning.org/tag-testing.html">testing</a> </div></div>
+<div id="postamble" class="status"><!-- org-static-blog-page-postamble --></div>
+</body>
+</html>

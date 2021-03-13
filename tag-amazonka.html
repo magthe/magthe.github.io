@@ -47,7 +47,55 @@ Putting it to use can be done with something like
     runAWSCond awsEnv <span class="org-haskell-operator">=</span> runResourceT <span class="org-haskell-operator">.</span> runAWS awsEnv <span class="org-haskell-operator">.</span> within <span class="org-haskell-constructor">Frankfurt</span> <span class="org-haskell-operator">.</span> C.runConduit
 </pre>
 </div>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-amazonka.html">amazonka</a> <a href="https://magnus.therning.org/tag-aws.html">aws</a> <a href="https://magnus.therning.org/tag-conduit.html">conduit</a> <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> </div><div id="archive">
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-amazonka.html">amazonka</a> <a href="https://magnus.therning.org/tag-aws.html">aws</a> <a href="https://magnus.therning.org/tag-conduit.html">conduit</a> <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> </div>
+<div class="post-date">10 Feb 2019</div><h1 class="post-title"><a href="https://magnus.therning.org/2019-02-10-000-using-stack-to-get-around-upstream-bugs.html">Using stack to get around upstream bugs</a></h1>
+<p>
+Recently I bumped into <a href="https://github.com/brendanhay/amazonka/issues/517">a bug in <i>amazonka</i></a>.<sup><a id="fnr.1" class="footref" href="#fn.1">1</a></sup> I can't really sit around
+waiting for Amazon to fix it, and then for <i>amazonka</i> to use the fixed
+documentation to generate the code and make another release.
+</p>
+
+<p>
+Luckily <a href="https://docs.haskellstack.org/en/stable/README/"><code>stack</code></a> contains features that make it fairly simple to work around this
+bug until it's properly fixed. Here's how.
+</p>
+
+<ol class="org-ol">
+<li>Put the upstream code in a git repository of your own. In my case I simply
+forked the <a href="https://github.com/brendanhay/amazonka"><i>amazonka</i> repository on github</a> (my fork is <a href="https://github.com/magthe/amazonka">here</a>).</li>
+
+<li>Fix the bug and commit the change. <a href="https://github.com/magthe/amazonka/commit/1543b65e3a8b692aa9038ada68aaed9967752983">My change to <i>amazonka-codepipeline</i></a> was
+simply to remove the missing fields &#x2013; it was easier than trying to make them
+optional (i.e. wrapping them in =Maybe=s).</li>
+
+<li>Tell <code>slack</code> to use the code from your modified git repository. In my case I
+added the following to my <code>slack.yaml</code>:</li>
+</ol>
+
+<pre class="example" id="org3a0d6eb">
+extra-deps:
+  - github: magthe/amazonka
+    commit: 1543b65e3a8b692aa9038ada68aaed9967752983
+    subdirs:
+      - amazonka-codepipeline
+</pre>
+
+<p>
+That's it!
+</p>
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+
+<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1">1</a></sup> <div class="footpara"><p class="footpara">
+The guilty party is Amazon, not <i>amazonka</i>, though I was a little
+surprised that there doesn't seem to be any established way to modify the Amazon
+API documentation before it's used to autogenerate the Haskell code.
+</p></div></div>
+
+
+</div>
+</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-amazonka.html">amazonka</a> <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-stack.html">stack</a> </div><div id="archive">
 <a href="https://magnus.therning.org/archive.html">Other posts</a>
 </div>
 </div>
