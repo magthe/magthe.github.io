@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="alternate"
+      type="application/rss+xml"
+      href="https://magnus.therning.org/feed.xml"
+      title="RSS feed for https://magnus.therning.org/">
+<title>My ghcide build for Nix</title>
+<meta name="author" content="Magnus Therning"><meta name="referrer" content="no-referrer"><link href= "static/style.css" rel="stylesheet" type="text/css" /><link href= "static/htmlize.css" rel="stylesheet" type="text/css" /><link href= "static/extra_style.css" rel="stylesheet" type="text/css" /></head>
+<body>
+<div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
+<div id="content">
+<div class="post-date">02 Feb 2020</div><h1 class="post-title"><a href="https://magnus.therning.org/2020-02-02-000-my-ghcide-build-for-nix.html">My ghcide build for Nix</a></h1>
+<p>
+I was slightly disappointed to find out that not all packages on Hackage that
+are marked as present in <a href="https://nixos.org/nixpkgs/">Nix(pkgs)</a> actually are available. Quite a few of them
+are marked broken and hence not installable. One of these packages is <a href="https://hackage.haskell.org/package/ghcide">ghcide</a>.
+</p>
+
+<p>
+There are of course expressions available for getting a working <code>ghcide</code>
+executable installed, like <a href="https://github.com/hercules-ci/ghcide-nix">ghcide-nix</a>. However, since I have rather simple needs
+for my Haskell projects I thought I'd play with my own approach to it.
+</p>
+
+<p>
+What I care about is:
+</p>
+
+<ol class="org-ol">
+<li>availability of the development tools I use, at the moment it's mainly
+<code>ghcide</code> but I'm planning on making use of <a href="https://hackage.haskell.org/package/ormolu">ormolu</a> in the near future</li>
+<li>pre-built packages</li>
+<li>ease of use</li>
+</ol>
+
+<p>
+So, I put together <a href="https://github.com/magthe/ghcide-for-nix">ghcide-for-nix</a>. It's basically just a constumized Nixpkgs
+where the packages needed to un-break <code>ghcide</code> are present.
+</p>
+
+<p>
+Usage is a simple <code>import</code> away:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix"><span class="org-nix-builtin">import</span> <span class="org-rainbow-delimiters-depth-1">(</span>builtins.fetchGit <span class="org-rainbow-delimiters-depth-2">{</span>
+  <span class="org-nix-attribute">name</span> = <span class="org-string">"ghcide-for-nix"</span>;
+  <span class="org-nix-attribute">url</span> = <span class="org-nix-constant">https://github.com/magthe/ghcide-for-nix</span>;
+  <span class="org-nix-attribute">rev</span> = <span class="org-string">"927a8caa62cece60d9d66dbdfc62b7738d61d75f"</span>;
+<span class="org-rainbow-delimiters-depth-2">}</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+and it'll give you a superset of Nixpkgs. Pre-built packages are available on
+<a href="https://magthe.cachix.org/">Cachix</a>.
+</p>
+
+<p>
+It's not sophisticated, but it's rather easy to use and suffices for my
+purposes.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-nix.html">nix</a> </div></div>
+<div id="postamble" class="status"><!-- org-static-blog-page-postamble --></div>
+</body>
+</html>

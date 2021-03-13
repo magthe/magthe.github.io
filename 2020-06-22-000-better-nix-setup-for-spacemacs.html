@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="alternate"
+      type="application/rss+xml"
+      href="https://magnus.therning.org/feed.xml"
+      title="RSS feed for https://magnus.therning.org/">
+<title>Better Nix setup for Spacemacs</title>
+<meta name="author" content="Magnus Therning"><meta name="referrer" content="no-referrer"><link href= "static/style.css" rel="stylesheet" type="text/css" /><link href= "static/htmlize.css" rel="stylesheet" type="text/css" /><link href= "static/extra_style.css" rel="stylesheet" type="text/css" /></head>
+<body>
+<div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
+<div id="content">
+<div class="post-date">22 Jun 2020</div><h1 class="post-title"><a href="https://magnus.therning.org/2020-06-22-000-better-nix-setup-for-spacemacs.html">Better Nix setup for Spacemacs</a></h1>
+<p>
+In an <a href="file:///posts/2019-12-07-000-nix-setup-for-spacemacs.html">earlier post</a> I documented my setup for getting <a href="https://www.spacemacs.org/">Spacemacs</a>/Emacs to work
+with <a href="https://nixos.org/nix/">Nix</a>. I've since found a much more elegant solution based on
+</p>
+
+<ul class="org-ul">
+<li><a href="https://github.com/direnv/direnv/">direnv</a>, and</li>
+<li><a href="https://github.com/wbolster/emacs-direnv">emacs-direnv</a></li>
+</ul>
+
+<p>
+No more Emacs packages for Nix and no need to defining functions that wrap
+executables in an invocation of <code>nix-shell</code>.
+</p>
+
+<p>
+There's a nice bonus too, with this setup I don't need to run <code>nix-shell</code>, which
+always drops me at a bash prompt, instead I get a working setup in my shell of
+choice.
+</p>
+
+<div id="outline-container-org0ffa6ad" class="outline-2">
+<h2 id="org0ffa6ad">Setting up <code>direnv</code></h2>
+<div class="outline-text-2" id="text-org0ffa6ad">
+<p>
+The steps for setting up <code>direnv</code> depends a bit on your setup, but luckily I
+found the <a href="https://direnv.net/#basic-installation">official instructions for installing <code>direnv</code></a> to be very clear and
+easy to follow. There's not much I can add to that.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org25fa924" class="outline-2">
+<h2 id="org25fa924">Setting up Spacemacs</h2>
+<div class="outline-text-2" id="text-org25fa924">
+<p>
+Since <code>emacs-direnv</code> isn't included by default in Spacemacs I needed to do a bit
+of setup. I opted to create a layer for it, rather than just drop it in the list
+<code>dotspacemacs-additional-packages</code>. Yes, a little more complicated, but not
+difficult and I nurture an intention of submitting the layer for inclusion in
+Spacemacs itself at some point. I'll see where that goes.
+</p>
+
+<p>
+For now, I put the following in the file
+<code>~/.emacs.d/private/layers/direnv/packages.el</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defconst</span> <span class="org-variable-name">direnv-packages</span>
+      '<span class="org-rainbow-delimiters-depth-2">(</span>direnv<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">direnv/init-direnv</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">use-package</span> <span class="org-constant">direnv</span>
+    <span class="org-builtin">:init</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>direnv-mode<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org0cf0d1c" class="outline-2">
+<h2 id="org0cf0d1c">Setting up the project folders</h2>
+<div class="outline-text-2" id="text-org0cf0d1c">
+<p>
+In each project folder I then add the file <code>.envrc</code> containing a single line:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell">use_nix
+</pre>
+</div>
+
+<p>
+Then I either run <code>direnv allow</code> from the command line, or run the
+function <code>direnv-allow</code> after opening the folder in Emacs.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org7bac164" class="outline-2">
+<h2 id="org7bac164">Using it</h2>
+<div class="outline-text-2" id="text-org7bac164">
+<p>
+It's as simple as moving into the folder in a shell &#x2013; all required envvars are
+set up on entry and unset on exit.
+</p>
+
+<p>
+In Emacs it's just as simple, just open a file in a project and the envvars are
+set. When switching to a buffer outside the project the envvars are unset.
+</p>
+
+<p>
+There is only one little caveat, <code>nix-build</code> doesn't work inside a Nix shell. I
+found out that running
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell"><span class="org-variable-name">IN_NIX_SHELL</span>= nix-build
+</pre>
+</div>
+
+<p>
+does work though.
+</p>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-nix.html">nix</a> <a href="https://magnus.therning.org/tag-spacemacs.html">spacemacs</a> </div></div>
+<div id="postamble" class="status"><!-- org-static-blog-page-postamble --></div>
+</body>
+</html>

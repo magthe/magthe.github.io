@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="alternate"
+      type="application/rss+xml"
+      href="https://magnus.therning.org/feed.xml"
+      title="RSS feed for https://magnus.therning.org/">
+<title>Magnus web site</title>
+<meta name="author" content="Magnus Therning"><meta name="referrer" content="no-referrer"><link href= "static/style.css" rel="stylesheet" type="text/css" /><link href= "static/htmlize.css" rel="stylesheet" type="text/css" /><link href= "static/extra_style.css" rel="stylesheet" type="text/css" /></head>
+<body>
+<div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
+<div id="content">
+<h1 class="title">Posts tagged "amazonka":</h1>
+<div class="post-date">11 Nov 2020</div><h1 class="post-title"><a href="https://magnus.therning.org/2020-11-11-2222-combining_amazonka_and_conduit.html">Combining Amazonka and Conduit</a></h1>
+<p>
+Combining <a href="https://hackage.haskell.org/package/amazonka">amazonka</a> and <a href="https://hackage.haskell.org/package/conduit">conduit</a> turned out to be easier than I had expected.
+</p>
+
+<p>
+Here's an SNS sink I put together today
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">snsSink</span> <span class="org-haskell-operator">::</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">MonadAWS</span> m, <span class="org-haskell-type">MonadIO</span> m<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=&gt;</span> <span class="org-haskell-type">T.Text</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">C.ConduitT</span> <span class="org-haskell-type">Value</span> <span class="org-haskell-type">C.Void</span> m <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+<span class="org-haskell-definition">snsSink</span> topic <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+  C.await <span class="org-haskell-operator">&gt;&gt;=</span> <span class="org-haskell-operator">\</span><span class="org-haskell-keyword">case</span>
+    <span class="org-haskell-constructor">Nothing</span> <span class="org-haskell-operator">-&gt;</span> pure <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+    <span class="org-haskell-constructor">Just</span> msg <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-keyword">do</span>
+      <span class="org-haskell-keyword">_</span> <span class="org-haskell-operator">&lt;-</span> C.lift <span class="org-haskell-operator">$</span> publishSNS topic <span class="org-rainbow-delimiters-depth-1">(</span>TL.toStrict <span class="org-haskell-operator">$</span> TL.decodeUtf8 <span class="org-haskell-operator">$</span> encode msg<span class="org-rainbow-delimiters-depth-1">)</span>
+      snsSink topic
+</pre>
+</div>
+
+<p>
+Putting it to use can be done with something like
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">foo</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+  <span class="org-haskell-operator">...</span>
+  awsEnv <span class="org-haskell-operator">&lt;-</span> newEnv <span class="org-haskell-constructor">Discover</span>
+  runAWSCond awsEnv <span class="org-haskell-operator">$</span>
+    <span class="org-haskell-operator">&lt;</span>source producing <span class="org-haskell-constructor">Value</span><span class="org-haskell-operator">&gt;</span> <span class="org-haskell-operator">.|</span> snsSink topicArn
+
+  <span class="org-haskell-keyword">where</span>
+    runAWSCond awsEnv <span class="org-haskell-operator">=</span> runResourceT <span class="org-haskell-operator">.</span> runAWS awsEnv <span class="org-haskell-operator">.</span> within <span class="org-haskell-constructor">Frankfurt</span> <span class="org-haskell-operator">.</span> C.runConduit
+</pre>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-amazonka.html">amazonka</a> <a href="https://magnus.therning.org/tag-aws.html">aws</a> <a href="https://magnus.therning.org/tag-conduit.html">conduit</a> <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> </div><div id="archive">
+<a href="https://magnus.therning.org/archive.html">Other posts</a>
+</div>
+</div>
+<div id="postamble" class="status"><!-- org-static-blog-page-postamble --></div>
+</body>
+</html>

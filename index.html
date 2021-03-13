@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="alternate"
+      type="application/rss+xml"
+      href="https://magnus.therning.org/feed.xml"
+      title="RSS feed for https://magnus.therning.org/">
+<title>Magnus web site</title>
+<meta name="author" content="Magnus Therning"><meta name="referrer" content="no-referrer"><link href= "static/style.css" rel="stylesheet" type="text/css" /><link href= "static/htmlize.css" rel="stylesheet" type="text/css" /><link href= "static/extra_style.css" rel="stylesheet" type="text/css" /></head>
+<body>
+<div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
+<div id="content">
+<header class="site-header" role="banner"><h1 class="title">Magnus web site</h1><h2 class="subtitle">Random stuff</h2></header>
+<div class="post-date">05 Mar 2021</div><h1 class="post-title"><a href="https://magnus.therning.org/2021-03-05-000-flycheck-and-hls.html">Flycheck and HLS</a></h1>
+<p>
+I've been using LSP for most programming languages for a while now. HLS is
+really very good now, but I've found that it doesn't warn on quite all things
+I'd like it to so I find myself having to swap between the <code>'lsp</code> and
+<code>'haskell-ghc</code> checkers. However, since <a href="https://www.flycheck.org/en/latest/">flycheck</a> supports chaining checkers I
+thought there must be a way to have both checkers active at the same time.
+</p>
+
+<p>
+The naive approach didn't work due to load order of things in Spacemacs so I had
+to experiment a bit to find something that works.
+</p>
+
+<p>
+The first issue was to make sure that HLS is available at all. I use <code>shell.nix</code>
+together with <a href="https://direnv.net/">direnv</a> extensively and I had noticed that <code>lsp-mode</code> tried to load
+HLS before <code>direnv</code> had put it in the <code>$PATH</code>. I think the
+<code>'lsp-beforeinitialize-hook</code> is the hook to use for this:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span>add-hook 'lsp-before-initialize-hook #'direnv-update-environment<span class="org-rainbow-delimiters-depth-1">)</span><span class="org-rainbow-delimiters-unmatched">)</span>
+</pre>
+</div>
+
+<p>
+I made a several attempt to chain the checkers but kept on getting
+errors due to the <code>'lsp</code> checker not being defined yet. Another problem
+I ran into was that the checkers were chained too late, resulting in
+having to manually run <code>flycheck-buffer</code> on the first file I opened.
+(Deferred loading is a brilliant thing, but make some things really
+difficult to debug.) After quite a bit of experimenting and reading the
+description of various hooks I did find something that works:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">with-eval-after-load</span> 'lsp-mode
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">defun</span> <span class="org-function-name">magthe:lsp-next-checker</span> <span class="org-rainbow-delimiters-depth-3">()</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>flycheck-add-next-checker 'lsp '<span class="org-rainbow-delimiters-depth-4">(</span>warning . haskell-ghc<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>add-hook 'lsp-lsp-haskell-after-open-hook
+            #'magthe:lsp-next-checker<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+Of course I have no idea if this is the easiest or most elegant solution but it
+does work for my testcases:
+</p>
+
+<ol class="org-ol">
+<li>Open a file in a project, <code>SPC p l</code> - choose project - choose a Haskell file.</li>
+<li>Open a project, <code>SPC p l</code> followed by <code>C-d</code>, and then open a Haskell file.</li>
+</ol>
+
+<p>
+Suggestions for improvements are more than welcome, of course.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-flycheck.html">flycheck</a> </div>
+<div class="post-date">30 Nov 2020</div><h1 class="post-title"><a href="https://magnus.therning.org/2020-11-30-1734-haskell__nix_and_using_packages_from_github.html">Haskell, Nix and using packages from GitHub</a></h1>
+<p>
+The other day I bumped into what turned out to be a <a href="https://mail.haskell.org/pipermail/haskell-cafe/2020-November/133021.html">bug in Amazonka</a> where
+sockets weren't closed in a timely fashion and thus the process ran out of file
+descriptors. Some more digging and an <a href="https://github.com/brendanhay/amazonka/issues/608">issue</a> later I found that a fix most likely
+already in place (mine was possibly a duplicate of an older <a href="https://github.com/brendanhay/amazonka/issues/490">issue</a>). Now I only
+had to verify if that was the case by using the most recent, and unreleased code
+on the <code>develop</code> branch of Amazonka.
+</p>
+
+<p>
+My first thought was to attempt to instruct Cabal to build the bits of Amazonka
+I need by putting a few <a href="https://cabal.readthedocs.io/en/3.4/cabal-project.html#specifying-packages-from-remote-version-control-locations"><code>source-repository-package</code> stanzas</a> in my config. That
+quickly started to look like a bit of a rabbit hole, so I decided to use Nix
+instead. After finding the <a href="https://stackoverflow.com/questions/54810851/how-can-i-build-a-haskell-dependency-from-a-github-source-nix-file-using-nix">perfect SO post</a> and looking up yet again how to do
+overrides for Haskell I ran <code>cabal2nix</code> for the three packages I need:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell">cabal2nix --no-haddock --no-check --subpath amazonka <span class="org-sh-escaped-newline">\</span>
+  git://github.com/brendanhay/amazonka.git &gt; amazonka.nix
+cabal2nix --no-haddock --no-check --subpath core <span class="org-sh-escaped-newline">\</span>
+  git://github.com/brendanhay/amazonka.git &gt; amazonka-core.nix
+cabal2nix --no-haddock --no-check --subpath amazonka-sqs <span class="org-sh-escaped-newline">\</span>
+  git://github.com/brendanhay/amazonka.git &gt; amazonka-sqs.nix
+</pre>
+</div>
+
+<p>
+The relevant part of the old Nix expression looked like this:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix"><span class="org-nix-attribute">thePkg</span> = haskellPackages.developPackage <span class="org-rainbow-delimiters-depth-1">{</span>
+  <span class="org-nix-attribute">root</span> = lib.cleanSource <span class="org-nix-constant">./.</span>;
+  <span class="org-nix-attribute">name</span> = name;
+
+  <span class="org-nix-attribute">modifier</span> = <span class="org-rainbow-delimiters-depth-2">(</span>t.flip t.pipe<span class="org-rainbow-delimiters-depth-2">)</span>
+    <span class="org-rainbow-delimiters-depth-2">[</span>hl.dontHaddock
+     hl.enableStaticLibraries
+     hl.justStaticExecutables
+     hl.disableLibraryProfiling
+     hl.disableExecutableProfiling<span class="org-rainbow-delimiters-depth-2">]</span>;
+<span class="org-rainbow-delimiters-depth-1">}</span>;
+</pre>
+</div>
+
+<p>
+After adding the overrides it looked like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix"><span class="org-nix-attribute">hp</span> = haskellPackages.override <span class="org-rainbow-delimiters-depth-1">{</span>
+  <span class="org-nix-attribute">overrides</span> = self: super: <span class="org-rainbow-delimiters-depth-2">{</span>
+    <span class="org-nix-attribute">amazonka-core</span> = self.callPackage <span class="org-nix-constant">./amazonka-core.nix</span> <span class="org-rainbow-delimiters-depth-3">{}</span>;
+    <span class="org-nix-attribute">amazonka</span> = self.callPackage <span class="org-nix-constant">./amazonka.nix</span> <span class="org-rainbow-delimiters-depth-3">{}</span>;
+    <span class="org-nix-attribute">amazonka-sqs</span> = self.callPackage <span class="org-nix-constant">./amazonka-sqs.nix</span> <span class="org-rainbow-delimiters-depth-3">{}</span>;
+  <span class="org-rainbow-delimiters-depth-2">}</span>;
+<span class="org-rainbow-delimiters-depth-1">}</span>;
+
+<span class="org-nix-attribute">thePkg</span> = hp.developPackage <span class="org-rainbow-delimiters-depth-1">{</span>
+  <span class="org-nix-attribute">root</span> = lib.cleanSource <span class="org-nix-constant">./.</span>;
+  <span class="org-nix-attribute">name</span> = name;
+
+  <span class="org-nix-attribute">modifier</span> = <span class="org-rainbow-delimiters-depth-2">(</span>t.flip t.pipe<span class="org-rainbow-delimiters-depth-2">)</span>
+    <span class="org-rainbow-delimiters-depth-2">[</span>hl.dontHaddock
+     hl.enableStaticLibraries
+     hl.justStaticExecutables
+     hl.disableLibraryProfiling
+     hl.disableExecutableProfiling<span class="org-rainbow-delimiters-depth-2">]</span>;
+<span class="org-rainbow-delimiters-depth-1">}</span>;
+</pre>
+</div>
+
+<p>
+After a somewhat longer-than-usual build I could verify that I had indeed bumped
+into the same issue and my issue was a duplicate.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-nix.html">nix</a> </div>
+<div class="post-date">11 Nov 2020</div><h1 class="post-title"><a href="https://magnus.therning.org/2020-11-11-2222-combining_amazonka_and_conduit.html">Combining Amazonka and Conduit</a></h1>
+<p>
+Combining <a href="https://hackage.haskell.org/package/amazonka">amazonka</a> and <a href="https://hackage.haskell.org/package/conduit">conduit</a> turned out to be easier than I had expected.
+</p>
+
+<p>
+Here's an SNS sink I put together today
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">snsSink</span> <span class="org-haskell-operator">::</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">MonadAWS</span> m, <span class="org-haskell-type">MonadIO</span> m<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=&gt;</span> <span class="org-haskell-type">T.Text</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">C.ConduitT</span> <span class="org-haskell-type">Value</span> <span class="org-haskell-type">C.Void</span> m <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+<span class="org-haskell-definition">snsSink</span> topic <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+  C.await <span class="org-haskell-operator">&gt;&gt;=</span> <span class="org-haskell-operator">\</span><span class="org-haskell-keyword">case</span>
+    <span class="org-haskell-constructor">Nothing</span> <span class="org-haskell-operator">-&gt;</span> pure <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+    <span class="org-haskell-constructor">Just</span> msg <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-keyword">do</span>
+      <span class="org-haskell-keyword">_</span> <span class="org-haskell-operator">&lt;-</span> C.lift <span class="org-haskell-operator">$</span> publishSNS topic <span class="org-rainbow-delimiters-depth-1">(</span>TL.toStrict <span class="org-haskell-operator">$</span> TL.decodeUtf8 <span class="org-haskell-operator">$</span> encode msg<span class="org-rainbow-delimiters-depth-1">)</span>
+      snsSink topic
+</pre>
+</div>
+
+<p>
+Putting it to use can be done with something like
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">foo</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+  <span class="org-haskell-operator">...</span>
+  awsEnv <span class="org-haskell-operator">&lt;-</span> newEnv <span class="org-haskell-constructor">Discover</span>
+  runAWSCond awsEnv <span class="org-haskell-operator">$</span>
+    <span class="org-haskell-operator">&lt;</span>source producing <span class="org-haskell-constructor">Value</span><span class="org-haskell-operator">&gt;</span> <span class="org-haskell-operator">.|</span> snsSink topicArn
+
+  <span class="org-haskell-keyword">where</span>
+    runAWSCond awsEnv <span class="org-haskell-operator">=</span> runResourceT <span class="org-haskell-operator">.</span> runAWS awsEnv <span class="org-haskell-operator">.</span> within <span class="org-haskell-constructor">Frankfurt</span> <span class="org-haskell-operator">.</span> C.runConduit
+</pre>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-amazonka.html">amazonka</a> <a href="https://magnus.therning.org/tag-aws.html">aws</a> <a href="https://magnus.therning.org/tag-conduit.html">conduit</a> <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> </div>
+<div class="post-date">22 Jun 2020</div><h1 class="post-title"><a href="https://magnus.therning.org/2020-06-22-000-better-nix-setup-for-spacemacs.html">Better Nix setup for Spacemacs</a></h1>
+<p>
+In an <a href="file:///posts/2019-12-07-000-nix-setup-for-spacemacs.html">earlier post</a> I documented my setup for getting <a href="https://www.spacemacs.org/">Spacemacs</a>/Emacs to work
+with <a href="https://nixos.org/nix/">Nix</a>. I've since found a much more elegant solution based on
+</p>
+
+<ul class="org-ul">
+<li><a href="https://github.com/direnv/direnv/">direnv</a>, and</li>
+<li><a href="https://github.com/wbolster/emacs-direnv">emacs-direnv</a></li>
+</ul>
+
+<p>
+No more Emacs packages for Nix and no need to defining functions that wrap
+executables in an invocation of <code>nix-shell</code>.
+</p>
+
+<p>
+There's a nice bonus too, with this setup I don't need to run <code>nix-shell</code>, which
+always drops me at a bash prompt, instead I get a working setup in my shell of
+choice.
+</p>
+
+<div id="outline-container-org0ffa6ad" class="outline-2">
+<h2 id="org0ffa6ad">Setting up <code>direnv</code></h2>
+<div class="outline-text-2" id="text-org0ffa6ad">
+<p>
+The steps for setting up <code>direnv</code> depends a bit on your setup, but luckily I
+found the <a href="https://direnv.net/#basic-installation">official instructions for installing <code>direnv</code></a> to be very clear and
+easy to follow. There's not much I can add to that.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org25fa924" class="outline-2">
+<h2 id="org25fa924">Setting up Spacemacs</h2>
+<div class="outline-text-2" id="text-org25fa924">
+<p>
+Since <code>emacs-direnv</code> isn't included by default in Spacemacs I needed to do a bit
+of setup. I opted to create a layer for it, rather than just drop it in the list
+<code>dotspacemacs-additional-packages</code>. Yes, a little more complicated, but not
+difficult and I nurture an intention of submitting the layer for inclusion in
+Spacemacs itself at some point. I'll see where that goes.
+</p>
+
+<p>
+For now, I put the following in the file
+<code>~/.emacs.d/private/layers/direnv/packages.el</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defconst</span> <span class="org-variable-name">direnv-packages</span>
+      '<span class="org-rainbow-delimiters-depth-2">(</span>direnv<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">direnv/init-direnv</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">use-package</span> <span class="org-constant">direnv</span>
+    <span class="org-builtin">:init</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>direnv-mode<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org0cf0d1c" class="outline-2">
+<h2 id="org0cf0d1c">Setting up the project folders</h2>
+<div class="outline-text-2" id="text-org0cf0d1c">
+<p>
+In each project folder I then add the file <code>.envrc</code> containing a single line:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell">use_nix
+</pre>
+</div>
+
+<p>
+Then I either run <code>direnv allow</code> from the command line, or run the
+function <code>direnv-allow</code> after opening the folder in Emacs.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org7bac164" class="outline-2">
+<h2 id="org7bac164">Using it</h2>
+<div class="outline-text-2" id="text-org7bac164">
+<p>
+It's as simple as moving into the folder in a shell &#x2013; all required envvars are
+set up on entry and unset on exit.
+</p>
+
+<p>
+In Emacs it's just as simple, just open a file in a project and the envvars are
+set. When switching to a buffer outside the project the envvars are unset.
+</p>
+
+<p>
+There is only one little caveat, <code>nix-build</code> doesn't work inside a Nix shell. I
+found out that running
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell"><span class="org-variable-name">IN_NIX_SHELL</span>= nix-build
+</pre>
+</div>
+
+<p>
+does work though.
+</p>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-nix.html">nix</a> <a href="https://magnus.therning.org/tag-spacemacs.html">spacemacs</a> </div>
+<div class="post-date">08 Apr 2020</div><h1 class="post-title"><a href="https://magnus.therning.org/2020-04-08-000-xray-and-way.html">X-Ray and WAI</a></h1>
+<p>
+For a while we've been planning on introducing <a href="https://aws.amazon.com/xray/">AWS X-Ray</a> into our system at
+work. There's official support for a few languages, but not too surprisingly
+Haskell isn't on that list. I found <a href="https://github.com/freckle/aws-xray-client">freckle/aws-xray-client</a> on GitHub, which is
+so unofficial that it isn't even published on Hackage. While it looks very good,
+I suspect it does more than I need and since it lacks licensing information I
+decided to instead implement a version tailored to our needs.
+</p>
+
+<p>
+As a first step I implemented a WAI <i>middleware</i> that wraps an HTTP request and
+reports the time it took to produce a response. Between the <a href="https://docs.aws.amazon.com/xray/latest/devguide/aws-xray.html">X-Ray Developer
+Guide</a> and the code in Freckle's git repo it turned out to be fairly simple.
+</p>
+
+<p>
+First off, this is the first step towards X-Ray nirvana, so all I'm aiming for
+is minimal support. That means all I want is to send <a href="https://docs.aws.amazon.com/xray/latest/devguide/xray-api-segmentdocuments.html#api-segmentdocuments-fields">minimal X-Ray segment</a>s,
+with the small addition that I want to support <code>parent_id</code> from the start.
+</p>
+
+<p>
+The first step then is to parse the HTTP header containing the X-Ray information
+&#x2013; <a href="https://docs.aws.amazon.com/xray/latest/devguide/xray-concepts.html#xray-concepts-tracingheader"><code>X-Amzn-Trace-Id</code></a>. For now I'm only interested in two parts, <code>Root</code> and
+<code>Parent</code>, so for simplicity's sake I use a tuple to keep them in. The idea is to
+take the header's value, split on <code>;</code> to get the parts, then split each part in
+two, a key and a value, and put them into an association list (<code>[(Text, Text)]</code>)
+for easy lookup using, well <code>lookup</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">parseXRayTraceIdHdr</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Text</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Maybe</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Text</span>, <span class="org-haskell-type">Maybe</span> <span class="org-haskell-type">Text</span><span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-haskell-definition">parseXRayTraceIdHdr</span> hdr <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+  bits <span class="org-haskell-operator">&lt;-</span> traverse parseHeaderComponent <span class="org-haskell-operator">$</span> T.split <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-operator">==</span> <span class="org-string">';'</span><span class="org-rainbow-delimiters-depth-1">)</span> hdr
+  traceId <span class="org-haskell-operator">&lt;-</span> lookup <span class="org-string">"Root"</span> bits
+  <span class="org-haskell-keyword">let</span> parent <span class="org-haskell-operator">=</span> lookup <span class="org-string">"Parent"</span> bits
+  pure <span class="org-rainbow-delimiters-depth-1">(</span>traceId, parent<span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-haskell-definition">parseHeaderComponent</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Text</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Maybe</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Text</span>, <span class="org-haskell-type">Text</span><span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-haskell-definition">parseHeaderComponent</span> cmp <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">case</span> T.split <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-operator">==</span> <span class="org-string">'='</span><span class="org-rainbow-delimiters-depth-1">)</span> cmp <span class="org-haskell-keyword">of</span>
+                            <span class="org-rainbow-delimiters-depth-1">[</span>name, value<span class="org-rainbow-delimiters-depth-1">]</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-constructor">Just</span> <span class="org-rainbow-delimiters-depth-1">(</span>name, value<span class="org-rainbow-delimiters-depth-1">)</span>
+                            <span class="org-haskell-keyword">_</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-constructor">Nothing</span>
+</pre>
+</div>
+
+<p>
+The start and end times for processing a request are also required. The docs say
+that using at least millisecond resolution is a good idea, so I decided to do
+exactly that. <code>NominalDiffTime</code>, which is what <code>getPOSIXTime</code> produces, supports
+a resolution of picoseconds (though I doubt my system's clock does) which
+requires a bit of (type-based) converting.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">mkTimeInMilli</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-type">Milli</span>
+<span class="org-haskell-definition">mkTimeInMilli</span> <span class="org-haskell-operator">=</span> ndfToMilli <span class="org-haskell-operator">&lt;$&gt;</span> getPOSIXTime
+  <span class="org-haskell-keyword">where</span>
+    ndfToMilli <span class="org-haskell-operator">=</span> fromRational <span class="org-haskell-operator">.</span> toRational
+</pre>
+</div>
+
+<p>
+The last support function needed is one that creates the segment. Just
+building the JSON object, using <i>aeson</i>'s <code>object</code>, is enough at this
+point.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">mkSegment</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Text</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Text</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Milli</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Milli</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Text</span>, <span class="org-haskell-type">Maybe</span> <span class="org-haskell-type">Text</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Value</span>
+<span class="org-haskell-definition">mkSegment</span> name id startTime endTime <span class="org-rainbow-delimiters-depth-1">(</span>root, parent<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=</span>
+  object <span class="org-haskell-operator">$</span> <span class="org-rainbow-delimiters-depth-1">[</span> <span class="org-string">"name"</span> <span class="org-haskell-operator">.=</span> name
+           , <span class="org-string">"id"</span> <span class="org-haskell-operator">.=</span> id
+           , <span class="org-string">"trace_id"</span> <span class="org-haskell-operator">.=</span> root
+           , <span class="org-string">"start_time"</span> <span class="org-haskell-operator">.=</span> startTime
+           , <span class="org-string">"end_time"</span> <span class="org-haskell-operator">.=</span> endTime
+           <span class="org-rainbow-delimiters-depth-1">]</span> <span class="org-haskell-operator">&lt;&gt;</span> p
+  <span class="org-haskell-keyword">where</span>
+    p <span class="org-haskell-operator">=</span> maybe <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">[]</span></span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-operator">\</span> v <span class="org-haskell-operator">-&gt;</span> <span class="org-rainbow-delimiters-depth-2">[</span><span class="org-string">"parent_id"</span> <span class="org-haskell-operator">.=</span> v<span class="org-rainbow-delimiters-depth-2">]</span><span class="org-rainbow-delimiters-depth-1">)</span> parent
+</pre>
+</div>
+
+<p>
+Armed with all this, I can now put together a WAI middleware that
+</p>
+
+<ol class="org-ol">
+<li>records the start time of the call</li>
+<li>processes the request</li>
+<li>sends off the response and keeps the result of it</li>
+<li>records the end time</li>
+<li>parses the tracing header</li>
+<li>builds the segment prepended with the <a href="https://docs.aws.amazon.com/xray/latest/devguide/xray-api-sendingdata.html#xray-api-daemon">X-Ray daemon header</a></li>
+<li>sends the segment to the X-Ray daemon</li>
+</ol>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">traceId</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Text</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Middleware</span>
+<span class="org-haskell-definition">traceId</span> xrayName app req sendResponse <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+  startTime <span class="org-haskell-operator">&lt;-</span> mkTimeInMilli
+  app req <span class="org-haskell-operator">$</span> <span class="org-haskell-operator">\</span> res <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-keyword">do</span>
+    rr <span class="org-haskell-operator">&lt;-</span> sendResponse res
+    endTime <span class="org-haskell-operator">&lt;-</span> mkTimeInMilli
+    theId <span class="org-haskell-operator">&lt;-</span> T.pack <span class="org-haskell-operator">.</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-operator">\</span> v <span class="org-haskell-operator">-&gt;</span> showHex v <span class="org-string">""</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">&lt;$&gt;</span> randomIO <span class="org-haskell-operator">@</span><span class="org-haskell-constructor">Word64</span>
+    <span class="org-haskell-keyword">let</span> traceParts <span class="org-haskell-operator">=</span> <span class="org-rainbow-delimiters-depth-1">(</span>decodeUtf8 <span class="org-haskell-operator">&lt;$&gt;</span> requestHeaderTraceId req<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">&gt;&gt;=</span> parseXRayTraceIdHdr
+        segment <span class="org-haskell-operator">=</span> mkSegment xrayName theId startTime endTime <span class="org-haskell-operator">&lt;$&gt;</span> traceParts
+    <span class="org-haskell-keyword">case</span> segment <span class="org-haskell-keyword">of</span>
+      <span class="org-haskell-constructor">Nothing</span> <span class="org-haskell-operator">-&gt;</span> pure <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+      <span class="org-haskell-constructor">Just</span> segment' <span class="org-haskell-operator">-&gt;</span> sendXRayPayload <span class="org-haskell-operator">$</span> toStrict <span class="org-haskell-operator">$</span> prepareXRayPayload segment'
+    pure rr
+
+  <span class="org-haskell-keyword">where</span>
+    prepareXRayPayload segment <span class="org-haskell-operator">=</span>
+      <span class="org-haskell-keyword">let</span> header <span class="org-haskell-operator">=</span> object <span class="org-rainbow-delimiters-depth-1">[</span><span class="org-string">"format"</span> <span class="org-haskell-operator">.=</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"json"</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">String</span><span class="org-rainbow-delimiters-depth-2">)</span>, <span class="org-string">"version"</span> <span class="org-haskell-operator">.=</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-highlight-numbers-number">1</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Int</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">]</span>
+      <span class="org-haskell-keyword">in</span> encode header <span class="org-haskell-operator">&lt;&gt;</span> <span class="org-string">"\n"</span> <span class="org-haskell-operator">&lt;&gt;</span> encode segment
+
+    sendXRayPayload payload <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+      addrInfos <span class="org-haskell-operator">&lt;-</span> S.getAddrInfo <span class="org-haskell-constructor">Nothing</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">Just</span> <span class="org-string">"127.0.0.1"</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">Just</span> <span class="org-string">"2000"</span><span class="org-rainbow-delimiters-depth-1">)</span>
+      <span class="org-haskell-keyword">case</span> addrInfos <span class="org-haskell-keyword">of</span>
+        <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">[]</span></span> <span class="org-haskell-operator">-&gt;</span> pure <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span> <span class="org-comment-delimiter">-- </span><span class="org-comment">silently skip</span>
+        <span class="org-rainbow-delimiters-depth-1">(</span>xrayAddr<span class="org-haskell-constructor">:</span><span class="org-haskell-keyword">_</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-keyword">do</span>
+          sock <span class="org-haskell-operator">&lt;-</span> S.socket <span class="org-rainbow-delimiters-depth-1">(</span>S.addrFamily xrayAddr<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-constructor">S.Datagram</span> S.defaultProtocol
+          S.connect sock <span class="org-rainbow-delimiters-depth-1">(</span>S.addrAddress xrayAddr<span class="org-rainbow-delimiters-depth-1">)</span>
+          sendAll sock payload
+          S.close sock
+</pre>
+</div>
+
+<p>
+The next step will be to instrument the actual processing. The service I'm
+instrumenting is asynchronous, so all the work happens <i>after</i> the response has
+been sent. My plan for this is to use subsegments to record it. That means I'll
+have to
+</p>
+
+<ul class="org-ul">
+<li>keep the <code>Root</code> and ID (<code>theId</code> in <code>traceId</code> above) for use in subsegments</li>
+<li>keep the original tracing header, for use in outgoing calls</li>
+<li>make sure all outgoing HTTP calls include a tracing header with a proper
+<code>Parent</code></li>
+<li>wrap all outgoing HTTP calls with time keeping and sending a subsegment to the
+X-Ray daemon</li>
+</ul>
+
+<p>
+I'm saving that work for a rainy day though, or rather, for a day when I'm so
+upset at Clojure that I don't want to see another parenthesis.
+</p>
+
+<p>
+<i>Edit (2020-04-10):</i> Corrected the segment field name for the parent ID, it
+should be <code>parent_id</code>.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-aws.html">AWS</a> <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-xray.html">XRay</a> </div><div id="archive">
+<a href="https://magnus.therning.org/archive.html">Other posts</a>
+</div>
+</div>
+<div id="postamble" class="status"><!-- org-static-blog-page-postamble --></div>
+</body>
+</html>

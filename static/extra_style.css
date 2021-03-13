@@ -1,0 +1,20 @@
+.post-date {
+    font-size: 75%;
+}
+
+.title {
+    color:#a5573e;
+}
+
+.org-src-container {
+    background-color: #f4f4f4;
+}
+
+.nav-link {
+    padding: 5px;
+    padding-bottom: 0px;
+}
+
+.align-right {
+    float: right;
+}

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0">
+<channel>
+<title><![CDATA[Magnus web site - aws]]></title>
+<description><![CDATA[Magnus web site - aws]]></description>
+<link>https://magnus.therning.org//tag-aws.html</link>
+<lastBuildDate>Sat, 13 Mar 2021 14:35:13 +0100</lastBuildDate>
+<item>
+  <title><![CDATA[Combining Amazonka and Conduit]]></title>
+  <description><![CDATA[
+<p>
+Combining <a href="https://hackage.haskell.org/package/amazonka">amazonka</a> and <a href="https://hackage.haskell.org/package/conduit">conduit</a> turned out to be easier than I had expected.
+</p>
+
+<p>
+Here's an SNS sink I put together today
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">snsSink</span> <span class="org-haskell-operator">::</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">MonadAWS</span> m, <span class="org-haskell-type">MonadIO</span> m<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=&gt;</span> <span class="org-haskell-type">T.Text</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">C.ConduitT</span> <span class="org-haskell-type">Value</span> <span class="org-haskell-type">C.Void</span> m <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+<span class="org-haskell-definition">snsSink</span> topic <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+  C.await <span class="org-haskell-operator">&gt;&gt;=</span> <span class="org-haskell-operator">\</span><span class="org-haskell-keyword">case</span>
+    <span class="org-haskell-constructor">Nothing</span> <span class="org-haskell-operator">-&gt;</span> pure <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+    <span class="org-haskell-constructor">Just</span> msg <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-keyword">do</span>
+      <span class="org-haskell-keyword">_</span> <span class="org-haskell-operator">&lt;-</span> C.lift <span class="org-haskell-operator">$</span> publishSNS topic <span class="org-rainbow-delimiters-depth-1">(</span>TL.toStrict <span class="org-haskell-operator">$</span> TL.decodeUtf8 <span class="org-haskell-operator">$</span> encode msg<span class="org-rainbow-delimiters-depth-1">)</span>
+      snsSink topic
+</pre>
+</div>
+
+<p>
+Putting it to use can be done with something like
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">foo</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+  <span class="org-haskell-operator">...</span>
+  awsEnv <span class="org-haskell-operator">&lt;-</span> newEnv <span class="org-haskell-constructor">Discover</span>
+  runAWSCond awsEnv <span class="org-haskell-operator">$</span>
+    <span class="org-haskell-operator">&lt;</span>source producing <span class="org-haskell-constructor">Value</span><span class="org-haskell-operator">&gt;</span> <span class="org-haskell-operator">.|</span> snsSink topicArn
+
+  <span class="org-haskell-keyword">where</span>
+    runAWSCond awsEnv <span class="org-haskell-operator">=</span> runResourceT <span class="org-haskell-operator">.</span> runAWS awsEnv <span class="org-haskell-operator">.</span> within <span class="org-haskell-constructor">Frankfurt</span> <span class="org-haskell-operator">.</span> C.runConduit
+</pre>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-amazonka.html">amazonka</a> <a href="https://magnus.therning.org/tag-aws.html">aws</a> <a href="https://magnus.therning.org/tag-conduit.html">conduit</a> <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> </div>]]></description>
+  <category><![CDATA[amazonka]]></category>
+  <category><![CDATA[aws]]></category>
+  <category><![CDATA[conduit]]></category>
+  <category><![CDATA[haskell]]></category>
+  <link>https://magnus.therning.org/2020-11-11-2222-combining_amazonka_and_conduit.html</link>
+  <pubDate>Wed, 11 Nov 2020 22:22:00 +0100</pubDate>
+</item>
+</channel>
+</rss>
