@@ -4,7 +4,7 @@
 <title><![CDATA[Magnus web site - conduit]]></title>
 <description><![CDATA[Magnus web site - conduit]]></description>
 <link>https://magnus.therning.org//tag-conduit.html</link>
-<lastBuildDate>Sun, 14 Mar 2021 14:56:02 +0100</lastBuildDate>
+<lastBuildDate>Sun, 14 Mar 2021 21:31:11 +0100</lastBuildDate>
 <item>
   <title><![CDATA[Combining Amazonka and Conduit]]></title>
   <description><![CDATA[
@@ -68,9 +68,9 @@ dares touch it. Hopefully the Haskell version will prove to be a joy to work
 with over time.
 </p>
 
-<div id="outline-container-org214f34f" class="outline-2">
-<h2 id="org214f34f">Overview of the architecture</h2>
-<div class="outline-text-2" id="text-org214f34f">
+<div id="outline-container-orga8a66cc" class="outline-2">
+<h2 id="orga8a66cc">Overview of the architecture</h2>
+<div class="outline-text-2" id="text-orga8a66cc">
 <p>
 The service is split into two parts, one web server using <a href="https://hackage.haskell.org/package/scotty">scotty</a>, and streaming
 data processing using <a href="https://hackage.haskell.org/package/conduit">conduit</a>. Persistent storage is provided by a <a href="https://www.postgresql.org/">PostgreSQL</a>
@@ -85,7 +85,7 @@ Hopefully this crude diagram clarifies it somewhat.
 </p>
 
 
-<figure id="org02f059e">
+<figure id="org603b78a">
 <img src="static/2019-08-10-architecture.png" alt="2019-08-10-architecture.png">
 
 <figcaption><span class="figure-number">Figure 1: </span>Diagram of the service architecture</figcaption>
@@ -141,9 +141,9 @@ choose to use it.<sup><a id="fnr.2" class="footref" href="#fn.2">2</a></sup></li
 </div>
 </div>
 
-<div id="outline-container-org29b0e87" class="outline-2">
-<h2 id="org29b0e87">Effects and tests</h2>
-<div class="outline-text-2" id="text-org29b0e87">
+<div id="outline-container-org495919d" class="outline-2">
+<h2 id="org495919d">Effects and tests</h2>
+<div class="outline-text-2" id="text-org495919d">
 <p>
 I started out writing everything based on a type like <code>ReaderT &lt;my cfg type&gt; IO</code>
 and using <code>liftIO</code> for effects that needed lifting. This worked nicely while I
@@ -177,9 +177,9 @@ that library instead.</li>
 </div>
 </div>
 
-<div id="outline-container-org98fd41b" class="outline-2">
-<h2 id="org98fd41b">Configuration</h2>
-<div class="outline-text-2" id="text-org98fd41b">
+<div id="outline-container-orged81fcb" class="outline-2">
+<h2 id="orged81fcb">Configuration</h2>
+<div class="outline-text-2" id="text-orged81fcb">
 <p>
 The service will be run in a container and we try to follow the <a href="https://12factor.net/">12-factor app
 rules</a>, where the third one says that configuration should be stored in the
@@ -200,9 +200,9 @@ log entry would become a bit nicer if the message was JSON rather than the
 </div>
 </div>
 
-<div id="outline-container-org8788723" class="outline-2">
-<h2 id="org8788723">Logging</h2>
-<div class="outline-text-2" id="text-org8788723">
+<div id="outline-container-orgf3bc0ed" class="outline-2">
+<h2 id="orgf3bc0ed">Logging</h2>
+<div class="outline-text-2" id="text-orgf3bc0ed">
 <p>
 There are two requirements we have when it comes to logging
 </p>
@@ -226,9 +226,9 @@ libraries that could make that easier.
 </div>
 </div>
 
-<div id="outline-container-org2b55605" class="outline-2">
-<h2 id="org2b55605">Data storage and picking up new events</h2>
-<div class="outline-text-2" id="text-org2b55605">
+<div id="outline-container-org5f31ed4" class="outline-2">
+<h2 id="org5f31ed4">Data storage and picking up new events</h2>
+<div class="outline-text-2" id="text-org5f31ed4">
 <p>
 The data stream processing depends heavily on being able to pick up when new
 events are written to the database. Especially when there are more than one
@@ -244,9 +244,9 @@ feedback that made my solution more robust.
 </div>
 </div>
 
-<div id="outline-container-org2cf7562" class="outline-2">
-<h2 id="org2cf7562">Delayed actions</h2>
-<div class="outline-text-2" id="text-org2cf7562">
+<div id="outline-container-org04b2853" class="outline-2">
+<h2 id="org04b2853">Delayed actions</h2>
+<div class="outline-text-2" id="text-org04b2853">
 <p>
 Some things in Haskell feel almost like cheating. The light-weight threading
 makes me confident that a <a href="https://hackage.haskell.org/package/base/docs/Control-Concurrent.html#v:forkIO"><code>forkIO</code></a> followed by a <a href="https://hackage.haskell.org/package/base/docs/Control-Concurrent.html#v:threadDelay"><code>threadDelay</code></a> (or in my case,
@@ -270,13 +270,12 @@ gave up on getting re-combination to work &#x2013; <a href="2018-10-16-000-zippi
 
 
 </div>
-</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-conduit.html">conduit</a> <a href="https://magnus.therning.org/tag-scotty.html">scotty</a> <a href="https://magnus.therning.org/tag-postgresql.html">postgresql</a> <a href="https://magnus.therning.org/tag-tagless.html">tagless</a> <a href="https://magnus.therning.org/tag-final.html">final</a> </div>]]></description>
+</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-conduit.html">conduit</a> <a href="https://magnus.therning.org/tag-scotty.html">scotty</a> <a href="https://magnus.therning.org/tag-postgresql.html">postgresql</a> <a href="https://magnus.therning.org/tag-tagless_final.html">tagless_final</a> </div>]]></description>
   <category><![CDATA[haskell]]></category>
   <category><![CDATA[conduit]]></category>
   <category><![CDATA[scotty]]></category>
   <category><![CDATA[postgresql]]></category>
-  <category><![CDATA[tagless]]></category>
-  <category><![CDATA[final]]></category>
+  <category><![CDATA[tagless_final]]></category>
   <link>https://magnus.therning.org/2019-08-10-000-architecture-of-a-service.html</link>
   <pubDate>Sat, 10 Aug 2019 12:34:00 +0200</pubDate>
 </item>

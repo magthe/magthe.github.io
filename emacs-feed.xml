@@ -4,7 +4,7 @@
 <title><![CDATA[Magnus web site - emacs]]></title>
 <description><![CDATA[Magnus web site - emacs]]></description>
 <link>https://magnus.therning.org//tag-emacs.html</link>
-<lastBuildDate>Sun, 14 Mar 2021 14:56:02 +0100</lastBuildDate>
+<lastBuildDate>Sun, 14 Mar 2021 21:26:14 +0100</lastBuildDate>
 <item>
   <title><![CDATA[Keeping todo items in org-roam]]></title>
   <description><![CDATA[
@@ -450,9 +450,9 @@ The changes I made to my Spacemacs config are
   ...<span class="org-rainbow-delimiters-depth-1">)</span>
 </pre>
 </div>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-orgmode.html">orgmode</a> </div>]]></description>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> </div>]]></description>
   <category><![CDATA[emacs]]></category>
-  <category><![CDATA[orgmode]]></category>
+  <category><![CDATA[org-mode]]></category>
   <link>https://magnus.therning.org/2019-10-20-000-ditaa-in-org-mode.html</link>
   <pubDate>Sun, 20 Oct 2019 12:34:00 +0200</pubDate>
 </item>
@@ -592,9 +592,9 @@ few new settings that makes <a href="https://orgmode.org/">Org</a> a little more
 </tr>
 </tbody>
 </table>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-orgmode.html">orgmode</a> </div>]]></description>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> </div>]]></description>
   <category><![CDATA[emacs]]></category>
-  <category><![CDATA[orgmode]]></category>
+  <category><![CDATA[org-mode]]></category>
   <link>https://magnus.therning.org/2019-05-07-000-some-orgmode-stuff.html</link>
   <pubDate>Tue, 07 May 2019 12:34:00 +0200</pubDate>
 </item>
@@ -628,9 +628,9 @@ After inspecting the session buffer simply added the following to my <code>~/.ba
 <p>
 and now I can finally run shell code blocks in sessions.
 </p>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-orgmode.html">orgmode</a> </div>]]></description>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> </div>]]></description>
   <category><![CDATA[emacs]]></category>
-  <category><![CDATA[orgmode]]></category>
+  <category><![CDATA[org-mode]]></category>
   <link>https://magnus.therning.org/2019-03-16-000-til--prompt-matters-to-org-mode.html</link>
   <pubDate>Sat, 16 Mar 2019 12:34:00 +0100</pubDate>
 </item>
@@ -654,396 +654,6 @@ from my Spacemacs setup
   <category><![CDATA[spacemacs]]></category>
   <link>https://magnus.therning.org/2019-01-28-000-a-missing-piece-in-my-emacs-spacemacs-setup-for-haskell-development.html</link>
   <pubDate>Mon, 28 Jan 2019 12:34:00 +0100</pubDate>
-</item>
-<item>
-  <title><![CDATA[QuickCheck on a REST API]]></title>
-  <description><![CDATA[
-<p>
-Since I'm working with web stuff nowadays I thought I'd play a little with
-translating my old post on <a href="2015-06-15-000-using-quickcheck-to-test-c-apis.html">using QuickCheck to test C APIs</a> to the web.
-</p>
-
-<div id="outline-container-orgd2e8eeb" class="outline-2">
-<h2 id="orgd2e8eeb">The goal and how to reach it</h2>
-<div class="outline-text-2" id="text-orgd2e8eeb">
-<p>
-I want to use <a href="https://hackage.haskell.org/package/QuickCheck">QuickCheck</a> to test a REST API, just like in the case of the C API
-the idea is to
-</p>
-
-<ol class="org-ol">
-<li>generate a sequence of API calls (a <i>program</i>), then</li>
-<li>run the sequence against a model, as well as</li>
-<li>run the sequence against the web service, and finally</li>
-<li>compare the resulting model against reality.</li>
-</ol>
-</div>
-</div>
-
-<div id="outline-container-org776189d" class="outline-2">
-<h2 id="org776189d">The REST API</h2>
-<div class="outline-text-2" id="text-org776189d">
-<p>
-I'll use a small web service I'm working on, and then concentrate on only a
-small part of the API to begin with.
-</p>
-
-<p>
-The parts of the API I'll use for the programs at this stage are
-</p>
-
-<table>
-
-
-<colgroup>
-<col  class="org-left">
-
-<col  class="org-left">
-
-<col  class="org-left">
-
-<col  class="org-left">
-</colgroup>
-<thead>
-<tr>
-<th scope="col" class="org-left">Method</th>
-<th scope="col" class="org-left">Route</th>
-<th scope="col" class="org-left">Example in</th>
-<th scope="col" class="org-left">Example out</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="org-left"><code>POST</code></td>
-<td class="org-left"><code>/users</code></td>
-<td class="org-left"><code>{"userId": 0, "userName": "Yogi Berra"}</code></td>
-<td class="org-left"><code>{"userId": 42, "userName": "Yogi Berra"}</code></td>
-</tr>
-
-<tr>
-<td class="org-left"><code>DELETE</code></td>
-<td class="org-left"><code>/users/:id</code></td>
-<td class="org-left">&#xa0;</td>
-<td class="org-left">&#xa0;</td>
-</tr>
-</tbody>
-</table>
-
-<p>
-The following API calls will also be used, but not in the programs
-</p>
-
-<table>
-
-
-<colgroup>
-<col  class="org-left">
-
-<col  class="org-left">
-
-<col  class="org-left">
-
-<col  class="org-left">
-</colgroup>
-<thead>
-<tr>
-<th scope="col" class="org-left">Method</th>
-<th scope="col" class="org-left">Route</th>
-<th scope="col" class="org-left">Example in</th>
-<th scope="col" class="org-left">Example out</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="org-left"><code>GET</code></td>
-<td class="org-left"><code>/users</code></td>
-<td class="org-left">&#xa0;</td>
-<td class="org-left"><code>[0,3,7]</code></td>
-</tr>
-
-<tr>
-<td class="org-left"><code>GET</code></td>
-<td class="org-left"><code>/users/:id</code></td>
-<td class="org-left">&#xa0;</td>
-<td class="org-left"><code>{"userId": 42, "userName": "Yogi Berra"}</code></td>
-</tr>
-
-<tr>
-<td class="org-left"><code>POST</code></td>
-<td class="org-left"><code>/reset</code></td>
-<td class="org-left">&#xa0;</td>
-<td class="org-left">&#xa0;</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-
-<div id="outline-container-org45a80a7" class="outline-2">
-<h2 id="org45a80a7">Representing API calls</h2>
-<div class="outline-text-2" id="text-org45a80a7">
-<p>
-Given the information about the API above it seems the following is enough to
-represent the two calls of interest together with a constructor representing the
-end of a program
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-haskell-keyword">data</span> <span class="org-haskell-type">ApiCall</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">AddUser</span> <span class="org-haskell-constructor">Text</span>
-             <span class="org-haskell-operator">|</span> <span class="org-haskell-constructor">DeleteUser</span> <span class="org-haskell-constructor">Int</span>
-             <span class="org-haskell-operator">|</span> <span class="org-haskell-constructor">EndProgram</span>
-             <span class="org-haskell-keyword">deriving</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">Show</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-and a program is just a sequence of calls, so list of <code>ApiCall</code> will do.
-However, since I want to generate sequences of calls, i.e. implement
-<code>Arbitrary</code>, I'll wrap it in a <code>newtype</code>
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-haskell-keyword">newtype</span> <span class="org-haskell-type">Program</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">Prog</span> <span class="org-rainbow-delimiters-depth-1">[</span><span class="org-haskell-constructor">ApiCall</span><span class="org-rainbow-delimiters-depth-1">]</span>
-</pre>
-</div>
-</div>
-</div>
-
-<div id="outline-container-org8734229" class="outline-2">
-<h2 id="org8734229">Running against a model (simulation)</h2>
-<div class="outline-text-2" id="text-org8734229">
-<p>
-First of all I need to decide what model to use. Based on the part of the API
-I'm using I'll use an ordinary dictionary of <code>Int</code> and <code>Text</code>
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-haskell-keyword">type</span> <span class="org-haskell-type">Model</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-type">M.Map</span> <span class="org-haskell-type">Int</span> <span class="org-haskell-type">Text</span>
-</pre>
-</div>
-
-<p>
-Simulating execution of a program is simulating each call against a
-model that's updated with each step. I expect the final model to
-correspond to the state of the real service after the program is run for
-real. The simulation begins with an empty dictionary.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-haskell-definition">simulateProgram</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Program</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Model</span>
-<span class="org-haskell-definition">simulateProgram</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">Prog</span> cs<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=</span> foldl simulateCall M.empty cs
-</pre>
-</div>
-
-<p>
-The simulation of the API calls must then be a function taking a model and a
-call, returning an updated model
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-haskell-definition">simulateCall</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Model</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">ApiCall</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Model</span>
-<span class="org-haskell-definition">simulateCall</span> m <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">AddUser</span> t<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=</span> M.insert k t m
-  <span class="org-haskell-keyword">where</span>
-    k <span class="org-haskell-operator">=</span> succ <span class="org-haskell-operator">$</span> foldl max <span class="org-highlight-numbers-number">0</span> <span class="org-rainbow-delimiters-depth-1">(</span>M.keys m<span class="org-rainbow-delimiters-depth-1">)</span>
-<span class="org-haskell-definition">simulateCall</span> m <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">DeleteUser</span> k<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=</span> M.delete k m
-<span class="org-haskell-definition">simulateCall</span> m <span class="org-haskell-constructor">EndProgram</span> <span class="org-haskell-operator">=</span> m
-</pre>
-</div>
-
-<p>
-Here I have to make a few assumptions. First, I assume the indeces for the users
-start on <code>1</code>. Second, that the next index used always is the successor of
-highest currently used index. We'll see how well this holds up to reality later
-on.
-</p>
-</div>
-</div>
-
-<div id="outline-container-org9c8cb3a" class="outline-2">
-<h2 id="org9c8cb3a">Running against the web service</h2>
-<div class="outline-text-2" id="text-org9c8cb3a">
-<p>
-Running the program against the actual web service follows the same pattern, but
-here I'm dealing with the real world, so it's a little more messy, i.e. <code>IO</code> is
-involved. First the running of a single call
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-haskell-definition">runCall</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Manager</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">ApiCall</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
-<span class="org-haskell-definition">runCall</span> mgr <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">AddUser</span> t<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
-  ireq <span class="org-haskell-operator">&lt;-</span> parseRequest <span class="org-string">"POST http://localhost:3000/users"</span>
-  <span class="org-haskell-keyword">let</span> req <span class="org-haskell-operator">=</span> ireq <span class="org-rainbow-delimiters-depth-1">{</span> requestBody <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">RequestBodyLBS</span> <span class="org-rainbow-delimiters-depth-2">(</span>encode <span class="org-haskell-operator">$</span> <span class="org-haskell-constructor">User</span> <span class="org-highlight-numbers-number">0</span> t<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">}</span>
-  resp <span class="org-haskell-operator">&lt;-</span> httpLbs req mgr
-  guard <span class="org-rainbow-delimiters-depth-1">(</span>status201 <span class="org-haskell-operator">==</span> responseStatus resp<span class="org-rainbow-delimiters-depth-1">)</span>
-
-<span class="org-haskell-definition">runCall</span> mgr <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">DeleteUser</span> k<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
-  req <span class="org-haskell-operator">&lt;-</span> parseRequest <span class="org-haskell-operator">$</span> <span class="org-string">"DELETE http://localhost:3000/users/"</span> <span class="org-haskell-operator">++</span> show k
-  resp <span class="org-haskell-operator">&lt;-</span> httpNoBody req mgr
-  guard <span class="org-rainbow-delimiters-depth-1">(</span>status200 <span class="org-haskell-operator">==</span> responseStatus resp<span class="org-rainbow-delimiters-depth-1">)</span>
-
-<span class="org-haskell-definition">runCall</span> <span class="org-haskell-keyword">_</span> <span class="org-haskell-constructor">EndProgram</span> <span class="org-haskell-operator">=</span> return <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
-</pre>
-</div>
-
-<p>
-The running of a program is slightly more involved. Of course I have to set up
-the <code>Manager</code> needed for the HTTP calls, but I also need to
-</p>
-
-<ol class="org-ol">
-<li>ensure that the web service is in a well-known state before starting, and</li>
-<li>extract the state of the web service after running the program, so I can
-compare it to the model</li>
-</ol>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-haskell-definition">runProgram</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Program</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-type">Model</span>
-<span class="org-haskell-definition">runProgram</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">Prog</span> cs<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
-  mgr <span class="org-haskell-operator">&lt;-</span> newManager defaultManagerSettings
-  resetReq <span class="org-haskell-operator">&lt;-</span> parseRequest <span class="org-string">"POST http://localhost:3000/reset"</span>
-  httpNoBody resetReq mgr
-  mapM_ <span class="org-rainbow-delimiters-depth-1">(</span>runCall mgr<span class="org-rainbow-delimiters-depth-1">)</span> cs
-  model <span class="org-haskell-operator">&lt;-</span> extractModel mgr
-  return model
-</pre>
-</div>
-
-<p>
-The call to <code>POST /reset</code> resets the web service. I would have liked to simply
-restart the service completely, but I failed in automating it. I think I'll have
-to take a closer look at the implementation of <a href="http://hackage.haskell.org/package/scotty">scotty</a> to find a way.
-</p>
-
-<p>
-Extracting the web service state and packaging it in a <code>Model</code> is a matter of
-calling <code>GET /users</code> and then repeatedly calling <code>GET /users/:id</code> with each <code>id</code>
-gotten from the first call
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-haskell-definition">extractModel</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Manager</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-type">Model</span>
-<span class="org-haskell-definition">extractModel</span> mgr <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
-  req <span class="org-haskell-operator">&lt;-</span> parseRequest <span class="org-string">"http://localhost:3000/users"</span>
-  resp <span class="org-haskell-operator">&lt;-</span> httpLbs req mgr
-  <span class="org-haskell-keyword">let</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">Just</span> ids<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=</span> decode <span class="org-rainbow-delimiters-depth-1">(</span>responseBody resp<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Maybe</span> <span class="org-rainbow-delimiters-depth-1">[</span><span class="org-haskell-type">Int</span><span class="org-rainbow-delimiters-depth-1">]</span>
-  users <span class="org-haskell-operator">&lt;-</span> forM ids <span class="org-haskell-operator">$</span> <span class="org-haskell-operator">\</span> id <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-keyword">do</span>
-    req <span class="org-haskell-operator">&lt;-</span> parseRequest <span class="org-haskell-operator">$</span> <span class="org-string">"http://localhost:3000/users/"</span> <span class="org-haskell-operator">++</span> show id
-    resp <span class="org-haskell-operator">&lt;-</span> httpLbs req mgr
-    <span class="org-haskell-keyword">let</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">Just</span> <span class="org-rainbow-delimiters-depth-2">(</span>user<span class="org-haskell-constructor">:</span><span class="org-haskell-keyword">_</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=</span> decode <span class="org-rainbow-delimiters-depth-1">(</span>responseBody resp<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Maybe</span> <span class="org-rainbow-delimiters-depth-1">[</span><span class="org-haskell-type">User</span><span class="org-rainbow-delimiters-depth-1">]</span>
-    return user
-  return <span class="org-haskell-operator">$</span> foldl <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-operator">\</span> map <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-haskell-constructor">User</span> id name<span class="org-rainbow-delimiters-depth-2">)</span> <span class="org-haskell-operator">-&gt;</span> M.insert id name map<span class="org-rainbow-delimiters-depth-1">)</span> M.empty users
-</pre>
-</div>
-</div>
-</div>
-
-<div id="outline-container-orgf418a26" class="outline-2">
-<h2 id="orgf418a26">Generating programs</h2>
-<div class="outline-text-2" id="text-orgf418a26">
-<p>
-My approach to generating a program is based on the idea that given a certain
-state there is only a limited number of possible calls that make sense. Given a
-model <code>m</code> it makes sense to make one of the following calls:
-</p>
-
-<ul class="org-ul">
-<li>add a new user</li>
-<li>delete an existing user</li>
-<li>end the program</li>
-</ul>
-
-<p>
-Based on this writing <code>genProgram</code> is rather straight forward
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-haskell-definition">genProgram</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Gen</span> <span class="org-haskell-type">Program</span>
-<span class="org-haskell-definition">genProgram</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">Prog</span> <span class="org-haskell-operator">&lt;$&gt;</span> go M.empty
-  <span class="org-haskell-keyword">where</span>
-    possibleAddUser <span class="org-haskell-keyword">_</span> <span class="org-haskell-operator">=</span> <span class="org-rainbow-delimiters-depth-1">[</span><span class="org-haskell-constructor">AddUser</span> <span class="org-haskell-operator">&lt;$&gt;</span> arbitrary<span class="org-rainbow-delimiters-depth-1">]</span>
-    possibleDeleteUser m <span class="org-haskell-operator">=</span> map <span class="org-rainbow-delimiters-depth-1">(</span>return <span class="org-haskell-operator">.</span> <span class="org-haskell-constructor">DeleteUser</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-rainbow-delimiters-depth-1">(</span>M.keys m<span class="org-rainbow-delimiters-depth-1">)</span>
-    possibleEndProgram <span class="org-haskell-keyword">_</span> <span class="org-haskell-operator">=</span> <span class="org-rainbow-delimiters-depth-1">[</span>return <span class="org-haskell-constructor">EndProgram</span><span class="org-rainbow-delimiters-depth-1">]</span>
-
-    go m <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
-      <span class="org-haskell-keyword">let</span> possibles <span class="org-haskell-operator">=</span> possibleDeleteUser m <span class="org-haskell-operator">++</span> possibleAddUser m <span class="org-haskell-operator">++</span> possibleEndProgram m
-      s <span class="org-haskell-operator">&lt;-</span> oneof possibles
-      <span class="org-haskell-keyword">let</span> m' <span class="org-haskell-operator">=</span> simulateCall m s
-      <span class="org-haskell-keyword">case</span> s <span class="org-haskell-keyword">of</span>
-        <span class="org-haskell-constructor">EndProgram</span> <span class="org-haskell-operator">-&gt;</span> return <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">[]</span></span>
-        <span class="org-haskell-keyword">_</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-rainbow-delimiters-depth-1">(</span>s<span class="org-haskell-constructor">:</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">&lt;$&gt;</span> go m'
-</pre>
-</div>
-
-<p>
-Armed with that the <code>Arbitrary</code> instance for <code>Program</code> can be implemented as<sup><a id="fnr.1" class="footref" href="#fn.1">1</a></sup>
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-haskell-keyword">instance</span> <span class="org-haskell-type">Arbitrary</span> <span class="org-haskell-type">Program</span> <span class="org-haskell-keyword">where</span>
-  arbitrary <span class="org-haskell-operator">=</span> genProgram
-  shrink p <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">[]</span></span>
-</pre>
-</div>
-</div>
-</div>
-
-<div id="outline-container-orge02a7fa" class="outline-2">
-<h2 id="orge02a7fa">The property of an API</h2>
-<div class="outline-text-2" id="text-orge02a7fa">
-<p>
-The steps in the <a href="#orgd2e8eeb">first section</a> can be used as a recipe for writing the property
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-haskell-definition">prop_progCorrectness</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Program</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Property</span>
-<span class="org-haskell-definition">prop_progCorrectness</span> program <span class="org-haskell-operator">=</span> monadicIO <span class="org-haskell-operator">$</span> <span class="org-haskell-keyword">do</span>
-  <span class="org-haskell-keyword">let</span> simulatedModel <span class="org-haskell-operator">=</span> simulateProgram program
-  runModel <span class="org-haskell-operator">&lt;-</span> run <span class="org-haskell-operator">$</span> runProgram program
-  assert <span class="org-haskell-operator">$</span> simulatedModel <span class="org-haskell-operator">==</span> runModel
-</pre>
-</div>
-</div>
-</div>
-
-<div id="outline-container-orgd44c20f" class="outline-2">
-<h2 id="orgd44c20f">What next?</h2>
-<div class="outline-text-2" id="text-orgd44c20f">
-<p>
-There are some improvements that I'd like to make:
-</p>
-
-<ul class="org-ul">
-<li>Make the generation of <code>Program</code> better in the sense that the programs become
-longer. I think this is important as I start tackling larger APIs.</li>
-<li>Write an implementation of <code>shrink</code> for <code>Program</code>. With longer programs it's
-of course more important to actually implement <code>shrink</code>.</li>
-</ul>
-
-<p>
-I'd love to hear if others are using <a href="https://hackage.haskell.org/package/QuickCheck">QuickCheck</a> to test REST APIs in some way,
-if anyone has suggestions for improvements, and of course ideas for how to
-implement <code>shrink</code> in a nice way.
-</p>
-</div>
-</div>
-<div id="footnotes">
-<h2 class="footnotes">Footnotes: </h2>
-<div id="text-footnotes">
-
-<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1">1</a></sup> <div class="footpara"><p class="footpara">
-Yes, I completely skip the issue of shrinking programs at this point.
-This is OK at this point though, because the generated =Programs=s do end up to
-be very short indeed.
-</p></div></div>
-
-
-</div>
-</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-flycheck.html">flycheck</a> </div>]]></description>
-  <category><![CDATA[emacs]]></category>
-  <category><![CDATA[haskell]]></category>
-  <category><![CDATA[flycheck]]></category>
-  <link>https://magnus.therning.org/2018-07-14-000-quickcheck-on-a-rest-api.html</link>
-  <pubDate>Sat, 14 Jul 2018 12:34:00 +0200</pubDate>
 </item>
 </channel>
 </rss>

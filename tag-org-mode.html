@@ -130,7 +130,134 @@ called prior to the agenda being opened.
 </div>
 </div>
 </div>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> <a href="https://magnus.therning.org/tag-org-roam.html">org-roam</a> <a href="https://magnus.therning.org/tag-spacemacs.html">spacemacs</a> </div><div id="archive">
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> <a href="https://magnus.therning.org/tag-org-roam.html">org-roam</a> <a href="https://magnus.therning.org/tag-spacemacs.html">spacemacs</a> </div>
+<div class="post-date">20 Oct 2019</div><h1 class="post-title"><a href="https://magnus.therning.org/2019-10-20-000-ditaa-in-org-mode.html">Ditaa in Org mode</a></h1>
+<p>
+Just found out that Emacs ships with Babel support for <a href="https://writequit.org/denver-emacs/presentations/2016-04-19-whats-new-emacs25-ditaa-artist.html#orgheadline15">ditaa</a> (yes, I'm late to
+the party).
+</p>
+
+<p>
+Sweet! That is yet another argument for converting all our <code>README.md</code> into
+<code>README.org</code> at work.
+</p>
+
+<p>
+<img src="https://media.giphy.com/media/xl5QdxfNonh3q/giphy.gif" alt="giphy.gif">\
+</p>
+
+<p>
+The changes I made to my Spacemacs config are
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">dotspacemacs/user-config</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  ...
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">with-eval-after-load</span> 'org
+    ...
+    <span class="org-rainbow-delimiters-depth-3">(</span>add-to-list 'org-babel-load-languages '<span class="org-rainbow-delimiters-depth-4">(</span>ditaa . t<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>setq org-ditaa-jar-path <span class="org-string">"/usr/share/java/ditaa/ditaa-0.11.jar"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  ...<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> </div>
+<div class="post-date">07 May 2019</div><h1 class="post-title"><a href="https://magnus.therning.org/2019-05-07-000-some-orgmode-stuff.html">Some OrgMode stuff</a></h1>
+<p>
+The last few days I've watched <a href="https://www.youtube.com/user/koenighaunstetten">Rainer König's OrgMode videos</a>. It's resulted in a
+few new settings that makes <a href="https://orgmode.org/">Org</a> a little more useful.
+</p>
+
+<table>
+
+
+<colgroup>
+<col  class="org-left">
+
+<col  class="org-left">
+
+<col  class="org-left">
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Variable</th>
+<th scope="col" class="org-left">Value</th>
+<th scope="col" class="org-left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left"><code>calendar-week-start-day</code></td>
+<td class="org-left"><code>1</code></td>
+<td class="org-left">Weeks start on Monday!</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>org-modules</code> (list)</td>
+<td class="org-left"><code>org-habit</code></td>
+<td class="org-left">Support for tracking habits</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>org-modules</code> (list)</td>
+<td class="org-left"><code>org-id</code></td>
+<td class="org-left">Improved support for <code>ID</code> property</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>org-agenda-start-on-weekday</code></td>
+<td class="org-left"><code>1</code></td>
+<td class="org-left">Weeks start on Monday, again!</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>org-log-into-drawer</code></td>
+<td class="org-left"><code>t</code></td>
+<td class="org-left">Put notes (logs) into a drawer</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>org-enforce-todo-checkbox-dependencies</code></td>
+<td class="org-left"><code>t</code></td>
+<td class="org-left">Checkboxes must be checked before a <i>TODO</i> can become <i>DONE</i></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>org-id-link-to-org-use-id</code></td>
+<td class="org-left"><code>t</code></td>
+<td class="org-left">Prefer use of <code>ID</code> property for links</td>
+</tr>
+</tbody>
+</table>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> </div>
+<div class="post-date">16 Mar 2019</div><h1 class="post-title"><a href="https://magnus.therning.org/2019-03-16-000-til--prompt-matters-to-org-mode.html">TIL: prompt matters to org-mode</a></h1>
+<p>
+A workmate just embellished some shell code blocks I'd put in a shared <a href="https://orgmode.org/">org-mode</a>
+file with <code>:session s</code>. When I tried to run the blocks with sessions my emacs
+just froze up though. I found a <a href="https://emacs.stackexchange.com/questions/19735/emacs-freezes-with-any-org-babel-snippet-using-session">post on the emacs StackExchange</a> that offered a
+possible cause for it: the prompt.
+</p>
+
+<p>
+I'm using <a href="https://github.com/Bash-it/bash-it">bash-it</a> so my prompt is rather far from the default.
+</p>
+
+<p>
+After inspecting the session buffer simply added the following to my <code>~/.bashrc</code>
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell"><span class="org-keyword">if</span> <span class="org-rainbow-delimiters-depth-1">[</span><span class="org-rainbow-delimiters-depth-2">[</span> $<span class="org-rainbow-delimiters-depth-3">{</span><span class="org-variable-name">TERM</span><span class="org-rainbow-delimiters-depth-3">}</span> == <span class="org-string">"dumb"</span> <span class="org-rainbow-delimiters-depth-2">]</span><span class="org-rainbow-delimiters-depth-1">]</span>; <span class="org-keyword">then</span>
+    <span class="org-builtin">export</span> <span class="org-variable-name">BASH_IT_THEME</span>=<span class="org-string">'standard'</span>
+<span class="org-keyword">else</span>
+    <span class="org-builtin">export</span> <span class="org-variable-name">BASH_IT_THEME</span>=<span class="org-string">'simple'</span>
+<span class="org-keyword">fi</span>
+</pre>
+</div>
+
+<p>
+and now I can finally run shell code blocks in sessions.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> </div><div id="archive">
 <a href="https://magnus.therning.org/archive.html">Other posts</a>
 </div>
 </div>
