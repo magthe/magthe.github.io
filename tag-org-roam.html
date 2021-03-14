@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="alternate"
+      type="application/rss+xml"
+      href="https://magnus.therning.org/feed.xml"
+      title="RSS feed for https://magnus.therning.org/">
+<title>Magnus web site</title>
+<meta name="author" content="Magnus Therning"><meta name="referrer" content="no-referrer"><link href= "static/style.css" rel="stylesheet" type="text/css" /><link href= "static/htmlize.css" rel="stylesheet" type="text/css" /><link href= "static/extra_style.css" rel="stylesheet" type="text/css" /></head>
+<body>
+<div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
+<div id="content">
+<h1 class="title">Posts tagged "org-roam":</h1>
+<div class="post-date">14 Mar 2021</div><h1 class="post-title"><a href="https://magnus.therning.org/2021-03-14-keeping-todo-items-in-org-roam.html">Keeping todo items in org-roam</a></h1>
+<p>
+A while ago I made an attempt to improve my work habits by keeping a document
+with TODO items. It lasted only for a while, and I've since had the intention to
+make another attempt. Since then I've started using <a href="https://github.com/org-roam/org-roam">org-roam</a> and I've managed to
+create a habit of writing daily journal notes using <a href="https://www.orgroam.com/manual.html#Daily_002dnotes">org-roam's daily-notes</a>. A
+few times I've thought that it might fit me well to put TODO items in the notes,
+but that would mean that I'd have to somehow keep track of them. At first I
+manually added a tag to each journal fily containing a TODO item. That didn't
+work very well at all, which should have been obvious up front. Then I added the
+folders where I keep roam files and journals to <code>org-agenda-files</code>, that worked
+a lot better. I'd still be using that, even if I expected it to slow down
+considerably as the number of files grow, but then I found a post on <a href="https://d12frosted.io/posts/2021-01-16-task-management-with-roam-vol5.html">dynamic and
+fast agenda with org-roam</a>.
+</p>
+
+<p>
+I adjusted it slightly to fit my own setup a bit better, i.e. I made a Spacemacs
+layer, <code>roam-extra</code>, I use the tag <code>todo</code>, and I use a different hook to get the
+tag added on opening an org-roam file.
+</p>
+
+<p>
+The layer consists of a single file, <code>layers/roam-extra/funcs.el</code>. In it I
+define 4 functions (they are pretty much copies of the functions in the post
+linked above):
+</p>
+
+<ol class="org-ol">
+<li><code>roam-extra:todo-p</code> - returns non-<code>nil</code> if the current current buffer contains
+a TODO item.</li>
+<li><code>roam-extra:update-todo-tag</code> - updates the tags of the current buffer to
+reflect the presence of TODO items, i.e. ensure the the tag <code>todo</code> is present
+iff there's a TODO item.</li>
+<li><code>roam-extra:todo-files</code> - uses the org-roam DB to return a list of all files
+containing the tag <code>todo</code>.</li>
+<li><code>roam-extra:update-todo-files</code> - adjusts <code>'org-agenda-files</code> to contain only
+the files with TODO items.</li>
+</ol>
+
+<p>
+I've put the full contents of the file at the <a href="#org6641697">end of the post</a>.
+</p>
+
+<p>
+To ensure that the <code>todo</code> tag is correct in all org-mode files I've added
+<code>roam-extra:update-todo-tag</code> to hooks that are invoked on opening an org-ram
+file and when saving a file. (I would love to find a more specialise hook than
+<code>before-save-hook</code>, but it works for now.)
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span>add-hook 'org-roam-file-setup-hook #'roam-extra:update-todo-tag<span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-rainbow-delimiters-depth-1">(</span>add-hook 'before-save-hook #'roam-extra:update-todo-tag<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+To ensure that the list of files with TODO items is kept up to date when I open
+I also wrap <code>org-agenda</code> in an advice so <code>roam-extra:update-todo-files</code> is
+called prior to the agenda being opened.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span>advice-add 'org-agenda <span class="org-builtin">:before</span> #'roam-extra:update-todo-files<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<div id="outline-container-org6641697" class="outline-2">
+<h2 id="org6641697">The layer, <code>layers/roam-extra/funcs.el</code></h2>
+<div class="outline-text-2" id="text-org6641697">
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">roam-extra:todo-p</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-doc">"Return non-nil if current buffer has any </span><span class="custom">TODO</span><span class="org-doc"> entry.</span>
+
+<span class="custom">TODO</span><span class="org-doc"> entries marked as done are ignored, meaning the this</span>
+<span class="org-doc">function returns nil if current buffer contains only completed</span>
+<span class="org-doc">tasks."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>org-element-map
+      <span class="org-rainbow-delimiters-depth-3">(</span>org-element-parse-buffer 'headline<span class="org-rainbow-delimiters-depth-3">)</span>
+      'headline
+    <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">lambda</span> <span class="org-rainbow-delimiters-depth-4">(</span>h<span class="org-rainbow-delimiters-depth-4">)</span>
+      <span class="org-rainbow-delimiters-depth-4">(</span>eq <span class="org-rainbow-delimiters-depth-5">(</span>org-element-property <span class="org-builtin">:todo-type</span> h<span class="org-rainbow-delimiters-depth-5">)</span>
+          'todo<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    nil 'first-match<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">roam-extra:update-todo-tag</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-doc">"Update </span><span class="custom">TODO</span><span class="org-doc"> tag in the current buffer."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">when</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">and</span> <span class="org-rainbow-delimiters-depth-4">(</span>not <span class="org-rainbow-delimiters-depth-5">(</span>active-minibuffer-window<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+             <span class="org-rainbow-delimiters-depth-4">(</span>org-roam--org-file-p buffer-file-name<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">let*</span> <span class="org-rainbow-delimiters-depth-4">(</span><span class="org-rainbow-delimiters-depth-5">(</span>file <span class="org-rainbow-delimiters-depth-6">(</span>buffer-file-name <span class="org-rainbow-delimiters-depth-7">(</span>buffer-base-buffer<span class="org-rainbow-delimiters-depth-7">)</span><span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span>
+           <span class="org-rainbow-delimiters-depth-5">(</span>all-tags <span class="org-rainbow-delimiters-depth-6">(</span>org-roam--extract-tags file<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span>
+           <span class="org-rainbow-delimiters-depth-5">(</span>prop-tags <span class="org-rainbow-delimiters-depth-6">(</span>org-roam--extract-tags-prop file<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span>
+           <span class="org-rainbow-delimiters-depth-5">(</span>tags prop-tags<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+      <span class="org-rainbow-delimiters-depth-4">(</span><span class="org-keyword">if</span> <span class="org-rainbow-delimiters-depth-5">(</span>roam-extra:todo-p<span class="org-rainbow-delimiters-depth-5">)</span>
+          <span class="org-rainbow-delimiters-depth-5">(</span><span class="org-keyword">setq</span> tags <span class="org-rainbow-delimiters-depth-6">(</span>seq-uniq <span class="org-rainbow-delimiters-depth-7">(</span>cons <span class="org-string">"</span><span class="custom">todo</span><span class="org-string">"</span> tags<span class="org-rainbow-delimiters-depth-7">)</span><span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span>
+        <span class="org-rainbow-delimiters-depth-5">(</span><span class="org-keyword">setq</span> tags <span class="org-rainbow-delimiters-depth-6">(</span>remove <span class="org-string">"</span><span class="custom">todo</span><span class="org-string">"</span> tags<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+      <span class="org-rainbow-delimiters-depth-4">(</span><span class="org-keyword">unless</span> <span class="org-rainbow-delimiters-depth-5">(</span>equal prop-tags tags<span class="org-rainbow-delimiters-depth-5">)</span>
+        <span class="org-rainbow-delimiters-depth-5">(</span>org-roam--set-global-prop
+         <span class="org-string">"roam_tags"</span>
+         <span class="org-rainbow-delimiters-depth-6">(</span>combine-and-quote-strings tags<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">roam-extra:todo-files</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-doc">"Return a list of note files containing </span><span class="custom">todo</span><span class="org-doc"> tag."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>seq-map
+   #'car
+   <span class="org-rainbow-delimiters-depth-3">(</span>org-roam-db-query
+    <span class="org-rainbow-delimiters-depth-4">[</span><span class="org-builtin">:select</span> file
+             <span class="org-builtin">:from</span> tags
+             <span class="org-builtin">:where</span> <span class="org-rainbow-delimiters-depth-5">(</span>like tags <span class="org-rainbow-delimiters-depth-6">(</span><span class="org-keyword">quote</span> <span class="org-string">"%\"</span><span class="custom">todo</span><span class="org-string">\"%"</span><span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">]</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">roam-extra:update-todo-files</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-type">&amp;rest</span> _<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-doc">"Update the value of `</span><span class="org-doc"><span class="org-constant">org-agenda-files</span></span><span class="org-doc">'."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">setq</span> org-agenda-files <span class="org-rainbow-delimiters-depth-3">(</span>roam-extra:todo-files<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> <a href="https://magnus.therning.org/tag-org-roam.html">org-roam</a> <a href="https://magnus.therning.org/tag-spacemacs.html">spacemacs</a> </div><div id="archive">
+<a href="https://magnus.therning.org/archive.html">Other posts</a>
+</div>
+</div>
+<div id="postamble" class="status"><!-- org-static-blog-page-postamble --></div>
+</body>
+</html>

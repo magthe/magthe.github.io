@@ -4,7 +4,135 @@
 <title><![CDATA[Magnus web site]]></title>
 <description><![CDATA[Magnus web site]]></description>
 <link>https://magnus.therning.org/</link>
-<lastBuildDate>Sun, 14 Mar 2021 07:55:25 +0100</lastBuildDate>
+<lastBuildDate>Sun, 14 Mar 2021 14:55:58 +0100</lastBuildDate>
+<item>
+  <title><![CDATA[Keeping todo items in org-roam]]></title>
+  <description><![CDATA[
+<p>
+A while ago I made an attempt to improve my work habits by keeping a document
+with TODO items. It lasted only for a while, and I've since had the intention to
+make another attempt. Since then I've started using <a href="https://github.com/org-roam/org-roam">org-roam</a> and I've managed to
+create a habit of writing daily journal notes using <a href="https://www.orgroam.com/manual.html#Daily_002dnotes">org-roam's daily-notes</a>. A
+few times I've thought that it might fit me well to put TODO items in the notes,
+but that would mean that I'd have to somehow keep track of them. At first I
+manually added a tag to each journal fily containing a TODO item. That didn't
+work very well at all, which should have been obvious up front. Then I added the
+folders where I keep roam files and journals to <code>org-agenda-files</code>, that worked
+a lot better. I'd still be using that, even if I expected it to slow down
+considerably as the number of files grow, but then I found a post on <a href="https://d12frosted.io/posts/2021-01-16-task-management-with-roam-vol5.html">dynamic and
+fast agenda with org-roam</a>.
+</p>
+
+<p>
+I adjusted it slightly to fit my own setup a bit better, i.e. I made a Spacemacs
+layer, <code>roam-extra</code>, I use the tag <code>todo</code>, and I use a different hook to get the
+tag added on opening an org-roam file.
+</p>
+
+<p>
+The layer consists of a single file, <code>layers/roam-extra/funcs.el</code>. In it I
+define 4 functions (they are pretty much copies of the functions in the post
+linked above):
+</p>
+
+<ol class="org-ol">
+<li><code>roam-extra:todo-p</code> - returns non-<code>nil</code> if the current current buffer contains
+a TODO item.</li>
+<li><code>roam-extra:update-todo-tag</code> - updates the tags of the current buffer to
+reflect the presence of TODO items, i.e. ensure the the tag <code>todo</code> is present
+iff there's a TODO item.</li>
+<li><code>roam-extra:todo-files</code> - uses the org-roam DB to return a list of all files
+containing the tag <code>todo</code>.</li>
+<li><code>roam-extra:update-todo-files</code> - adjusts <code>'org-agenda-files</code> to contain only
+the files with TODO items.</li>
+</ol>
+
+<p>
+I've put the full contents of the file at the <a href="#org6641697">end of the post</a>.
+</p>
+
+<p>
+To ensure that the <code>todo</code> tag is correct in all org-mode files I've added
+<code>roam-extra:update-todo-tag</code> to hooks that are invoked on opening an org-ram
+file and when saving a file. (I would love to find a more specialise hook than
+<code>before-save-hook</code>, but it works for now.)
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span>add-hook 'org-roam-file-setup-hook #'roam-extra:update-todo-tag<span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-rainbow-delimiters-depth-1">(</span>add-hook 'before-save-hook #'roam-extra:update-todo-tag<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+To ensure that the list of files with TODO items is kept up to date when I open
+I also wrap <code>org-agenda</code> in an advice so <code>roam-extra:update-todo-files</code> is
+called prior to the agenda being opened.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span>advice-add 'org-agenda <span class="org-builtin">:before</span> #'roam-extra:update-todo-files<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<div id="outline-container-org6641697" class="outline-2">
+<h2 id="org6641697">The layer, <code>layers/roam-extra/funcs.el</code></h2>
+<div class="outline-text-2" id="text-org6641697">
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">roam-extra:todo-p</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-doc">"Return non-nil if current buffer has any </span><span class="custom">TODO</span><span class="org-doc"> entry.</span>
+
+<span class="custom">TODO</span><span class="org-doc"> entries marked as done are ignored, meaning the this</span>
+<span class="org-doc">function returns nil if current buffer contains only completed</span>
+<span class="org-doc">tasks."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>org-element-map
+      <span class="org-rainbow-delimiters-depth-3">(</span>org-element-parse-buffer 'headline<span class="org-rainbow-delimiters-depth-3">)</span>
+      'headline
+    <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">lambda</span> <span class="org-rainbow-delimiters-depth-4">(</span>h<span class="org-rainbow-delimiters-depth-4">)</span>
+      <span class="org-rainbow-delimiters-depth-4">(</span>eq <span class="org-rainbow-delimiters-depth-5">(</span>org-element-property <span class="org-builtin">:todo-type</span> h<span class="org-rainbow-delimiters-depth-5">)</span>
+          'todo<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    nil 'first-match<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">roam-extra:update-todo-tag</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-doc">"Update </span><span class="custom">TODO</span><span class="org-doc"> tag in the current buffer."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">when</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">and</span> <span class="org-rainbow-delimiters-depth-4">(</span>not <span class="org-rainbow-delimiters-depth-5">(</span>active-minibuffer-window<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+             <span class="org-rainbow-delimiters-depth-4">(</span>org-roam--org-file-p buffer-file-name<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">let*</span> <span class="org-rainbow-delimiters-depth-4">(</span><span class="org-rainbow-delimiters-depth-5">(</span>file <span class="org-rainbow-delimiters-depth-6">(</span>buffer-file-name <span class="org-rainbow-delimiters-depth-7">(</span>buffer-base-buffer<span class="org-rainbow-delimiters-depth-7">)</span><span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span>
+           <span class="org-rainbow-delimiters-depth-5">(</span>all-tags <span class="org-rainbow-delimiters-depth-6">(</span>org-roam--extract-tags file<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span>
+           <span class="org-rainbow-delimiters-depth-5">(</span>prop-tags <span class="org-rainbow-delimiters-depth-6">(</span>org-roam--extract-tags-prop file<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span>
+           <span class="org-rainbow-delimiters-depth-5">(</span>tags prop-tags<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+      <span class="org-rainbow-delimiters-depth-4">(</span><span class="org-keyword">if</span> <span class="org-rainbow-delimiters-depth-5">(</span>roam-extra:todo-p<span class="org-rainbow-delimiters-depth-5">)</span>
+          <span class="org-rainbow-delimiters-depth-5">(</span><span class="org-keyword">setq</span> tags <span class="org-rainbow-delimiters-depth-6">(</span>seq-uniq <span class="org-rainbow-delimiters-depth-7">(</span>cons <span class="org-string">"</span><span class="custom">todo</span><span class="org-string">"</span> tags<span class="org-rainbow-delimiters-depth-7">)</span><span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span>
+        <span class="org-rainbow-delimiters-depth-5">(</span><span class="org-keyword">setq</span> tags <span class="org-rainbow-delimiters-depth-6">(</span>remove <span class="org-string">"</span><span class="custom">todo</span><span class="org-string">"</span> tags<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+      <span class="org-rainbow-delimiters-depth-4">(</span><span class="org-keyword">unless</span> <span class="org-rainbow-delimiters-depth-5">(</span>equal prop-tags tags<span class="org-rainbow-delimiters-depth-5">)</span>
+        <span class="org-rainbow-delimiters-depth-5">(</span>org-roam--set-global-prop
+         <span class="org-string">"roam_tags"</span>
+         <span class="org-rainbow-delimiters-depth-6">(</span>combine-and-quote-strings tags<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">roam-extra:todo-files</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-doc">"Return a list of note files containing </span><span class="custom">todo</span><span class="org-doc"> tag."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>seq-map
+   #'car
+   <span class="org-rainbow-delimiters-depth-3">(</span>org-roam-db-query
+    <span class="org-rainbow-delimiters-depth-4">[</span><span class="org-builtin">:select</span> file
+             <span class="org-builtin">:from</span> tags
+             <span class="org-builtin">:where</span> <span class="org-rainbow-delimiters-depth-5">(</span>like tags <span class="org-rainbow-delimiters-depth-6">(</span><span class="org-keyword">quote</span> <span class="org-string">"%\"</span><span class="custom">todo</span><span class="org-string">\"%"</span><span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">]</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">roam-extra:update-todo-files</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-type">&amp;rest</span> _<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-doc">"Update the value of `</span><span class="org-doc"><span class="org-constant">org-agenda-files</span></span><span class="org-doc">'."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">setq</span> org-agenda-files <span class="org-rainbow-delimiters-depth-3">(</span>roam-extra:todo-files<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> <a href="https://magnus.therning.org/tag-org-roam.html">org-roam</a> <a href="https://magnus.therning.org/tag-spacemacs.html">spacemacs</a> </div>]]></description>
+  <category><![CDATA[emacs]]></category>
+  <category><![CDATA[org-mode]]></category>
+  <category><![CDATA[org-roam]]></category>
+  <category><![CDATA[spacemacs]]></category>
+  <link>https://magnus.therning.org/2021-03-14-keeping-todo-items-in-org-roam.html</link>
+  <pubDate>Sun, 14 Mar 2021 13:12:00 +0100</pubDate>
+</item>
 <item>
   <title><![CDATA[Flycheck and HLS]]></title>
   <description><![CDATA[
@@ -4185,9 +4313,9 @@ functions from Haskell without bindings</a> and I found the motivation to actual
 start writing some code.
 </p>
 
-<div id="outline-container-orgf105224" class="outline-2">
-<h2 id="orgf105224">The general idea</h2>
-<div class="outline-text-2" id="text-orgf105224">
+<div id="outline-container-org755182d" class="outline-2">
+<h2 id="org755182d">The general idea</h2>
+<div class="outline-text-2" id="text-org755182d">
 <p>
 Many C APIs are rather stateful beasts so to test it I
 </p>
@@ -4201,9 +4329,9 @@ Many C APIs are rather stateful beasts so to test it I
 </div>
 </div>
 
-<div id="outline-container-org72234d2" class="outline-2">
-<h2 id="org72234d2">The C API</h2>
-<div class="outline-text-2" id="text-org72234d2">
+<div id="outline-container-org5c47d51" class="outline-2">
+<h2 id="org5c47d51">The C API</h2>
+<div class="outline-text-2" id="text-org5c47d51">
 <p>
 To begin with I hacked up a simple implementation of a stack in C. The
 "specification" is
@@ -4260,9 +4388,9 @@ In the code below I import this module qualified.
 </div>
 </div>
 
-<div id="outline-container-org1752afd" class="outline-2">
-<h2 id="org1752afd">Representing a program</h2>
-<div class="outline-text-2" id="text-org1752afd">
+<div id="outline-container-org7f43b7c" class="outline-2">
+<h2 id="org7f43b7c">Representing a program</h2>
+<div class="outline-text-2" id="text-org7f43b7c">
 <p>
 To represent a sequence of calls I first used a custom type, but later realised
 that there really was no reason at all to not use a wrapped list:
@@ -4286,9 +4414,9 @@ Then each of the C API functions can be represented with
 </div>
 </div>
 
-<div id="outline-container-orgce528f7" class="outline-2">
-<h2 id="orgce528f7"><code>Arbitrary</code> for <code>Statement</code></h2>
-<div class="outline-text-2" id="text-orgce528f7">
+<div id="outline-container-org63a6359" class="outline-2">
+<h2 id="org63a6359"><code>Arbitrary</code> for <code>Statement</code></h2>
+<div class="outline-text-2" id="text-org63a6359">
 <p>
 My implementation of <code>Arbitrary</code> for <code>Statement</code> is very simple:
 </p>
@@ -4309,9 +4437,9 @@ shrinking only returns anything for the one constructor that takes an argument,
 </div>
 </div>
 
-<div id="outline-container-org18df2ec" class="outline-2">
-<h2 id="org18df2ec">Prerequisites of <code>Arbitrary</code> for <code>Program Statement</code></h2>
-<div class="outline-text-2" id="text-org18df2ec">
+<div id="outline-container-org2a84010" class="outline-2">
+<h2 id="org2a84010">Prerequisites of <code>Arbitrary</code> for <code>Program Statement</code></h2>
+<div class="outline-text-2" id="text-org2a84010">
 <p>
 I want to ensure that all <code>Program Statement</code> are valid, which means I need to
 define the model for running the program and functions for checking the
@@ -4320,7 +4448,7 @@ the <code>Statement</code>).
 </p>
 
 <p>
-Based on the <a href="#org72234d2">C API</a> above it seems necessary to track creation, the contents of
+Based on the <a href="#org5c47d51">C API</a> above it seems necessary to track creation, the contents of
 the stack, and even if it isn't explicitly mentioned it's probably a good idea
 to track the popped value. Using <a href="http://hackage.haskell.org/package/record"><code>record</code></a> (<code>Record</code> is imported as <code>R</code>, and
 <code>Record.Lens</code> as <code>RL</code>) I defined it like this:
@@ -4377,9 +4505,9 @@ seen in the use of <code>tail</code>.)
 </div>
 </div>
 
-<div id="outline-container-org81aa1cf" class="outline-2">
-<h2 id="org81aa1cf"><code>Arbitrary</code> for <code>Program Statement</code></h2>
-<div class="outline-text-2" id="text-org81aa1cf">
+<div id="outline-container-org9eab783" class="outline-2">
+<h2 id="org9eab783"><code>Arbitrary</code> for <code>Program Statement</code></h2>
+<div class="outline-text-2" id="text-org9eab783">
 <p>
 With this in place I can define <code>Arbitrary</code> for <code>Program Statement</code> as
 follows.
@@ -4423,9 +4551,9 @@ For shrinking I take advantage of the already existing implementation for lists:
 </div>
 </div>
 
-<div id="outline-container-org8b68f24" class="outline-2">
-<h2 id="org8b68f24">Some thoughts so far</h2>
-<div class="outline-text-2" id="text-org8b68f24">
+<div id="outline-container-org637962f" class="outline-2">
+<h2 id="org637962f">Some thoughts so far</h2>
+<div class="outline-text-2" id="text-org637962f">
 <p>
 I would love making an implementation of <code>Arbitrary s</code>, where <code>s</code> is something
 that implements a type class that contains <code>preCond</code>, <code>modelRunStatement</code> and
@@ -4451,9 +4579,9 @@ can offer a solution.
 </div>
 </div>
 
-<div id="outline-container-org3c9f6e9" class="outline-2">
-<h2 id="org3c9f6e9">Running the C code</h2>
-<div class="outline-text-2" id="text-org3c9f6e9">
+<div id="outline-container-orga64057c" class="outline-2">
+<h2 id="orga64057c">Running the C code</h2>
+<div class="outline-text-2" id="text-orga64057c">
 <p>
 When running the sequence of <code>Statement</code> against the C code I catch the results
 in
@@ -4483,9 +4611,9 @@ easily done using <code>inline-c</code> and <code>record</code>:
 </div>
 </div>
 
-<div id="outline-container-orgc3d17f2" class="outline-2">
-<h2 id="orgc3d17f2">Comparing states</h2>
-<div class="outline-text-2" id="text-orgc3d17f2">
+<div id="outline-container-org8c5786b" class="outline-2">
+<h2 id="org8c5786b">Comparing states</h2>
+<div class="outline-text-2" id="text-org8c5786b">
 <p>
 Comparing a <code>ModelContext</code> and a <code>RealContext</code> is easily done:
 </p>
@@ -4503,9 +4631,9 @@ Comparing a <code>ModelContext</code> and a <code>RealContext</code> is easily d
 </div>
 </div>
 
-<div id="outline-container-orgf4cba17" class="outline-2">
-<h2 id="orgf4cba17">Verifying a <code>Program Statement</code></h2>
-<div class="outline-text-2" id="text-orgf4cba17">
+<div id="outline-container-org12af561" class="outline-2">
+<h2 id="org12af561">Verifying a <code>Program Statement</code></h2>
+<div class="outline-text-2" id="text-org12af561">
 <p>
 With all that in place I can finally write a function for checking the validity
 of a program:
@@ -4529,9 +4657,9 @@ of a program:
 </div>
 </div>
 
-<div id="outline-container-org5065044" class="outline-2">
-<h2 id="org5065044">The property, finally!</h2>
-<div class="outline-text-2" id="text-org5065044">
+<div id="outline-container-org813eb63" class="outline-2">
+<h2 id="org813eb63">The property, finally!</h2>
+<div class="outline-text-2" id="text-org813eb63">
 <p>
 To wrap this all up I then define the property
 </p>
