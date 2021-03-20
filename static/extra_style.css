@@ -18,3 +18,11 @@
 .align-right {
     float: right;
 }
+
+a {
+    text-decoration: underline;
+}
+
+.post-title a {
+    text-decoration: none;
+}
