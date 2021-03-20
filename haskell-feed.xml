@@ -4,7 +4,213 @@
 <title><![CDATA[Magnus web site - haskell]]></title>
 <description><![CDATA[Magnus web site - haskell]]></description>
 <link>https://magnus.therning.org//tag-haskell.html</link>
-<lastBuildDate>Sat, 20 Mar 2021 08:20:05 +0100</lastBuildDate>
+<lastBuildDate>Sat, 20 Mar 2021 17:58:36 +0100</lastBuildDate>
+<item>
+  <title><![CDATA[Barbie and <strike>Ken</strike>JSON]]></title>
+  <description><![CDATA[
+<p>
+After higher-kinded data (HKD) and <a href="https://hackage.haskell.org/package/barbies">barbies</a> were mentioned in <a href="https://haskellweekly.news/episode/35.html">episode 35 of
+Haskell Weekly</a> I've been wondering if it could be used in combination with <a href="https://hackage.haskell.org/package/aeson">aeson</a>
+to do validation when implementing web services.
+</p>
+
+<p>
+TLDR; I think it'd work, but I have a feeling I'd have to spend some more time
+on it to get an API with nice ergonomics.
+</p>
+
+<div id="outline-container-orga9a9fc9" class="outline-2">
+<h2 id="orga9a9fc9">Defining a type to play with</h2>
+<div class="outline-text-2" id="text-orga9a9fc9">
+<p>
+I opted to use <a href="https://hackage.haskell.org/package/barbies-th">barbies-th</a> to save on the typing a bit. Defining a simple type
+holding a name and an age can then look like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">declareBareB</span>
+  <span class="org-rainbow-delimiters-depth-1">[</span>d<span class="org-haskell-operator">|</span>
+   <span class="org-haskell-keyword">data</span> <span class="org-haskell-type">Person</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">Person</span> <span class="org-rainbow-delimiters-depth-2">{</span>name <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Text</span>, age <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Int</span><span class="org-rainbow-delimiters-depth-2">}</span>
+  <span class="org-haskell-operator">|</span><span class="org-rainbow-delimiters-depth-1">]</span>
+
+<span class="org-haskell-keyword">deriving</span> <span class="org-haskell-keyword">instance</span> <span class="org-haskell-type">Show</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Person</span> <span class="org-haskell-type">Covered</span> <span class="org-haskell-type">Identity</span><span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-haskell-keyword">deriving</span> <span class="org-haskell-keyword">instance</span> <span class="org-haskell-type">Show</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Person</span> <span class="org-haskell-type">Covered</span> <span class="org-haskell-type">Maybe</span><span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-haskell-keyword">deriving</span> <span class="org-haskell-keyword">instance</span> <span class="org-haskell-type">Show</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Person</span> <span class="org-haskell-type">Covered</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-haskell-type">Either</span> <span class="org-haskell-type">Text</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+The two functions from the <code>Barbies</code> module documentation, <code>addDefaults</code> and
+<code>check</code>, can then be written like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">addDefaults</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Person</span> <span class="org-haskell-type">Covered</span> <span class="org-haskell-type">Maybe</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Person</span> <span class="org-haskell-type">Covered</span> <span class="org-haskell-type">Identity</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Person</span> <span class="org-haskell-type">Covered</span> <span class="org-haskell-type">Identity</span>
+<span class="org-haskell-definition">addDefaults</span> <span class="org-haskell-operator">=</span> bzipWith trans
+  <span class="org-haskell-keyword">where</span>
+    trans m d <span class="org-haskell-operator">=</span> maybe d pure m
+
+<span class="org-haskell-definition">check</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Person</span> <span class="org-haskell-type">Covered</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Either</span> <span class="org-haskell-type">Text</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Either</span> <span class="org-rainbow-delimiters-depth-1">[</span><span class="org-haskell-type">Text</span><span class="org-rainbow-delimiters-depth-1">]</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Person</span> <span class="org-haskell-type">Covered</span> <span class="org-haskell-type">Identity</span><span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-haskell-definition">check</span> pe <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">case</span> btraverse <span class="org-rainbow-delimiters-depth-1">(</span>either <span class="org-rainbow-delimiters-depth-2">(</span>const <span class="org-haskell-constructor">Nothing</span><span class="org-rainbow-delimiters-depth-2">)</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-haskell-constructor">Just</span> <span class="org-haskell-operator">.</span> <span class="org-haskell-constructor">Identity</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span> pe <span class="org-haskell-keyword">of</span>
+  <span class="org-haskell-constructor">Just</span> pin <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-constructor">Right</span> pin
+  <span class="org-haskell-constructor">Nothing</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-constructor">Left</span> <span class="org-haskell-operator">$</span> bfoldMap <span class="org-rainbow-delimiters-depth-1">(</span>either <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-haskell-constructor">:</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-3">[]</span></span><span class="org-rainbow-delimiters-depth-2">)</span> <span class="org-rainbow-delimiters-depth-2">(</span>const <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-3">[]</span></span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span> pe
+</pre>
+</div>
+
+<p>
+I found it straight forward to define some instances and play with those
+functions a bit.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgc68301e" class="outline-2">
+<h2 id="orgc68301e">Adding in JSON</h2>
+<div class="outline-text-2" id="text-orgc68301e">
+<p>
+The bit that wasn't immediately obvious to me was how to use aeson to parse into
+a type like <code>Person Covered (Either Text)</code>.
+</p>
+
+<p>
+First off I needed some data to test things out with.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">bs0, bs1</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">BSL.ByteString</span>
+<span class="org-haskell-definition">bs0</span> <span class="org-haskell-operator">=</span> <span class="org-string">"{\"name\": \"the name\", \"age\": 17}"</span>
+<span class="org-haskell-definition">bs1</span> <span class="org-haskell-operator">=</span> <span class="org-string">"{\"name\": \"the name\", \"age\": true}"</span>
+</pre>
+</div>
+
+<p>
+To keep things simple I took baby steps, first I tried parsing into <code>Person
+Covered Identity</code>. It turns out that the <code>FromJSON</code> instance from that doesn't
+need much thought at all. (It's a bit of a pain to have to specify types in GHCi
+all the time, so I'm throwing in a specialised decoding function for each type
+too.)
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-keyword">instance</span> <span class="org-haskell-type">FromJSON</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Person</span> <span class="org-haskell-type">Covered</span> <span class="org-haskell-type">Identity</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-keyword">where</span>
+  parseJSON <span class="org-haskell-operator">=</span> withObject <span class="org-string">"Person"</span> <span class="org-haskell-operator">$</span>
+    <span class="org-haskell-operator">\</span>o <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-constructor">Person</span> <span class="org-haskell-operator">&lt;$&gt;</span> o <span class="org-haskell-operator">.:</span> <span class="org-string">"name"</span>
+      <span class="org-haskell-operator">&lt;*&gt;</span> o <span class="org-haskell-operator">.:</span> <span class="org-string">"age"</span>
+
+<span class="org-haskell-definition">decodePI</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">BSL.ByteString</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Maybe</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Person</span> <span class="org-haskell-type">Covered</span> <span class="org-haskell-type">Identity</span><span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-haskell-definition">decodePI</span> <span class="org-haskell-operator">=</span> decode
+</pre>
+</div>
+
+<p>
+Trying it out on the test data gives the expected results
+</p>
+
+<pre class="example" id="orgbe631ca">
+λ&gt; let i0 = decodePI bs0
+λ&gt; i0
+Just (Person {name = Identity "the name", age = Identity 17})
+λ&gt; let i1 = decodePI bs1
+λ&gt; i1
+Nothing
+</pre>
+
+<p>
+So far so good! Moving onto <code>Person Covered Maybe</code>. I spent some time trying to
+use the combinators in <code>Data.Aeson</code> for dealing with parser failures, but in the
+end I had to resort to using <code>&lt;|&gt;</code> from <code>Alternative</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-keyword">instance</span> <span class="org-haskell-type">FromJSON</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Person</span> <span class="org-haskell-type">Covered</span> <span class="org-haskell-type">Maybe</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-keyword">where</span>
+  parseJSON <span class="org-haskell-operator">=</span> withObject <span class="org-string">"Person"</span> <span class="org-haskell-operator">$</span>
+    <span class="org-haskell-operator">\</span>o <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-constructor">Person</span> <span class="org-haskell-operator">&lt;$&gt;</span> <span class="org-rainbow-delimiters-depth-1">(</span>o <span class="org-haskell-operator">.:</span> <span class="org-string">"name"</span> <span class="org-haskell-operator">&lt;|&gt;</span> pure <span class="org-haskell-constructor">Nothing</span><span class="org-rainbow-delimiters-depth-1">)</span>
+      <span class="org-haskell-operator">&lt;*&gt;</span> <span class="org-rainbow-delimiters-depth-1">(</span>o <span class="org-haskell-operator">.:</span> <span class="org-string">"age"</span> <span class="org-haskell-operator">&lt;|&gt;</span> pure <span class="org-haskell-constructor">Nothing</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-haskell-definition">decodePM</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">BSL.ByteString</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Maybe</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Person</span> <span class="org-haskell-type">Covered</span> <span class="org-haskell-type">Maybe</span><span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-haskell-definition">decodePM</span> <span class="org-haskell-operator">=</span> decode
+</pre>
+</div>
+
+<p>
+Trying that out I saw exactly the behaviour I expected, i.e. that parsing won't
+fail. (Well, at least not as long as it's a valid JSON object to being with.)
+</p>
+
+<pre class="example" id="orgec185e3">
+λ&gt; let m0 = decodePM bs0
+λ&gt; m0
+Just (Person {name = Just "the name", age = Just 17})
+λ&gt; let m1 = decodePM bs1
+λ&gt; m1
+Just (Person {name = Just "the name", age = Nothing})
+</pre>
+
+<p>
+With that done I found that the instance for <code>Person Covered (Either Text)</code>
+followed quite naturally. I had to spend a little time on getting the types
+right to parse the fields properly. Somewhat disappointingly I didn't get type
+errors when the behaviour of the code turned out to be wrong. I'm gussing
+aeson's <code>Parser</code> was a little too willing to give me parser failures. Anyway, I
+ended up with this instance
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-keyword">instance</span> <span class="org-haskell-type">FromJSON</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Person</span> <span class="org-haskell-type">Covered</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-haskell-type">Either</span> <span class="org-haskell-type">Text</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-keyword">where</span>
+  parseJSON <span class="org-haskell-operator">=</span> withObject <span class="org-string">"Person"</span> <span class="org-haskell-operator">$</span>
+    <span class="org-haskell-operator">\</span>o <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-constructor">Person</span> <span class="org-haskell-operator">&lt;$&gt;</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-rainbow-delimiters-depth-2">(</span><span class="org-haskell-constructor">Right</span> <span class="org-haskell-operator">&lt;$&gt;</span> o <span class="org-haskell-operator">.:</span> <span class="org-string">"name"</span><span class="org-rainbow-delimiters-depth-2">)</span> <span class="org-haskell-operator">&lt;|&gt;</span> pure <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-haskell-constructor">Left</span> <span class="org-string">"A name is most needed"</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+      <span class="org-haskell-operator">&lt;*&gt;</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-rainbow-delimiters-depth-2">(</span><span class="org-haskell-constructor">Right</span> <span class="org-haskell-operator">&lt;$&gt;</span> o <span class="org-haskell-operator">.:</span> <span class="org-string">"age"</span><span class="org-rainbow-delimiters-depth-2">)</span> <span class="org-haskell-operator">&lt;|&gt;</span> pure <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-haskell-constructor">Left</span> <span class="org-string">"An integer age is needed"</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-haskell-definition">decodePE</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">BSL.ByteString</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Maybe</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Person</span> <span class="org-haskell-type">Covered</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-haskell-type">Either</span> <span class="org-haskell-type">Text</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-haskell-definition">decodePE</span> <span class="org-haskell-operator">=</span> decode
+</pre>
+</div>
+
+<p>
+That does exhibit the behaviour I want
+</p>
+
+<pre class="example" id="orgb5a080b">
+λ&gt; let e0 = decodePE bs0
+λ&gt; e0
+Just (Person {name = Right "the name", age = Right 17})
+λ&gt; let e1 = decodePE bs1
+λ&gt; e1
+Just (Person {name = Right "the name", age = Left "An integer age is needed"})
+</pre>
+</div>
+</div>
+
+<div id="outline-container-orgcfdacc1" class="outline-2">
+<h2 id="orgcfdacc1">In closing</h2>
+<div class="outline-text-2" id="text-orgcfdacc1">
+<p>
+I think everyone will agree that the <code>FromJSON</code> instances are increasingly
+messy. I think that can be fixed by putting some thought into what a more
+pleasing API should look like.
+</p>
+
+<p>
+I'd also like to mix in validation beyond what aeson offers out-of-the-box,
+which really only is "is the field present?" and "does the value have the
+correct type?". For instance, Once we know there is a field called <code>age</code>, and
+that it's an <code>Int</code>, then we might want to make sure it's non-negitive, or that
+the person is at least 18. I'm guessing that wouldn't be too difficult.
+</p>
+
+<p>
+Finally, I'd love to see examples of using HKDs for parsing/validation in the
+wild. It's probably easiest to reach me at <a href="https://mastodon.technology/@magthe">@magthe@mastodon.technology</a>.
+</p>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-hkd.html">hkd</a> <a href="https://magnus.therning.org/tag-json.html">json</a> </div>]]></description>
+  <category><![CDATA[haskell]]></category>
+  <category><![CDATA[hkd]]></category>
+  <category><![CDATA[json]]></category>
+  <link>https://magnus.therning.org/2021-03-20-barbie-and-json.html</link>
+  <pubDate>Sat, 20 Mar 2021 16:22:00 +0100</pubDate>
+</item>
 <item>
   <title><![CDATA[Custom monad with servant and throwing errors]]></title>
   <description><![CDATA[
@@ -1017,331 +1223,6 @@ gave up on getting re-combination to work &#x2013; <a href="2018-10-16-000-zippi
   <category><![CDATA[tagless_final]]></category>
   <link>https://magnus.therning.org/2019-08-10-000-architecture-of-a-service.html</link>
   <pubDate>Sat, 10 Aug 2019 12:34:00 +0200</pubDate>
-</item>
-<item>
-  <title><![CDATA[Hedgehog on a REST API, part 2]]></title>
-  <description><![CDATA[
-<p>
-This is a short follow-up to <a href="2019-05-30-000-hedgehog-on-a-rest-api.html">Hedgehog on a REST API</a> where I actually run the
-tests in that post.
-</p>
-
-<div id="outline-container-org27855a2" class="outline-2">
-<h2 id="org27855a2">Fixing an issue with the model</h2>
-<div class="outline-text-2" id="text-org27855a2">
-<p>
-The first issue I run into is
-</p>
-
-<pre class="example" id="orgdd312b9">
-━━━ Main ━━━
-  ✗ sequential failed after 18 tests and 1 shrink.
-
-        ┏━━ tst/test-01.hs ━━━
-     89 ┃ getUser :: (MonadGen n, MonadIO m) =&gt; Command n m State
-     90 ┃ getUser = Command gen exec [ Require r
-     91 ┃                            , Ensure e
-     92 ┃                            ]
-     93 ┃   where
-     94 ┃     gen (State m) = case M.keys m of
-     95 ┃       [] -&gt; Nothing
-     96 ┃       ks -&gt; Just $ GetUser &lt;$&gt; Gen.element ks
-     97 ┃
-     98 ┃     exec (GetUser i) = liftIO $ do
-     99 ┃       mgr &lt;- newManager defaultManagerSettings
-    100 ┃       getReq &lt;- parseRequest $ "GET http://localhost:3000/users/" ++ show i
-    101 ┃       getResp &lt;- httpLbs getReq mgr
-    102 ┃       let us = decode $ responseBody getResp :: Maybe [User]
-    103 ┃       return (status200 == responseStatus getResp, us)
-    104 ┃
-    105 ┃     r (State m) (GetUser i) = i `elem` M.keys m
-    106 ┃
-    107 ┃     e _ _ (GetUser _) (r, us) = do
-    108 ┃       r === True
-    109 ┃       assert $ isJust us
-    110 ┃       (length &lt;$&gt; us) === Just 1
-        ┃       ^^^^^^^^^^^^^^^^^^^^^^^^^^
-        ┃       │ Failed (- lhs =/= + rhs)
-        ┃       │ - Just 0
-        ┃       │ + Just 1
-
-        ┏━━ tst/test-01.hs ━━━
-    118 ┃ prop_seq :: Property
-    119 ┃ prop_seq = property $ do
-    120 ┃   actions &lt;- forAll $ Gen.sequential (Range.linear 1 10) initialState [addUser, deleteUser, getUser]
-        ┃   │ Var 0 = AddUser ""
-        ┃   │ Var 1 = GetUser 1
-    121 ┃   resetWS
-    122 ┃   executeSequential initialState actions
-
-    This failure can be reproduced by running:
-    &gt; recheck (Size 17) (Seed 2158538972777046104 (-1442908127347265675)) sequential
-
-  ✗ 1 failed.
-</pre>
-
-<p>
-It's easy to verify this using <a href="https://httpie.org/">httpie</a>:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-shell">$ http -p b POST :3000/users userId:=<span class="org-highlight-numbers-number">0</span> <span class="org-string">"userName="</span>
-<span class="org-rainbow-delimiters-depth-1">{</span>
-    <span class="org-string">"userId"</span>: <span class="org-highlight-numbers-number">0,</span>
-    <span class="org-string">"userName"</span>: <span class="org-string">""</span>
-<span class="org-rainbow-delimiters-depth-1">}</span>
-$ http -p b GET :3000/users/1
-<span class="org-rainbow-delimiters-depth-1">[]</span>
-</pre>
-</div>
-
-<p>
-It's clear that my assumption that <i>User ID</i> starts at 1 is wrong. Luckily
-fixing that isn't too difficult. Instead of defining the update function for
-<code>addUser</code> as
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-haskell-definition">u</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">State</span> m<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">AddUser</span> n<span class="org-rainbow-delimiters-depth-1">)</span> _o <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">State</span> <span class="org-haskell-operator">$</span> M.insert k n m
-  <span class="org-haskell-keyword">where</span>
-    k <span class="org-haskell-operator">=</span> succ <span class="org-haskell-operator">$</span> foldl max <span class="org-highlight-numbers-number">0</span> <span class="org-rainbow-delimiters-depth-1">(</span>M.keys m<span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-I define it as
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-haskell-definition">u</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">State</span> m<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">AddUser</span> n<span class="org-rainbow-delimiters-depth-1">)</span> _o <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">State</span> <span class="org-haskell-operator">$</span> M.insert k n m
-  <span class="org-haskell-keyword">where</span>
-    k <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">case</span> M.keys m <span class="org-haskell-keyword">of</span>
-      <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">[]</span></span> <span class="org-haskell-operator">-&gt;</span> <span class="org-highlight-numbers-number">0</span>
-      ks <span class="org-haskell-operator">-&gt;</span> succ <span class="org-haskell-operator">$</span> foldl max <span class="org-highlight-numbers-number">0</span> ks
-</pre>
-</div>
-
-<p>
-The complete code at this point can be found <a href="https://gist.github.com/8cbbfdb130a173bb51c317df0c00aa15">here</a>.
-</p>
-</div>
-</div>
-
-<div id="outline-container-org9c34f53" class="outline-2">
-<h2 id="org9c34f53">Fixing another issue with the model</h2>
-<div class="outline-text-2" id="text-org9c34f53">
-<p>
-With that fix in place another issue with the model shows up
-</p>
-
-<pre class="example" id="orga71bb89">
-━━━ Main ━━━
-  ✗ sequential failed after 74 tests and 2 shrinks.
-
-        ┏━━ tst/test-01.hs ━━━
-     91 ┃ getUser :: (MonadGen n, MonadIO m) =&gt; Command n m State
-     92 ┃ getUser = Command gen exec [ Require r
-     93 ┃                            , Ensure e
-     94 ┃                            ]
-     95 ┃   where
-     96 ┃     gen (State m) = case M.keys m of
-     97 ┃       [] -&gt; Nothing
-     98 ┃       ks -&gt; Just $ GetUser &lt;$&gt; Gen.element ks
-     99 ┃
-    100 ┃     exec (GetUser i) = liftIO $ do
-    101 ┃       mgr &lt;- newManager defaultManagerSettings
-    102 ┃       getReq &lt;- parseRequest $ "GET http://localhost:3000/users/" ++ show i
-    103 ┃       getResp &lt;- httpLbs getReq mgr
-    104 ┃       let us = decode $ responseBody getResp :: Maybe [User]
-    105 ┃       return (status200 == responseStatus getResp, us)
-    106 ┃
-    107 ┃     r (State m) (GetUser i) = i `elem` M.keys m
-    108 ┃
-    109 ┃     e _ _ (GetUser _) (r, us) = do
-    110 ┃       r === True
-    111 ┃       assert $ isJust us
-    112 ┃       (length &lt;$&gt; us) === Just 1
-        ┃       ^^^^^^^^^^^^^^^^^^^^^^^^^^
-        ┃       │ Failed (- lhs =/= + rhs)
-        ┃       │ - Just 0
-        ┃       │ + Just 1
-
-        ┏━━ tst/test-01.hs ━━━
-    120 ┃ prop_seq :: Property
-    121 ┃ prop_seq = property $ do
-    122 ┃   actions &lt;- forAll $ Gen.sequential (Range.linear 1 10) initialState [addUser, deleteUser, getUser]
-        ┃   │ Var 0 = AddUser ""
-        ┃   │ Var 1 = DeleteUser 0
-        ┃   │ Var 2 = AddUser ""
-        ┃   │ Var 3 = GetUser 0
-    123 ┃   resetWS
-    124 ┃   executeSequential initialState actions
-
-    This failure can be reproduced by running:
-    &gt; recheck (Size 73) (Seed 3813043122711576923 (-444438259649958339)) sequential
-
-  ✗ 1 failed.
-</pre>
-
-<p>
-Again, verifying this using <a href="https://httpie.org/">httpie</a> shows what the issue is
-</p>
-
-<div class="org-src-container">
-<pre class="src src-shell">$ http -p b POST :3000/users userId:=<span class="org-highlight-numbers-number">0</span> <span class="org-string">"userName="</span>
-<span class="org-rainbow-delimiters-depth-1">{</span>
-    <span class="org-string">"userId"</span>: <span class="org-highlight-numbers-number">0,</span>
-    <span class="org-string">"userName"</span>: <span class="org-string">""</span>
-<span class="org-rainbow-delimiters-depth-1">}</span>
-$ http -p b DELETE :3000/users/0
-$ http -p b POST :3000/users userId:=<span class="org-highlight-numbers-number">0</span> <span class="org-string">"userName="</span>
-<span class="org-rainbow-delimiters-depth-1">{</span>
-    <span class="org-string">"userId"</span>: <span class="org-highlight-numbers-number">1,</span>
-    <span class="org-string">"userName"</span>: <span class="org-string">""</span>
-<span class="org-rainbow-delimiters-depth-1">}</span>
-$ http -p b GET :3000/users/0
-<span class="org-rainbow-delimiters-depth-1">[]</span>
-</pre>
-</div>
-
-<p>
-In other words, the model assumes that the 0 <i>User ID</i> get's re-used.
-</p>
-
-<p>
-To fix this I need a bigger change. The central bit is that the state is changed
-to keep track of the index more explicitly. That is, it changes from
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-haskell-keyword">newtype</span> <span class="org-haskell-type">State</span> <span class="org-rainbow-delimiters-depth-1">(</span>v <span class="org-haskell-operator">::</span> <span class="org-haskell-operator">*</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-operator">*</span><span class="org-rainbow-delimiters-depth-1">)</span><span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">State</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">M.Map</span> <span class="org-haskell-constructor">Int</span> <span class="org-haskell-constructor">Text</span><span class="org-rainbow-delimiters-depth-1">)</span>
-  <span class="org-haskell-keyword">deriving</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">Eq</span>, <span class="org-haskell-constructor">Show</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-to
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-haskell-keyword">data</span> <span class="org-haskell-type">State</span> <span class="org-rainbow-delimiters-depth-1">(</span>v <span class="org-haskell-operator">::</span> <span class="org-haskell-operator">*</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-operator">*</span><span class="org-rainbow-delimiters-depth-1">)</span><span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">State</span> <span class="org-haskell-constructor">Int</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">M.Map</span> <span class="org-haskell-constructor">Int</span> <span class="org-haskell-constructor">Text</span><span class="org-rainbow-delimiters-depth-1">)</span>
-  <span class="org-haskell-keyword">deriving</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">Eq</span>, <span class="org-haskell-constructor">Show</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-That change does, quite obviously, require a bunch of other changes in the other
-functions dealing with the state. The complete file can be viewed <a href="https://gist.github.com/e3c3f4a3c35ab8a529045f90f9f4ba71">here</a>.
-</p>
-</div>
-</div>
-
-<div id="outline-container-org5f32fc1" class="outline-2">
-<h2 id="org5f32fc1">All is well, or is it?</h2>
-<div class="outline-text-2" id="text-org5f32fc1">
-<p>
-After this the tests pass, so all is good in the world, right?
-</p>
-
-<p>
-In the test I defined the <a href="2019-05-30-000-hedgehog-on-a-rest-api.html#MissingReference">property</a> over rather short sequences of commands. What
-happens if I increase the (maximum) length of the sequences a bit? Instead using
-<code>Range.linear 1 10</code> I'll use <code>Range.linear 1 1000</code>. Well, besides taking
-slightly longer to run I get another sequence of commands that triggers an
-issue:
-</p>
-
-<pre class="example" id="org112d5bd">
-━━━ Main ━━━
-  ✗ sequential failed after 13 tests and 29 shrinks.
-
-        ┏━━ tst/test-01.hs ━━━
-     87 ┃ getUser :: (MonadGen n, MonadIO m) =&gt; Command n m State
-     88 ┃ getUser = Command gen exec [ Require r
-     89 ┃                            , Ensure e
-     90 ┃                            ]
-     91 ┃   where
-     92 ┃     gen (State _ m) = case M.keys m of
-     93 ┃       [] -&gt; Nothing
-     94 ┃       ks -&gt; Just $ GetUser &lt;$&gt; Gen.element ks
-     95 ┃
-     96 ┃     exec (GetUser i) = liftIO $ do
-     97 ┃       mgr &lt;- newManager defaultManagerSettings
-     98 ┃       getReq &lt;- parseRequest $ "GET http://localhost:3000/users/" ++ show i
-     99 ┃       getResp &lt;- httpLbs getReq mgr
-    100 ┃       let us = decode $ responseBody getResp :: Maybe [User]
-    101 ┃       return (status200 == responseStatus getResp, us)
-    102 ┃
-    103 ┃     r (State _ m) (GetUser i) = i `elem` M.keys m
-    104 ┃
-    105 ┃     e _ _ (GetUser _) (r, us) = do
-    106 ┃       r === True
-    107 ┃       assert $ isJust us
-    108 ┃       (length &lt;$&gt; us) === Just 1
-        ┃       ^^^^^^^^^^^^^^^^^^^^^^^^^^
-        ┃       │ Failed (- lhs =/= + rhs)
-        ┃       │ - Just 0
-        ┃       │ + Just 1
-
-        ┏━━ tst/test-01.hs ━━━
-    116 ┃ prop_seq :: Property
-    117 ┃ prop_seq = property $ do
-    118 ┃   actions &lt;- forAll $ Gen.sequential (Range.linear 1 1000) initialState [addUser, deleteUser, getUser]
-        ┃   │ Var 0 = AddUser ""
-        ┃   │ Var 2 = AddUser ""
-        ┃   │ Var 5 = AddUser ""
-        ┃   │ Var 7 = AddUser ""
-        ┃   │ Var 9 = AddUser ""
-        ┃   │ Var 11 = AddUser ""
-        ┃   │ Var 20 = AddUser ""
-        ┃   │ Var 28 = AddUser ""
-        ┃   │ Var 30 = AddUser ""
-        ┃   │ Var 32 = AddUser ""
-        ┃   │ Var 33 = AddUser ""
-        ┃   │ Var 34 = AddUser ""
-        ┃   │ Var 37 = AddUser ""
-        ┃   │ Var 38 = AddUser ""
-        ┃   │ Var 41 = AddUser ""
-        ┃   │ Var 45 = AddUser ""
-        ┃   │ Var 47 = GetUser 15
-    119 ┃   resetWS
-    120 ┃   executeSequential initialState actions
-
-    This failure can be reproduced by running:
-    &gt; recheck (Size 12) (Seed 2976784816810995551 (-47094630645854485)) sequential
-
-  ✗ 1 failed.
-</pre>
-
-<p>
-That is, after inserting 16 users, we don't see any user when trying to get that
-16th user (<i>User ID</i> 15). That's a proper bug in the server.
-</p>
-
-<p>
-As a matter of fact, this is the bug I put into the server and was hoping to
-find. In particular, I wanted <i>hedgehog</i> to find the minimal sequence leading to
-this bug.<sup><a id="fnr.1" class="footref" href="#fn.1">1</a></sup> Which it clearly has!
-</p>
-</div>
-</div>
-<div id="footnotes">
-<h2 class="footnotes">Footnotes: </h2>
-<div id="text-footnotes">
-
-<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1">1</a></sup> <div class="footpara"><p class="footpara">
-If you recall from the <a href="2019-05-30-000-hedgehog-on-a-rest-api.html">previous post</a>, I was interested in the integrated
-shrinking offered by <i>hedgehog</i>.
-</p></div></div>
-
-
-</div>
-</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-hedgehog.html">hedgehog</a> <a href="https://magnus.therning.org/tag-testing.html">testing</a> </div>]]></description>
-  <category><![CDATA[haskell]]></category>
-  <category><![CDATA[hedgehog]]></category>
-  <category><![CDATA[testing]]></category>
-  <link>https://magnus.therning.org/2019-06-23-000-hedgehog-on-a-rest-api--part-2.html</link>
-  <pubDate>Sun, 23 Jun 2019 12:34:00 +0200</pubDate>
 </item>
 </channel>
 </rss>

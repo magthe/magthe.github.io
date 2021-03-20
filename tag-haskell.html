@@ -12,6 +12,204 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <h1 class="title">Posts tagged "haskell":</h1>
+<div class="post-date">20 Mar 2021</div><h1 class="post-title"><a href="https://magnus.therning.org/2021-03-20-barbie-and-json.html">Barbie and <strike>Ken</strike>JSON</a></h1>
+<p>
+After higher-kinded data (HKD) and <a href="https://hackage.haskell.org/package/barbies">barbies</a> were mentioned in <a href="https://haskellweekly.news/episode/35.html">episode 35 of
+Haskell Weekly</a> I've been wondering if it could be used in combination with <a href="https://hackage.haskell.org/package/aeson">aeson</a>
+to do validation when implementing web services.
+</p>
+
+<p>
+TLDR; I think it'd work, but I have a feeling I'd have to spend some more time
+on it to get an API with nice ergonomics.
+</p>
+
+<div id="outline-container-orga9a9fc9" class="outline-2">
+<h2 id="orga9a9fc9">Defining a type to play with</h2>
+<div class="outline-text-2" id="text-orga9a9fc9">
+<p>
+I opted to use <a href="https://hackage.haskell.org/package/barbies-th">barbies-th</a> to save on the typing a bit. Defining a simple type
+holding a name and an age can then look like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">declareBareB</span>
+  <span class="org-rainbow-delimiters-depth-1">[</span>d<span class="org-haskell-operator">|</span>
+   <span class="org-haskell-keyword">data</span> <span class="org-haskell-type">Person</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">Person</span> <span class="org-rainbow-delimiters-depth-2">{</span>name <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Text</span>, age <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Int</span><span class="org-rainbow-delimiters-depth-2">}</span>
+  <span class="org-haskell-operator">|</span><span class="org-rainbow-delimiters-depth-1">]</span>
+
+<span class="org-haskell-keyword">deriving</span> <span class="org-haskell-keyword">instance</span> <span class="org-haskell-type">Show</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Person</span> <span class="org-haskell-type">Covered</span> <span class="org-haskell-type">Identity</span><span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-haskell-keyword">deriving</span> <span class="org-haskell-keyword">instance</span> <span class="org-haskell-type">Show</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Person</span> <span class="org-haskell-type">Covered</span> <span class="org-haskell-type">Maybe</span><span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-haskell-keyword">deriving</span> <span class="org-haskell-keyword">instance</span> <span class="org-haskell-type">Show</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Person</span> <span class="org-haskell-type">Covered</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-haskell-type">Either</span> <span class="org-haskell-type">Text</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+The two functions from the <code>Barbies</code> module documentation, <code>addDefaults</code> and
+<code>check</code>, can then be written like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">addDefaults</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Person</span> <span class="org-haskell-type">Covered</span> <span class="org-haskell-type">Maybe</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Person</span> <span class="org-haskell-type">Covered</span> <span class="org-haskell-type">Identity</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Person</span> <span class="org-haskell-type">Covered</span> <span class="org-haskell-type">Identity</span>
+<span class="org-haskell-definition">addDefaults</span> <span class="org-haskell-operator">=</span> bzipWith trans
+  <span class="org-haskell-keyword">where</span>
+    trans m d <span class="org-haskell-operator">=</span> maybe d pure m
+
+<span class="org-haskell-definition">check</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Person</span> <span class="org-haskell-type">Covered</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Either</span> <span class="org-haskell-type">Text</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Either</span> <span class="org-rainbow-delimiters-depth-1">[</span><span class="org-haskell-type">Text</span><span class="org-rainbow-delimiters-depth-1">]</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Person</span> <span class="org-haskell-type">Covered</span> <span class="org-haskell-type">Identity</span><span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-haskell-definition">check</span> pe <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">case</span> btraverse <span class="org-rainbow-delimiters-depth-1">(</span>either <span class="org-rainbow-delimiters-depth-2">(</span>const <span class="org-haskell-constructor">Nothing</span><span class="org-rainbow-delimiters-depth-2">)</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-haskell-constructor">Just</span> <span class="org-haskell-operator">.</span> <span class="org-haskell-constructor">Identity</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span> pe <span class="org-haskell-keyword">of</span>
+  <span class="org-haskell-constructor">Just</span> pin <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-constructor">Right</span> pin
+  <span class="org-haskell-constructor">Nothing</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-constructor">Left</span> <span class="org-haskell-operator">$</span> bfoldMap <span class="org-rainbow-delimiters-depth-1">(</span>either <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-haskell-constructor">:</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-3">[]</span></span><span class="org-rainbow-delimiters-depth-2">)</span> <span class="org-rainbow-delimiters-depth-2">(</span>const <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-3">[]</span></span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span> pe
+</pre>
+</div>
+
+<p>
+I found it straight forward to define some instances and play with those
+functions a bit.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgc68301e" class="outline-2">
+<h2 id="orgc68301e">Adding in JSON</h2>
+<div class="outline-text-2" id="text-orgc68301e">
+<p>
+The bit that wasn't immediately obvious to me was how to use aeson to parse into
+a type like <code>Person Covered (Either Text)</code>.
+</p>
+
+<p>
+First off I needed some data to test things out with.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">bs0, bs1</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">BSL.ByteString</span>
+<span class="org-haskell-definition">bs0</span> <span class="org-haskell-operator">=</span> <span class="org-string">"{\"name\": \"the name\", \"age\": 17}"</span>
+<span class="org-haskell-definition">bs1</span> <span class="org-haskell-operator">=</span> <span class="org-string">"{\"name\": \"the name\", \"age\": true}"</span>
+</pre>
+</div>
+
+<p>
+To keep things simple I took baby steps, first I tried parsing into <code>Person
+Covered Identity</code>. It turns out that the <code>FromJSON</code> instance from that doesn't
+need much thought at all. (It's a bit of a pain to have to specify types in GHCi
+all the time, so I'm throwing in a specialised decoding function for each type
+too.)
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-keyword">instance</span> <span class="org-haskell-type">FromJSON</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Person</span> <span class="org-haskell-type">Covered</span> <span class="org-haskell-type">Identity</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-keyword">where</span>
+  parseJSON <span class="org-haskell-operator">=</span> withObject <span class="org-string">"Person"</span> <span class="org-haskell-operator">$</span>
+    <span class="org-haskell-operator">\</span>o <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-constructor">Person</span> <span class="org-haskell-operator">&lt;$&gt;</span> o <span class="org-haskell-operator">.:</span> <span class="org-string">"name"</span>
+      <span class="org-haskell-operator">&lt;*&gt;</span> o <span class="org-haskell-operator">.:</span> <span class="org-string">"age"</span>
+
+<span class="org-haskell-definition">decodePI</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">BSL.ByteString</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Maybe</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Person</span> <span class="org-haskell-type">Covered</span> <span class="org-haskell-type">Identity</span><span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-haskell-definition">decodePI</span> <span class="org-haskell-operator">=</span> decode
+</pre>
+</div>
+
+<p>
+Trying it out on the test data gives the expected results
+</p>
+
+<pre class="example" id="orgbe631ca">
+λ&gt; let i0 = decodePI bs0
+λ&gt; i0
+Just (Person {name = Identity "the name", age = Identity 17})
+λ&gt; let i1 = decodePI bs1
+λ&gt; i1
+Nothing
+</pre>
+
+<p>
+So far so good! Moving onto <code>Person Covered Maybe</code>. I spent some time trying to
+use the combinators in <code>Data.Aeson</code> for dealing with parser failures, but in the
+end I had to resort to using <code>&lt;|&gt;</code> from <code>Alternative</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-keyword">instance</span> <span class="org-haskell-type">FromJSON</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Person</span> <span class="org-haskell-type">Covered</span> <span class="org-haskell-type">Maybe</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-keyword">where</span>
+  parseJSON <span class="org-haskell-operator">=</span> withObject <span class="org-string">"Person"</span> <span class="org-haskell-operator">$</span>
+    <span class="org-haskell-operator">\</span>o <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-constructor">Person</span> <span class="org-haskell-operator">&lt;$&gt;</span> <span class="org-rainbow-delimiters-depth-1">(</span>o <span class="org-haskell-operator">.:</span> <span class="org-string">"name"</span> <span class="org-haskell-operator">&lt;|&gt;</span> pure <span class="org-haskell-constructor">Nothing</span><span class="org-rainbow-delimiters-depth-1">)</span>
+      <span class="org-haskell-operator">&lt;*&gt;</span> <span class="org-rainbow-delimiters-depth-1">(</span>o <span class="org-haskell-operator">.:</span> <span class="org-string">"age"</span> <span class="org-haskell-operator">&lt;|&gt;</span> pure <span class="org-haskell-constructor">Nothing</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-haskell-definition">decodePM</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">BSL.ByteString</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Maybe</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Person</span> <span class="org-haskell-type">Covered</span> <span class="org-haskell-type">Maybe</span><span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-haskell-definition">decodePM</span> <span class="org-haskell-operator">=</span> decode
+</pre>
+</div>
+
+<p>
+Trying that out I saw exactly the behaviour I expected, i.e. that parsing won't
+fail. (Well, at least not as long as it's a valid JSON object to being with.)
+</p>
+
+<pre class="example" id="orgec185e3">
+λ&gt; let m0 = decodePM bs0
+λ&gt; m0
+Just (Person {name = Just "the name", age = Just 17})
+λ&gt; let m1 = decodePM bs1
+λ&gt; m1
+Just (Person {name = Just "the name", age = Nothing})
+</pre>
+
+<p>
+With that done I found that the instance for <code>Person Covered (Either Text)</code>
+followed quite naturally. I had to spend a little time on getting the types
+right to parse the fields properly. Somewhat disappointingly I didn't get type
+errors when the behaviour of the code turned out to be wrong. I'm gussing
+aeson's <code>Parser</code> was a little too willing to give me parser failures. Anyway, I
+ended up with this instance
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-keyword">instance</span> <span class="org-haskell-type">FromJSON</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Person</span> <span class="org-haskell-type">Covered</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-haskell-type">Either</span> <span class="org-haskell-type">Text</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-keyword">where</span>
+  parseJSON <span class="org-haskell-operator">=</span> withObject <span class="org-string">"Person"</span> <span class="org-haskell-operator">$</span>
+    <span class="org-haskell-operator">\</span>o <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-constructor">Person</span> <span class="org-haskell-operator">&lt;$&gt;</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-rainbow-delimiters-depth-2">(</span><span class="org-haskell-constructor">Right</span> <span class="org-haskell-operator">&lt;$&gt;</span> o <span class="org-haskell-operator">.:</span> <span class="org-string">"name"</span><span class="org-rainbow-delimiters-depth-2">)</span> <span class="org-haskell-operator">&lt;|&gt;</span> pure <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-haskell-constructor">Left</span> <span class="org-string">"A name is most needed"</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+      <span class="org-haskell-operator">&lt;*&gt;</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-rainbow-delimiters-depth-2">(</span><span class="org-haskell-constructor">Right</span> <span class="org-haskell-operator">&lt;$&gt;</span> o <span class="org-haskell-operator">.:</span> <span class="org-string">"age"</span><span class="org-rainbow-delimiters-depth-2">)</span> <span class="org-haskell-operator">&lt;|&gt;</span> pure <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-haskell-constructor">Left</span> <span class="org-string">"An integer age is needed"</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-haskell-definition">decodePE</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">BSL.ByteString</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Maybe</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Person</span> <span class="org-haskell-type">Covered</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-haskell-type">Either</span> <span class="org-haskell-type">Text</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-haskell-definition">decodePE</span> <span class="org-haskell-operator">=</span> decode
+</pre>
+</div>
+
+<p>
+That does exhibit the behaviour I want
+</p>
+
+<pre class="example" id="orgb5a080b">
+λ&gt; let e0 = decodePE bs0
+λ&gt; e0
+Just (Person {name = Right "the name", age = Right 17})
+λ&gt; let e1 = decodePE bs1
+λ&gt; e1
+Just (Person {name = Right "the name", age = Left "An integer age is needed"})
+</pre>
+</div>
+</div>
+
+<div id="outline-container-orgcfdacc1" class="outline-2">
+<h2 id="orgcfdacc1">In closing</h2>
+<div class="outline-text-2" id="text-orgcfdacc1">
+<p>
+I think everyone will agree that the <code>FromJSON</code> instances are increasingly
+messy. I think that can be fixed by putting some thought into what a more
+pleasing API should look like.
+</p>
+
+<p>
+I'd also like to mix in validation beyond what aeson offers out-of-the-box,
+which really only is "is the field present?" and "does the value have the
+correct type?". For instance, Once we know there is a field called <code>age</code>, and
+that it's an <code>Int</code>, then we might want to make sure it's non-negitive, or that
+the person is at least 18. I'm guessing that wouldn't be too difficult.
+</p>
+
+<p>
+Finally, I'd love to see examples of using HKDs for parsing/validation in the
+wild. It's probably easiest to reach me at <a href="https://mastodon.technology/@magthe">@magthe@mastodon.technology</a>.
+</p>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-hkd.html">hkd</a> <a href="https://magnus.therning.org/tag-json.html">json</a> </div>
 <div class="post-date">19 Mar 2021</div><h1 class="post-title"><a href="https://magnus.therning.org/2021-03-19-custom-monad-with-servant-and-throwing-errors.html">Custom monad with servant and throwing errors</a></h1>
 <p>
 In the past I've always used <a href="https://hackage.haskell.org/package/scotty">scotty</a> when writing web services. This was mostly
