@@ -12,6 +12,127 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <header class="site-header" role="banner"><h1 class="title">Magnus web site</h1><h2 class="subtitle">Random stuff</h2></header>
+<div class="post-date">19 Mar 2021</div><h1 class="post-title"><a href="https://magnus.therning.org/2021-03-19-custom-monad-with-servant-and-throwing-errors.html">Custom monad with servant and throwing errors</a></h1>
+<p>
+In the past I've always used <a href="https://hackage.haskell.org/package/scotty">scotty</a> when writing web services. This was mostly
+due to laziness, I found working out how to use scotty a lot easier than
+<a href="https://hackage.haskell.org/package/servant">servant</a>, so basically I was being lazy. Fairly quickly I bumped into some
+limitations in scotty, but at first the workarounds didn't add too much
+complexity and were acceptable. A few weeks ago they started weighing on me
+though and I decided to look into servant and since I really liked what I found
+I've started moving all projects to use servant.
+</p>
+
+<p>
+In several of the projects I've used tagless final style and defined a type
+based on <code>ReaderT</code> holding configuration over <code>IO</code>, that is something like
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-keyword">newtype</span> <span class="org-haskell-type">AppM</span> a <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">AppM</span> <span class="org-rainbow-delimiters-depth-1">{</span>unAppM <span class="org-haskell-constructor">:</span> <span class="org-haskell-constructor">ReaderT</span> <span class="org-haskell-constructor">Config</span> <span class="org-haskell-constructor">IO</span> a<span class="org-rainbow-delimiters-depth-1">}</span>
+  <span class="org-haskell-keyword">deriving</span>
+    <span class="org-rainbow-delimiters-depth-1">(</span> <span class="org-haskell-constructor">Functor</span>,
+      <span class="org-haskell-constructor">Applicative</span>,
+      <span class="org-haskell-constructor">Monad</span>,
+      <span class="org-haskell-constructor">MonadIO</span>,
+      <span class="org-haskell-constructor">MonadReader</span> <span class="org-haskell-constructor">Config</span>
+    <span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-haskell-definition">runAppM</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">AppM</span> a <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Config</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">IO</span> a
+<span class="org-haskell-definition">runAppM</span> app <span class="org-haskell-operator">=</span> runReaderT <span class="org-rainbow-delimiters-depth-1">(</span>unAppM app<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+I found that servant is very well suited to this style through <a href="https://hoogle.haskell.org/?hoogle=hoistServer%20is%3Aexact&amp;scope=set:stackage"><code>hoistServer</code></a> and
+there are several examples on how to use it with a <code>ReaderT</code>-based type like
+above. The first one I found is in the <a href="https://docs.servant.dev/en/stable/cookbook/using-custom-monad/UsingCustomMonad.html">servant cookbook</a>. However, as I realised
+a bit later, using a simple type like this doesn't make it easy to trigger
+responses with status other than <code>200 OK</code>. When I looked at the definition of
+the type for writing handlers that ships with servant, <a href="https://hoogle.haskell.org/?hoogle=Handler%20package%3Aservant-server%20is%3Aexact&amp;scope=set:stackage"><code>Handler</code></a>, I decided to
+try to use the following type in my service
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-keyword">newtype</span> <span class="org-haskell-type">AppM</span> a <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">AppM</span> <span class="org-rainbow-delimiters-depth-1">{</span>unAppM <span class="org-haskell-constructor">:</span> <span class="org-haskell-constructor">ReaderT</span> <span class="org-haskell-constructor">Config</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-haskell-constructor">ExceptT</span> <span class="org-haskell-constructor">ServerError</span> <span class="org-haskell-constructor">IO</span><span class="org-rainbow-delimiters-depth-2">)</span> a<span class="org-rainbow-delimiters-depth-1">}</span>
+  <span class="org-haskell-keyword">deriving</span>
+    <span class="org-rainbow-delimiters-depth-1">(</span> <span class="org-haskell-constructor">Functor</span>,
+      <span class="org-haskell-constructor">Applicative</span>,
+      <span class="org-haskell-constructor">Monad</span>,
+      <span class="org-haskell-constructor">MonadIO</span>,
+      <span class="org-haskell-constructor">MonadReader</span> <span class="org-haskell-constructor">Config</span>
+    <span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-haskell-definition">runAppM</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">AppM</span> a <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Config</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">IO</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Either</span> <span class="org-haskell-type">ServerError</span> a<span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-haskell-definition">runAppM</span> app <span class="org-haskell-operator">=</span> runExceptT <span class="org-haskell-operator">.</span> runReaderT <span class="org-rainbow-delimiters-depth-1">(</span>unAppM app<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+The natural transformation required by <code>hoistServer</code> can then be written like
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">nt</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">AppM</span> a <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Handler</span> a
+<span class="org-haskell-definition">nt</span> x <span class="org-haskell-operator">=</span>
+  liftIO <span class="org-rainbow-delimiters-depth-1">(</span>runAppM x cfg<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">&gt;&gt;=</span> <span class="org-haskell-operator">\</span><span class="org-haskell-keyword">case</span>
+    <span class="org-haskell-constructor">Right</span> v <span class="org-haskell-operator">-&gt;</span> pure v
+    <span class="org-haskell-constructor">Left</span> err <span class="org-haskell-operator">-&gt;</span> throwError err
+</pre>
+</div>
+
+<p>
+I particularly like how clearly this suggests a way to add custom errors if I
+want that.
+</p>
+
+<ol class="org-ol">
+<li>Swap out <code>ServerError</code> for my custom error type in <code>AppM</code>.</li>
+<li>Write a function to transform my custom error type into a <code>ServerError</code>,
+<code>transformCustomError :: CustomError -&gt; ServerError</code>.</li>
+<li>use <code>throwError $ transformCustomError err</code> in the <code>Left</code> branch of <code>nt</code>.</li>
+</ol>
+
+<div id="outline-container-org656a1f3" class="outline-2">
+<h2 id="org656a1f3">A slight complication with <code>MonadUnliftIO</code></h2>
+<div class="outline-text-2" id="text-org656a1f3">
+<p>
+I was using <a href="https://hackage.haskell.org/package/unliftio">unliftio</a> in my service, and as long as I based my monad stack only
+on <code>ReaderT</code> that worked fine. I even got the <code>MonadUnliftIO</code> instance for free
+through automatic deriving. <code>ExceptT</code> isn't a stateless monad though, so using
+unliftio is out of the question, instead I had to switch to <a href="https://hoogle.haskell.org/?hoogle=MonadBaseControl%20package%3Amonad-control&amp;scope=set:stackage"><code>MonadBaseControl</code></a>
+and the packages that work with it. Defining and instance of <code>MonadBaseControl</code>
+looked a bit daunting, but luckily <code>Handler</code> has an instance of it that I used
+as inspiration.
+</p>
+
+<p>
+First off <code>MonadBaseControl</code> requires the type to also be an instance of
+<code>MonadBase</code>. There's an explicit implementation for <code>Handler</code>, but I found that
+it can be derived automatically, so I took the lazy route.
+</p>
+
+<p>
+The instance of <code>MonadBaseControl</code> for <code>AppM</code> ended up looking like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-keyword">instance</span> <span class="org-haskell-type">MonadBaseControl</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-type">AppM</span> <span class="org-haskell-keyword">where</span>
+  <span class="org-haskell-keyword">type</span> <span class="org-haskell-type">StM</span> <span class="org-haskell-type">AppM</span> a <span class="org-haskell-operator">=</span> <span class="org-haskell-type">Either</span> <span class="org-haskell-type">ServerError</span> a
+
+  liftBaseWith f <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">AppM</span> <span class="org-rainbow-delimiters-depth-1">(</span>liftBaseWith <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-haskell-operator">\</span>g <span class="org-haskell-operator">-&gt;</span> f <span class="org-rainbow-delimiters-depth-3">(</span>g <span class="org-haskell-operator">.</span> unAppM<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+  restoreM <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">AppM</span> <span class="org-haskell-operator">.</span> restoreM
+</pre>
+</div>
+
+<p>
+I can't claim to really understand what's going on in that definition, but I
+have Alexis King's article on <a href="https://lexi-lambda.github.io/blog/2019/09/07/demystifying-monadbasecontrol/">Demystifying MonadBaseControl</a> on my list of things
+to read.
+</p>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-servant.html">servant</a> </div>
 <div class="post-date">14 Mar 2021</div><h1 class="post-title"><a href="https://magnus.therning.org/2021-03-14-keeping-todo-items-in-org-roam.html">Keeping todo items in org-roam</a></h1>
 <p>
 A while ago I made an attempt to improve my work habits by keeping a document
@@ -304,117 +425,7 @@ Putting it to use can be done with something like
     runAWSCond awsEnv <span class="org-haskell-operator">=</span> runResourceT <span class="org-haskell-operator">.</span> runAWS awsEnv <span class="org-haskell-operator">.</span> within <span class="org-haskell-constructor">Frankfurt</span> <span class="org-haskell-operator">.</span> C.runConduit
 </pre>
 </div>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-amazonka.html">amazonka</a> <a href="https://magnus.therning.org/tag-aws.html">aws</a> <a href="https://magnus.therning.org/tag-conduit.html">conduit</a> <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> </div>
-<div class="post-date">22 Jun 2020</div><h1 class="post-title"><a href="https://magnus.therning.org/2020-06-22-000-better-nix-setup-for-spacemacs.html">Better Nix setup for Spacemacs</a></h1>
-<p>
-In an <a href="2019-12-07-000-nix-setup-for-spacemacs.html">earlier post</a> I documented my setup for getting <a href="https://www.spacemacs.org/">Spacemacs</a>/Emacs to work
-with <a href="https://nixos.org/nix/">Nix</a>. I've since found a much more elegant solution based on
-</p>
-
-<ul class="org-ul">
-<li><a href="https://github.com/direnv/direnv/">direnv</a>, and</li>
-<li><a href="https://github.com/wbolster/emacs-direnv">emacs-direnv</a></li>
-</ul>
-
-<p>
-No more Emacs packages for Nix and no need to defining functions that wrap
-executables in an invocation of <code>nix-shell</code>.
-</p>
-
-<p>
-There's a nice bonus too, with this setup I don't need to run <code>nix-shell</code>, which
-always drops me at a bash prompt, instead I get a working setup in my shell of
-choice.
-</p>
-
-<div id="outline-container-orgd063368" class="outline-2">
-<h2 id="orgd063368">Setting up <code>direnv</code></h2>
-<div class="outline-text-2" id="text-orgd063368">
-<p>
-The steps for setting up <code>direnv</code> depends a bit on your setup, but luckily I
-found the <a href="https://direnv.net/#basic-installation">official instructions for installing <code>direnv</code></a> to be very clear and
-easy to follow. There's not much I can add to that.
-</p>
-</div>
-</div>
-
-<div id="outline-container-org9ce9cc2" class="outline-2">
-<h2 id="org9ce9cc2">Setting up Spacemacs</h2>
-<div class="outline-text-2" id="text-org9ce9cc2">
-<p>
-Since <code>emacs-direnv</code> isn't included by default in Spacemacs I needed to do a bit
-of setup. I opted to create a layer for it, rather than just drop it in the list
-<code>dotspacemacs-additional-packages</code>. Yes, a little more complicated, but not
-difficult and I nurture an intention of submitting the layer for inclusion in
-Spacemacs itself at some point. I'll see where that goes.
-</p>
-
-<p>
-For now, I put the following in the file
-<code>~/.emacs.d/private/layers/direnv/packages.el</code>:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defconst</span> <span class="org-variable-name">direnv-packages</span>
-      '<span class="org-rainbow-delimiters-depth-2">(</span>direnv<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-
-<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">direnv/init-direnv</span> <span class="org-rainbow-delimiters-depth-2">()</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">use-package</span> <span class="org-constant">direnv</span>
-    <span class="org-builtin">:init</span>
-    <span class="org-rainbow-delimiters-depth-3">(</span>direnv-mode<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-</div>
-</div>
-
-<div id="outline-container-org6002225" class="outline-2">
-<h2 id="org6002225">Setting up the project folders</h2>
-<div class="outline-text-2" id="text-org6002225">
-<p>
-In each project folder I then add the file <code>.envrc</code> containing a single line:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-shell">use_nix
-</pre>
-</div>
-
-<p>
-Then I either run <code>direnv allow</code> from the command line, or run the
-function <code>direnv-allow</code> after opening the folder in Emacs.
-</p>
-</div>
-</div>
-
-<div id="outline-container-orgbcb33a0" class="outline-2">
-<h2 id="orgbcb33a0">Using it</h2>
-<div class="outline-text-2" id="text-orgbcb33a0">
-<p>
-It's as simple as moving into the folder in a shell &#x2013; all required envvars are
-set up on entry and unset on exit.
-</p>
-
-<p>
-In Emacs it's just as simple, just open a file in a project and the envvars are
-set. When switching to a buffer outside the project the envvars are unset.
-</p>
-
-<p>
-There is only one little caveat, <code>nix-build</code> doesn't work inside a Nix shell. I
-found out that running
-</p>
-
-<div class="org-src-container">
-<pre class="src src-shell"><span class="org-variable-name">IN_NIX_SHELL</span>= nix-build
-</pre>
-</div>
-
-<p>
-does work though.
-</p>
-</div>
-</div>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-nix.html">nix</a> <a href="https://magnus.therning.org/tag-spacemacs.html">spacemacs</a> </div><div id="archive">
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-amazonka.html">amazonka</a> <a href="https://magnus.therning.org/tag-aws.html">aws</a> <a href="https://magnus.therning.org/tag-conduit.html">conduit</a> <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> </div><div id="archive">
 <a href="https://magnus.therning.org/archive.html">Other posts</a>
 </div>
 </div>
