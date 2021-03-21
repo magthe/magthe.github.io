@@ -12,6 +12,37 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <h1 class="title">Posts tagged "org-mode":</h1>
+<div class="post-date">21 Mar 2021</div><h1 class="post-title"><a href="https://magnus.therning.org/2021-03-21-todo-items-in-org-roam,-an-update.html">Todo items in org-roam, an update</a></h1>
+<p>
+I got an email from Mr Z with a nice modification to the code in my post on
+<a href="2021-03-14-keeping-todo-items-in-org-roam.html">keeping todo items in org-roam</a>.
+</p>
+
+<p>
+He already had a bunch of agenda files that he wanted to keep using (I had so
+few of them that I'd simply converted them to roam files). Here's the solution
+he shared with me:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defvar</span> <span class="org-variable-name">roam-extra-original-org-agenda-files</span> nil
+  <span class="org-doc">"Original value of  `</span><span class="org-doc"><span class="org-constant">org-agenda-files</span></span><span class="org-doc">'."</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">roam-extra:update-todo-files</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-type">&amp;rest</span> _<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-doc">"Update the value of `</span><span class="org-doc"><span class="org-constant">org-agenda-files</span></span><span class="org-doc">'."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">unless</span> roam-extra-original-org-agenda-files
+    <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">setq</span> roam-extra-original-org-agenda-files org-agenda-files<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">setq</span> org-agenda-files
+        <span class="org-rainbow-delimiters-depth-3">(</span>append roam-extra-original-org-agenda-files
+                <span class="org-rainbow-delimiters-depth-4">(</span>roam-extra:todo-files<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+It's a rather nice modification I think. Thanks to Mr Z for agreeing to let me
+share it here.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> <a href="https://magnus.therning.org/tag-org-roam.html">org-roam</a> </div>
 <div class="post-date">14 Mar 2021</div><h1 class="post-title"><a href="https://magnus.therning.org/2021-03-14-keeping-todo-items-in-org-roam.html">Keeping todo items in org-roam</a></h1>
 <p>
 A while ago I made an attempt to improve my work habits by keeping a document

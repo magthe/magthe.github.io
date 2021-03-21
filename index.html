@@ -12,6 +12,37 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <header class="site-header" role="banner"><h1 class="title">Magnus web site</h1><h2 class="subtitle">Random stuff</h2></header>
+<div class="post-date">21 Mar 2021</div><h1 class="post-title"><a href="https://magnus.therning.org/2021-03-21-todo-items-in-org-roam,-an-update.html">Todo items in org-roam, an update</a></h1>
+<p>
+I got an email from Mr Z with a nice modification to the code in my post on
+<a href="2021-03-14-keeping-todo-items-in-org-roam.html">keeping todo items in org-roam</a>.
+</p>
+
+<p>
+He already had a bunch of agenda files that he wanted to keep using (I had so
+few of them that I'd simply converted them to roam files). Here's the solution
+he shared with me:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defvar</span> <span class="org-variable-name">roam-extra-original-org-agenda-files</span> nil
+  <span class="org-doc">"Original value of  `</span><span class="org-doc"><span class="org-constant">org-agenda-files</span></span><span class="org-doc">'."</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">roam-extra:update-todo-files</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-type">&amp;rest</span> _<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-doc">"Update the value of `</span><span class="org-doc"><span class="org-constant">org-agenda-files</span></span><span class="org-doc">'."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">unless</span> roam-extra-original-org-agenda-files
+    <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">setq</span> roam-extra-original-org-agenda-files org-agenda-files<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">setq</span> org-agenda-files
+        <span class="org-rainbow-delimiters-depth-3">(</span>append roam-extra-original-org-agenda-files
+                <span class="org-rainbow-delimiters-depth-4">(</span>roam-extra:todo-files<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+It's a rather nice modification I think. Thanks to Mr Z for agreeing to let me
+share it here.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> <a href="https://magnus.therning.org/tag-org-roam.html">org-roam</a> </div>
 <div class="post-date">20 Mar 2021</div><h1 class="post-title"><a href="https://magnus.therning.org/2021-03-20-barbie-and-json.html">Barbie and <strike>Ken</strike>JSON</a></h1>
 <p>
 After higher-kinded data (HKD) and <a href="https://hackage.haskell.org/package/barbies">barbies</a> were mentioned in <a href="https://haskellweekly.news/episode/35.html">episode 35 of
@@ -508,86 +539,7 @@ does work for my testcases:
 <p>
 Suggestions for improvements are more than welcome, of course.
 </p>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-flycheck.html">flycheck</a> </div>
-<div class="post-date">30 Nov 2020</div><h1 class="post-title"><a href="https://magnus.therning.org/2020-11-30-1734-haskell__nix_and_using_packages_from_github.html">Haskell, Nix and using packages from GitHub</a></h1>
-<p>
-The other day I bumped into what turned out to be a <a href="https://mail.haskell.org/pipermail/haskell-cafe/2020-November/133021.html">bug in Amazonka</a> where
-sockets weren't closed in a timely fashion and thus the process ran out of file
-descriptors. Some more digging and an <a href="https://github.com/brendanhay/amazonka/issues/608">issue</a> later I found that a fix most likely
-already in place (mine was possibly a duplicate of an older <a href="https://github.com/brendanhay/amazonka/issues/490">issue</a>). Now I only
-had to verify if that was the case by using the most recent, and unreleased code
-on the <code>develop</code> branch of Amazonka.
-</p>
-
-<p>
-My first thought was to attempt to instruct Cabal to build the bits of Amazonka
-I need by putting a few <a href="https://cabal.readthedocs.io/en/3.4/cabal-project.html#specifying-packages-from-remote-version-control-locations"><code>source-repository-package</code> stanzas</a> in my config. That
-quickly started to look like a bit of a rabbit hole, so I decided to use Nix
-instead. After finding the <a href="https://stackoverflow.com/questions/54810851/how-can-i-build-a-haskell-dependency-from-a-github-source-nix-file-using-nix">perfect SO post</a> and looking up yet again how to do
-overrides for Haskell I ran <code>cabal2nix</code> for the three packages I need:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-shell">cabal2nix --no-haddock --no-check --subpath amazonka <span class="org-sh-escaped-newline">\</span>
-  git://github.com/brendanhay/amazonka.git &gt; amazonka.nix
-cabal2nix --no-haddock --no-check --subpath core <span class="org-sh-escaped-newline">\</span>
-  git://github.com/brendanhay/amazonka.git &gt; amazonka-core.nix
-cabal2nix --no-haddock --no-check --subpath amazonka-sqs <span class="org-sh-escaped-newline">\</span>
-  git://github.com/brendanhay/amazonka.git &gt; amazonka-sqs.nix
-</pre>
-</div>
-
-<p>
-The relevant part of the old Nix expression looked like this:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-nix"><span class="org-nix-attribute">thePkg</span> = haskellPackages.developPackage <span class="org-rainbow-delimiters-depth-1">{</span>
-  <span class="org-nix-attribute">root</span> = lib.cleanSource <span class="org-nix-constant">./.</span>;
-  <span class="org-nix-attribute">name</span> = name;
-
-  <span class="org-nix-attribute">modifier</span> = <span class="org-rainbow-delimiters-depth-2">(</span>t.flip t.pipe<span class="org-rainbow-delimiters-depth-2">)</span>
-    <span class="org-rainbow-delimiters-depth-2">[</span>hl.dontHaddock
-     hl.enableStaticLibraries
-     hl.justStaticExecutables
-     hl.disableLibraryProfiling
-     hl.disableExecutableProfiling<span class="org-rainbow-delimiters-depth-2">]</span>;
-<span class="org-rainbow-delimiters-depth-1">}</span>;
-</pre>
-</div>
-
-<p>
-After adding the overrides it looked like this
-</p>
-
-<div class="org-src-container">
-<pre class="src src-nix"><span class="org-nix-attribute">hp</span> = haskellPackages.override <span class="org-rainbow-delimiters-depth-1">{</span>
-  <span class="org-nix-attribute">overrides</span> = self: super: <span class="org-rainbow-delimiters-depth-2">{</span>
-    <span class="org-nix-attribute">amazonka-core</span> = self.callPackage <span class="org-nix-constant">./amazonka-core.nix</span> <span class="org-rainbow-delimiters-depth-3">{}</span>;
-    <span class="org-nix-attribute">amazonka</span> = self.callPackage <span class="org-nix-constant">./amazonka.nix</span> <span class="org-rainbow-delimiters-depth-3">{}</span>;
-    <span class="org-nix-attribute">amazonka-sqs</span> = self.callPackage <span class="org-nix-constant">./amazonka-sqs.nix</span> <span class="org-rainbow-delimiters-depth-3">{}</span>;
-  <span class="org-rainbow-delimiters-depth-2">}</span>;
-<span class="org-rainbow-delimiters-depth-1">}</span>;
-
-<span class="org-nix-attribute">thePkg</span> = hp.developPackage <span class="org-rainbow-delimiters-depth-1">{</span>
-  <span class="org-nix-attribute">root</span> = lib.cleanSource <span class="org-nix-constant">./.</span>;
-  <span class="org-nix-attribute">name</span> = name;
-
-  <span class="org-nix-attribute">modifier</span> = <span class="org-rainbow-delimiters-depth-2">(</span>t.flip t.pipe<span class="org-rainbow-delimiters-depth-2">)</span>
-    <span class="org-rainbow-delimiters-depth-2">[</span>hl.dontHaddock
-     hl.enableStaticLibraries
-     hl.justStaticExecutables
-     hl.disableLibraryProfiling
-     hl.disableExecutableProfiling<span class="org-rainbow-delimiters-depth-2">]</span>;
-<span class="org-rainbow-delimiters-depth-1">}</span>;
-</pre>
-</div>
-
-<p>
-After a somewhat longer-than-usual build I could verify that I had indeed bumped
-into the same issue and my issue was a duplicate.
-</p>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-nix.html">nix</a> </div><div id="archive">
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-flycheck.html">flycheck</a> </div><div id="archive">
 <a href="https://magnus.therning.org/archive.html">Other posts</a>
 </div>
 </div>
