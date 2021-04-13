@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="alternate"
+      type="application/rss+xml"
+      href="https://magnus.therning.org/feed.xml"
+      title="RSS feed for https://magnus.therning.org/">
+<title>Magnus web site</title>
+<meta name="author" content="Magnus Therning"><meta name="referrer" content="no-referrer"><link href= "static/style.css" rel="stylesheet" type="text/css" /><link href= "static/htmlize.css" rel="stylesheet" type="text/css" /><link href= "static/extra_style.css" rel="stylesheet" type="text/css" /></head>
+<body>
+<div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
+<div id="content">
+<h1 class="title">Posts tagged "direnv":</h1>
+<div class="post-date">13 Apr 2021</div><h1 class="post-title"><a href="https://magnus.therning.org/2021-04-13-nix-shell,-direnv-and-xdg_data_dirs.html">Nix shell, direnv and XDG_DATA_DIRS</a></h1>
+<p>
+A few weeks ago I noticed that I no longer could use
+<code>haskell-hoogle-lookup-from-website</code> in Emacs. After a bit of experimentation I
+found that the reason was that I couldn't use <code>xdg-open</code> in a Nix shell.
+Yesterday I finally got around to look into further.
+</p>
+
+<p>
+It's caused by <code>direnv</code> overwriting <code>XDG_DATA_DIRS</code> rather than appending to it.
+Of course someone already reported <a href="https://github.com/direnv/direnv/issues/785">a bug</a> already.
+</p>
+
+<p>
+The workaround is to use
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell">use nix --keep XDG_DATA_DIRS
+</pre>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-nix.html">nix</a> <a href="https://magnus.therning.org/tag-direnv.html">direnv</a> </div><div id="archive">
+<a href="https://magnus.therning.org/archive.html">Other posts</a>
+</div>
+</div>
+<div id="postamble" class="status"><!-- org-static-blog-page-postamble --></div>
+</body>
+</html>

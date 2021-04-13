@@ -12,6 +12,28 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <header class="site-header" role="banner"><h1 class="title">Magnus web site</h1><h2 class="subtitle">Random stuff</h2></header>
+<div class="post-date">13 Apr 2021</div><h1 class="post-title"><a href="https://magnus.therning.org/2021-04-13-nix-shell,-direnv-and-xdg_data_dirs.html">Nix shell, direnv and XDG_DATA_DIRS</a></h1>
+<p>
+A few weeks ago I noticed that I no longer could use
+<code>haskell-hoogle-lookup-from-website</code> in Emacs. After a bit of experimentation I
+found that the reason was that I couldn't use <code>xdg-open</code> in a Nix shell.
+Yesterday I finally got around to look into further.
+</p>
+
+<p>
+It's caused by <code>direnv</code> overwriting <code>XDG_DATA_DIRS</code> rather than appending to it.
+Of course someone already reported <a href="https://github.com/direnv/direnv/issues/785">a bug</a> already.
+</p>
+
+<p>
+The workaround is to use
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell">use nix --keep XDG_DATA_DIRS
+</pre>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-nix.html">nix</a> <a href="https://magnus.therning.org/tag-direnv.html">direnv</a> </div>
 <div class="post-date">21 Mar 2021</div><h1 class="post-title"><a href="https://magnus.therning.org/2021-03-21-todo-items-in-org-roam,-an-update.html">Todo items in org-roam, an update</a></h1>
 <p>
 I got an email from Mr Z with a nice modification to the code in my post on
@@ -480,66 +502,7 @@ called prior to the agenda being opened.
 </div>
 </div>
 </div>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> <a href="https://magnus.therning.org/tag-org-roam.html">org-roam</a> <a href="https://magnus.therning.org/tag-spacemacs.html">spacemacs</a> </div>
-<div class="post-date">05 Mar 2021</div><h1 class="post-title"><a href="https://magnus.therning.org/2021-03-05-000-flycheck-and-hls.html">Flycheck and HLS</a></h1>
-<p>
-I've been using LSP for most programming languages for a while now. HLS is
-really very good now, but I've found that it doesn't warn on quite all things
-I'd like it to so I find myself having to swap between the <code>'lsp</code> and
-<code>'haskell-ghc</code> checkers. However, since <a href="https://www.flycheck.org/en/latest/">flycheck</a> supports chaining checkers I
-thought there must be a way to have both checkers active at the same time.
-</p>
-
-<p>
-The naive approach didn't work due to load order of things in Spacemacs so I had
-to experiment a bit to find something that works.
-</p>
-
-<p>
-The first issue was to make sure that HLS is available at all. I use <code>shell.nix</code>
-together with <a href="https://direnv.net/">direnv</a> extensively and I had noticed that <code>lsp-mode</code> tried to load
-HLS before <code>direnv</code> had put it in the <code>$PATH</code>. I think the
-<code>'lsp-beforeinitialize-hook</code> is the hook to use for this:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span>add-hook 'lsp-before-initialize-hook #'direnv-update-environment<span class="org-rainbow-delimiters-depth-1">)</span><span class="org-rainbow-delimiters-unmatched">)</span>
-</pre>
-</div>
-
-<p>
-I made a several attempt to chain the checkers but kept on getting
-errors due to the <code>'lsp</code> checker not being defined yet. Another problem
-I ran into was that the checkers were chained too late, resulting in
-having to manually run <code>flycheck-buffer</code> on the first file I opened.
-(Deferred loading is a brilliant thing, but make some things really
-difficult to debug.) After quite a bit of experimenting and reading the
-description of various hooks I did find something that works:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">with-eval-after-load</span> 'lsp-mode
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">defun</span> <span class="org-function-name">magthe:lsp-next-checker</span> <span class="org-rainbow-delimiters-depth-3">()</span>
-    <span class="org-rainbow-delimiters-depth-3">(</span>flycheck-add-next-checker 'lsp '<span class="org-rainbow-delimiters-depth-4">(</span>warning . haskell-ghc<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>add-hook 'lsp-lsp-haskell-after-open-hook
-            #'magthe:lsp-next-checker<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-Of course I have no idea if this is the easiest or most elegant solution but it
-does work for my testcases:
-</p>
-
-<ol class="org-ol">
-<li>Open a file in a project, <code>SPC p l</code> - choose project - choose a Haskell file.</li>
-<li>Open a project, <code>SPC p l</code> followed by <code>C-d</code>, and then open a Haskell file.</li>
-</ol>
-
-<p>
-Suggestions for improvements are more than welcome, of course.
-</p>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-flycheck.html">flycheck</a> </div><div id="archive">
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> <a href="https://magnus.therning.org/tag-org-roam.html">org-roam</a> <a href="https://magnus.therning.org/tag-spacemacs.html">spacemacs</a> </div><div id="archive">
 <a href="https://magnus.therning.org/archive.html">Other posts</a>
 </div>
 </div>

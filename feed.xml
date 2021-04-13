@@ -4,7 +4,36 @@
 <title><![CDATA[Magnus web site]]></title>
 <description><![CDATA[Magnus web site]]></description>
 <link>https://magnus.therning.org/</link>
-<lastBuildDate>Sun, 21 Mar 2021 09:08:21 +0100</lastBuildDate>
+<lastBuildDate>Tue, 13 Apr 2021 08:19:05 +0200</lastBuildDate>
+<item>
+  <title><![CDATA[Nix shell, direnv and XDG_DATA_DIRS]]></title>
+  <description><![CDATA[
+<p>
+A few weeks ago I noticed that I no longer could use
+<code>haskell-hoogle-lookup-from-website</code> in Emacs. After a bit of experimentation I
+found that the reason was that I couldn't use <code>xdg-open</code> in a Nix shell.
+Yesterday I finally got around to look into further.
+</p>
+
+<p>
+It's caused by <code>direnv</code> overwriting <code>XDG_DATA_DIRS</code> rather than appending to it.
+Of course someone already reported <a href="https://github.com/direnv/direnv/issues/785">a bug</a> already.
+</p>
+
+<p>
+The workaround is to use
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell">use nix --keep XDG_DATA_DIRS
+</pre>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-nix.html">nix</a> <a href="https://magnus.therning.org/tag-direnv.html">direnv</a> </div>]]></description>
+  <category><![CDATA[nix]]></category>
+  <category><![CDATA[direnv]]></category>
+  <link>https://magnus.therning.org/2021-04-13-nix-shell,-direnv-and-xdg_data_dirs.html</link>
+  <pubDate>Tue, 13 Apr 2021 08:04:00 +0200</pubDate>
+</item>
 <item>
   <title><![CDATA[Todo items in org-roam, an update]]></title>
   <description><![CDATA[
@@ -983,65 +1012,6 @@ should be <code>parent_id</code>.
   <category><![CDATA[XRay]]></category>
   <link>https://magnus.therning.org/2020-04-08-000-xray-and-wai.html</link>
   <pubDate>Wed, 08 Apr 2020 12:00:00 +0200</pubDate>
-</item>
-<item>
-  <title><![CDATA[My ghcide build for Nix]]></title>
-  <description><![CDATA[
-<p>
-I was slightly disappointed to find out that not all packages on Hackage that
-are marked as present in <a href="https://nixos.org/nixpkgs/">Nix(pkgs)</a> actually are available. Quite a few of them
-are marked broken and hence not installable. One of these packages is <a href="https://hackage.haskell.org/package/ghcide">ghcide</a>.
-</p>
-
-<p>
-There are of course expressions available for getting a working <code>ghcide</code>
-executable installed, like <a href="https://github.com/hercules-ci/ghcide-nix">ghcide-nix</a>. However, since I have rather simple needs
-for my Haskell projects I thought I'd play with my own approach to it.
-</p>
-
-<p>
-What I care about is:
-</p>
-
-<ol class="org-ol">
-<li>availability of the development tools I use, at the moment it's mainly
-<code>ghcide</code> but I'm planning on making use of <a href="https://hackage.haskell.org/package/ormolu">ormolu</a> in the near future</li>
-<li>pre-built packages</li>
-<li>ease of use</li>
-</ol>
-
-<p>
-So, I put together <a href="https://github.com/magthe/ghcide-for-nix">ghcide-for-nix</a>. It's basically just a constumized Nixpkgs
-where the packages needed to un-break <code>ghcide</code> are present.
-</p>
-
-<p>
-Usage is a simple <code>import</code> away:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-nix"><span class="org-nix-builtin">import</span> <span class="org-rainbow-delimiters-depth-1">(</span>builtins.fetchGit <span class="org-rainbow-delimiters-depth-2">{</span>
-  <span class="org-nix-attribute">name</span> = <span class="org-string">"ghcide-for-nix"</span>;
-  <span class="org-nix-attribute">url</span> = <span class="org-nix-constant">https://github.com/magthe/ghcide-for-nix</span>;
-  <span class="org-nix-attribute">rev</span> = <span class="org-string">"927a8caa62cece60d9d66dbdfc62b7738d61d75f"</span>;
-<span class="org-rainbow-delimiters-depth-2">}</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-and it'll give you a superset of Nixpkgs. Pre-built packages are available on
-<a href="https://magthe.cachix.org/">Cachix</a>.
-</p>
-
-<p>
-It's not sophisticated, but it's rather easy to use and suffices for my
-purposes.
-</p>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-nix.html">nix</a> </div>]]></description>
-  <category><![CDATA[haskell]]></category>
-  <category><![CDATA[nix]]></category>
-  <link>https://magnus.therning.org/2020-02-02-000-my-ghcide-build-for-nix.html</link>
-  <pubDate>Sun, 02 Feb 2020 12:00:00 +0100</pubDate>
 </item>
 </channel>
 </rss>
