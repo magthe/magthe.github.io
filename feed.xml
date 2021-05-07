@@ -4,7 +4,59 @@
 <title><![CDATA[Magnus web site]]></title>
 <description><![CDATA[Magnus web site]]></description>
 <link>https://magnus.therning.org/</link>
-<lastBuildDate>Wed, 21 Apr 2021 22:54:23 +0200</lastBuildDate>
+<lastBuildDate>Fri, 07 May 2021 20:56:22 +0200</lastBuildDate>
+<item>
+  <title><![CDATA[Working with Hedis]]></title>
+  <description><![CDATA[
+<p>
+I'm now writing the second Haskell service using <a href="https://redis.io/commands/incrby">Redis</a> to store data. There are
+a few packages on <a href="https://hackage.haskell.org/">Hackage</a> related to Redis but I only found 2 client libraries,
+<a href="https://hackage.haskell.org/package/redis-io">redis-io</a> and <a href="https://hackage.haskell.org/package/hedis">hedis</a>. I must say I like the API of redis-io better, but it breaks
+a rule I hold very dear:
+</p>
+
+<p>
+&gt; Libraries should never log, that's the sole responsibility of the application.
+</p>
+
+<p>
+So, hedis it is. I tried using the API as is, but found it really cumbersome so
+looked around and after some inspiration from <a href="https://hackage.haskell.org/package/hedis-simple">hedis-simple</a> I came up with the
+following functions.
+</p>
+
+<p>
+First a wrapper around a Redis function that put everything into <code>ExceptionT</code>
+with a function that transforms a <code>reply</code> into an <code>Exception</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">lpush</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Exception</span> e <span class="org-haskell-operator">=&gt;</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Reply</span> <span class="org-haskell-operator">-&gt;</span> e<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">ByteString</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-rainbow-delimiters-depth-1">[</span><span class="org-haskell-type">ByteString</span><span class="org-rainbow-delimiters-depth-1">]</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">ExceptionT</span> <span class="org-haskell-type">Redis</span> <span class="org-haskell-type">Integer</span>
+<span class="org-haskell-definition">lpush</span> mapper key element <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">ExceptionT</span> <span class="org-haskell-operator">$</span> replyToExc <span class="org-haskell-operator">&lt;$&gt;</span> R.lpush key element
+  <span class="org-haskell-keyword">where</span>
+    replyToExc <span class="org-haskell-operator">=</span> first <span class="org-rainbow-delimiters-depth-1">(</span>toException <span class="org-haskell-operator">.</span> mapper<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+I found wrapping up functions like this is simple, but repetitive.
+</p>
+
+<p>
+Finally I need a way to run the whole thing and unwrap it all back to <code>IO</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">runRedis</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Connection</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">ExceptionT</span> <span class="org-haskell-type">Redis</span> a <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">IO</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Either</span> <span class="org-haskell-type">SomeException</span> a<span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-haskell-definition">runRedis</span> conn <span class="org-haskell-operator">=</span> R.runRedis conn <span class="org-haskell-operator">.</span> runExceptionT
+</pre>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-redis.html">redis</a> </div>]]></description>
+  <category><![CDATA[haskell]]></category>
+  <category><![CDATA[redis]]></category>
+  <link>https://magnus.therning.org/2021-05-07-working-with-hedis.html</link>
+  <pubDate>Fri, 07 May 2021 20:54:00 +0200</pubDate>
+</item>
 <item>
   <title><![CDATA[First contribution to nixpkgs.haskellPackages]]></title>
   <description><![CDATA[
@@ -750,124 +802,6 @@ Putting it to use can be done with something like
   <category><![CDATA[haskell]]></category>
   <link>https://magnus.therning.org/2020-11-11-2222-combining_amazonka_and_conduit.html</link>
   <pubDate>Wed, 11 Nov 2020 22:22:00 +0100</pubDate>
-</item>
-<item>
-  <title><![CDATA[Better Nix setup for Spacemacs]]></title>
-  <description><![CDATA[
-<p>
-In an <a href="2019-12-07-000-nix-setup-for-spacemacs.html">earlier post</a> I documented my setup for getting <a href="https://www.spacemacs.org/">Spacemacs</a>/Emacs to work
-with <a href="https://nixos.org/nix/">Nix</a>. I've since found a much more elegant solution based on
-</p>
-
-<ul class="org-ul">
-<li><a href="https://github.com/direnv/direnv/">direnv</a>, and</li>
-<li><a href="https://github.com/wbolster/emacs-direnv">emacs-direnv</a></li>
-</ul>
-
-<p>
-No more Emacs packages for Nix and no need to defining functions that wrap
-executables in an invocation of <code>nix-shell</code>.
-</p>
-
-<p>
-There's a nice bonus too, with this setup I don't need to run <code>nix-shell</code>, which
-always drops me at a bash prompt, instead I get a working setup in my shell of
-choice.
-</p>
-
-<div id="outline-container-orgd063368" class="outline-2">
-<h2 id="orgd063368">Setting up <code>direnv</code></h2>
-<div class="outline-text-2" id="text-orgd063368">
-<p>
-The steps for setting up <code>direnv</code> depends a bit on your setup, but luckily I
-found the <a href="https://direnv.net/#basic-installation">official instructions for installing <code>direnv</code></a> to be very clear and
-easy to follow. There's not much I can add to that.
-</p>
-</div>
-</div>
-
-<div id="outline-container-org9ce9cc2" class="outline-2">
-<h2 id="org9ce9cc2">Setting up Spacemacs</h2>
-<div class="outline-text-2" id="text-org9ce9cc2">
-<p>
-Since <code>emacs-direnv</code> isn't included by default in Spacemacs I needed to do a bit
-of setup. I opted to create a layer for it, rather than just drop it in the list
-<code>dotspacemacs-additional-packages</code>. Yes, a little more complicated, but not
-difficult and I nurture an intention of submitting the layer for inclusion in
-Spacemacs itself at some point. I'll see where that goes.
-</p>
-
-<p>
-For now, I put the following in the file
-<code>~/.emacs.d/private/layers/direnv/packages.el</code>:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defconst</span> <span class="org-variable-name">direnv-packages</span>
-      '<span class="org-rainbow-delimiters-depth-2">(</span>direnv<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-
-<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">direnv/init-direnv</span> <span class="org-rainbow-delimiters-depth-2">()</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">use-package</span> <span class="org-constant">direnv</span>
-    <span class="org-builtin">:init</span>
-    <span class="org-rainbow-delimiters-depth-3">(</span>direnv-mode<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-</div>
-</div>
-
-<div id="outline-container-org6002225" class="outline-2">
-<h2 id="org6002225">Setting up the project folders</h2>
-<div class="outline-text-2" id="text-org6002225">
-<p>
-In each project folder I then add the file <code>.envrc</code> containing a single line:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-shell">use_nix
-</pre>
-</div>
-
-<p>
-Then I either run <code>direnv allow</code> from the command line, or run the
-function <code>direnv-allow</code> after opening the folder in Emacs.
-</p>
-</div>
-</div>
-
-<div id="outline-container-orgbcb33a0" class="outline-2">
-<h2 id="orgbcb33a0">Using it</h2>
-<div class="outline-text-2" id="text-orgbcb33a0">
-<p>
-It's as simple as moving into the folder in a shell &#x2013; all required envvars are
-set up on entry and unset on exit.
-</p>
-
-<p>
-In Emacs it's just as simple, just open a file in a project and the envvars are
-set. When switching to a buffer outside the project the envvars are unset.
-</p>
-
-<p>
-There is only one little caveat, <code>nix-build</code> doesn't work inside a Nix shell. I
-found out that running
-</p>
-
-<div class="org-src-container">
-<pre class="src src-shell"><span class="org-variable-name">IN_NIX_SHELL</span>= nix-build
-</pre>
-</div>
-
-<p>
-does work though.
-</p>
-</div>
-</div>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-nix.html">nix</a> <a href="https://magnus.therning.org/tag-spacemacs.html">spacemacs</a> </div>]]></description>
-  <category><![CDATA[emacs]]></category>
-  <category><![CDATA[nix]]></category>
-  <category><![CDATA[spacemacs]]></category>
-  <link>https://magnus.therning.org/2020-06-22-000-better-nix-setup-for-spacemacs.html</link>
-  <pubDate>Mon, 22 Jun 2020 12:34:00 +0200</pubDate>
 </item>
 </channel>
 </rss>

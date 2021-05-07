@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="alternate"
+      type="application/rss+xml"
+      href="https://magnus.therning.org/feed.xml"
+      title="RSS feed for https://magnus.therning.org/">
+<title>Magnus web site</title>
+<meta name="author" content="Magnus Therning"><meta name="referrer" content="no-referrer"><link href= "static/style.css" rel="stylesheet" type="text/css" /><link href= "static/htmlize.css" rel="stylesheet" type="text/css" /><link href= "static/extra_style.css" rel="stylesheet" type="text/css" /></head>
+<body>
+<div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
+<div id="content">
+<h1 class="title">Posts tagged "redis":</h1>
+<div class="post-date">07 May 2021</div><h1 class="post-title"><a href="https://magnus.therning.org/2021-05-07-working-with-hedis.html">Working with Hedis</a></h1>
+<p>
+I'm now writing the second Haskell service using <a href="https://redis.io/commands/incrby">Redis</a> to store data. There are
+a few packages on <a href="https://hackage.haskell.org/">Hackage</a> related to Redis but I only found 2 client libraries,
+<a href="https://hackage.haskell.org/package/redis-io">redis-io</a> and <a href="https://hackage.haskell.org/package/hedis">hedis</a>. I must say I like the API of redis-io better, but it breaks
+a rule I hold very dear:
+</p>
+
+<p>
+&gt; Libraries should never log, that's the sole responsibility of the application.
+</p>
+
+<p>
+So, hedis it is. I tried using the API as is, but found it really cumbersome so
+looked around and after some inspiration from <a href="https://hackage.haskell.org/package/hedis-simple">hedis-simple</a> I came up with the
+following functions.
+</p>
+
+<p>
+First a wrapper around a Redis function that put everything into <code>ExceptionT</code>
+with a function that transforms a <code>reply</code> into an <code>Exception</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">lpush</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Exception</span> e <span class="org-haskell-operator">=&gt;</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Reply</span> <span class="org-haskell-operator">-&gt;</span> e<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">ByteString</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-rainbow-delimiters-depth-1">[</span><span class="org-haskell-type">ByteString</span><span class="org-rainbow-delimiters-depth-1">]</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">ExceptionT</span> <span class="org-haskell-type">Redis</span> <span class="org-haskell-type">Integer</span>
+<span class="org-haskell-definition">lpush</span> mapper key element <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">ExceptionT</span> <span class="org-haskell-operator">$</span> replyToExc <span class="org-haskell-operator">&lt;$&gt;</span> R.lpush key element
+  <span class="org-haskell-keyword">where</span>
+    replyToExc <span class="org-haskell-operator">=</span> first <span class="org-rainbow-delimiters-depth-1">(</span>toException <span class="org-haskell-operator">.</span> mapper<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+I found wrapping up functions like this is simple, but repetitive.
+</p>
+
+<p>
+Finally I need a way to run the whole thing and unwrap it all back to <code>IO</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">runRedis</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Connection</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">ExceptionT</span> <span class="org-haskell-type">Redis</span> a <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">IO</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Either</span> <span class="org-haskell-type">SomeException</span> a<span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-haskell-definition">runRedis</span> conn <span class="org-haskell-operator">=</span> R.runRedis conn <span class="org-haskell-operator">.</span> runExceptionT
+</pre>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-redis.html">redis</a> </div><div id="archive">
+<a href="https://magnus.therning.org/archive.html">Other posts</a>
+</div>
+</div>
+<div id="postamble" class="status"><!-- org-static-blog-page-postamble --></div>
+</body>
+</html>
