@@ -4,7 +4,7 @@
 <title><![CDATA[Magnus web site]]></title>
 <description><![CDATA[Magnus web site]]></description>
 <link>https://magnus.therning.org/</link>
-<lastBuildDate>Sun, 06 Jun 2021 11:54:59 +0200</lastBuildDate>
+<lastBuildDate>Sun, 06 Jun 2021 12:11:45 +0200</lastBuildDate>
 <item>
   <title><![CDATA[ZSH, Nix, and completions]]></title>
   <description><![CDATA[
@@ -41,9 +41,11 @@ a few packages on <a href="https://hackage.haskell.org/">Hackage</a> related to 
 a rule I hold very dear:
 </p>
 
+<blockquote>
 <p>
-&gt; Libraries should never log, that's the sole responsibility of the application.
+Libraries should never log, that's the responsibility of the application.
 </p>
+</blockquote>
 
 <p>
 So, hedis it is. I tried using the API as is, but found it really cumbersome so
