@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="alternate"
+      type="application/rss+xml"
+      href="https://magnus.therning.org/feed.xml"
+      title="RSS feed for https://magnus.therning.org/">
+<title>Magnus web site</title>
+<meta name="author" content="Magnus Therning"><meta name="referrer" content="no-referrer"><link href= "static/style.css" rel="stylesheet" type="text/css" /><link href= "static/htmlize.css" rel="stylesheet" type="text/css" /><link href= "static/extra_style.css" rel="stylesheet" type="text/css" /></head>
+<body>
+<div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
+<div id="content">
+<h1 class="title">Posts tagged "zsh":</h1>
+<div class="post-date">06 Jun 2021</div><h1 class="post-title"><a href="https://magnus.therning.org/2021-06-06-zsh,-nix,-and-completions.html">ZSH, Nix, and completions</a></h1>
+<p>
+TIL that <a href="https://www.zsh.org/">ZSH</a> completions that come with Nix packages end up in
+<code>~/.nix-profile/share/zsh/vendor-completions/</code> and that folder <i>is not</i> added to
+<code>$FPATH</code> by the init script that comes with Nix.
+</p>
+
+<p>
+After modifying the bit in <code>~/.zshenv</code> it now looks like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell"><span class="org-keyword">if</span> <span class="org-rainbow-delimiters-depth-1">[</span><span class="org-rainbow-delimiters-depth-2">[</span> -f ~/.nix-profile/etc/profile.d/nix.sh <span class="org-rainbow-delimiters-depth-2">]</span><span class="org-rainbow-delimiters-depth-1">]</span>; <span class="org-keyword">then</span>
+    <span class="org-builtin">source</span> ~/.nix-profile/etc/profile.d/nix.sh
+    <span class="org-builtin">export</span> <span class="org-variable-name">fpath</span>=<span class="org-rainbow-delimiters-depth-1">(</span>~/.nix-profile/share/zsh/vendor-completions $<span class="org-rainbow-delimiters-depth-2">{</span><span class="org-variable-name">fpath</span><span class="org-rainbow-delimiters-depth-2">}</span><span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-keyword">fi</span>
+</pre>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-nix.html">nix</a> <a href="https://magnus.therning.org/tag-zsh.html">zsh</a> </div><div id="archive">
+<a href="https://magnus.therning.org/archive.html">Other posts</a>
+</div>
+</div>
+<div id="postamble" class="status"><!-- org-static-blog-page-postamble --></div>
+</body>
+</html>
