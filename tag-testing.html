@@ -12,6 +12,113 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <h1 class="title">Posts tagged "testing":</h1>
+<div class="post-date">27 Jun 2021</div><h1 class="post-title"><a href="https://magnus.therning.org/2021-06-27-a-first-look-at-hmock.html">A first look at HMock</a></h1>
+<p>
+The other day I found Chris Smith's <a href="https://itnext.io/hmock-first-rate-mocks-in-haskell-e59d7c3b066c">HMock: First Rate Mocks in Haskell</a> (<a href="https://hackage.haskell.org/package/HMock">link to
+hackage</a>) and thought it could be nice see if it can clear up some of the tests I
+have in a few of the Haskell projects at work. All the projects follow the
+pattern of defining custom monads for effects (something like final tagless)
+with instances implemented on a stack of monads from MTL. It's a pretty standard
+thing in Haskell I'd say, especially since the monad stack very often ends up
+being <code>ReaderT MyConfig IO</code>.
+</p>
+
+<p>
+I decided to try it first on a single such custom monad, one for making HTTP
+requests:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-keyword">class</span> <span class="org-haskell-type">Monad</span> m <span class="org-haskell-operator">=&gt;</span> <span class="org-haskell-type">MonadHttpClient</span> m <span class="org-haskell-keyword">where</span>
+  mHttpGet <span class="org-haskell-operator">::</span> <span class="org-haskell-type">String</span> <span class="org-haskell-operator">-&gt;</span> m <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Status</span>, <span class="org-haskell-type">ByteString</span><span class="org-rainbow-delimiters-depth-1">)</span>
+  mHttpPost <span class="org-haskell-operator">::</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Typeable</span> a, <span class="org-haskell-type">Postable</span> a<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=&gt;</span> <span class="org-haskell-type">String</span> <span class="org-haskell-operator">-&gt;</span> a <span class="org-haskell-operator">-&gt;</span> m <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Status</span>, <span class="org-haskell-type">ByteString</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+Yes, the underlying implementation uses <a href="https://hackage.haskell.org/package/wreq">wreq</a>, but I'm not too bothered by that
+shining through. Also, initially I didn't have that <code>Typeable a</code> constraint on
+<code>mHttpPost</code>, it got added after a short <a href="https://github.com/cdsmith/HMock/issues/1">exchange about <code>KnownSymbol</code></a> with Chris.
+</p>
+
+<p>
+To dip a toe in the water I thought I'd simply write tests for the two effects
+themselves. First of all there's an impressive list of extensions needed, and
+then the monad needs to be made mockable:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-pragma">{-# LANGUAGE DataKinds #-}</span>
+<span class="org-haskell-pragma">{-# LANGUAGE FlexibleInstances #-}</span>
+<span class="org-haskell-pragma">{-# LANGUAGE GADTs #-}</span>
+<span class="org-haskell-pragma">{-# LANGUAGE ImportQualifiedPost #-}</span>
+<span class="org-haskell-pragma">{-# LANGUAGE MultiParamTypeClasses #-}</span>
+<span class="org-haskell-pragma">{-# LANGUAGE RankNTypes #-}</span>
+<span class="org-haskell-pragma">{-# LANGUAGE StandaloneDeriving #-}</span>
+<span class="org-haskell-pragma">{-# LANGUAGE TemplateHaskell #-}</span>
+<span class="org-haskell-pragma">{-# LANGUAGE TypeApplications #-}</span>
+<span class="org-haskell-pragma">{-# LANGUAGE TypeFamilies #-}</span>
+
+<span class="org-haskell-definition">makeMockable</span> ''<span class="org-haskell-constructor">MonadHttpClient</span>
+</pre>
+</div>
+
+<p>
+After that, writing a test with HMock for <code>mHttpGet</code> was fairly straight
+forward, I could simply follow the examples in the package's documentation. I'm
+using <a href="https://hackage.haskell.org/package/tasty">tasty</a> for organising the tests though:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">httpGetTest</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">TestTree</span>
+<span class="org-haskell-definition">httpGetTest</span> <span class="org-haskell-operator">=</span> testCase <span class="org-string">"Get"</span> <span class="org-haskell-operator">$</span> <span class="org-haskell-keyword">do</span>
+  <span class="org-rainbow-delimiters-depth-1">(</span>s, b<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">&lt;-</span> runMockT <span class="org-haskell-operator">$</span> <span class="org-haskell-keyword">do</span>
+    expect <span class="org-haskell-operator">$</span> <span class="org-haskell-constructor">MHttpGet</span> <span class="org-string">"url"</span> <span class="org-haskell-operator">|-&gt;</span> <span class="org-rainbow-delimiters-depth-1">(</span>status200, <span class="org-string">"result"</span><span class="org-rainbow-delimiters-depth-1">)</span>
+    mHttpGet <span class="org-string">"url"</span>
+  status200 <span class="org-haskell-operator">@=?</span> s
+  <span class="org-string">"result"</span> <span class="org-haskell-operator">@=?</span> b
+</pre>
+</div>
+
+<p>
+The effect for sending a <code>POST</code> request was slightly trickier, as can be seen in
+the issue linked above, but with some help I came up with the following:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">httpPostTest</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">TestTree</span>
+<span class="org-haskell-definition">httpPostTest</span> <span class="org-haskell-operator">=</span> testCase <span class="org-string">"Post"</span> <span class="org-haskell-operator">$</span> <span class="org-haskell-keyword">do</span>
+  <span class="org-rainbow-delimiters-depth-1">(</span>s, b<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">&lt;-</span> runMockT <span class="org-haskell-operator">$</span> <span class="org-haskell-keyword">do</span>
+    expect <span class="org-haskell-operator">$</span> <span class="org-haskell-constructor">MHttpPost_</span> <span class="org-rainbow-delimiters-depth-1">(</span>eq <span class="org-string">"url"</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-rainbow-delimiters-depth-1">(</span>typed <span class="org-haskell-operator">@</span><span class="org-haskell-constructor">ByteString</span> anything<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">|-&gt;</span> <span class="org-rainbow-delimiters-depth-1">(</span>status201, <span class="org-string">"result"</span><span class="org-rainbow-delimiters-depth-1">)</span>
+    mHttpPost <span class="org-string">"url"</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-string">"hello"</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">ByteString</span><span class="org-rainbow-delimiters-depth-1">)</span>
+  status201 <span class="org-haskell-operator">@=?</span> s
+  <span class="org-string">"result"</span> <span class="org-haskell-operator">@=?</span> b
+</pre>
+</div>
+
+<div id="outline-container-org07a2709" class="outline-2">
+<h2 id="org07a2709">Next step</h2>
+<div class="outline-text-2" id="text-org07a2709">
+<p>
+My hope is that using HMock will remove the need for creating a bunch of test
+implementations for the various custom monads for effects<sup><a id="fnr.1" class="footref" href="#fn.1">1</a></sup> in the projects,
+thereby reducing the amount of test code overall. I also suspect that it will
+make the tests clearer and easier to read, as the behaviour of the mocks are
+closer to the tests using the mocks.
+</p>
+</div>
+</div>
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+
+<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1">1</a></sup> <div class="footpara"><p class="footpara">
+Basically they could be looked at as hand-written mocks.
+</p></div></div>
+
+
+</div>
+</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-testing.html">testing</a> <a href="https://magnus.therning.org/tag-mocks.html">mocks</a> </div>
 <div class="post-date">19 Aug 2019</div><h1 class="post-title"><a href="https://magnus.therning.org/2019-08-19-000-hedgehog-on-a-rest-api--part-3.html">Hedgehog on a REST API, part 3</a></h1>
 <p>
 In my previous post on using Hedgehog on a REST API, <a href="2019-06-23-000-hedgehog-on-a-rest-api--part-2.html">Hedgehog on a REST API,

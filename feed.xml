@@ -4,7 +4,122 @@
 <title><![CDATA[Magnus web site]]></title>
 <description><![CDATA[Magnus web site]]></description>
 <link>https://magnus.therning.org/</link>
-<lastBuildDate>Sun, 06 Jun 2021 12:11:45 +0200</lastBuildDate>
+<lastBuildDate>Sun, 27 Jun 2021 23:48:56 +0200</lastBuildDate>
+<item>
+  <title><![CDATA[A first look at HMock]]></title>
+  <description><![CDATA[
+<p>
+The other day I found Chris Smith's <a href="https://itnext.io/hmock-first-rate-mocks-in-haskell-e59d7c3b066c">HMock: First Rate Mocks in Haskell</a> (<a href="https://hackage.haskell.org/package/HMock">link to
+hackage</a>) and thought it could be nice see if it can clear up some of the tests I
+have in a few of the Haskell projects at work. All the projects follow the
+pattern of defining custom monads for effects (something like final tagless)
+with instances implemented on a stack of monads from MTL. It's a pretty standard
+thing in Haskell I'd say, especially since the monad stack very often ends up
+being <code>ReaderT MyConfig IO</code>.
+</p>
+
+<p>
+I decided to try it first on a single such custom monad, one for making HTTP
+requests:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-keyword">class</span> <span class="org-haskell-type">Monad</span> m <span class="org-haskell-operator">=&gt;</span> <span class="org-haskell-type">MonadHttpClient</span> m <span class="org-haskell-keyword">where</span>
+  mHttpGet <span class="org-haskell-operator">::</span> <span class="org-haskell-type">String</span> <span class="org-haskell-operator">-&gt;</span> m <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Status</span>, <span class="org-haskell-type">ByteString</span><span class="org-rainbow-delimiters-depth-1">)</span>
+  mHttpPost <span class="org-haskell-operator">::</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Typeable</span> a, <span class="org-haskell-type">Postable</span> a<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=&gt;</span> <span class="org-haskell-type">String</span> <span class="org-haskell-operator">-&gt;</span> a <span class="org-haskell-operator">-&gt;</span> m <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Status</span>, <span class="org-haskell-type">ByteString</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+Yes, the underlying implementation uses <a href="https://hackage.haskell.org/package/wreq">wreq</a>, but I'm not too bothered by that
+shining through. Also, initially I didn't have that <code>Typeable a</code> constraint on
+<code>mHttpPost</code>, it got added after a short <a href="https://github.com/cdsmith/HMock/issues/1">exchange about <code>KnownSymbol</code></a> with Chris.
+</p>
+
+<p>
+To dip a toe in the water I thought I'd simply write tests for the two effects
+themselves. First of all there's an impressive list of extensions needed, and
+then the monad needs to be made mockable:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-pragma">{-# LANGUAGE DataKinds #-}</span>
+<span class="org-haskell-pragma">{-# LANGUAGE FlexibleInstances #-}</span>
+<span class="org-haskell-pragma">{-# LANGUAGE GADTs #-}</span>
+<span class="org-haskell-pragma">{-# LANGUAGE ImportQualifiedPost #-}</span>
+<span class="org-haskell-pragma">{-# LANGUAGE MultiParamTypeClasses #-}</span>
+<span class="org-haskell-pragma">{-# LANGUAGE RankNTypes #-}</span>
+<span class="org-haskell-pragma">{-# LANGUAGE StandaloneDeriving #-}</span>
+<span class="org-haskell-pragma">{-# LANGUAGE TemplateHaskell #-}</span>
+<span class="org-haskell-pragma">{-# LANGUAGE TypeApplications #-}</span>
+<span class="org-haskell-pragma">{-# LANGUAGE TypeFamilies #-}</span>
+
+<span class="org-haskell-definition">makeMockable</span> ''<span class="org-haskell-constructor">MonadHttpClient</span>
+</pre>
+</div>
+
+<p>
+After that, writing a test with HMock for <code>mHttpGet</code> was fairly straight
+forward, I could simply follow the examples in the package's documentation. I'm
+using <a href="https://hackage.haskell.org/package/tasty">tasty</a> for organising the tests though:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">httpGetTest</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">TestTree</span>
+<span class="org-haskell-definition">httpGetTest</span> <span class="org-haskell-operator">=</span> testCase <span class="org-string">"Get"</span> <span class="org-haskell-operator">$</span> <span class="org-haskell-keyword">do</span>
+  <span class="org-rainbow-delimiters-depth-1">(</span>s, b<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">&lt;-</span> runMockT <span class="org-haskell-operator">$</span> <span class="org-haskell-keyword">do</span>
+    expect <span class="org-haskell-operator">$</span> <span class="org-haskell-constructor">MHttpGet</span> <span class="org-string">"url"</span> <span class="org-haskell-operator">|-&gt;</span> <span class="org-rainbow-delimiters-depth-1">(</span>status200, <span class="org-string">"result"</span><span class="org-rainbow-delimiters-depth-1">)</span>
+    mHttpGet <span class="org-string">"url"</span>
+  status200 <span class="org-haskell-operator">@=?</span> s
+  <span class="org-string">"result"</span> <span class="org-haskell-operator">@=?</span> b
+</pre>
+</div>
+
+<p>
+The effect for sending a <code>POST</code> request was slightly trickier, as can be seen in
+the issue linked above, but with some help I came up with the following:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">httpPostTest</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">TestTree</span>
+<span class="org-haskell-definition">httpPostTest</span> <span class="org-haskell-operator">=</span> testCase <span class="org-string">"Post"</span> <span class="org-haskell-operator">$</span> <span class="org-haskell-keyword">do</span>
+  <span class="org-rainbow-delimiters-depth-1">(</span>s, b<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">&lt;-</span> runMockT <span class="org-haskell-operator">$</span> <span class="org-haskell-keyword">do</span>
+    expect <span class="org-haskell-operator">$</span> <span class="org-haskell-constructor">MHttpPost_</span> <span class="org-rainbow-delimiters-depth-1">(</span>eq <span class="org-string">"url"</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-rainbow-delimiters-depth-1">(</span>typed <span class="org-haskell-operator">@</span><span class="org-haskell-constructor">ByteString</span> anything<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">|-&gt;</span> <span class="org-rainbow-delimiters-depth-1">(</span>status201, <span class="org-string">"result"</span><span class="org-rainbow-delimiters-depth-1">)</span>
+    mHttpPost <span class="org-string">"url"</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-string">"hello"</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">ByteString</span><span class="org-rainbow-delimiters-depth-1">)</span>
+  status201 <span class="org-haskell-operator">@=?</span> s
+  <span class="org-string">"result"</span> <span class="org-haskell-operator">@=?</span> b
+</pre>
+</div>
+
+<div id="outline-container-org07a2709" class="outline-2">
+<h2 id="org07a2709">Next step</h2>
+<div class="outline-text-2" id="text-org07a2709">
+<p>
+My hope is that using HMock will remove the need for creating a bunch of test
+implementations for the various custom monads for effects<sup><a id="fnr.1" class="footref" href="#fn.1">1</a></sup> in the projects,
+thereby reducing the amount of test code overall. I also suspect that it will
+make the tests clearer and easier to read, as the behaviour of the mocks are
+closer to the tests using the mocks.
+</p>
+</div>
+</div>
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+
+<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1">1</a></sup> <div class="footpara"><p class="footpara">
+Basically they could be looked at as hand-written mocks.
+</p></div></div>
+
+
+</div>
+</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-testing.html">testing</a> <a href="https://magnus.therning.org/tag-mocks.html">mocks</a> </div>]]></description>
+  <category><![CDATA[haskell]]></category>
+  <category><![CDATA[testing]]></category>
+  <category><![CDATA[mocks]]></category>
+  <link>https://magnus.therning.org/2021-06-27-a-first-look-at-hmock.html</link>
+  <pubDate>Sun, 27 Jun 2021 23:14:00 +0200</pubDate>
+</item>
 <item>
   <title><![CDATA[ZSH, Nix, and completions]]></title>
   <description><![CDATA[
@@ -699,92 +814,6 @@ Suggestions for improvements are more than welcome, of course.
   <category><![CDATA[flycheck]]></category>
   <link>https://magnus.therning.org/2021-03-05-000-flycheck-and-hls.html</link>
   <pubDate>Fri, 05 Mar 2021 21:48:00 +0100</pubDate>
-</item>
-<item>
-  <title><![CDATA[Haskell, Nix and using packages from GitHub]]></title>
-  <description><![CDATA[
-<p>
-The other day I bumped into what turned out to be a <a href="https://mail.haskell.org/pipermail/haskell-cafe/2020-November/133021.html">bug in Amazonka</a> where
-sockets weren't closed in a timely fashion and thus the process ran out of file
-descriptors. Some more digging and an <a href="https://github.com/brendanhay/amazonka/issues/608">issue</a> later I found that a fix most likely
-already in place (mine was possibly a duplicate of an older <a href="https://github.com/brendanhay/amazonka/issues/490">issue</a>). Now I only
-had to verify if that was the case by using the most recent, and unreleased code
-on the <code>develop</code> branch of Amazonka.
-</p>
-
-<p>
-My first thought was to attempt to instruct Cabal to build the bits of Amazonka
-I need by putting a few <a href="https://cabal.readthedocs.io/en/3.4/cabal-project.html#specifying-packages-from-remote-version-control-locations"><code>source-repository-package</code> stanzas</a> in my config. That
-quickly started to look like a bit of a rabbit hole, so I decided to use Nix
-instead. After finding the <a href="https://stackoverflow.com/questions/54810851/how-can-i-build-a-haskell-dependency-from-a-github-source-nix-file-using-nix">perfect SO post</a> and looking up yet again how to do
-overrides for Haskell I ran <code>cabal2nix</code> for the three packages I need:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-shell">cabal2nix --no-haddock --no-check --subpath amazonka <span class="org-sh-escaped-newline">\</span>
-  git://github.com/brendanhay/amazonka.git &gt; amazonka.nix
-cabal2nix --no-haddock --no-check --subpath core <span class="org-sh-escaped-newline">\</span>
-  git://github.com/brendanhay/amazonka.git &gt; amazonka-core.nix
-cabal2nix --no-haddock --no-check --subpath amazonka-sqs <span class="org-sh-escaped-newline">\</span>
-  git://github.com/brendanhay/amazonka.git &gt; amazonka-sqs.nix
-</pre>
-</div>
-
-<p>
-The relevant part of the old Nix expression looked like this:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-nix"><span class="org-nix-attribute">thePkg</span> = haskellPackages.developPackage <span class="org-rainbow-delimiters-depth-1">{</span>
-  <span class="org-nix-attribute">root</span> = lib.cleanSource <span class="org-nix-constant">./.</span>;
-  <span class="org-nix-attribute">name</span> = name;
-
-  <span class="org-nix-attribute">modifier</span> = <span class="org-rainbow-delimiters-depth-2">(</span>t.flip t.pipe<span class="org-rainbow-delimiters-depth-2">)</span>
-    <span class="org-rainbow-delimiters-depth-2">[</span>hl.dontHaddock
-     hl.enableStaticLibraries
-     hl.justStaticExecutables
-     hl.disableLibraryProfiling
-     hl.disableExecutableProfiling<span class="org-rainbow-delimiters-depth-2">]</span>;
-<span class="org-rainbow-delimiters-depth-1">}</span>;
-</pre>
-</div>
-
-<p>
-After adding the overrides it looked like this
-</p>
-
-<div class="org-src-container">
-<pre class="src src-nix"><span class="org-nix-attribute">hp</span> = haskellPackages.override <span class="org-rainbow-delimiters-depth-1">{</span>
-  <span class="org-nix-attribute">overrides</span> = self: super: <span class="org-rainbow-delimiters-depth-2">{</span>
-    <span class="org-nix-attribute">amazonka-core</span> = self.callPackage <span class="org-nix-constant">./amazonka-core.nix</span> <span class="org-rainbow-delimiters-depth-3">{}</span>;
-    <span class="org-nix-attribute">amazonka</span> = self.callPackage <span class="org-nix-constant">./amazonka.nix</span> <span class="org-rainbow-delimiters-depth-3">{}</span>;
-    <span class="org-nix-attribute">amazonka-sqs</span> = self.callPackage <span class="org-nix-constant">./amazonka-sqs.nix</span> <span class="org-rainbow-delimiters-depth-3">{}</span>;
-  <span class="org-rainbow-delimiters-depth-2">}</span>;
-<span class="org-rainbow-delimiters-depth-1">}</span>;
-
-<span class="org-nix-attribute">thePkg</span> = hp.developPackage <span class="org-rainbow-delimiters-depth-1">{</span>
-  <span class="org-nix-attribute">root</span> = lib.cleanSource <span class="org-nix-constant">./.</span>;
-  <span class="org-nix-attribute">name</span> = name;
-
-  <span class="org-nix-attribute">modifier</span> = <span class="org-rainbow-delimiters-depth-2">(</span>t.flip t.pipe<span class="org-rainbow-delimiters-depth-2">)</span>
-    <span class="org-rainbow-delimiters-depth-2">[</span>hl.dontHaddock
-     hl.enableStaticLibraries
-     hl.justStaticExecutables
-     hl.disableLibraryProfiling
-     hl.disableExecutableProfiling<span class="org-rainbow-delimiters-depth-2">]</span>;
-<span class="org-rainbow-delimiters-depth-1">}</span>;
-</pre>
-</div>
-
-<p>
-After a somewhat longer-than-usual build I could verify that I had indeed bumped
-into the same issue and my issue was a duplicate.
-</p>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-nix.html">nix</a> </div>]]></description>
-  <category><![CDATA[haskell]]></category>
-  <category><![CDATA[nix]]></category>
-  <link>https://magnus.therning.org/2020-11-30-1734-haskell__nix_and_using_packages_from_github.html</link>
-  <pubDate>Mon, 30 Nov 2020 17:34:00 +0100</pubDate>
 </item>
 </channel>
 </rss>
