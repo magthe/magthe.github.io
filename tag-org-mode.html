@@ -12,6 +12,167 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <h1 class="title">Posts tagged "org-mode":</h1>
+<div class="post-date">23 Jul 2021</div><h1 class="post-title"><a href="https://magnus.therning.org/2021-07-23-keeping-todo-items-in-org-roam-v2.html">Keeping todo items in org-roam v2</a></h1>
+<p>
+Org-roam v2 has been <a href="https://blog.jethro.dev/posts/org_roam_v2/">released</a> and yes, it broke my config a bit. Unfortunately
+the v1-to-v2 upgrade wizard didn't work for me. I realized later that it might
+have been due to the roam-related functions I'd hooked into `'before-save-hook`.
+I didn't think about it until I'd already manually touched up almost all my
+files (there aren't that many) so I can't say anything for sure. However, I
+think it might be a good idea to keep hooks in mind if one runs into issues with
+upgrading.
+</p>
+
+<p>
+The majority of the time I didn't spend on my notes though, but on the setup
+I've written about in an earlier post, <a href="https://magnus.therning.org/2021-03-14-keeping-todo-items-in-org-roam.html">Keeping todo items in org-roam</a>. Due to
+some of the changes in v2, changes that I think make org-roam slightly more
+"org-y", that setup needed a bit of love.
+</p>
+
+<p>
+The basis is still the same 4 functions I described in that post, only the
+details had to be changed.
+</p>
+
+<p>
+I hope the following is useful, and as always I'm always happy to receive
+commends and suggestions for improvements.
+</p>
+
+<div id="outline-container-org2ca70ee" class="outline-2">
+<h2 id="org2ca70ee">Some tag helpers</h2>
+<div class="outline-text-2" id="text-org2ca70ee">
+<p>
+The very handy functions for extracting tags as lists seem to be gone, in their
+place I found <code>org-roam-{get,set}-keyword</code>. Using these I wrote three wrappers
+that allow slightly nicer handling of tags.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">roam-extra:get-filetags</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>split-string <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">or</span> <span class="org-rainbow-delimiters-depth-4">(</span>org-roam-get-keyword <span class="org-string">"filetags"</span><span class="org-rainbow-delimiters-depth-4">)</span> <span class="org-string">""</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">roam-extra:add-filetag</span> <span class="org-rainbow-delimiters-depth-2">(</span>tag<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">let*</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>new-tags <span class="org-rainbow-delimiters-depth-5">(</span>cons tag <span class="org-rainbow-delimiters-depth-6">(</span>roam-extra:get-filetags<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+         <span class="org-rainbow-delimiters-depth-4">(</span>new-tags-str <span class="org-rainbow-delimiters-depth-5">(</span>combine-and-quote-strings new-tags<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>org-roam-set-keyword <span class="org-string">"filetags"</span> new-tags-str<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">roam-extra:del-filetag</span> <span class="org-rainbow-delimiters-depth-2">(</span>tag<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">let*</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>new-tags <span class="org-rainbow-delimiters-depth-5">(</span>seq-difference <span class="org-rainbow-delimiters-depth-6">(</span>roam-extra:get-filetags<span class="org-rainbow-delimiters-depth-6">)</span> `<span class="org-rainbow-delimiters-depth-6">(</span>,tag<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+         <span class="org-rainbow-delimiters-depth-4">(</span>new-tags-str <span class="org-rainbow-delimiters-depth-5">(</span>combine-and-quote-strings new-tags<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>org-roam-set-keyword <span class="org-string">"filetags"</span> new-tags-str<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgc4e90df" class="outline-2">
+<h2 id="orgc4e90df">The layer</h2>
+<div class="outline-text-2" id="text-orgc4e90df">
+<p>
+<code>roam-extra:todo-p</code> needed no changes at all. I'm including it here only for
+easy reference.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">roam-extra:todo-p</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-doc">"Return non-nil if current buffer has any </span><span class="org-doc"><span class="custom">TODO</span></span><span class="org-doc"> entry.</span>
+
+<span class="org-doc"><span class="custom">TODO</span></span><span class="org-doc"> entries marked as done are ignored, meaning the this</span>
+<span class="org-doc">function returns nil if current buffer contains only completed</span>
+<span class="org-doc">tasks."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>org-element-map
+      <span class="org-rainbow-delimiters-depth-3">(</span>org-element-parse-buffer 'headline<span class="org-rainbow-delimiters-depth-3">)</span>
+      'headline
+    <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">lambda</span> <span class="org-rainbow-delimiters-depth-4">(</span>h<span class="org-rainbow-delimiters-depth-4">)</span>
+      <span class="org-rainbow-delimiters-depth-4">(</span>eq <span class="org-rainbow-delimiters-depth-5">(</span>org-element-property <span class="org-builtin">:todo-type</span> h<span class="org-rainbow-delimiters-depth-5">)</span>
+          'todo<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    nil 'first-match<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+As pretty much all functions I used in the old version of
+<code>roam-extra:update-todo-tag</code> are gone I took the opportunity to rework it
+completely. I think it ended up being slightly simpler. I suspect the the use of
+<code>org-with-point-at 1 ...</code> is unnecessary, but I haven't tested it yet so I'm
+leaving it in for now.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">roam-extra:update-todo-tag</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-doc">"Update </span><span class="org-doc"><span class="custom">TODO</span></span><span class="org-doc"> tag in the current buffer."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">when</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">and</span> <span class="org-rainbow-delimiters-depth-4">(</span>not <span class="org-rainbow-delimiters-depth-5">(</span>active-minibuffer-window<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+             <span class="org-rainbow-delimiters-depth-4">(</span>org-roam-file-p<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">org-with-point-at</span> <span class="org-highlight-numbers-number">1</span>
+      <span class="org-rainbow-delimiters-depth-4">(</span><span class="org-keyword">let*</span> <span class="org-rainbow-delimiters-depth-5">(</span><span class="org-rainbow-delimiters-depth-6">(</span>tags <span class="org-rainbow-delimiters-depth-7">(</span>roam-extra:get-filetags<span class="org-rainbow-delimiters-depth-7">)</span><span class="org-rainbow-delimiters-depth-6">)</span>
+             <span class="org-rainbow-delimiters-depth-6">(</span>is-todo <span class="org-rainbow-delimiters-depth-7">(</span>roam-extra:todo-p<span class="org-rainbow-delimiters-depth-7">)</span><span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span>
+        <span class="org-rainbow-delimiters-depth-5">(</span><span class="org-keyword">cond</span> <span class="org-rainbow-delimiters-depth-6">(</span><span class="org-rainbow-delimiters-depth-7">(</span><span class="org-keyword">and</span> is-todo <span class="org-rainbow-delimiters-depth-8">(</span>not <span class="org-rainbow-delimiters-depth-9">(</span>seq-contains-p tags <span class="org-string">"</span><span class="org-string"><span class="custom">todo</span></span><span class="org-string">"</span><span class="org-rainbow-delimiters-depth-9">)</span><span class="org-rainbow-delimiters-depth-8">)</span><span class="org-rainbow-delimiters-depth-7">)</span>
+               <span class="org-rainbow-delimiters-depth-7">(</span>roam-extra:add-filetag <span class="org-string">"</span><span class="org-string"><span class="custom">todo</span></span><span class="org-string">"</span><span class="org-rainbow-delimiters-depth-7">)</span><span class="org-rainbow-delimiters-depth-6">)</span>
+              <span class="org-rainbow-delimiters-depth-6">(</span><span class="org-rainbow-delimiters-depth-7">(</span><span class="org-keyword">and</span> <span class="org-rainbow-delimiters-depth-8">(</span>not is-todo<span class="org-rainbow-delimiters-depth-8">)</span> <span class="org-rainbow-delimiters-depth-8">(</span>seq-contains-p tags <span class="org-string">"</span><span class="org-string"><span class="custom">todo</span></span><span class="org-string">"</span><span class="org-rainbow-delimiters-depth-8">)</span><span class="org-rainbow-delimiters-depth-7">)</span>
+               <span class="org-rainbow-delimiters-depth-7">(</span>roam-extra:del-filetag <span class="org-string">"</span><span class="org-string"><span class="custom">todo</span></span><span class="org-string">"</span><span class="org-rainbow-delimiters-depth-7">)</span><span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+In the previous version <code>roam-extra:todo-files</code> was built using an SQL query.
+That felt a little brittle to me, so despite that my <a href="https://d12frosted.io/posts/2021-01-16-task-management-with-roam-vol5.html">original inspiration</a>
+contains an updated SQL query I decided to go the route of using the org-roam
+API instead. The function <code>org-roam-node-list</code> makes it easy to get all nodes
+and then finding the files is just a matter of using <code>seq-filter</code> and <code>seq-map</code>.
+Now that headings may be nodes, and that heading-based nodes seem to inherit the
+top-level tags, a file may appear more than once, hence the call to <code>seq-unique</code>
+at the end.
+</p>
+
+<p>
+Based on what I've seen V2 appears less eager to sync the DB, so to make sure
+all nodes are up-to-date it's best to start off with forcing a sync.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">roam-extra:todo-files</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-doc">"Return a list of roam files containing </span><span class="org-doc"><span class="custom">todo</span></span><span class="org-doc"> tag."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>org-roam-db-sync<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">let</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>todo-nodes <span class="org-rainbow-delimiters-depth-5">(</span>seq-filter <span class="org-rainbow-delimiters-depth-6">(</span><span class="org-keyword">lambda</span> <span class="org-rainbow-delimiters-depth-7">(</span>n<span class="org-rainbow-delimiters-depth-7">)</span>
+                                  <span class="org-rainbow-delimiters-depth-7">(</span>seq-contains-p <span class="org-rainbow-delimiters-depth-8">(</span>org-roam-node-tags n<span class="org-rainbow-delimiters-depth-8">)</span> <span class="org-string">"</span><span class="org-string"><span class="custom">todo</span></span><span class="org-string">"</span><span class="org-rainbow-delimiters-depth-7">)</span><span class="org-rainbow-delimiters-depth-6">)</span>
+                                 <span class="org-rainbow-delimiters-depth-6">(</span>org-roam-node-list<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>seq-uniq <span class="org-rainbow-delimiters-depth-4">(</span>seq-map #'org-roam-node-file todo-nodes<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+With that in place it turns out that also <code>roam-extra:update-todo-files</code> worked
+without any changes. I'm including it here for easy reference as well.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">roam-extra:update-todo-files</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-type">&amp;rest</span> _<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-doc">"Update the value of `</span><span class="org-doc"><span class="org-constant">org-agenda-files</span></span><span class="org-doc">'."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">setq</span> org-agenda-files <span class="org-rainbow-delimiters-depth-3">(</span>roam-extra:todo-files<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org317e364" class="outline-2">
+<h2 id="org317e364">Hooking it up</h2>
+<div class="outline-text-2" id="text-org317e364">
+<p>
+The variable <code>org-roam-file-setup-hook</code> is gone, so the the more general
+<code>find-file-hook</code> will have to be used instead.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span>add-hook 'find-file-hook #'roam-extra:update-todo-tag<span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-rainbow-delimiters-depth-1">(</span>add-hook 'before-save-hook #'roam-extra:update-todo-tag<span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-rainbow-delimiters-depth-1">(</span>advice-add 'org-agenda <span class="org-builtin">:before</span> #'roam-extra:update-todo-files<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> <a href="https://magnus.therning.org/tag-org-roam.html">org-roam</a> <a href="https://magnus.therning.org/tag-spacemacs.html">spacemacs</a> </div>
 <div class="post-date">21 Mar 2021</div><h1 class="post-title"><a href="https://magnus.therning.org/2021-03-21-todo-items-in-org-roam,-an-update.html">Todo items in org-roam, an update</a></h1>
 <p>
 I got an email from Mr Z with a nice modification to the code in my post on
