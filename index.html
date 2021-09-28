@@ -12,6 +12,141 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <header class="site-header" role="banner"><h1 class="title">Magnus web site</h1><h2 class="subtitle">Random stuff</h2></header>
+<div class="post-date">28 Sep 2021</div><h1 class="post-title"><a href="https://magnus.therning.org/2021-09-28-using-lens-to-set-a-value-based-on-another.html">Using lens to set a value based on another</a></h1>
+<p>
+I started writing a small tool for work that consumes YAML files and combines
+the data into a single YAML file. To be specific it consumes YAML files
+containing snippets of service specification for <a href="https://docs.docker.com/compose/">Docker Compose</a> and it produces
+a YAML file for use with <code>docker-compose</code>. Besides being useful to me, I thought
+it'd also be a good way to get some experience with <a href="https://hackage.haskell.org/package/lens">lens</a>.
+</p>
+
+<p>
+The first transformation I wanted to write was one that puts in the correct
+image name. So, only slightly simplified, it is transforming
+</p>
+
+<div class="org-src-container">
+<pre class="src src-yaml"><span class="org-variable-name">panda</span>:
+    <span class="org-variable-name">x-image</span>: panda
+<span class="org-variable-name">goat</span>:
+    <span class="org-variable-name">x-image</span>: goat
+<span class="org-variable-name">tapir</span>:
+    <span class="org-variable-name">image</span>: incorrent
+    <span class="org-variable-name">x-image</span>: tapir
+</pre>
+</div>
+
+<p>
+into
+</p>
+
+<div class="org-src-container">
+<pre class="src src-yaml"><span class="org-variable-name">panda</span>:
+    <span class="org-variable-name">image</span>: panda:latest
+    <span class="org-variable-name">x-image</span>: panda
+<span class="org-variable-name">goat</span>:
+    <span class="org-variable-name">image</span>: goat:latest
+    <span class="org-variable-name">x-image</span>: goat
+<span class="org-variable-name">tapir</span>:
+    <span class="org-variable-name">image</span>: tapir:latest
+    <span class="org-variable-name">x-image</span>: tapir
+</pre>
+</div>
+
+<p>
+That is, it creates a new key/value pair in each object based on the value of
+<code>x-image</code> in the same object.
+</p>
+
+<div id="outline-container-org3bb936a" class="outline-2">
+<h2 id="org3bb936a">First approach</h2>
+<div class="outline-text-2" id="text-org3bb936a">
+<p>
+The first approach I came up with was to traverse the sub-objects and apply a
+function that adds the <code>image</code> key.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">setImage</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Value</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Value</span>
+<span class="org-haskell-definition">setImage</span> y <span class="org-haskell-operator">=</span> y <span class="org-haskell-operator">&amp;</span> members <span class="org-haskell-operator">%~</span> setImg
+  <span class="org-haskell-keyword">where</span>
+    setImg o <span class="org-haskell-operator">=</span>
+        o
+            <span class="org-haskell-operator">&amp;</span> _Object <span class="org-haskell-operator">.</span> at <span class="org-string">"image"</span>
+            <span class="org-haskell-operator">?~</span> <span class="org-haskell-constructor">String</span> <span class="org-rainbow-delimiters-depth-1">(</span>o <span class="org-haskell-operator">^.</span> key <span class="org-string">"x-image"</span> <span class="org-haskell-operator">.</span> _String <span class="org-haskell-operator">&lt;&gt;</span> <span class="org-string">":latest"</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+It did make me wonder if this kind of problem, setting a value based on another
+value, isn't so common that there's a nicer solution to it. Perhaps coded up in
+a combinator that isn't mentioned in <a href="https://leanpub.com/optics-by-example">Optics By Example</a> (or mabye I've forgot it
+was mentioned). That lead me to ask around a bit, which leads to approach two.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgf55f462" class="outline-2">
+<h2 id="orgf55f462">Second approach</h2>
+<div class="outline-text-2" id="text-orgf55f462">
+<p>
+Arguably there isn't much difference, it's still traversing the sub-objects and
+applying a function. The function makes use of <code>view</code> being run in a monad and
+<code>ASetter</code> being defined with <code>Identity</code> (a monad).
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">setImage'</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Value</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Value</span>
+<span class="org-haskell-definition">setImage'</span> y <span class="org-haskell-operator">=</span>
+    y
+        <span class="org-haskell-operator">&amp;</span> members <span class="org-haskell-operator">.</span> _Object
+        <span class="org-haskell-operator">%~</span> <span class="org-rainbow-delimiters-depth-1">(</span>set <span class="org-rainbow-delimiters-depth-2">(</span>at <span class="org-string">"image"</span><span class="org-rainbow-delimiters-depth-2">)</span> <span class="org-haskell-operator">.</span> <span class="org-rainbow-delimiters-depth-2">(</span>_Just <span class="org-haskell-operator">.</span> _String <span class="org-haskell-operator">%~</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-haskell-operator">&lt;&gt;</span> <span class="org-string">":latest"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span> <span class="org-haskell-operator">=&lt;&lt;</span> view <span class="org-rainbow-delimiters-depth-2">(</span>at <span class="org-string">"x-image"</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+I haven't made up my mind on whether I like this better than the first. It's
+disappointingly similar to the first one.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orge880fe2" class="outline-2">
+<h2 id="orge880fe2">Third approach</h2>
+<div class="outline-text-2" id="text-orge880fe2">
+<p>
+Then I it might be nice to split the fetching of <code>x-image</code> values from the
+addition of <code>image</code> key/value pairs. By extracting with an index it's possible
+to keep track of what sub-object each <code>x-image</code> value comes from. Then two steps
+can be combined using <code>foldl</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">setImage''</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Value</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">Value</span>
+<span class="org-haskell-definition">setImage''</span> y <span class="org-haskell-operator">=</span> foldl setOne y vals
+  <span class="org-haskell-keyword">where</span>
+    vals <span class="org-haskell-operator">=</span> y <span class="org-haskell-operator">^@..</span> members <span class="org-haskell-operator">&lt;.</span> key <span class="org-string">"x-image"</span> <span class="org-haskell-operator">.</span> _String
+    setOne y' <span class="org-rainbow-delimiters-depth-1">(</span>objKey, value<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=</span>
+        y'
+            <span class="org-haskell-operator">&amp;</span> key objKey <span class="org-haskell-operator">.</span> _Object <span class="org-haskell-operator">.</span> at <span class="org-string">"image"</span>
+            <span class="org-haskell-operator">?~</span> <span class="org-haskell-constructor">String</span> <span class="org-rainbow-delimiters-depth-1">(</span>value <span class="org-haskell-operator">&lt;&gt;</span> <span class="org-string">":latest"</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+I'm not convinced though. I guess I'm still holding out for a brilliant
+combinator that fits my problem perfectly.
+</p>
+
+<p>
+Please point me to "the perfect solution" if you have one, or if you just have
+some general tips on optics that would make my code clearer, or shorter, or more
+elegant, or maybe just more lens-y.
+</p>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-lens.html">lens</a> <a href="https://magnus.therning.org/tag-optics.html">optics</a> </div>
 <div class="post-date">23 Jul 2021</div><h1 class="post-title"><a href="https://magnus.therning.org/2021-07-23-keeping-todo-items-in-org-roam-v2.html">Keeping todo items in org-roam v2</a></h1>
 <p>
 Org-roam v2 has been <a href="https://blog.jethro.dev/posts/org_roam_v2/">released</a> and yes, it broke my config a bit. Unfortunately
@@ -397,54 +532,7 @@ After modifying the bit in <code>~/.zshenv</code> it now looks like this
 <span class="org-keyword">fi</span>
 </pre>
 </div>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-nix.html">nix</a> <a href="https://magnus.therning.org/tag-zsh.html">zsh</a> </div>
-<div class="post-date">07 May 2021</div><h1 class="post-title"><a href="https://magnus.therning.org/2021-05-07-working-with-hedis.html">Working with Hedis</a></h1>
-<p>
-I'm now writing the second Haskell service using <a href="https://redis.io/commands/incrby">Redis</a> to store data. There are
-a few packages on <a href="https://hackage.haskell.org/">Hackage</a> related to Redis but I only found 2 client libraries,
-<a href="https://hackage.haskell.org/package/redis-io">redis-io</a> and <a href="https://hackage.haskell.org/package/hedis">hedis</a>. I must say I like the API of redis-io better, but it breaks
-a rule I hold very dear:
-</p>
-
-<blockquote>
-<p>
-Libraries should never log, that's the responsibility of the application.
-</p>
-</blockquote>
-
-<p>
-So, hedis it is. I tried using the API as is, but found it really cumbersome so
-looked around and after some inspiration from <a href="https://hackage.haskell.org/package/hedis-simple">hedis-simple</a> I came up with the
-following functions.
-</p>
-
-<p>
-First a wrapper around a Redis function that put everything into <code>ExceptionT</code>
-with a function that transforms a <code>reply</code> into an <code>Exception</code>.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-haskell-definition">lpush</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Exception</span> e <span class="org-haskell-operator">=&gt;</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Reply</span> <span class="org-haskell-operator">-&gt;</span> e<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">ByteString</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-rainbow-delimiters-depth-1">[</span><span class="org-haskell-type">ByteString</span><span class="org-rainbow-delimiters-depth-1">]</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">ExceptionT</span> <span class="org-haskell-type">Redis</span> <span class="org-haskell-type">Integer</span>
-<span class="org-haskell-definition">lpush</span> mapper key element <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">ExceptionT</span> <span class="org-haskell-operator">$</span> replyToExc <span class="org-haskell-operator">&lt;$&gt;</span> R.lpush key element
-  <span class="org-haskell-keyword">where</span>
-    replyToExc <span class="org-haskell-operator">=</span> first <span class="org-rainbow-delimiters-depth-1">(</span>toException <span class="org-haskell-operator">.</span> mapper<span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-I found wrapping up functions like this is simple, but repetitive.
-</p>
-
-<p>
-Finally I need a way to run the whole thing and unwrap it all back to <code>IO</code>:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-haskell-definition">runRedis</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Connection</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">ExceptionT</span> <span class="org-haskell-type">Redis</span> a <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">IO</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Either</span> <span class="org-haskell-type">SomeException</span> a<span class="org-rainbow-delimiters-depth-1">)</span>
-<span class="org-haskell-definition">runRedis</span> conn <span class="org-haskell-operator">=</span> R.runRedis conn <span class="org-haskell-operator">.</span> runExceptionT
-</pre>
-</div>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-redis.html">redis</a> </div><div id="archive">
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-nix.html">nix</a> <a href="https://magnus.therning.org/tag-zsh.html">zsh</a> </div><div id="archive">
 <a href="https://magnus.therning.org/archive.html">Other posts</a>
 </div>
 </div>
