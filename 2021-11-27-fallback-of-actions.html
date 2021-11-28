@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="alternate"
+      type="application/rss+xml"
+      href="https://magnus.therning.org/feed.xml"
+      title="RSS feed for https://magnus.therning.org/">
+<title>Fallback of actions</title>
+<meta name="author" content="Magnus Therning"><meta name="referrer" content="no-referrer"><link href= "static/style.css" rel="stylesheet" type="text/css" /><link href= "static/htmlize.css" rel="stylesheet" type="text/css" /><link href= "static/extra_style.css" rel="stylesheet" type="text/css" /></head>
+<body>
+<div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
+<div id="content">
+<div class="post-date">27 Nov 2021</div><h1 class="post-title"><a href="https://magnus.therning.org/2021-11-27-fallback-of-actions.html">Fallback of actions</a></h1>
+<p>
+In a tool I'm writing I want to load a file that may reside on the local disk,
+but if it isn't there I want to fetch it from the web. Basically it's very
+similar to having a cache and dealing with a miss, except in my case I don't
+populate the cache.
+</p>
+
+<p>
+Let me first define the functions to play with
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">loadFromDisk</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">String</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">IO</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Either</span> <span class="org-haskell-type">String</span> <span class="org-haskell-type">Int</span><span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-haskell-definition">loadFromDisk</span> k<span class="org-haskell-operator">@</span><span class="org-string">"bad key"</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+    putStrLn <span class="org-haskell-operator">$</span> <span class="org-string">"local: "</span> <span class="org-haskell-operator">&lt;&gt;</span> k
+    pure <span class="org-haskell-operator">$</span> <span class="org-haskell-constructor">Left</span> <span class="org-haskell-operator">$</span> <span class="org-string">"no such local key: "</span> <span class="org-haskell-operator">&lt;&gt;</span> k
+<span class="org-haskell-definition">loadFromDisk</span> k <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+    putStrLn <span class="org-haskell-operator">$</span> <span class="org-string">"local: "</span> <span class="org-haskell-operator">&lt;&gt;</span> k
+    pure <span class="org-haskell-operator">$</span> <span class="org-haskell-constructor">Right</span> <span class="org-haskell-operator">$</span> length k
+
+<span class="org-haskell-definition">loadFromWeb</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">String</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">IO</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Either</span> <span class="org-haskell-type">String</span> <span class="org-haskell-type">Int</span><span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-haskell-definition">loadFromWeb</span> k<span class="org-haskell-operator">@</span><span class="org-string">"bad key"</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+    putStrLn <span class="org-haskell-operator">$</span> <span class="org-string">"web: "</span> <span class="org-haskell-operator">&lt;&gt;</span> k
+    pure <span class="org-haskell-operator">$</span> <span class="org-haskell-constructor">Left</span> <span class="org-haskell-operator">$</span> <span class="org-string">"no such remote key: "</span> <span class="org-haskell-operator">&lt;&gt;</span> k
+<span class="org-haskell-definition">loadFromWeb</span> k <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+    putStrLn <span class="org-haskell-operator">$</span> <span class="org-string">"web: "</span> <span class="org-haskell-operator">&lt;&gt;</span> k
+    pure <span class="org-haskell-operator">$</span> <span class="org-haskell-constructor">Right</span> <span class="org-haskell-operator">$</span> length k
+</pre>
+</div>
+
+<div id="outline-container-org79c5c1e" class="outline-2">
+<h2 id="org79c5c1e">Discarded solution: using the <code>Alternative</code> of <code>IO</code> directly</h2>
+<div class="outline-text-2" id="text-org79c5c1e">
+<p>
+It's fairly easy to get the desired behaviour but <code>Alternative</code> of <code>IO</code> is based
+on exceptions which doesn't strike me as a good idea unless one is using <code>IO</code>
+directly. That is fine in a smallish application, but in my case it makes sense
+to use tagless style (or <code>ReaderT</code> pattern) so I'll skip exploring this option
+completely.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org74c8945" class="outline-2">
+<h2 id="org74c8945">First attempt: lifting into the <code>Alternative</code> of <code>Either e</code></h2>
+<div class="outline-text-2" id="text-org74c8945">
+<p>
+There's an instance of <code>Alternative</code> for <code>Either e</code> in version 0.5 of
+<a href="https://hackage.haskell.org/package/transformers-0.5.6.2/docs/Control-Monad-Trans-Error.html#section.orphans">transformers</a>. It's deprecated and it's gone in newer versions of the library as
+one really should use <code>Except</code> or <code>ExceptT</code> instead. Even if I don't think it's
+where I want to end up, it's not an altogether bad place to start.
+</p>
+
+<p>
+Now let's define a function using <code>liftA2 (&lt;|&gt;)</code> to make it easy to see what the
+behaviour is
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">fallBack</span> <span class="org-haskell-operator">::</span>
+    <span class="org-haskell-type">Applicative</span> m <span class="org-haskell-operator">=&gt;</span>
+    m <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Either</span> <span class="org-haskell-type">String</span> res<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">-&gt;</span>
+    m <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Either</span> <span class="org-haskell-type">String</span> res<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">-&gt;</span>
+    m <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Either</span> <span class="org-haskell-type">String</span> res<span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-haskell-definition">fallBack</span> <span class="org-haskell-operator">=</span> liftA2 <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-operator">&lt;|&gt;</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<pre class="example" id="org1f6b3a0">
+λ&gt; loadFromDisk "bad key" `fallBack` loadFromWeb "good key"
+local: bad key
+web: good key
+Right 8
+
+λ&gt; loadFromDisk "bad key" `fallBack` loadFromWeb "bad key"
+local: bad key
+web: bad key
+Left "no such remote key: bad key"
+</pre>
+
+<p>
+The first example shows that it falls back to loading form the web, and the
+second one shows that it's only the last failure that survives. The latter part,
+that only the last failure survives, isn't ideal but I think I can live with
+that. If I were interested in collecting all failures I would reach for
+<code>Validation</code> from <a href="https://hackage.haskell.org/package/validation-selective"><code>validation-selective</code></a> (there's one in <a href="https://hackage.haskell.org/package/validation-selective"><code>validation</code></a> that
+should work too).
+</p>
+
+<p>
+So far so good, but the next example shows a behaviour I don't want
+</p>
+
+<pre class="example" id="org005ead3">
+λ&gt; loadFromDisk "good key" `fallBack` loadFromWeb "good key"
+local: good key
+web: good key
+Right 8
+</pre>
+
+<p>
+or to make it even more explicit
+</p>
+
+<pre class="example" id="orgf34f455">
+λ&gt; loadFromDisk "good key" `fallBack` undefined
+local: good key
+*** Exception: Prelude.undefined
+CallStack (from HasCallStack):
+  error, called at libraries/base/GHC/Err.hs:79:14 in base:GHC.Err
+  undefined, called at &lt;interactive&gt;:451:36 in interactive:Ghci4
+</pre>
+
+<p>
+There's no short-circuiting!<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>
+</p>
+
+<p>
+The behaviour I want is of course that if the first action is successful, then
+the second action shouldn't take place at all.
+</p>
+
+<p>
+It looks like either <code>&lt;|&gt;</code> is strict in its second argument, or maybe it's
+<code>liftA2</code> that forces it. I've not bothered digging into the details, it's enough
+to observe it to realise that this approach isn't good enough.
+</p>
+</div>
+</div>
+
+<div id="outline-container-second-attempt" class="outline-2">
+<h2 id="second-attempt">Second attempt: cutting it short, manually</h2>
+<div class="outline-text-2" id="text-second-attempt">
+<p>
+Fixing the lack of short-circuiting the evaluation after the first success isn't
+too difficult to do manually. Something like this does it
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">fallBack</span> <span class="org-haskell-operator">::</span>
+    <span class="org-haskell-type">Monad</span> m <span class="org-haskell-operator">=&gt;</span>
+    m <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Either</span> <span class="org-haskell-type">String</span> a<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">-&gt;</span>
+    m <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Either</span> <span class="org-haskell-type">String</span> a<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">-&gt;</span>
+    m <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Either</span> <span class="org-haskell-type">String</span> a<span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-haskell-definition">fallBack</span> first other <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+    first <span class="org-haskell-operator">&gt;&gt;=</span> <span class="org-haskell-operator">\</span><span class="org-haskell-keyword">case</span>
+        r<span class="org-haskell-operator">@</span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">Right</span> <span class="org-haskell-keyword">_</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">-&gt;</span> pure r
+        r<span class="org-haskell-operator">@</span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">Left</span> <span class="org-haskell-keyword">_</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-rainbow-delimiters-depth-1">(</span>r <span class="org-haskell-operator">&lt;|&gt;</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">&lt;$&gt;</span> other
+</pre>
+</div>
+
+<p>
+It does indeed show the behaviour I want
+</p>
+
+<pre class="example" id="org0bc7069">
+λ&gt; loadFromDisk "bad key" `fallBack` loadFromWeb "good key"
+local: bad key
+web: good key
+Right 8
+
+λ&gt; loadFromDisk "bad key" `fallBack` loadFromWeb "bad key"
+local: bad key
+web: bad key
+Left "no such remote key: bad key"
+
+λ&gt; loadFromDisk "good key" `fallBack` undefined
+local: good key
+Right 8
+</pre>
+
+<p>
+Excellent! And to switch over to use <code>Validation</code> one just have to switch
+constructors, <code>Right</code> becomes <code>Success</code> and <code>Left</code> becomes <code>Failure</code>. Though
+collecting the failures by concatenating strings isn't the best idea of course.
+Switching to some other <code>Monoid</code> (that's the constraint on the failure type)
+isn't too difficult.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">fallBack</span> <span class="org-haskell-operator">::</span>
+    <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Monad</span> m, <span class="org-haskell-type">Monoid</span> e<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=&gt;</span>
+    m <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Validation</span> e a<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">-&gt;</span>
+    m <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Validation</span> e a<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">-&gt;</span>
+    m <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Validation</span> e a<span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-haskell-definition">fallBack</span> first other <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+    first <span class="org-haskell-operator">&gt;&gt;=</span> <span class="org-haskell-operator">\</span><span class="org-haskell-keyword">case</span>
+        r<span class="org-haskell-operator">@</span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">Success</span> <span class="org-haskell-keyword">_</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">-&gt;</span> pure r
+        r<span class="org-haskell-operator">@</span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">Failure</span> <span class="org-haskell-keyword">_</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-rainbow-delimiters-depth-1">(</span>r <span class="org-haskell-operator">&lt;|&gt;</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">&lt;$&gt;</span> other
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgbc3f08f" class="outline-2">
+<h2 id="orgbc3f08f">Third attempt: pulling failures out to <code>MonadPlus</code></h2>
+<div class="outline-text-2" id="text-orgbc3f08f">
+<p>
+After writing the <code>fallBack</code> function I still wanted to explore other solutions.
+There's almost always something more out there in the Haskell eco system, right?
+So I asked in the <i>#haskell-beginners</i> channel on the Functional Programming
+Slack. The way I asked the question resulted in answers that iterates over a
+list of actions and cutting at the first success.
+</p>
+
+<p>
+The first suggestion had me a little confused at first, but once I re-organised
+the helper function a little it made more sense to me.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">mFromRight</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">MonadPlus</span> m <span class="org-haskell-operator">=&gt;</span> m <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Either</span> err res<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">-&gt;</span> m res
+<span class="org-haskell-definition">mFromRight</span> <span class="org-haskell-operator">=</span> <span class="org-rainbow-delimiters-depth-1">(</span>either <span class="org-rainbow-delimiters-depth-2">(</span>const mzero<span class="org-rainbow-delimiters-depth-2">)</span> return <span class="org-haskell-operator">=&lt;&lt;</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+To use it put the actions in a list, map the helper above, and finally run
+<code>asum</code> on it all<sup><a id="fnr.2" class="footref" href="#fn.2" role="doc-backlink">2</a></sup>. I think it makes it a little clearer what happens if
+it's rewritten like this.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">firstRightM</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">MonadPlus</span> m <span class="org-haskell-operator">=&gt;</span> <span class="org-rainbow-delimiters-depth-1">[</span>m <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-haskell-type">Either</span> err res<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">]</span> <span class="org-haskell-operator">-&gt;</span> m res
+<span class="org-haskell-definition">firstRightM</span> <span class="org-haskell-operator">=</span> asum <span class="org-haskell-operator">.</span> fmap go
+  <span class="org-haskell-keyword">where</span>
+    go m <span class="org-haskell-operator">=</span> m <span class="org-haskell-operator">&gt;&gt;=</span> either <span class="org-rainbow-delimiters-depth-1">(</span>const mzero<span class="org-rainbow-delimiters-depth-1">)</span> return
+</pre>
+</div>
+
+<pre class="example" id="org46be250">
+λ&gt; firstRightM [loadFromDisk "bad key", loadFromWeb "good key"]
+local: bad key
+web: good key
+8
+
+λ&gt; firstRightM [loadFromDisk "good key", undefined]
+local: good key
+8
+</pre>
+
+<p>
+So far so good, but I left out the case where both fail, because that's sort of
+the fly in the ointment here
+</p>
+
+<pre class="example" id="orgdda08c7">
+λ&gt; firstRightM [loadFromDisk "bad key", loadFromWeb "bad key"]
+local: bad key
+web: bad key
+*** Exception: user error (mzero)
+</pre>
+
+<p>
+It's not nice to be back to deal with exceptions, but it's possible to recover,
+e.g. by appending <code>&lt;|&gt; pure 0</code>.
+</p>
+
+<pre class="example" id="org3555519">
+λ&gt; firstRightM [loadFromDisk "bad key", loadFromWeb "bad key"] &lt;|&gt; pure 0
+local: bad key
+web: bad key
+0
+</pre>
+
+<p>
+However that removes the ability to deal with the situation where all actions
+fail. Not nice! Add to that the difficulty of coming up with a <i>good</i>
+<code>MonadPlus</code> instance for an application monad; one basically have to resort to
+the same thing as for <code>IO</code>, i.e. to throw an exception. Also not nice!
+</p>
+</div>
+</div>
+
+<div id="outline-container-fourth-attempt" class="outline-2">
+<h2 id="fourth-attempt">Fourth attempt: wrapping in <code>ExceptT</code> to get its <code>Alternative</code> behaviour</h2>
+<div class="outline-text-2" id="text-fourth-attempt">
+<p>
+This was another suggestion from the Slack channel, and it is the one I like the
+most. Again it was suggested as a way to stop at the first successful action in
+a list of actions.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">firstRightM</span> <span class="org-haskell-operator">::</span>
+    <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Foldable</span> t, <span class="org-haskell-type">Functor</span> t, <span class="org-haskell-type">Monad</span> m, <span class="org-haskell-type">Monoid</span> err<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=&gt;</span>
+    t <span class="org-rainbow-delimiters-depth-1">(</span>m <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-haskell-type">Either</span> err res<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">-&gt;</span>
+    m <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Either</span> err res<span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-haskell-definition">firstRightM</span> <span class="org-haskell-operator">=</span> runExceptT <span class="org-haskell-operator">.</span> asum <span class="org-haskell-operator">.</span> fmap <span class="org-haskell-constructor">ExceptT</span>
+</pre>
+</div>
+
+<p>
+Which can be used similarly to the previous one. It's also easy to write a
+variant of <code>fallBack</code> for it.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">fallBack</span> <span class="org-haskell-operator">::</span>
+    <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Monad</span> m, <span class="org-haskell-type">Monoid</span> err<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=&gt;</span>
+    m <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Either</span> err res<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">-&gt;</span>
+    m <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Either</span> err res<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">-&gt;</span>
+    m <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Either</span> err res<span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-haskell-definition">fallBack</span> first other <span class="org-haskell-operator">=</span> runExceptT <span class="org-haskell-operator">$</span> <span class="org-haskell-constructor">ExceptT</span> first <span class="org-haskell-operator">&lt;|&gt;</span> <span class="org-haskell-constructor">ExceptT</span> other
+</pre>
+</div>
+
+<pre class="example" id="org2366803">
+λ&gt; loadFromDisk "bad key" `fallBack` loadFromWeb "good key"
+local: bad key
+web: good key
+Right 8
+
+λ&gt; loadFromDisk "good key" `fallBack` undefined
+local: good key
+Right 8
+
+λ&gt; loadFromDisk "bad key" `fallBack` loadFromWeb "bad key"
+local: bad key
+web: bad key
+Left "no such local key: bad keyno such remote key: bad key"
+</pre>
+
+<p>
+Yay! This solution has the short-circuiting behaviour I want, as well as
+collecting all errors on failure.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgc7c8216" class="outline-2">
+<h2 id="orgc7c8216">Conclusion</h2>
+<div class="outline-text-2" id="text-orgc7c8216">
+<p>
+I'm still a little disappointed that <code>liftA2 (&lt;|&gt;)</code> isn't short-circuiting as I
+still think it's the easiest of the approaches. However, it's a problem that one
+has to rely on a deprecated instance of <code>Alternative</code> for <code>Either String</code>,
+but switching to use <code>Validation</code> would be only a minor change.
+</p>
+
+<p>
+Manually writing the <code>fallBack</code> function, as I did in the <a href="#second-attempt">second attempt</a>,
+results in very explicit code which is nice as it often reduces the cognitive
+load for the reader. It's a contender, but using the deprecated <code>Alternative</code>
+instance is problematic and introducing <code>Validition</code>, an arguably not very
+common type, takes away a little of the appeal.
+</p>
+
+<p>
+In the end I prefer the <a href="#fourth-attempt">fourth attempt</a>. It behaves exactly like I want and even
+though <code>ExpectT</code> lives in <i>transformers</i> I feel that it (I pull it in via <i>mtl</i>)
+is in such wide use that most Haskell programmers will be familiar with it.
+</p>
+
+<p>
+One final thing to add is that the <a href="https://hackage.haskell.org/package/validation-selective-0.1.0.1/docs/Validation.html">documentation of <code>Validation</code></a> is an excellent
+inspiration when it comes to the behaviour of its instances. I wish that the
+documentation of other packages, in particular commonly used ones like <i>base</i>,
+<i>transformers</i>, and <i>mtl</i>, would be more like it.
+</p>
+</div>
+</div>
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+
+<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+I'm not sure if it's a good term to use in this case as <a href="https://en.wikipedia.org/wiki/Short-circuit_evaluation">Wikipedia</a> says
+it's for Boolean operators. I hope it's not too far a stretch to use it in this
+context too.
+</p></div></div>
+
+<div class="footdef"><sup><a id="fn.2" class="footnum" href="#fnr.2" role="doc-backlink">2</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+In the version of <i>base</i> I'm using there is no <code>asum</code>, so I simply copied
+the implementation from a later version:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">asum</span> <span class="org-haskell-operator">::</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Foldable</span> t, <span class="org-haskell-type">Alternative</span> f<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">=&gt;</span> t <span class="org-rainbow-delimiters-depth-1">(</span>f a<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">-&gt;</span> f a
+<span class="org-haskell-definition">asum</span> <span class="org-haskell-operator">=</span> foldr <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-operator">&lt;|&gt;</span><span class="org-rainbow-delimiters-depth-1">)</span> empty
+</pre>
+</div></div></div>
+
+
+</div>
+</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-alternative_typeclass.html">alternative_typeclass</a> <a href="https://magnus.therning.org/tag-caching.html">caching</a> <a href="https://magnus.therning.org/tag-fallback.html">fallback</a> <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> </div></div>
+<div id="postamble" class="status"><!-- org-static-blog-page-postamble --></div>
+</body>
+</html>
