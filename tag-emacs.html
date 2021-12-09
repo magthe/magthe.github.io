@@ -12,6 +12,55 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <h1 class="title">Posts tagged "emacs":</h1>
+<div class="post-date">08 Dec 2021</div><h1 class="post-title"><a href="https://magnus.therning.org/2021-12-08-magit_forge-and-self-hosted-gitlab.html">Magit/forge and self-hosted GitLab</a></h1>
+<p>
+As I found the documentation for adding a self-hosted instance of GitLab to to
+magit/forge a bit difficult, I thought I'd write a note for my future self (and
+anyone else who might find it useful).
+</p>
+
+<p>
+First put the following in `~/.gitconfig`
+</p>
+
+<div class="org-src-container">
+<pre class="src src-gitconfig">[<span class="org-type">gitlab</span> <span class="org-function-name">"gitlab.private.com/api/v4"</span>]
+  <span class="org-variable-name">user</span> = my.username
+</pre>
+</div>
+
+<p>
+Then create an access token on GitLab. I ticked <code>api</code> and <code>write_repository</code>,
+which seems to work fine so far. Put the token in <code>~/.authinfo.gpg</code>
+</p>
+
+<div class="org-src-container">
+<pre class="src src-authinfo"><span class="org-variable-name">machine</span> <span class="org-builtin">gitlab.private.com/api/v4</span> <span class="org-comment-delimiter">login</span> <span class="org-keyword">my.user^forge</span> <span class="org-comment-delimiter">password</span> <span class="org-doc">&lt;token&gt;</span>
+</pre>
+</div>
+
+<p>
+(Remember that a newline is needed at the end of the file.)
+</p>
+
+<p>
+Finally, add the GitLab instance to <code>'forge-alist</code>
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">setq</span>
+ forge-alist
+ '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-rainbow-delimiters-depth-3">(</span><span class="org-string">"gitlab.private.com"</span> <span class="org-string">"gitlab.private.com/api/v4"</span> <span class="org-string">"gitlab.private.com"</span> forge-gitlab-repository<span class="org-rainbow-delimiters-depth-3">)</span>
+   <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-string">"github.com"</span> <span class="org-string">"api.github.com"</span> <span class="org-string">"github.com"</span> forge-github-repository<span class="org-rainbow-delimiters-depth-3">)</span>
+   <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-string">"gitlab.com"</span> <span class="org-string">"gitlab.com/api/v4"</span> <span class="org-string">"gitlab.com"</span> forge-gitlab-repository<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+ <span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+That's it!
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-git.html">git</a> <a href="https://magnus.therning.org/tag-magit.html">magit</a> </div>
 <div class="post-date">23 Jul 2021</div><h1 class="post-title"><a href="https://magnus.therning.org/2021-07-23-keeping-todo-items-in-org-roam-v2.html">Keeping todo items in org-roam v2</a></h1>
 <p>
 Org-roam v2 has been <a href="https://blog.jethro.dev/posts/org_roam_v2/">released</a> and yes, it broke my config a bit. Unfortunately
