@@ -12,6 +12,102 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <h1 class="title">Posts tagged "org-mode":</h1>
+<div class="post-date">01 Jan 2022</div><h1 class="post-title"><a href="https://magnus.therning.org/2022-01-01-trimming-newline-on-code-block-variable.html">Trimming newline on code block variable</a></h1>
+<p>
+Today I found <a href="https://github.com/zweifisch/ob-http">ob-http</a> and decided to try it out a little. I quickly ran into a
+problem of a trailing newline. Basically I tried to do something like this:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-org"><span class="org-org-meta-line">#+name: id</span>
+<span class="org-org-block-begin-line">#+begin_src http :select .id :cache yes</span>
+<span class="org-org-block"><span class="org-constant">POST</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-function-name">/foo</span></span>
+<span class="org-org-block"><span class="org-variable-name">Content-Type</span></span><span class="org-org-block"><span class="org-comment">:</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-string">application/json</span></span>
+
+<span class="org-org-block"><span class="org-comment">{</span></span>
+<span class="org-org-block">  </span><span class="org-org-block"><span class="org-string">"foo"</span></span><span class="org-org-block"><span class="org-comment">:</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-string">"toto"</span></span><span class="org-org-block"><span class="org-comment">,</span></span>
+<span class="org-org-block">  </span><span class="org-org-block"><span class="org-string">"bar"</span></span><span class="org-org-block"><span class="org-comment">:</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-string">"tata"</span></span>
+<span class="org-org-block"><span class="org-comment">}</span></span>
+<span class="org-org-block-end-line">#+end_src</span>
+
+<span class="org-org-meta-line">#+RESULTS[c5fd99206822a2109d7ac1d140185e6ec3f4f1d9]: id</span>
+<span class="org-org-block-begin-line">#+begin_example</span>
+<span class="custom">48722051-f81b-433f-acb4-a65d961ec841</span>
+<span class="org-org-block-end-line">#+end_example</span>
+
+<span class="org-org-meta-line">#+header: :var id=id</span>
+<span class="org-org-block-begin-line">#+begin_src http</span>
+<span class="org-org-block"><span class="org-constant">POST</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-function-name">/foo/${id}/fix</span></span>
+<span class="org-org-block-end-line">#+end_src</span>
+</pre>
+</div>
+
+<p>
+The trailing newline messes up the URL though, and the second code block fails.
+</p>
+
+<p>
+I found two ways to deal with it, using a table and using <code>org-sbe</code>
+</p>
+
+<div id="outline-container-org3ef143c" class="outline-2">
+<h2 id="org3ef143c">Using a table</h2>
+<div class="outline-text-2" id="text-org3ef143c">
+<div class="org-src-container">
+<pre class="src src-org"><span class="org-org-meta-line">#+name: id</span>
+<span class="org-org-block-begin-line">#+begin_src http :select .id :cache yes :results table</span>
+<span class="org-org-block"><span class="org-constant">POST</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-function-name">/foo</span></span>
+<span class="org-org-block"><span class="org-variable-name">Content-Type</span></span><span class="org-org-block"><span class="org-comment">:</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-string">application/json</span></span>
+
+<span class="org-org-block"><span class="org-comment">{</span></span>
+<span class="org-org-block">  </span><span class="org-org-block"><span class="org-string">"foo"</span></span><span class="org-org-block"><span class="org-comment">:</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-string">"toto"</span></span><span class="org-org-block"><span class="org-comment">,</span></span>
+<span class="org-org-block">  </span><span class="org-org-block"><span class="org-string">"bar"</span></span><span class="org-org-block"><span class="org-comment">:</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-string">"tata"</span></span>
+<span class="org-org-block"><span class="org-comment">}</span></span>
+<span class="org-org-block-end-line">#+end_src</span>
+
+<span class="org-org-meta-line">#+RESULTS[c5fd99206822a2109d7ac1d140185e6ec3f4f1d9]: id</span>
+<span class="org-org-block-begin-line">#+begin_example</span>
+<span class="custom">| 48722051-f81b-433f-acb4-a65d961ec841 |</span>
+<span class="org-org-block-end-line">#+end_example</span>
+
+<span class="org-org-meta-line">#+header: :var id=id[0,0]</span>
+<span class="org-org-block-begin-line">#+begin_src http</span>
+<span class="org-org-block"><span class="org-constant">POST</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-function-name">/foo/${id}/fix</span></span>
+<span class="org-org-block-end-line">#+end_src</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org33493ca" class="outline-2">
+<h2 id="org33493ca">Using <code>org-sbe</code></h2>
+<div class="outline-text-2" id="text-org33493ca">
+<div class="org-src-container">
+<pre class="src src-org"><span class="org-org-meta-line">#+name: id</span>
+<span class="org-org-block-begin-line">#+begin_src http :select .id :cache yes</span>
+<span class="org-org-block"><span class="org-constant">POST</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-function-name">/foo</span></span>
+<span class="org-org-block"><span class="org-variable-name">Content-Type</span></span><span class="org-org-block"><span class="org-comment">:</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-string">application/json</span></span>
+
+<span class="org-org-block"><span class="org-comment">{</span></span>
+<span class="org-org-block">  </span><span class="org-org-block"><span class="org-string">"foo"</span></span><span class="org-org-block"><span class="org-comment">:</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-string">"toto"</span></span><span class="org-org-block"><span class="org-comment">,</span></span>
+<span class="org-org-block">  </span><span class="org-org-block"><span class="org-string">"bar"</span></span><span class="org-org-block"><span class="org-comment">:</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-string">"tata"</span></span>
+<span class="org-org-block"><span class="org-comment">}</span></span>
+<span class="org-org-block-end-line">#+end_src</span>
+
+<span class="org-org-meta-line">#+RESULTS[c5fd99206822a2109d7ac1d140185e6ec3f4f1d9]: id</span>
+<span class="org-org-block-begin-line">#+begin_example</span>
+<span class="custom">48722051-f81b-433f-acb4-a65d961ec841</span>
+<span class="org-org-block-end-line">#+end_example</span>
+
+<span class="org-org-meta-line">#+header: :var id=(org-sbe id)</span>
+<span class="org-org-block-begin-line">#+begin_src http</span>
+<span class="org-org-block"><span class="org-constant">POST</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-function-name">/foo/${id}/fix</span></span>
+<span class="org-org-block-end-line">#+end_src</span>
+</pre>
+</div>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> </div>
 <div class="post-date">23 Jul 2021</div><h1 class="post-title"><a href="https://magnus.therning.org/2021-07-23-keeping-todo-items-in-org-roam-v2.html">Keeping todo items in org-roam v2</a></h1>
 <p>
 Org-roam v2 has been <a href="https://blog.jethro.dev/posts/org_roam_v2/">released</a> and yes, it broke my config a bit. Unfortunately

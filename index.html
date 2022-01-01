@@ -12,6 +12,102 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <header class="site-header" role="banner"><h1 class="title">Magnus web site</h1><h2 class="subtitle">Random stuff</h2></header>
+<div class="post-date">01 Jan 2022</div><h1 class="post-title"><a href="https://magnus.therning.org/2022-01-01-trimming-newline-on-code-block-variable.html">Trimming newline on code block variable</a></h1>
+<p>
+Today I found <a href="https://github.com/zweifisch/ob-http">ob-http</a> and decided to try it out a little. I quickly ran into a
+problem of a trailing newline. Basically I tried to do something like this:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-org"><span class="org-org-meta-line">#+name: id</span>
+<span class="org-org-block-begin-line">#+begin_src http :select .id :cache yes</span>
+<span class="org-org-block"><span class="org-constant">POST</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-function-name">/foo</span></span>
+<span class="org-org-block"><span class="org-variable-name">Content-Type</span></span><span class="org-org-block"><span class="org-comment">:</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-string">application/json</span></span>
+
+<span class="org-org-block"><span class="org-comment">{</span></span>
+<span class="org-org-block">  </span><span class="org-org-block"><span class="org-string">"foo"</span></span><span class="org-org-block"><span class="org-comment">:</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-string">"toto"</span></span><span class="org-org-block"><span class="org-comment">,</span></span>
+<span class="org-org-block">  </span><span class="org-org-block"><span class="org-string">"bar"</span></span><span class="org-org-block"><span class="org-comment">:</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-string">"tata"</span></span>
+<span class="org-org-block"><span class="org-comment">}</span></span>
+<span class="org-org-block-end-line">#+end_src</span>
+
+<span class="org-org-meta-line">#+RESULTS[c5fd99206822a2109d7ac1d140185e6ec3f4f1d9]: id</span>
+<span class="org-org-block-begin-line">#+begin_example</span>
+<span class="custom">48722051-f81b-433f-acb4-a65d961ec841</span>
+<span class="org-org-block-end-line">#+end_example</span>
+
+<span class="org-org-meta-line">#+header: :var id=id</span>
+<span class="org-org-block-begin-line">#+begin_src http</span>
+<span class="org-org-block"><span class="org-constant">POST</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-function-name">/foo/${id}/fix</span></span>
+<span class="org-org-block-end-line">#+end_src</span>
+</pre>
+</div>
+
+<p>
+The trailing newline messes up the URL though, and the second code block fails.
+</p>
+
+<p>
+I found two ways to deal with it, using a table and using <code>org-sbe</code>
+</p>
+
+<div id="outline-container-org3ef143c" class="outline-2">
+<h2 id="org3ef143c">Using a table</h2>
+<div class="outline-text-2" id="text-org3ef143c">
+<div class="org-src-container">
+<pre class="src src-org"><span class="org-org-meta-line">#+name: id</span>
+<span class="org-org-block-begin-line">#+begin_src http :select .id :cache yes :results table</span>
+<span class="org-org-block"><span class="org-constant">POST</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-function-name">/foo</span></span>
+<span class="org-org-block"><span class="org-variable-name">Content-Type</span></span><span class="org-org-block"><span class="org-comment">:</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-string">application/json</span></span>
+
+<span class="org-org-block"><span class="org-comment">{</span></span>
+<span class="org-org-block">  </span><span class="org-org-block"><span class="org-string">"foo"</span></span><span class="org-org-block"><span class="org-comment">:</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-string">"toto"</span></span><span class="org-org-block"><span class="org-comment">,</span></span>
+<span class="org-org-block">  </span><span class="org-org-block"><span class="org-string">"bar"</span></span><span class="org-org-block"><span class="org-comment">:</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-string">"tata"</span></span>
+<span class="org-org-block"><span class="org-comment">}</span></span>
+<span class="org-org-block-end-line">#+end_src</span>
+
+<span class="org-org-meta-line">#+RESULTS[c5fd99206822a2109d7ac1d140185e6ec3f4f1d9]: id</span>
+<span class="org-org-block-begin-line">#+begin_example</span>
+<span class="custom">| 48722051-f81b-433f-acb4-a65d961ec841 |</span>
+<span class="org-org-block-end-line">#+end_example</span>
+
+<span class="org-org-meta-line">#+header: :var id=id[0,0]</span>
+<span class="org-org-block-begin-line">#+begin_src http</span>
+<span class="org-org-block"><span class="org-constant">POST</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-function-name">/foo/${id}/fix</span></span>
+<span class="org-org-block-end-line">#+end_src</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org33493ca" class="outline-2">
+<h2 id="org33493ca">Using <code>org-sbe</code></h2>
+<div class="outline-text-2" id="text-org33493ca">
+<div class="org-src-container">
+<pre class="src src-org"><span class="org-org-meta-line">#+name: id</span>
+<span class="org-org-block-begin-line">#+begin_src http :select .id :cache yes</span>
+<span class="org-org-block"><span class="org-constant">POST</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-function-name">/foo</span></span>
+<span class="org-org-block"><span class="org-variable-name">Content-Type</span></span><span class="org-org-block"><span class="org-comment">:</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-string">application/json</span></span>
+
+<span class="org-org-block"><span class="org-comment">{</span></span>
+<span class="org-org-block">  </span><span class="org-org-block"><span class="org-string">"foo"</span></span><span class="org-org-block"><span class="org-comment">:</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-string">"toto"</span></span><span class="org-org-block"><span class="org-comment">,</span></span>
+<span class="org-org-block">  </span><span class="org-org-block"><span class="org-string">"bar"</span></span><span class="org-org-block"><span class="org-comment">:</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-string">"tata"</span></span>
+<span class="org-org-block"><span class="org-comment">}</span></span>
+<span class="org-org-block-end-line">#+end_src</span>
+
+<span class="org-org-meta-line">#+RESULTS[c5fd99206822a2109d7ac1d140185e6ec3f4f1d9]: id</span>
+<span class="org-org-block-begin-line">#+begin_example</span>
+<span class="custom">48722051-f81b-433f-acb4-a65d961ec841</span>
+<span class="org-org-block-end-line">#+end_example</span>
+
+<span class="org-org-meta-line">#+header: :var id=(org-sbe id)</span>
+<span class="org-org-block-begin-line">#+begin_src http</span>
+<span class="org-org-block"><span class="org-constant">POST</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-function-name">/foo/${id}/fix</span></span>
+<span class="org-org-block-end-line">#+end_src</span>
+</pre>
+</div>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> </div>
 <div class="post-date">08 Dec 2021</div><h1 class="post-title"><a href="https://magnus.therning.org/2021-12-08-magit_forge-and-self-hosted-gitlab.html">Magit/forge and self-hosted GitLab</a></h1>
 <p>
 As I found the documentation for adding a self-hosted instance of GitLab to to
@@ -743,106 +839,7 @@ The variable <code>org-roam-file-setup-hook</code> is gone, so the the more gene
 </div>
 </div>
 </div>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> <a href="https://magnus.therning.org/tag-org-roam.html">org-roam</a> <a href="https://magnus.therning.org/tag-spacemacs.html">spacemacs</a> </div>
-<div class="post-date">03 Jul 2021</div><h1 class="post-title"><a href="https://magnus.therning.org/2021-07-03-the-timeout-manager-exception.html">The timeout manager exception</a></h1>
-<p>
-The other day I bumped the dependencies of a Haskell project at work and noticed
-a new exception being thrown:
-</p>
-
-<blockquote>
-<p>
-Thread killed by timeout manager
-</p>
-</blockquote>
-
-<p>
-After a couple of false starts (it wasn't the <a href="https://hackage.haskell.org/package/resource-pool">connection pool</a>, nor was it
-<a href="https://hackage.haskell.org/package/servant">servant</a>) I realised that a better approach would be to look at the list of
-packages that were updated as part of the dependency bumping.<sup><a id="fnr.1" class="footref" href="#fn.1">1</a></sup> Most of them
-I thought would be <span class="underline">very</span> unlikely sources of it, but two in the list stood out:
-</p>
-
-<table>
-
-
-<colgroup>
-<col  class="org-left">
-
-<col  class="org-right">
-
-<col  class="org-right">
-</colgroup>
-<thead>
-<tr>
-<th scope="col" class="org-left">Package</th>
-<th scope="col" class="org-right">Pre</th>
-<th scope="col" class="org-right">Post</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="org-left"><a href="https://hackage.haskell.org/package/unliftio">unliftio</a></td>
-<td class="org-right">0.2.14</td>
-<td class="org-right">0.2.18</td>
-</tr>
-
-<tr>
-<td class="org-left"><a href="https://hackage.haskell.org/package/warp">warp</a></td>
-<td class="org-right">3.3.15</td>
-<td class="org-right">3.3.16</td>
-</tr>
-</tbody>
-</table>
-
-<p>
-<code>warp</code> since the exception seemed to be thrown shortly after handling an HTTP
-request, and <code>unliftio</code> since the exception was caught by the handler for
-uncaught exceptions and its description contains "thread". Also, when looking at
-the code changes in <code>warp</code> on GitHub<sup><a id="fnr.2" class="footref" href="#fn.2">2</a></sup> I found that some of the changes
-introduced was increased use of <code>unliftio</code> for async stuff. The changes contain
-mentions of <code>TimeoutThread</code> and <code>System.TimeManager</code>. That sounded promising,
-and it lead me to the <a href="https://hackage.haskell.org/package/time-manager-0.0.0/docs/System-TimeManager.html#t:TimeoutThread">TimeoutThread</a> exception in <a href="https://hackage.haskell.org/package/time-manager">time-manager</a>.
-</p>
-
-<p>
-With that knowledge I could quickly adjust the handler for uncaught exceptions
-to not log <code>TimeoutThread</code> as fatal:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-haskell-definition">lastExceptionHandler</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">LoggerSet</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">SomeException</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
-<span class="org-haskell-definition">lastExceptionHandler</span> logger e
-  <span class="org-haskell-operator">|</span> <span class="org-haskell-constructor">Just</span> <span class="org-haskell-constructor">TimeoutThread</span> <span class="org-haskell-operator">&lt;-</span> fromException e <span class="org-haskell-operator">=</span> return <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
-  <span class="org-haskell-operator">|</span> otherwise <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
-      logFatalIoS logger <span class="org-haskell-operator">$</span> pack <span class="org-haskell-operator">$</span> <span class="org-string">"uncaught exception: "</span> <span class="org-haskell-operator">&lt;&gt;</span> displayException e
-      flushLogStr logger
-</pre>
-</div>
-
-<p>
-I have to say it was a bit more work to arrive at this than I'd have liked. I
-reckon there are easier ways to track down the information I needed. So I'd love
-to hear what tricks and tips others have.
-</p>
-<div id="footnotes">
-<h2 class="footnotes">Footnotes: </h2>
-<div id="text-footnotes">
-
-<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1">1</a></sup> <div class="footpara"><p class="footpara">
-As a bonus it gave me a good reason to reach for <a href="https://man7.org/linux/man-pages/man1/comm.1.html"><code>comm</code></a>, a command that I
-rarely use but for some reason always enjoy.
-</p></div></div>
-
-<div class="footdef"><sup><a id="fn.2" class="footnum" href="#fnr.2">2</a></sup> <div class="footpara"><p class="footpara">
-GitHub's compare feature isn't very easy to discover, but a URL like this
-<a href="https://github.com/yesodweb/wai/compare/warp-3.3.15...warp-3.3.16">https://github.com/yesodweb/wai/compare/warp-3.3.15&#x2026;warp-3.3.16</a> (note the 3
-dots!) does the trick.
-</p></div></div>
-
-
-</div>
-</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-warp.html">warp</a> <a href="https://magnus.therning.org/tag-servant.html">servant</a> </div><div id="archive">
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> <a href="https://magnus.therning.org/tag-org-roam.html">org-roam</a> <a href="https://magnus.therning.org/tag-spacemacs.html">spacemacs</a> </div><div id="archive">
 <a href="https://magnus.therning.org/archive.html">Other posts</a>
 </div>
 </div>
