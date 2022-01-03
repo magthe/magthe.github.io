@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="alternate"
+      type="application/rss+xml"
+      href="https://magnus.therning.org/feed.xml"
+      title="RSS feed for https://magnus.therning.org/">
+<title>Magnus web site</title>
+<meta name="author" content="Magnus Therning"><meta name="referrer" content="no-referrer"><link href= "static/style.css" rel="stylesheet" type="text/css" /><link href= "static/htmlize.css" rel="stylesheet" type="text/css" /><link href= "static/extra_style.css" rel="stylesheet" type="text/css" /></head>
+<body>
+<div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
+<div id="content">
+<h1 class="title">Posts tagged "compose":</h1>
+<div class="post-date">03 Jan 2022</div><h1 class="post-title"><a href="https://magnus.therning.org/2022-01-03-accessing-the-host-from-inside-a-docker-container.html">Accessing the host from inside a Docker container</a></h1>
+<p>
+To give the container access to a service running on the the host add
+<code>extra_hosts</code> to its definition in the Compose file:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-yaml"><span class="org-variable-name">svc</span>:
+  ...
+  <span class="org-variable-name">extra_hosts</span>:
+    - <span class="org-string">"host.docker.internal:host-gateway"</span>
+</pre>
+</div>
+
+<p>
+Then it's possible to access it as <code>host.docler.internal</code>. Just don't forget to
+bind the service on the host to something else than <code>127.0.0.1</code>.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-compose.html">compose</a> <a href="https://magnus.therning.org/tag-docker.html">docker</a> </div><div id="archive">
+<a href="https://magnus.therning.org/archive.html">Other posts</a>
+</div>
+</div>
+<div id="postamble" class="status"><!-- org-static-blog-page-postamble --></div>
+</body>
+</html>

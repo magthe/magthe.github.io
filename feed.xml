@@ -4,7 +4,33 @@
 <title><![CDATA[Magnus web site]]></title>
 <description><![CDATA[Magnus web site]]></description>
 <link>https://magnus.therning.org/</link>
-<lastBuildDate>Sat, 01 Jan 2022 19:26:38 +0100</lastBuildDate>
+<lastBuildDate>Mon, 03 Jan 2022 13:52:36 +0100</lastBuildDate>
+<item>
+  <title><![CDATA[Accessing the host from inside a Docker container]]></title>
+  <description><![CDATA[
+<p>
+To give the container access to a service running on the the host add
+<code>extra_hosts</code> to its definition in the Compose file:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-yaml"><span class="org-variable-name">svc</span>:
+  ...
+  <span class="org-variable-name">extra_hosts</span>:
+    - <span class="org-string">"host.docker.internal:host-gateway"</span>
+</pre>
+</div>
+
+<p>
+Then it's possible to access it as <code>host.docler.internal</code>. Just don't forget to
+bind the service on the host to something else than <code>127.0.0.1</code>.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-compose.html">compose</a> <a href="https://magnus.therning.org/tag-docker.html">docker</a> </div>]]></description>
+  <category><![CDATA[compose]]></category>
+  <category><![CDATA[docker]]></category>
+  <link>https://magnus.therning.org/2022-01-03-accessing-the-host-from-inside-a-docker-container.html</link>
+  <pubDate>Mon, 03 Jan 2022 13:48:00 +0100</pubDate>
+</item>
 <item>
   <title><![CDATA[Trimming newline on code block variable]]></title>
   <description><![CDATA[
@@ -1175,24 +1201,6 @@ Finally I need a way to run the whole thing and unwrap it all back to <code>IO</
   <category><![CDATA[redis]]></category>
   <link>https://magnus.therning.org/2021-05-07-working-with-hedis.html</link>
   <pubDate>Fri, 07 May 2021 20:54:00 +0200</pubDate>
-</item>
-<item>
-  <title><![CDATA[First contribution to nixpkgs.haskellPackages]]></title>
-  <description><![CDATA[
-<p>
-Nothing much to be proud of, but yesterday I found out that <a href="https://hackage.haskell.org/package/servant-docs">servant-docs</a> was
-marked broken in <span class="underline">nixpkgs</span> even though it builds just fine and this morning I
-decided to do something about it.
-</p>
-
-<p>
-So, with the help of a <a href="https://discourse.nixos.org/t/call-to-action-for-updating-haskell-packages-after-bump-to-lts-15/6071">post on the NixOS discourse</a> I put together my first <a href="https://github.com/NixOS/nixpkgs/pull/120026">PR</a>.
-</p>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-nix.html">nix</a> <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> </div>]]></description>
-  <category><![CDATA[nix]]></category>
-  <category><![CDATA[haskell]]></category>
-  <link>https://magnus.therning.org/2021-04-21-first-contribution-to-nixpkgs.haskellpackages.html</link>
-  <pubDate>Wed, 21 Apr 2021 22:46:00 +0200</pubDate>
 </item>
 </channel>
 </rss>
