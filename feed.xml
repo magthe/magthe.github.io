@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<rss version="2.0">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
 <channel>
 <title><![CDATA[Magnus web site]]></title>
 <description><![CDATA[Magnus web site]]></description>
 <link>https://magnus.therning.org/</link>
-<lastBuildDate>Mon, 03 Jan 2022 13:52:36 +0100</lastBuildDate>
+<lastBuildDate>Mon, 10 Jan 2022 22:04:15 +0100</lastBuildDate>
 <item>
   <title><![CDATA[Accessing the host from inside a Docker container]]></title>
   <description><![CDATA[
@@ -22,13 +22,14 @@ To give the container access to a service running on the the host add
 </div>
 
 <p>
-Then it's possible to access it as <code>host.docler.internal</code>. Just don't forget to
+Then it's possible to access it as <code>host.docker.internal</code>. Just don't forget to
 bind the service on the host to something else than <code>127.0.0.1</code>.
 </p>
 <div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-compose.html">compose</a> <a href="https://magnus.therning.org/tag-docker.html">docker</a> </div>]]></description>
   <category><![CDATA[compose]]></category>
   <category><![CDATA[docker]]></category>
   <link>https://magnus.therning.org/2022-01-03-accessing-the-host-from-inside-a-docker-container.html</link>
+  <guid>https://magnus.therning.org/2022-01-03-accessing-the-host-from-inside-a-docker-container.html</guid>
   <pubDate>Mon, 03 Jan 2022 13:48:00 +0100</pubDate>
 </item>
 <item>
@@ -132,6 +133,7 @@ I found two ways to deal with it, using a table and using <code>org-sbe</code>
   <category><![CDATA[emacs]]></category>
   <category><![CDATA[org-mode]]></category>
   <link>https://magnus.therning.org/2022-01-01-trimming-newline-on-code-block-variable.html</link>
+  <guid>https://magnus.therning.org/2022-01-01-trimming-newline-on-code-block-variable.html</guid>
   <pubDate>Sat, 01 Jan 2022 19:24:00 +0100</pubDate>
 </item>
 <item>
@@ -189,6 +191,7 @@ That's it!
   <category><![CDATA[git]]></category>
   <category><![CDATA[magit]]></category>
   <link>https://magnus.therning.org/2021-12-08-magit_forge-and-self-hosted-gitlab.html</link>
+  <guid>https://magnus.therning.org/2021-12-08-magit_forge-and-self-hosted-gitlab.html</guid>
   <pubDate>Wed, 08 Dec 2021 06:57:00 +0100</pubDate>
 </item>
 <item>
@@ -585,6 +588,7 @@ the implementation from a later version:
   <category><![CDATA[fallback]]></category>
   <category><![CDATA[haskell]]></category>
   <link>https://magnus.therning.org/2021-11-27-fallback-of-actions.html</link>
+  <guid>https://magnus.therning.org/2021-11-27-fallback-of-actions.html</guid>
   <pubDate>Sat, 27 Nov 2021 11:31:00 +0100</pubDate>
 </item>
 <item>
@@ -728,6 +732,7 @@ elegant, or maybe just more lens-y.
   <category><![CDATA[lens]]></category>
   <category><![CDATA[optics]]></category>
   <link>https://magnus.therning.org/2021-09-28-using-lens-to-set-a-value-based-on-another.html</link>
+  <guid>https://magnus.therning.org/2021-09-28-using-lens-to-set-a-value-based-on-another.html</guid>
   <pubDate>Tue, 28 Sep 2021 13:21:00 +0200</pubDate>
 </item>
 <item>
@@ -898,6 +903,7 @@ The variable <code>org-roam-file-setup-hook</code> is gone, so the the more gene
   <category><![CDATA[org-roam]]></category>
   <category><![CDATA[spacemacs]]></category>
   <link>https://magnus.therning.org/2021-07-23-keeping-todo-items-in-org-roam-v2.html</link>
+  <guid>https://magnus.therning.org/2021-07-23-keeping-todo-items-in-org-roam-v2.html</guid>
   <pubDate>Fri, 23 Jul 2021 15:07:00 +0200</pubDate>
 </item>
 <item>
@@ -1005,6 +1011,7 @@ dots!) does the trick.
   <category><![CDATA[warp]]></category>
   <category><![CDATA[servant]]></category>
   <link>https://magnus.therning.org/2021-07-03-the-timeout-manager-exception.html</link>
+  <guid>https://magnus.therning.org/2021-07-03-the-timeout-manager-exception.html</guid>
   <pubDate>Sat, 03 Jul 2021 13:52:00 +0200</pubDate>
 </item>
 <item>
@@ -1120,6 +1127,7 @@ Basically they could be looked at as hand-written mocks.
   <category><![CDATA[testing]]></category>
   <category><![CDATA[mocks]]></category>
   <link>https://magnus.therning.org/2021-06-27-a-first-look-at-hmock.html</link>
+  <guid>https://magnus.therning.org/2021-06-27-a-first-look-at-hmock.html</guid>
   <pubDate>Sun, 27 Jun 2021 23:14:00 +0200</pubDate>
 </item>
 <item>
@@ -1146,6 +1154,7 @@ After modifying the bit in <code>~/.zshenv</code> it now looks like this
   <category><![CDATA[nix]]></category>
   <category><![CDATA[zsh]]></category>
   <link>https://magnus.therning.org/2021-06-06-zsh,-nix,-and-completions.html</link>
+  <guid>https://magnus.therning.org/2021-06-06-zsh,-nix,-and-completions.html</guid>
   <pubDate>Sun, 06 Jun 2021 11:36:00 +0200</pubDate>
 </item>
 <item>
@@ -1200,6 +1209,7 @@ Finally I need a way to run the whole thing and unwrap it all back to <code>IO</
   <category><![CDATA[haskell]]></category>
   <category><![CDATA[redis]]></category>
   <link>https://magnus.therning.org/2021-05-07-working-with-hedis.html</link>
+  <guid>https://magnus.therning.org/2021-05-07-working-with-hedis.html</guid>
   <pubDate>Fri, 07 May 2021 20:54:00 +0200</pubDate>
 </item>
 </channel>
