@@ -4,7 +4,54 @@
 <title><![CDATA[Magnus web site]]></title>
 <description><![CDATA[Magnus web site]]></description>
 <link>https://magnus.therning.org/</link>
-<lastBuildDate>Mon, 10 Jan 2022 22:04:15 +0100</lastBuildDate>
+<lastBuildDate>Sun, 30 Jan 2022 15:48:51 +0100</lastBuildDate>
+<item>
+  <title><![CDATA[Keeping Projectile's cache tidy]]></title>
+  <description><![CDATA[
+<p>
+A while back I added a function to find all projects recursively from a
+directory and add them to Projectile's cache (see the <a href="2019-11-05-000-populating-projectile-s-cache.html">Populating Projectile's
+cache</a>). Since then I've just made a tiny change to also include containing a
+<code>.projectile</code> file.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">projectile-extra-add-projects-in-subfolders</span> <span class="org-rainbow-delimiters-depth-2">(</span>projects-root<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span> <span class="org-rainbow-delimiters-depth-3">(</span>list <span class="org-rainbow-delimiters-depth-4">(</span>read-directory-name <span class="org-string">"Add to known projects: "</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>message <span class="org-string">"Searching for projects in %s..."</span> projects-root<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">let*</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>proj-rx <span class="org-rainbow-delimiters-depth-5">(</span><span class="org-keyword">rx</span> <span class="org-rainbow-delimiters-depth-6">(</span><span class="org-keyword">and</span> line-start ?. <span class="org-rainbow-delimiters-depth-7">(</span><span class="org-keyword">or</span> <span class="org-string">"projectile"</span> <span class="org-string">"git"</span><span class="org-rainbow-delimiters-depth-7">)</span> line-end<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+         <span class="org-rainbow-delimiters-depth-4">(</span>dirs <span class="org-rainbow-delimiters-depth-5">(</span>seq-map
+                'file-name-directory
+                <span class="org-rainbow-delimiters-depth-6">(</span>directory-files-recursively projects-root
+                                             proj-rx
+                                             t<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>seq-do 'projectile-add-known-project dirs<span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>message <span class="org-string">"Added %d projects"</span> <span class="org-rainbow-delimiters-depth-4">(</span>length dirs<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+Since then I've also found a need for tidying the cache, in my casse that means
+removing entries in the cache that no longer exist on disk. I didn't find a
+function for it, so I wrote one.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">projectile-extra-tidy-projects</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">let</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>missing-dirs <span class="org-rainbow-delimiters-depth-5">(</span>seq-remove 'file-directory-p projectile-known-projects<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>seq-do 'projectile-remove-known-project missing-dirs<span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>message <span class="org-string">"Tidied %d projects"</span> <span class="org-rainbow-delimiters-depth-4">(</span>length missing-dirs<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-elisp.html">elisp</a> <a href="https://magnus.therning.org/tag-projectile.html">projectile</a> </div>]]></description>
+  <category><![CDATA[emacs]]></category>
+  <category><![CDATA[elisp]]></category>
+  <category><![CDATA[projectile]]></category>
+  <link>https://magnus.therning.org/2022-01-30-keeping-projectile's-cache-tidy.html</link>
+  <guid>https://magnus.therning.org/2022-01-30-keeping-projectile's-cache-tidy.html</guid>
+  <pubDate>Sun, 30 Jan 2022 15:14:00 +0100</pubDate>
+</item>
 <item>
   <title><![CDATA[Accessing the host from inside a Docker container]]></title>
   <description><![CDATA[
@@ -1156,61 +1203,6 @@ After modifying the bit in <code>~/.zshenv</code> it now looks like this
   <link>https://magnus.therning.org/2021-06-06-zsh,-nix,-and-completions.html</link>
   <guid>https://magnus.therning.org/2021-06-06-zsh,-nix,-and-completions.html</guid>
   <pubDate>Sun, 06 Jun 2021 11:36:00 +0200</pubDate>
-</item>
-<item>
-  <title><![CDATA[Working with Hedis]]></title>
-  <description><![CDATA[
-<p>
-I'm now writing the second Haskell service using <a href="https://redis.io/commands/incrby">Redis</a> to store data. There are
-a few packages on <a href="https://hackage.haskell.org/">Hackage</a> related to Redis but I only found 2 client libraries,
-<a href="https://hackage.haskell.org/package/redis-io">redis-io</a> and <a href="https://hackage.haskell.org/package/hedis">hedis</a>. I must say I like the API of redis-io better, but it breaks
-a rule I hold very dear:
-</p>
-
-<blockquote>
-<p>
-Libraries should never log, that's the responsibility of the application.
-</p>
-</blockquote>
-
-<p>
-So, hedis it is. I tried using the API as is, but found it really cumbersome so
-looked around and after some inspiration from <a href="https://hackage.haskell.org/package/hedis-simple">hedis-simple</a> I came up with the
-following functions.
-</p>
-
-<p>
-First a wrapper around a Redis function that put everything into <code>ExceptionT</code>
-with a function that transforms a <code>reply</code> into an <code>Exception</code>.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-haskell-definition">lpush</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Exception</span> e <span class="org-haskell-operator">=&gt;</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Reply</span> <span class="org-haskell-operator">-&gt;</span> e<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">ByteString</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-rainbow-delimiters-depth-1">[</span><span class="org-haskell-type">ByteString</span><span class="org-rainbow-delimiters-depth-1">]</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">ExceptionT</span> <span class="org-haskell-type">Redis</span> <span class="org-haskell-type">Integer</span>
-<span class="org-haskell-definition">lpush</span> mapper key element <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">ExceptionT</span> <span class="org-haskell-operator">$</span> replyToExc <span class="org-haskell-operator">&lt;$&gt;</span> R.lpush key element
-  <span class="org-haskell-keyword">where</span>
-    replyToExc <span class="org-haskell-operator">=</span> first <span class="org-rainbow-delimiters-depth-1">(</span>toException <span class="org-haskell-operator">.</span> mapper<span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-I found wrapping up functions like this is simple, but repetitive.
-</p>
-
-<p>
-Finally I need a way to run the whole thing and unwrap it all back to <code>IO</code>:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-haskell-definition">runRedis</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Connection</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">ExceptionT</span> <span class="org-haskell-type">Redis</span> a <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">IO</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-type">Either</span> <span class="org-haskell-type">SomeException</span> a<span class="org-rainbow-delimiters-depth-1">)</span>
-<span class="org-haskell-definition">runRedis</span> conn <span class="org-haskell-operator">=</span> R.runRedis conn <span class="org-haskell-operator">.</span> runExceptionT
-</pre>
-</div>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-redis.html">redis</a> </div>]]></description>
-  <category><![CDATA[haskell]]></category>
-  <category><![CDATA[redis]]></category>
-  <link>https://magnus.therning.org/2021-05-07-working-with-hedis.html</link>
-  <guid>https://magnus.therning.org/2021-05-07-working-with-hedis.html</guid>
-  <pubDate>Fri, 07 May 2021 20:54:00 +0200</pubDate>
 </item>
 </channel>
 </rss>
