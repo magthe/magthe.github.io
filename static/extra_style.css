@@ -19,6 +19,28 @@
     float: right;
 }
 
+div .notes {
+    border:1px solid #ccc;
+    box-shadow: 3px 3px 3px #eee;
+    margin: 1em auto;
+    padding: .1em .5em;
+    position: relative;
+}
+
+div .notes ::before {
+    display: block;
+    position: absolute;
+    background-color: #a5573e;
+    top: 0;
+    left: 0;
+    padding: 0 .2em;
+    border-bottom-left-radius: 8px;
+    border: 0;
+    color: #fff;
+    font-size: 80%;
+    content: "My comment";
+}
+
 a {
     text-decoration: underline;
 }

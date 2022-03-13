@@ -112,9 +112,9 @@ Let me first define the functions to play with
 </pre>
 </div>
 
-<div id="outline-container-org79c5c1e" class="outline-2">
-<h2 id="org79c5c1e">Discarded solution: using the <code>Alternative</code> of <code>IO</code> directly</h2>
-<div class="outline-text-2" id="text-org79c5c1e">
+<div id="outline-container-org92749a7" class="outline-2">
+<h2 id="org92749a7">Discarded solution: using the <code>Alternative</code> of <code>IO</code> directly</h2>
+<div class="outline-text-2" id="text-org92749a7">
 <p>
 It's fairly easy to get the desired behaviour but <code>Alternative</code> of <code>IO</code> is based
 on exceptions which doesn't strike me as a good idea unless one is using <code>IO</code>
@@ -125,9 +125,9 @@ completely.
 </div>
 </div>
 
-<div id="outline-container-org74c8945" class="outline-2">
-<h2 id="org74c8945">First attempt: lifting into the <code>Alternative</code> of <code>Either e</code></h2>
-<div class="outline-text-2" id="text-org74c8945">
+<div id="outline-container-org27ee1de" class="outline-2">
+<h2 id="org27ee1de">First attempt: lifting into the <code>Alternative</code> of <code>Either e</code></h2>
+<div class="outline-text-2" id="text-org27ee1de">
 <p>
 There's an instance of <code>Alternative</code> for <code>Either e</code> in version 0.5 of
 <a href="https://hackage.haskell.org/package/transformers-0.5.6.2/docs/Control-Monad-Trans-Error.html#section.orphans">transformers</a>. It's deprecated and it's gone in newer versions of the library as
@@ -150,7 +150,7 @@ behaviour is
 </pre>
 </div>
 
-<pre class="example" id="org1f6b3a0">
+<pre class="example" id="org487a7ea">
 λ&gt; loadFromDisk "bad key" `fallBack` loadFromWeb "good key"
 local: bad key
 web: good key
@@ -175,7 +175,7 @@ should work too).
 So far so good, but the next example shows a behaviour I don't want
 </p>
 
-<pre class="example" id="org005ead3">
+<pre class="example" id="org18412e0">
 λ&gt; loadFromDisk "good key" `fallBack` loadFromWeb "good key"
 local: good key
 web: good key
@@ -186,7 +186,7 @@ Right 8
 or to make it even more explicit
 </p>
 
-<pre class="example" id="orgf34f455">
+<pre class="example" id="org2cb8b01">
 λ&gt; loadFromDisk "good key" `fallBack` undefined
 local: good key
 *** Exception: Prelude.undefined
@@ -237,7 +237,7 @@ too difficult to do manually. Something like this does it
 It does indeed show the behaviour I want
 </p>
 
-<pre class="example" id="org0bc7069">
+<pre class="example" id="orgc4fcdad">
 λ&gt; loadFromDisk "bad key" `fallBack` loadFromWeb "good key"
 local: bad key
 web: good key
@@ -276,9 +276,9 @@ isn't too difficult.
 </div>
 </div>
 
-<div id="outline-container-orgbc3f08f" class="outline-2">
-<h2 id="orgbc3f08f">Third attempt: pulling failures out to <code>MonadPlus</code></h2>
-<div class="outline-text-2" id="text-orgbc3f08f">
+<div id="outline-container-orgfcd9b93" class="outline-2">
+<h2 id="orgfcd9b93">Third attempt: pulling failures out to <code>MonadPlus</code></h2>
+<div class="outline-text-2" id="text-orgfcd9b93">
 <p>
 After writing the <code>fallBack</code> function I still wanted to explore other solutions.
 There's almost always something more out there in the Haskell eco system, right?
@@ -312,7 +312,7 @@ it's rewritten like this.
 </pre>
 </div>
 
-<pre class="example" id="org46be250">
+<pre class="example" id="orgc7c1789">
 λ&gt; firstRightM [loadFromDisk "bad key", loadFromWeb "good key"]
 local: bad key
 web: good key
@@ -328,7 +328,7 @@ So far so good, but I left out the case where both fail, because that's sort of
 the fly in the ointment here
 </p>
 
-<pre class="example" id="orgdda08c7">
+<pre class="example" id="orge0f6d87">
 λ&gt; firstRightM [loadFromDisk "bad key", loadFromWeb "bad key"]
 local: bad key
 web: bad key
@@ -340,7 +340,7 @@ It's not nice to be back to deal with exceptions, but it's possible to recover,
 e.g. by appending <code>&lt;|&gt; pure 0</code>.
 </p>
 
-<pre class="example" id="org3555519">
+<pre class="example" id="org1370a54">
 λ&gt; firstRightM [loadFromDisk "bad key", loadFromWeb "bad key"] &lt;|&gt; pure 0
 local: bad key
 web: bad key
@@ -389,7 +389,7 @@ variant of <code>fallBack</code> for it.
 </pre>
 </div>
 
-<pre class="example" id="org2366803">
+<pre class="example" id="org4634f2c">
 λ&gt; loadFromDisk "bad key" `fallBack` loadFromWeb "good key"
 local: bad key
 web: good key
@@ -412,9 +412,9 @@ collecting all errors on failure.
 </div>
 </div>
 
-<div id="outline-container-orgc7c8216" class="outline-2">
-<h2 id="orgc7c8216">Conclusion</h2>
-<div class="outline-text-2" id="text-orgc7c8216">
+<div id="outline-container-org8c1dc5a" class="outline-2">
+<h2 id="org8c1dc5a">Conclusion</h2>
+<div class="outline-text-2" id="text-org8c1dc5a">
 <p>
 I'm still a little disappointed that <code>liftA2 (&lt;|&gt;)</code> isn't short-circuiting as I
 still think it's the easiest of the approaches. However, it's a problem that one
@@ -442,6 +442,66 @@ inspiration when it comes to the behaviour of its instances. I wish that the
 documentation of other packages, in particular commonly used ones like <i>base</i>,
 <i>transformers</i>, and <i>mtl</i>, would be more like it.
 </p>
+</div>
+</div>
+
+<div id="outline-container-org7bea582" class="outline-2">
+<h2 id="org7bea582">Comments, feedback, and questions</h2>
+<div class="outline-text-2" id="text-org7bea582">
+</div>
+<div id="outline-container-org3eb4528" class="outline-3">
+<h3 id="org3eb4528"><span class="timestamp-wrapper"><span class="timestamp">[2021-11-28 Sun] </span></span> Dustin Sallings</h3>
+<div class="outline-text-3" id="text-org3eb4528">
+<div class="notes" id="orgdacc0c2">
+<p>
+Dustin sent me a comment via email a while ago, it's now March 2022 so it's
+taken me embarrassingly long to publish it here.
+</p>
+
+<p>
+I removed a bit from the beginning of the email as it doesn't relate to this
+post.
+</p>
+
+</div>
+
+<p>
+&#x2026; a thing I've written code for before that I was reasonably pleased with. I
+have a suite of software for managing my GoPro media which involves doing some
+metadata extraction from images and video. There will be multiple transcodings
+of each medium with each that contains the metadata having it completely intact
+(i.e., low quality encodings do not lose metadata fidelity). I also run this on
+multiple machines and store a cache of Metadata in S3.
+</p>
+
+<p>
+Sometimes, I've already processed the metadata on another machine. Often, I can
+get it from the lowest quality. Sometimes, there's no metadata at all. The core
+of my extraction looks like this:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">ms <span class="org-haskell-operator">&lt;-</span> asum <span class="org-rainbow-delimiters-depth-1">[</span>
+  <span class="org-haskell-constructor">Just</span> <span class="org-haskell-operator">.</span> BL.toStrict <span class="org-haskell-operator">&lt;$&gt;</span> getMetaBlob mid,
+  fv <span class="org-string">"mp4_low"</span> <span class="org-rainbow-delimiters-depth-2">(</span>fn <span class="org-string">"low"</span><span class="org-rainbow-delimiters-depth-2">)</span>,
+  fv <span class="org-string">"high_res_proxy_mp4"</span> <span class="org-rainbow-delimiters-depth-2">(</span>fn <span class="org-string">"high"</span><span class="org-rainbow-delimiters-depth-2">)</span>,
+  fv <span class="org-string">"source"</span> <span class="org-rainbow-delimiters-depth-2">(</span>fn <span class="org-string">"src"</span><span class="org-rainbow-delimiters-depth-2">)</span>,
+  pure <span class="org-haskell-constructor">Nothing</span><span class="org-rainbow-delimiters-depth-1">]</span>
+</pre>
+</div>
+
+<p>
+The first version grabs the processed blob from S3. The next three fetch (and
+process) increasingly larger variants of the uploaded media. The last one just
+gives up and says there's no metadata available (and memoizes that in the local
+DB and S3).
+</p>
+
+<p>
+Some of these objects are in the tens of gigs, and I had a really bad internet
+connection when I first wrote this software, so I needed it to work.
+</p>
+</div>
 </div>
 </div>
 <div id="footnotes">
