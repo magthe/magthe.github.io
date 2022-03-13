@@ -12,6 +12,75 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <h1 class="title">Posts tagged "haskell":</h1>
+<div class="post-date">13 Mar 2022</div><h1 class="post-title"><a href="https://magnus.therning.org/2022-03-13-simple-nix-flake-for-haskell-development.html">Simple nix flake for Haskell development</a></h1>
+<p>
+Recently I've moved over to using <a href="https://nixos.wiki/wiki/Flakes">flakes</a> in my Haskell development projects. It
+took me a little while to arrive at a pattern a flake for Haskell development
+that I like. I'm hoping sharing it might help others when doing the same change
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix"><span class="org-rainbow-delimiters-depth-1">{</span>
+  <span class="org-nix-attribute">inputs</span> = <span class="org-rainbow-delimiters-depth-2">{</span>
+    <span class="org-nix-attribute">nixpkgs.url</span> = <span class="org-string">"github:nixos/nixpkgs"</span>;
+    <span class="org-nix-attribute">flake-utils.url</span> = <span class="org-string">"github:numtide/flake-utils"</span>;
+  <span class="org-rainbow-delimiters-depth-2">}</span>;
+
+  <span class="org-nix-attribute">outputs</span> = <span class="org-rainbow-delimiters-depth-2">{</span> self, nixpkgs, flake-utils <span class="org-rainbow-delimiters-depth-2">}</span>:
+    flake-utils.lib.eachDefaultSystem <span class="org-rainbow-delimiters-depth-2">(</span>system:
+      <span class="org-nix-keyword">with</span> nixpkgs.legacyPackages.$<span class="org-rainbow-delimiters-depth-3">{</span>system<span class="org-rainbow-delimiters-depth-3">}</span>;
+      <span class="org-nix-keyword">let</span>
+        <span class="org-nix-attribute">t</span> = lib.trivial;
+        <span class="org-nix-attribute">hl</span> = haskell.lib;
+
+        <span class="org-nix-attribute">name</span> = <span class="org-string">"project-name"</span>;
+
+        <span class="org-nix-attribute">project</span> = devTools: <span class="org-comment"># [1]</span>
+          <span class="org-nix-keyword">let</span> <span class="org-nix-attribute">addBuildTools</span> = <span class="org-rainbow-delimiters-depth-3">(</span>t.flip hl.addBuildTools<span class="org-rainbow-delimiters-depth-3">)</span> devTools;
+          <span class="org-nix-keyword">in</span> haskellPackages.developPackage <span class="org-rainbow-delimiters-depth-3">{</span>
+            <span class="org-nix-attribute">root</span> = lib.sourceFilesBySuffices <span class="org-nix-constant">./.</span> <span class="org-rainbow-delimiters-depth-4">[</span> <span class="org-string">".cabal"</span> <span class="org-string">".hs"</span> <span class="org-rainbow-delimiters-depth-4">]</span>;
+            <span class="org-nix-attribute">name</span> = name;
+            <span class="org-nix-attribute">returnShellEnv</span> = !<span class="org-rainbow-delimiters-depth-4">(</span>devTools == <span class="org-rainbow-delimiters-depth-5">[</span> <span class="org-rainbow-delimiters-depth-5">]</span><span class="org-rainbow-delimiters-depth-4">)</span>; <span class="org-comment"># [2]</span>
+
+            <span class="org-nix-attribute">modifier</span> = <span class="org-rainbow-delimiters-depth-4">(</span>t.flip t.pipe<span class="org-rainbow-delimiters-depth-4">)</span> <span class="org-rainbow-delimiters-depth-4">[</span>
+              addBuildTools
+              hl.dontHaddock
+              hl.enableStaticLibraries
+              hl.justStaticExecutables
+              hl.disableLibraryProfiling
+              hl.disableExecutableProfiling
+            <span class="org-rainbow-delimiters-depth-4">]</span>;
+          <span class="org-rainbow-delimiters-depth-3">}</span>;
+
+      <span class="org-nix-keyword">in</span> <span class="org-rainbow-delimiters-depth-3">{</span>
+        <span class="org-nix-attribute">packages.walloper</span> = project <span class="org-rainbow-delimiters-depth-4">[</span> <span class="org-rainbow-delimiters-depth-4">]</span>; <span class="org-comment"># [3]</span>
+
+        <span class="org-nix-attribute">defaultPackage</span> = self.packages.$<span class="org-rainbow-delimiters-depth-4">{</span>system<span class="org-rainbow-delimiters-depth-4">}</span>.walloper;
+
+        <span class="org-nix-attribute">devShell</span> = project <span class="org-rainbow-delimiters-depth-4">(</span><span class="org-nix-keyword">with</span> haskellPackages; <span class="org-rainbow-delimiters-depth-5">[</span> <span class="org-comment"># [4]</span>
+          cabal-fmt
+          cabal-install
+          haskell-language-server
+          hlint
+        <span class="org-rainbow-delimiters-depth-5">]</span><span class="org-rainbow-delimiters-depth-4">)</span>;
+      <span class="org-rainbow-delimiters-depth-3">}</span><span class="org-rainbow-delimiters-depth-2">)</span>;
+<span class="org-rainbow-delimiters-depth-1">}</span>
+</pre>
+</div>
+
+<p>
+The main issue I ran into is getting a development shell out of
+<code>haskellPackages.developPackage</code>, it requires <code>returnShellEnv</code> to be <code>true</code>.
+Something that isn't too easy to find out. This means that the only solution
+I've found to getting a development shell is to have separate expressions for
+building and getting a shell. In the above flake the build expression, <i>[3]</i>,
+passes an empty list of development tools, the argument <code>devTools</code> at <i>[1]</i>,
+while the development shell expression, <i>[4]</i>, passes in a list of tools needed
+for development only. The decision of whether the expression is for building or
+for a development shell, <i>[2]</i>, then looks at the list of development tools
+passed in.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-nix.html">nix</a> </div>
 <div class="post-date">27 Nov 2021</div><h1 class="post-title"><a href="https://magnus.therning.org/2021-11-27-fallback-of-actions.html">Fallback of actions</a></h1>
 <p>
 In a tool I'm writing I want to load a file that may reside on the local disk,
