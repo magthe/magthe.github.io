@@ -55,7 +55,7 @@ that I like. I'm hoping sharing it might help others when doing the same change
       <span class="org-nix-keyword">in</span> <span class="org-rainbow-delimiters-depth-3">{</span>
         <span class="org-nix-attribute">packages.pkg</span> = project <span class="org-rainbow-delimiters-depth-4">[</span> <span class="org-rainbow-delimiters-depth-4">]</span>; <span class="org-comment"># [3]</span>
 
-        <span class="org-nix-attribute">defaultPackage</span> = self.packages.$<span class="org-rainbow-delimiters-depth-4">{</span>system<span class="org-rainbow-delimiters-depth-4">}</span>.walloper;
+        <span class="org-nix-attribute">defaultPackage</span> = self.packages.$<span class="org-rainbow-delimiters-depth-4">{</span>system<span class="org-rainbow-delimiters-depth-4">}</span>.pkg;
 
         <span class="org-nix-attribute">devShell</span> = project <span class="org-rainbow-delimiters-depth-4">(</span><span class="org-nix-keyword">with</span> haskellPackages; <span class="org-rainbow-delimiters-depth-5">[</span> <span class="org-comment"># [4]</span>
           cabal-fmt

@@ -43,9 +43,9 @@ Let me first define the functions to play with
 </pre>
 </div>
 
-<div id="outline-container-org92749a7" class="outline-2">
-<h2 id="org92749a7">Discarded solution: using the <code>Alternative</code> of <code>IO</code> directly</h2>
-<div class="outline-text-2" id="text-org92749a7">
+<div id="outline-container-org06d71ff" class="outline-2">
+<h2 id="org06d71ff">Discarded solution: using the <code>Alternative</code> of <code>IO</code> directly</h2>
+<div class="outline-text-2" id="text-org06d71ff">
 <p>
 It's fairly easy to get the desired behaviour but <code>Alternative</code> of <code>IO</code> is based
 on exceptions which doesn't strike me as a good idea unless one is using <code>IO</code>
@@ -56,9 +56,9 @@ completely.
 </div>
 </div>
 
-<div id="outline-container-org27ee1de" class="outline-2">
-<h2 id="org27ee1de">First attempt: lifting into the <code>Alternative</code> of <code>Either e</code></h2>
-<div class="outline-text-2" id="text-org27ee1de">
+<div id="outline-container-org393493a" class="outline-2">
+<h2 id="org393493a">First attempt: lifting into the <code>Alternative</code> of <code>Either e</code></h2>
+<div class="outline-text-2" id="text-org393493a">
 <p>
 There's an instance of <code>Alternative</code> for <code>Either e</code> in version 0.5 of
 <a href="https://hackage.haskell.org/package/transformers-0.5.6.2/docs/Control-Monad-Trans-Error.html#section.orphans">transformers</a>. It's deprecated and it's gone in newer versions of the library as
@@ -81,7 +81,7 @@ behaviour is
 </pre>
 </div>
 
-<pre class="example" id="org487a7ea">
+<pre class="example" id="orgfc4f34e">
 λ&gt; loadFromDisk "bad key" `fallBack` loadFromWeb "good key"
 local: bad key
 web: good key
@@ -106,7 +106,7 @@ should work too).
 So far so good, but the next example shows a behaviour I don't want
 </p>
 
-<pre class="example" id="org18412e0">
+<pre class="example" id="orgfe77c40">
 λ&gt; loadFromDisk "good key" `fallBack` loadFromWeb "good key"
 local: good key
 web: good key
@@ -117,7 +117,7 @@ Right 8
 or to make it even more explicit
 </p>
 
-<pre class="example" id="org2cb8b01">
+<pre class="example" id="org0b4b72a">
 λ&gt; loadFromDisk "good key" `fallBack` undefined
 local: good key
 *** Exception: Prelude.undefined
@@ -168,7 +168,7 @@ too difficult to do manually. Something like this does it
 It does indeed show the behaviour I want
 </p>
 
-<pre class="example" id="orgc4fcdad">
+<pre class="example" id="org3813a45">
 λ&gt; loadFromDisk "bad key" `fallBack` loadFromWeb "good key"
 local: bad key
 web: good key
@@ -207,9 +207,9 @@ isn't too difficult.
 </div>
 </div>
 
-<div id="outline-container-orgfcd9b93" class="outline-2">
-<h2 id="orgfcd9b93">Third attempt: pulling failures out to <code>MonadPlus</code></h2>
-<div class="outline-text-2" id="text-orgfcd9b93">
+<div id="outline-container-org5d3ae21" class="outline-2">
+<h2 id="org5d3ae21">Third attempt: pulling failures out to <code>MonadPlus</code></h2>
+<div class="outline-text-2" id="text-org5d3ae21">
 <p>
 After writing the <code>fallBack</code> function I still wanted to explore other solutions.
 There's almost always something more out there in the Haskell eco system, right?
@@ -243,7 +243,7 @@ it's rewritten like this.
 </pre>
 </div>
 
-<pre class="example" id="orgc7c1789">
+<pre class="example" id="orgc0d84cf">
 λ&gt; firstRightM [loadFromDisk "bad key", loadFromWeb "good key"]
 local: bad key
 web: good key
@@ -259,7 +259,7 @@ So far so good, but I left out the case where both fail, because that's sort of
 the fly in the ointment here
 </p>
 
-<pre class="example" id="orge0f6d87">
+<pre class="example" id="org9b2d311">
 λ&gt; firstRightM [loadFromDisk "bad key", loadFromWeb "bad key"]
 local: bad key
 web: bad key
@@ -271,7 +271,7 @@ It's not nice to be back to deal with exceptions, but it's possible to recover,
 e.g. by appending <code>&lt;|&gt; pure 0</code>.
 </p>
 
-<pre class="example" id="org1370a54">
+<pre class="example" id="org1198c83">
 λ&gt; firstRightM [loadFromDisk "bad key", loadFromWeb "bad key"] &lt;|&gt; pure 0
 local: bad key
 web: bad key
@@ -320,7 +320,7 @@ variant of <code>fallBack</code> for it.
 </pre>
 </div>
 
-<pre class="example" id="org4634f2c">
+<pre class="example" id="orgb08a34f">
 λ&gt; loadFromDisk "bad key" `fallBack` loadFromWeb "good key"
 local: bad key
 web: good key
@@ -343,9 +343,9 @@ collecting all errors on failure.
 </div>
 </div>
 
-<div id="outline-container-org8c1dc5a" class="outline-2">
-<h2 id="org8c1dc5a">Conclusion</h2>
-<div class="outline-text-2" id="text-org8c1dc5a">
+<div id="outline-container-org63037a5" class="outline-2">
+<h2 id="org63037a5">Conclusion</h2>
+<div class="outline-text-2" id="text-org63037a5">
 <p>
 I'm still a little disappointed that <code>liftA2 (&lt;|&gt;)</code> isn't short-circuiting as I
 still think it's the easiest of the approaches. However, it's a problem that one
@@ -376,14 +376,14 @@ documentation of other packages, in particular commonly used ones like <i>base</
 </div>
 </div>
 
-<div id="outline-container-org7bea582" class="outline-2">
-<h2 id="org7bea582">Comments, feedback, and questions</h2>
-<div class="outline-text-2" id="text-org7bea582">
+<div id="outline-container-org1914c53" class="outline-2">
+<h2 id="org1914c53">Comments, feedback, and questions</h2>
+<div class="outline-text-2" id="text-org1914c53">
 </div>
-<div id="outline-container-org3eb4528" class="outline-3">
-<h3 id="org3eb4528"><span class="timestamp-wrapper"><span class="timestamp">[2021-11-28 Sun] </span></span> Dustin Sallings</h3>
-<div class="outline-text-3" id="text-org3eb4528">
-<div class="notes" id="orgdacc0c2">
+<div id="outline-container-org5082aab" class="outline-3">
+<h3 id="org5082aab"><span class="timestamp-wrapper"><span class="timestamp">[2021-11-28 Sun] </span></span> Dustin Sallings</h3>
+<div class="outline-text-3" id="text-org5082aab">
+<div class="notes" id="org1f46424">
 <p>
 Dustin sent me a comment via email a while ago, it's now March 2022 so it's
 taken me embarrassingly long to publish it here.
