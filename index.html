@@ -12,6 +12,65 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <header class="site-header" role="banner"><h1 class="title">Magnus web site</h1><h2 class="subtitle">Random stuff</h2></header>
+<div class="post-date">08 May 2022</div><h1 class="post-title"><a href="https://magnus.therning.org/2022-05-08-a-little-haskell:-epoch-timestamp.html">A little Haskell: epoch timestamp</a></h1>
+<p>
+A need of getting the current <a href="https://en.wikipedia.org/wiki/Unix_time">UNIX time</a> is something that comes up every now and
+then. Just this week I needed it in order to add a <a href="https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-a-liveness-command">k8s liveness probe</a><sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>.
+</p>
+
+<p>
+While it's often rather straight forward to get the Unix time as an integer in
+other languages<sup><a id="fnr.2" class="footref" href="#fn.2" role="doc-backlink">2</a></sup>, in Haskell there's a bit of type tetris involved.
+</p>
+
+
+<ol class="org-ol">
+<li><a href="https://hoogle.haskell.org/?hoogle=getPOSIXTime&amp;scope=set%3Astackage">getPOSIXTime</a> gives me a <a href="https://hoogle.haskell.org/?hoogle=POSIXTime&amp;scope=set%3Astackage">POSIXTime</a>, which is an alias for <a href="https://hoogle.haskell.org/?hoogle=NominalDiffTime&amp;scope=set%3Astackage">NominalDiffTime</a>.</li>
+<li><code>NominalDiffTime</code> implements <a href="https://hoogle.haskell.org/?hoogle=RealFrac&amp;scope=set%3Astackage">RealFrac</a> and can thus be converted to anything
+implementing <a href="https://hoogle.haskell.org/?hoogle=Integral&amp;scope=set%3Astackage">Integral</a> (I wanted it as <code>Int64</code>).</li>
+<li><code>NominalDiffTime</code> also implements <a href="https://hoogle.haskell.org/?hoogle=Num&amp;scope=set%3Astackage">Num</a>, so if the timestamp needs better
+precision than seconds it's easy to do (I needed milliseconds).</li>
+</ol>
+
+
+<p>
+The combination of the above is something like
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">truncate <span class="org-haskell-definition">&lt;$&gt;</span> getPOSIXTime
+</pre>
+</div>
+
+<p>
+In my case the full function of writing the timestamp to a file looks like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">writeTimestampFile</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">MonadIO</span> m <span class="org-haskell-operator">=&gt;</span> <span class="org-haskell-type">Path</span> <span class="org-haskell-type">Abs</span> <span class="org-haskell-type">File</span> <span class="org-haskell-operator">-&gt;</span> m <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+<span class="org-haskell-definition">writeTimestampFile</span> afn <span class="org-haskell-operator">=</span> liftIO <span class="org-haskell-operator">$</span> <span class="org-haskell-keyword">do</span>
+    truncate <span class="org-haskell-operator">@</span><span class="org-haskell-keyword">_</span> <span class="org-haskell-operator">@</span><span class="org-haskell-constructor">Int64</span> <span class="org-haskell-operator">.</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-operator">*</span> <span class="org-highlight-numbers-number">1000</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">&lt;$&gt;</span> getPOSIXTime <span class="org-haskell-operator">&gt;&gt;=</span> writeFile <span class="org-rainbow-delimiters-depth-1">(</span>fromAbsFile afn<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">.</span> show
+</pre>
+</div>
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+
+<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+Over the last few days I've looked into <a href="https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/">k8s probes</a>. Since we're using
+<a href="https://istio.io/latest/">Istio</a> TCP probes are of very <a href="https://github.com/istio/istio/pull/28737#pullrequestreview-535660318">limited use</a>, and as the service in question doesn't
+offer an HTTP API I decided to use a liveness command that checks that the
+contents of a file is a sufficiently recent epoch timestamp.
+</p></div></div>
+
+<div class="footdef"><sup><a id="fn.2" class="footnum" href="#fnr.2" role="doc-backlink">2</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+Rust's Chrono package has <a href="https://docs.rs/chrono/0.4.19/chrono/struct.DateTime.html#method.timestamp">Utc.timestamp(t)</a>. Python has <a href="https://docs.python.org/3/library/time.html?highlight=time%20time#time.time">time.time()</a>.
+Golang has <a href="https://pkg.go.dev/time#Time.Unix">Time.Unix</a>.
+</p></div></div>
+
+
+</div>
+</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-k8s.html">k8s</a>
 <div class="post-date">13 Mar 2022</div><h1 class="post-title"><a href="https://magnus.therning.org/2022-03-13-simple-nix-flake-for-haskell-development.html">Simple nix flake for Haskell development</a></h1>
 <p>
 Recently I've moved over to using <a href="https://nixos.wiki/wiki/Flakes">flakes</a> in my Haskell development projects. It
@@ -233,56 +292,7 @@ I found two ways to deal with it, using a table and using <code>org-sbe</code>
 </div>
 </div>
 </div>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> </div>
-<div class="post-date">08 Dec 2021</div><h1 class="post-title"><a href="https://magnus.therning.org/2021-12-08-magit_forge-and-self-hosted-gitlab.html">Magit/forge and self-hosted GitLab</a></h1>
-<p>
-As I found the documentation for adding a self-hosted instance of GitLab to to
-magit/forge a bit difficult, I thought I'd write a note for my future self (and
-anyone else who might find it useful).
-</p>
-
-<p>
-First put the following in `~/.gitconfig`
-</p>
-
-<div class="org-src-container">
-<pre class="src src-gitconfig">[<span class="org-type">gitlab</span> <span class="org-function-name">"gitlab.private.com/api/v4"</span>]
-  <span class="org-variable-name">user</span> = my.username
-</pre>
-</div>
-
-<p>
-Then create an access token on GitLab. I ticked <code>api</code> and <code>write_repository</code>,
-which seems to work fine so far. Put the token in <code>~/.authinfo.gpg</code>
-</p>
-
-<div class="org-src-container">
-<pre class="src src-authinfo"><span class="org-variable-name">machine</span> <span class="org-builtin">gitlab.private.com/api/v4</span> <span class="org-comment-delimiter">login</span> <span class="org-keyword">my.user^forge</span> <span class="org-comment-delimiter">password</span> <span class="org-doc">&lt;token&gt;</span>
-</pre>
-</div>
-
-<p>
-(Remember that a newline is needed at the end of the file.)
-</p>
-
-<p>
-Finally, add the GitLab instance to <code>'forge-alist</code>
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">setq</span>
- forge-alist
- '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-rainbow-delimiters-depth-3">(</span><span class="org-string">"gitlab.private.com"</span> <span class="org-string">"gitlab.private.com/api/v4"</span> <span class="org-string">"gitlab.private.com"</span> forge-gitlab-repository<span class="org-rainbow-delimiters-depth-3">)</span>
-   <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-string">"github.com"</span> <span class="org-string">"api.github.com"</span> <span class="org-string">"github.com"</span> forge-github-repository<span class="org-rainbow-delimiters-depth-3">)</span>
-   <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-string">"gitlab.com"</span> <span class="org-string">"gitlab.com/api/v4"</span> <span class="org-string">"gitlab.com"</span> forge-gitlab-repository<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
- <span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-That's it!
-</p>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-git.html">git</a> <a href="https://magnus.therning.org/tag-magit.html">magit</a> </div><div id="archive">
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> </div><div id="archive">
 <a href="https://magnus.therning.org/archive.html">Other posts</a>
 </div>
 </div>
