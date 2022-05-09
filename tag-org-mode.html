@@ -12,6 +12,65 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <h1 class="title">Posts tagged "org-mode":</h1>
+<div class="post-date">09 May 2022</div><h1 class="post-title"><a href="https://magnus.therning.org/2022-05-09-comments-and-org-static-blog.html">Comments and org-static-blog</a></h1>
+<p>
+I'm using <a href="https://github.com/bastibe/org-static-blog">org-static-blog</a> to generate the contents of this site. So far I'm very
+happy with it, but I've gotten a few emails from readers who've wanted to
+comment on something I've written and they always point out that it's not easy
+to do. It's actually not a coincidence that it's a bit difficult!
+</p>
+
+<p>
+Yesterday I came up with a way that might make is slightly easier without
+involving JavaScript from a 3rd party. By making use of the built-in support for
+adding HTML code for comments. One slight limitation is that it's a single
+variable holding the code, and I'd really like to allow for both
+</p>
+
+<ul class="org-ul">
+<li>using a link to a discussion site, e.g. <a href="https://www.reddit.com/">reddit</a>, as well as</li>
+<li>my email address</li>
+</ul>
+
+
+<p>
+As the comment support in org-static-blog comes in the form of a single variable
+this seems a bit difficult to accomplish. However, it isn't difficult at all to
+do in elisp due to the power of <code>advice-add</code>.
+</p>
+
+<p>
+By using the following advice on <code>org-static-blog-publish-file</code>
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span>advice-add 'org-static-blog-publish-file <span class="org-builtin">:around</span>
+            <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">lambda</span> <span class="org-rainbow-delimiters-depth-3">(</span>orig-fn filename <span class="org-type">&amp;rest</span> args<span class="org-rainbow-delimiters-depth-3">)</span>
+              <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">let*</span>  <span class="org-rainbow-delimiters-depth-4">(</span><span class="org-rainbow-delimiters-depth-5">(</span>comments-url <span class="org-rainbow-delimiters-depth-6">(</span><span class="org-keyword">with-temp-buffer</span>
+                                      <span class="org-rainbow-delimiters-depth-7">(</span>insert-file-contents filename<span class="org-rainbow-delimiters-depth-7">)</span>
+                                      <span class="org-rainbow-delimiters-depth-7">(</span><span class="org-keyword">or</span> <span class="org-rainbow-delimiters-depth-8">(</span>cadar <span class="org-rainbow-delimiters-depth-9">(</span>org-collect-keywords '<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-string">"commentsurl"</span><span class="org-rainbow-delimiters-depth-1">)</span><span class="org-rainbow-delimiters-depth-9">)</span><span class="org-rainbow-delimiters-depth-8">)</span>
+                                          my-blog-default-comments-url<span class="org-rainbow-delimiters-depth-7">)</span><span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span>
+                      <span class="org-rainbow-delimiters-depth-5">(</span>org-static-blog-post-comments <span class="org-rainbow-delimiters-depth-6">(</span>concat <span class="org-string">"Comment &lt;a href="</span> comments-url <span class="org-string">"&gt;here&lt;/a&gt;."</span><span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+                <span class="org-rainbow-delimiters-depth-4">(</span>apply orig-fn filename args<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+and defining <code>my-blog-default-comments-url</code> to a <code>mailto:...</code> URL I get a link
+to use for commenting by either
+</p>
+
+<ol class="org-ol">
+<li>set <code>commentsurl</code> to point to discussion about the post on reddit, or</li>
+<li>not set <code>commentsurl</code> at all and get the <code>mailto:...</code> URL.</li>
+</ol>
+
+
+<p>
+If you look at <a href="https://magnus.therning.org/2022-05-08-a-little-haskell:-epoch-timestamp.html">my previous post</a> you see the result of the former, and if you
+look below you see the result of the latter.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a>
 <div class="post-date">01 Jan 2022</div><h1 class="post-title"><a href="https://magnus.therning.org/2022-01-01-trimming-newline-on-code-block-variable.html">Trimming newline on code block variable</a></h1>
 <p>
 Today I found <a href="https://github.com/zweifisch/ob-http">ob-http</a> and decided to try it out a little. I quickly ran into a

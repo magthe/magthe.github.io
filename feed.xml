@@ -4,7 +4,74 @@
 <title><![CDATA[Magnus web site]]></title>
 <description><![CDATA[Magnus web site]]></description>
 <link>https://magnus.therning.org/</link>
-<lastBuildDate>Sun, 08 May 2022 20:30:11 +0200</lastBuildDate>
+<lastBuildDate>Mon, 09 May 2022 23:03:42 +0200</lastBuildDate>
+<item>
+  <title><![CDATA[Comments and org-static-blog]]></title>
+  <description><![CDATA[
+<p>
+I'm using <a href="https://github.com/bastibe/org-static-blog">org-static-blog</a> to generate the contents of this site. So far I'm very
+happy with it, but I've gotten a few emails from readers who've wanted to
+comment on something I've written and they always point out that it's not easy
+to do. It's actually not a coincidence that it's a bit difficult!
+</p>
+
+<p>
+Yesterday I came up with a way that might make is slightly easier without
+involving JavaScript from a 3rd party. By making use of the built-in support for
+adding HTML code for comments. One slight limitation is that it's a single
+variable holding the code, and I'd really like to allow for both
+</p>
+
+<ul class="org-ul">
+<li>using a link to a discussion site, e.g. <a href="https://www.reddit.com/">reddit</a>, as well as</li>
+<li>my email address</li>
+</ul>
+
+
+<p>
+As the comment support in org-static-blog comes in the form of a single variable
+this seems a bit difficult to accomplish. However, it isn't difficult at all to
+do in elisp due to the power of <code>advice-add</code>.
+</p>
+
+<p>
+By using the following advice on <code>org-static-blog-publish-file</code>
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span>advice-add 'org-static-blog-publish-file <span class="org-builtin">:around</span>
+            <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">lambda</span> <span class="org-rainbow-delimiters-depth-3">(</span>orig-fn filename <span class="org-type">&amp;rest</span> args<span class="org-rainbow-delimiters-depth-3">)</span>
+              <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">let*</span>  <span class="org-rainbow-delimiters-depth-4">(</span><span class="org-rainbow-delimiters-depth-5">(</span>comments-url <span class="org-rainbow-delimiters-depth-6">(</span><span class="org-keyword">with-temp-buffer</span>
+                                      <span class="org-rainbow-delimiters-depth-7">(</span>insert-file-contents filename<span class="org-rainbow-delimiters-depth-7">)</span>
+                                      <span class="org-rainbow-delimiters-depth-7">(</span><span class="org-keyword">or</span> <span class="org-rainbow-delimiters-depth-8">(</span>cadar <span class="org-rainbow-delimiters-depth-9">(</span>org-collect-keywords '<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-string">"commentsurl"</span><span class="org-rainbow-delimiters-depth-1">)</span><span class="org-rainbow-delimiters-depth-9">)</span><span class="org-rainbow-delimiters-depth-8">)</span>
+                                          my-blog-default-comments-url<span class="org-rainbow-delimiters-depth-7">)</span><span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span>
+                      <span class="org-rainbow-delimiters-depth-5">(</span>org-static-blog-post-comments <span class="org-rainbow-delimiters-depth-6">(</span>concat <span class="org-string">"Comment &lt;a href="</span> comments-url <span class="org-string">"&gt;here&lt;/a&gt;."</span><span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+                <span class="org-rainbow-delimiters-depth-4">(</span>apply orig-fn filename args<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+and defining <code>my-blog-default-comments-url</code> to a <code>mailto:...</code> URL I get a link
+to use for commenting by either
+</p>
+
+<ol class="org-ol">
+<li>set <code>commentsurl</code> to point to discussion about the post on reddit, or</li>
+<li>not set <code>commentsurl</code> at all and get the <code>mailto:...</code> URL.</li>
+</ol>
+
+
+<p>
+If you look at <a href="https://magnus.therning.org/2022-05-08-a-little-haskell:-epoch-timestamp.html">my previous post</a> you see the result of the former, and if you
+look below you see the result of the latter.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> ]]></description>
+  <category><![CDATA[emacs]]></category>
+  <category><![CDATA[org-mode]]></category>
+  <link>https://magnus.therning.org/2022-05-09-comments-and-org-static-blog.html</link>
+  <guid>https://magnus.therning.org/2022-05-09-comments-and-org-static-blog.html</guid>
+  <pubDate>Mon, 09 May 2022 22:10:00 +0200</pubDate>
+</item>
 <item>
   <title><![CDATA[A little Haskell: epoch timestamp]]></title>
   <description><![CDATA[
@@ -1156,114 +1223,6 @@ The variable <code>org-roam-file-setup-hook</code> is gone, so the the more gene
   <link>https://magnus.therning.org/2021-07-23-keeping-todo-items-in-org-roam-v2.html</link>
   <guid>https://magnus.therning.org/2021-07-23-keeping-todo-items-in-org-roam-v2.html</guid>
   <pubDate>Fri, 23 Jul 2021 15:07:00 +0200</pubDate>
-</item>
-<item>
-  <title><![CDATA[The timeout manager exception]]></title>
-  <description><![CDATA[
-<p>
-The other day I bumped the dependencies of a Haskell project at work and noticed
-a new exception being thrown:
-</p>
-
-<blockquote>
-<p>
-Thread killed by timeout manager
-</p>
-</blockquote>
-
-<p>
-After a couple of false starts (it wasn't the <a href="https://hackage.haskell.org/package/resource-pool">connection pool</a>, nor was it
-<a href="https://hackage.haskell.org/package/servant">servant</a>) I realised that a better approach would be to look at the list of
-packages that were updated as part of the dependency bumping.<sup><a id="fnr.1" class="footref" href="#fn.1">1</a></sup> Most of them
-I thought would be <span class="underline">very</span> unlikely sources of it, but two in the list stood out:
-</p>
-
-<table>
-
-
-<colgroup>
-<col  class="org-left">
-
-<col  class="org-right">
-
-<col  class="org-right">
-</colgroup>
-<thead>
-<tr>
-<th scope="col" class="org-left">Package</th>
-<th scope="col" class="org-right">Pre</th>
-<th scope="col" class="org-right">Post</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="org-left"><a href="https://hackage.haskell.org/package/unliftio">unliftio</a></td>
-<td class="org-right">0.2.14</td>
-<td class="org-right">0.2.18</td>
-</tr>
-
-<tr>
-<td class="org-left"><a href="https://hackage.haskell.org/package/warp">warp</a></td>
-<td class="org-right">3.3.15</td>
-<td class="org-right">3.3.16</td>
-</tr>
-</tbody>
-</table>
-
-<p>
-<code>warp</code> since the exception seemed to be thrown shortly after handling an HTTP
-request, and <code>unliftio</code> since the exception was caught by the handler for
-uncaught exceptions and its description contains "thread". Also, when looking at
-the code changes in <code>warp</code> on GitHub<sup><a id="fnr.2" class="footref" href="#fn.2">2</a></sup> I found that some of the changes
-introduced was increased use of <code>unliftio</code> for async stuff. The changes contain
-mentions of <code>TimeoutThread</code> and <code>System.TimeManager</code>. That sounded promising,
-and it lead me to the <a href="https://hackage.haskell.org/package/time-manager-0.0.0/docs/System-TimeManager.html#t:TimeoutThread">TimeoutThread</a> exception in <a href="https://hackage.haskell.org/package/time-manager">time-manager</a>.
-</p>
-
-<p>
-With that knowledge I could quickly adjust the handler for uncaught exceptions
-to not log <code>TimeoutThread</code> as fatal:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-haskell-definition">lastExceptionHandler</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">LoggerSet</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">SomeException</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
-<span class="org-haskell-definition">lastExceptionHandler</span> logger e
-  <span class="org-haskell-operator">|</span> <span class="org-haskell-constructor">Just</span> <span class="org-haskell-constructor">TimeoutThread</span> <span class="org-haskell-operator">&lt;-</span> fromException e <span class="org-haskell-operator">=</span> return <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
-  <span class="org-haskell-operator">|</span> otherwise <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
-      logFatalIoS logger <span class="org-haskell-operator">$</span> pack <span class="org-haskell-operator">$</span> <span class="org-string">"uncaught exception: "</span> <span class="org-haskell-operator">&lt;&gt;</span> displayException e
-      flushLogStr logger
-</pre>
-</div>
-
-<p>
-I have to say it was a bit more work to arrive at this than I'd have liked. I
-reckon there are easier ways to track down the information I needed. So I'd love
-to hear what tricks and tips others have.
-</p>
-<div id="footnotes">
-<h2 class="footnotes">Footnotes: </h2>
-<div id="text-footnotes">
-
-<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1">1</a></sup> <div class="footpara"><p class="footpara">
-As a bonus it gave me a good reason to reach for <a href="https://man7.org/linux/man-pages/man1/comm.1.html"><code>comm</code></a>, a command that I
-rarely use but for some reason always enjoy.
-</p></div></div>
-
-<div class="footdef"><sup><a id="fn.2" class="footnum" href="#fnr.2">2</a></sup> <div class="footpara"><p class="footpara">
-GitHub's compare feature isn't very easy to discover, but a URL like this
-<a href="https://github.com/yesodweb/wai/compare/warp-3.3.15...warp-3.3.16">https://github.com/yesodweb/wai/compare/warp-3.3.15&#x2026;warp-3.3.16</a> (note the 3
-dots!) does the trick.
-</p></div></div>
-
-
-</div>
-</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-warp.html">warp</a> <a href="https://magnus.therning.org/tag-servant.html">servant</a> </div>]]></description>
-  <category><![CDATA[haskell]]></category>
-  <category><![CDATA[warp]]></category>
-  <category><![CDATA[servant]]></category>
-  <link>https://magnus.therning.org/2021-07-03-the-timeout-manager-exception.html</link>
-  <guid>https://magnus.therning.org/2021-07-03-the-timeout-manager-exception.html</guid>
-  <pubDate>Sat, 03 Jul 2021 13:52:00 +0200</pubDate>
 </item>
 </channel>
 </rss>
