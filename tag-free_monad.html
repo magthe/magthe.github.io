@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="alternate"
+      type="application/rss+xml"
+      href="https://magnus.therning.org/feed.xml"
+      title="RSS feed for https://magnus.therning.org/">
+<title>Magnus web site</title>
+<meta name="author" content="Magnus Therning"><meta name="referrer" content="no-referrer"><link href= "static/style.css" rel="stylesheet" type="text/css" /><link href= "static/htmlize.css" rel="stylesheet" type="text/css" /><link href= "static/extra_style.css" rel="stylesheet" type="text/css" /></head>
+<body>
+<div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
+<div id="content">
+<h1 class="title">Posts tagged "free_monad":</h1>
+<div class="post-date">31 Jan 2017</div><h1 class="post-title"><a href="https://magnus.therning.org/2017-01-31-on-mocks-and-stubs-in-python.html">On mocks and stubs in Python (free monad or interpreter pattern)</a></h1>
+<p>
+A few weeks ago I watched a video where <a href="https://youtu.be/EaxDl5NPuCA">Ken Scambler talks about mocks and
+stubs</a>. In particular he talks about how to get rid of them.
+</p>
+
+<p>
+What he's talking about is free monads, but I feel he's glossing over a lot of
+details. Based on some of the questions asked during the talk I think I share
+that feeling with some people in the audience. Specifically I feel he skipped
+over the following:
+</p>
+
+<ul class="org-ul">
+<li>How does one <i>actually</i> write such code in a mainstream OO/imperative language?</li>
+<li>What's required of the language in order to allow using the techniques he's
+talking about?</li>
+<li>Errors tend to break abstractions, so how does one deal with error (i.e.
+exceptions)?</li>
+</ul>
+
+<p>
+Every time I've used mocks and stubs for unit testing I've had a feeling that
+"this can't be how it's supposed to be done!" So to me, Ken's talk offered some
+hope, and I <i>really</i> want to know how applicable the ideas are in mainstream
+OO/imperative languages.
+</p>
+
+<div id="outline-container-org250606d" class="outline-2">
+<h2 id="org250606d">The example</h2>
+<div class="outline-text-2" id="text-org250606d">
+<p>
+To play around with this I picked the following function (in Python):
+</p>
+
+<div class="org-src-container">
+<pre class="src src-python"><span class="org-keyword">def</span> <span class="org-function-name">count_chars_of_file</span><span class="org-rainbow-delimiters-depth-1">(</span>fn<span class="org-rainbow-delimiters-depth-1">)</span>:
+    <span class="org-variable-name">fd</span> = os.<span class="org-builtin">open</span><span class="org-rainbow-delimiters-depth-1">(</span>fn, os.O_RDONLY<span class="org-rainbow-delimiters-depth-1">)</span>
+    <span class="org-variable-name">text</span> = os.read<span class="org-rainbow-delimiters-depth-1">(</span>fd, <span class="org-highlight-numbers-number">10000</span><span class="org-rainbow-delimiters-depth-1">)</span>
+    <span class="org-variable-name">n</span> = <span class="org-builtin">len</span><span class="org-rainbow-delimiters-depth-1">(</span>text<span class="org-rainbow-delimiters-depth-1">)</span>
+    os.close<span class="org-rainbow-delimiters-depth-1">(</span>fd<span class="org-rainbow-delimiters-depth-1">)</span>
+    <span class="org-keyword">return</span> n
+</pre>
+</div>
+
+<p>
+It's small and simple, but I think it suffices to highlight a few important
+points. So the goal is to rewrite this function such that calls to IO operations
+(actions) (e.g. <code>os.read</code>) are replaced by data (an instance of some data type)
+conveying the intent of the operation. This data can later be passed to an
+<i>interpreter of actions</i>.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgaecfdd2" class="outline-2">
+<h2 id="orgaecfdd2">Thoughts on the execution of actions and the interpreter pattern</h2>
+<div class="outline-text-2" id="text-orgaecfdd2">
+<p>
+When reading the examples in the <a href="http://www.oodesign.com/interpreter-pattern.html">description of the interpreter pattern</a> what
+stands out to me is that they are either
+</p>
+
+<ol class="org-ol">
+<li>a list of expressions, or</li>
+<li>a tree of expressions</li>
+</ol>
+
+
+<p>
+that is passed to an interpreter. Will this do for us when trying to rewrite <code>count_chars_of_file</code>?
+</p>
+
+<p>
+No, it won't! Here's why:
+</p>
+
+<ul class="org-ul">
+<li>A tree of actions doesn't really make sense. Our actions are small and simple,
+they encode the intent of a single IO operation.</li>
+<li>A list of actions can't deal with interspersed non-actions, in this case it's
+the line <code>n = len(text)</code> that causes a problem.</li>
+</ul>
+
+
+<p>
+The interpreter pattern misses something that is crucial in this case: the
+running of the interpreter must be intermingled with running non-interpreted
+code. The way I think of it is that not only the action needs to be present and
+dealt with, but also <i>the rest of the program</i>, that latter thing is commonly
+called a <i>continuation</i>.
+</p>
+
+<p>
+So, can we introduce actions and rewrite <code>count_chars_of_file</code> such that we
+pause the program when interpretation of an action is required, interpret it,
+and then resume where we left off?
+</p>
+
+<p>
+Sure, but it's not really idiomatic Python code!
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgc3fe682" class="outline-2">
+<h2 id="orgc3fe682">Actions and continuations</h2>
+<div class="outline-text-2" id="text-orgc3fe682">
+<p>
+The IO operations (actions) are represented as a named tuple:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-python"><span class="org-variable-name">Op</span> = collections.namedtuple<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-string">'Op'</span>, <span class="org-rainbow-delimiters-depth-2">[</span><span class="org-string">'op'</span>, <span class="org-string">'args'</span>, <span class="org-string">'k'</span><span class="org-rainbow-delimiters-depth-2">]</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+and the functions returning actions can then be written as
+</p>
+
+<div class="org-src-container">
+<pre class="src src-python"><span class="org-keyword">def</span> <span class="org-function-name">cps_open</span><span class="org-rainbow-delimiters-depth-1">(</span>fn, k<span class="org-rainbow-delimiters-depth-1">)</span>:
+    <span class="org-keyword">return</span> Op<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-string">'open'</span>, <span class="org-rainbow-delimiters-depth-2">[</span>fn<span class="org-rainbow-delimiters-depth-2">]</span>, k<span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-keyword">def</span> <span class="org-function-name">cps_read</span><span class="org-rainbow-delimiters-depth-1">(</span>fd, k<span class="org-rainbow-delimiters-depth-1">)</span>:
+    <span class="org-keyword">return</span> Op<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-string">'read'</span>, <span class="org-rainbow-delimiters-depth-2">[</span>fd<span class="org-rainbow-delimiters-depth-2">]</span>, k<span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-keyword">def</span> <span class="org-function-name">cps_close</span><span class="org-rainbow-delimiters-depth-1">(</span>fd, k<span class="org-rainbow-delimiters-depth-1">)</span>:
+    <span class="org-keyword">return</span> Op<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-string">'close'</span>, <span class="org-rainbow-delimiters-depth-2">[</span>fd<span class="org-rainbow-delimiters-depth-2">]</span>, k<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+The interpreter is then an <i>if</i> statement checking the value of <code>op.op</code> with
+each branch executing the IO operation and passing the result to the rest of the
+program. I decided to wrap it directly in the program runner:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-python"><span class="org-keyword">def</span> <span class="org-function-name">runProgram</span><span class="org-rainbow-delimiters-depth-1">(</span>prog<span class="org-rainbow-delimiters-depth-1">)</span>:
+    <span class="org-keyword">def</span> <span class="org-function-name">runOp</span><span class="org-rainbow-delimiters-depth-1">(</span>op<span class="org-rainbow-delimiters-depth-1">)</span>:
+        <span class="org-keyword">if</span> op.op == <span class="org-string">'open'</span>:
+            fd = os.<span class="org-builtin">open</span><span class="org-rainbow-delimiters-depth-1">(</span>*op.args, os.O_RDONLY<span class="org-rainbow-delimiters-depth-1">)</span>
+            <span class="org-keyword">return</span> op.k<span class="org-rainbow-delimiters-depth-1">(</span>fd<span class="org-rainbow-delimiters-depth-1">)</span>
+        <span class="org-keyword">elif</span> op.op == <span class="org-string">'read'</span>:
+            text = os.read<span class="org-rainbow-delimiters-depth-1">(</span>*op.args, <span class="org-highlight-numbers-number">10000</span><span class="org-rainbow-delimiters-depth-1">)</span>
+            <span class="org-keyword">return</span> op.k<span class="org-rainbow-delimiters-depth-1">(</span>text<span class="org-rainbow-delimiters-depth-1">)</span>
+        <span class="org-keyword">elif</span> op.op == <span class="org-string">'close'</span>:
+            os.close<span class="org-rainbow-delimiters-depth-1">(</span>*op.args<span class="org-rainbow-delimiters-depth-1">)</span>
+            <span class="org-keyword">return</span> op.k<span class="org-rainbow-delimiters-depth-1">()</span>
+
+    <span class="org-keyword">while</span> <span class="org-builtin">isinstance</span><span class="org-rainbow-delimiters-depth-1">(</span>prog, Op<span class="org-rainbow-delimiters-depth-1">)</span>:
+        prog = runOp<span class="org-rainbow-delimiters-depth-1">(</span>prog<span class="org-rainbow-delimiters-depth-1">)</span>
+
+    <span class="org-keyword">return</span> prog
+</pre>
+</div>
+
+<p>
+So far so good, but what will `count<sub>char</sub><sub>of</sub><sub>file</sub>` all of this do to
+<code>count_chars_of_file</code>?
+</p>
+
+<p>
+Well, it's not quite as easy to read any more (basically it's rewritten in <a href="https://en.wikipedia.org/wiki/Continuation-passing_style">CPS</a>):
+</p>
+
+<div class="org-src-container">
+<pre class="src src-python"><span class="org-keyword">def</span> <span class="org-function-name">count_chars_of_file</span><span class="org-rainbow-delimiters-depth-1">(</span>fn<span class="org-rainbow-delimiters-depth-1">)</span>:
+
+    <span class="org-keyword">def</span> <span class="org-function-name">cont_1</span><span class="org-rainbow-delimiters-depth-1">(</span>text, fd<span class="org-rainbow-delimiters-depth-1">)</span>:
+        <span class="org-variable-name">n</span> = <span class="org-builtin">len</span><span class="org-rainbow-delimiters-depth-1">(</span>text<span class="org-rainbow-delimiters-depth-1">)</span>
+        <span class="org-keyword">return</span> cps_close<span class="org-rainbow-delimiters-depth-1">(</span>fd, <span class="org-keyword">lambda</span> n=n: n<span class="org-rainbow-delimiters-depth-1">)</span>
+
+    <span class="org-keyword">def</span> <span class="org-function-name">cont_0</span><span class="org-rainbow-delimiters-depth-1">(</span>fd<span class="org-rainbow-delimiters-depth-1">)</span>:
+        <span class="org-keyword">return</span> cps_read<span class="org-rainbow-delimiters-depth-1">(</span>fd, <span class="org-keyword">lambda</span> text, fd=fd: cont_1<span class="org-rainbow-delimiters-depth-2">(</span>text, fd<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+    <span class="org-keyword">return</span> cps_open<span class="org-rainbow-delimiters-depth-1">(</span>fn, cont_0<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org9e5aa46" class="outline-2">
+<h2 id="org9e5aa46">Generators to the rescue</h2>
+<div class="outline-text-2" id="text-org9e5aa46">
+<p>
+Python does have a notion of continuations in the form of generators.<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup> By
+making <code>count_char_of_file</code> into a generator it's possible to remove the
+explicit continuations and the program actually resembles the original one
+again.
+</p>
+
+<p>
+The type for the actions loses one member, and the functions creating them lose
+an argument:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-python"><span class="org-variable-name">Op</span> = collections.namedtuple<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-string">'Op'</span>, <span class="org-rainbow-delimiters-depth-2">[</span><span class="org-string">'op'</span>, <span class="org-string">'args'</span><span class="org-rainbow-delimiters-depth-2">]</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-keyword">def</span> <span class="org-function-name">gen_open</span><span class="org-rainbow-delimiters-depth-1">(</span>fn<span class="org-rainbow-delimiters-depth-1">)</span>:
+    <span class="org-keyword">return</span> Op<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-string">'open'</span>, <span class="org-rainbow-delimiters-depth-2">[</span>fn<span class="org-rainbow-delimiters-depth-2">]</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-keyword">def</span> <span class="org-function-name">gen_read</span><span class="org-rainbow-delimiters-depth-1">(</span>fd<span class="org-rainbow-delimiters-depth-1">)</span>:
+    <span class="org-keyword">return</span> Op<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-string">'read'</span>, <span class="org-rainbow-delimiters-depth-2">[</span>fd<span class="org-rainbow-delimiters-depth-2">]</span><span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-keyword">def</span> <span class="org-function-name">gen_close</span><span class="org-rainbow-delimiters-depth-1">(</span>fd<span class="org-rainbow-delimiters-depth-1">)</span>:
+    <span class="org-keyword">return</span> Op<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-string">'close'</span>, <span class="org-rainbow-delimiters-depth-2">[</span>fd<span class="org-rainbow-delimiters-depth-2">]</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+The interpreter and program runner must be modified to step the generator until
+its end:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-python"><span class="org-keyword">def</span> <span class="org-function-name">runProgram</span><span class="org-rainbow-delimiters-depth-1">(</span>prog<span class="org-rainbow-delimiters-depth-1">)</span>:
+    <span class="org-keyword">def</span> <span class="org-function-name">runOp</span><span class="org-rainbow-delimiters-depth-1">(</span>op<span class="org-rainbow-delimiters-depth-1">)</span>:
+        <span class="org-keyword">if</span> op.op == <span class="org-string">'open'</span>:
+            fd = os.<span class="org-builtin">open</span><span class="org-rainbow-delimiters-depth-1">(</span>op.args<span class="org-rainbow-delimiters-depth-2">[</span><span class="org-highlight-numbers-number">0</span><span class="org-rainbow-delimiters-depth-2">]</span>, os.O_RDONLY<span class="org-rainbow-delimiters-depth-1">)</span>
+            <span class="org-keyword">return</span> fd
+        <span class="org-keyword">elif</span> op.op == <span class="org-string">'read'</span>:
+            text = os.read<span class="org-rainbow-delimiters-depth-1">(</span>op.args<span class="org-rainbow-delimiters-depth-2">[</span><span class="org-highlight-numbers-number">0</span><span class="org-rainbow-delimiters-depth-2">]</span>, <span class="org-highlight-numbers-number">10000</span><span class="org-rainbow-delimiters-depth-1">)</span>
+            <span class="org-keyword">return</span> text
+        <span class="org-keyword">elif</span> op.op == <span class="org-string">'close'</span>:
+            os.close<span class="org-rainbow-delimiters-depth-1">(</span>op.args<span class="org-rainbow-delimiters-depth-2">[</span><span class="org-highlight-numbers-number">0</span><span class="org-rainbow-delimiters-depth-2">]</span><span class="org-rainbow-delimiters-depth-1">)</span>
+            <span class="org-keyword">return</span> <span class="org-constant">None</span>
+
+    <span class="org-keyword">try</span>:
+        op = prog.send<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-constant">None</span><span class="org-rainbow-delimiters-depth-1">)</span>
+        <span class="org-keyword">while</span> <span class="org-constant">True</span>:
+            r = runOp<span class="org-rainbow-delimiters-depth-1">(</span>op<span class="org-rainbow-delimiters-depth-1">)</span>
+            op = prog.send<span class="org-rainbow-delimiters-depth-1">(</span>r<span class="org-rainbow-delimiters-depth-1">)</span>
+    <span class="org-keyword">except</span> <span class="org-type">StopIteration</span> <span class="org-keyword">as</span> e:
+        <span class="org-keyword">return</span> e.value
+</pre>
+</div>
+
+<p>
+Finally, the generator-version of <code>count_chars_of_file</code> goes back to being a bit
+more readable:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-python"><span class="org-keyword">def</span> <span class="org-function-name">count_chars_of_file</span><span class="org-rainbow-delimiters-depth-1">(</span>fn<span class="org-rainbow-delimiters-depth-1">)</span>:
+    <span class="org-variable-name">fd</span> = <span class="org-keyword">yield</span> gen_open<span class="org-rainbow-delimiters-depth-1">(</span>fn<span class="org-rainbow-delimiters-depth-1">)</span>
+    <span class="org-variable-name">text</span> = <span class="org-keyword">yield</span> gen_read<span class="org-rainbow-delimiters-depth-1">(</span>fd<span class="org-rainbow-delimiters-depth-1">)</span>
+    <span class="org-variable-name">n</span> = <span class="org-builtin">len</span><span class="org-rainbow-delimiters-depth-1">(</span>text<span class="org-rainbow-delimiters-depth-1">)</span>
+    <span class="org-keyword">yield</span> gen_close<span class="org-rainbow-delimiters-depth-1">(</span>fd<span class="org-rainbow-delimiters-depth-1">)</span>
+    <span class="org-keyword">return</span> n
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org7663bc0" class="outline-2">
+<h2 id="org7663bc0">Generators all the way</h2>
+<div class="outline-text-2" id="text-org7663bc0">
+<p>
+Limitations of Python generators mean that we have either have to push the
+interpreter (<code>runProgram</code>) down to where <code>count_char_of_file</code> is used, or make
+all intermediate layers into generators and rewrite the interpreter to deal with
+this. It could look something like this then:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-python"><span class="org-keyword">def</span> <span class="org-function-name">runProgram</span><span class="org-rainbow-delimiters-depth-1">(</span>prog<span class="org-rainbow-delimiters-depth-1">)</span>:
+    <span class="org-keyword">def</span> <span class="org-function-name">runOp</span><span class="org-rainbow-delimiters-depth-1">(</span>op<span class="org-rainbow-delimiters-depth-1">)</span>:
+        <span class="org-keyword">if</span> op.op == <span class="org-string">'open'</span>:
+            fd = os.<span class="org-builtin">open</span><span class="org-rainbow-delimiters-depth-1">(</span>op.args<span class="org-rainbow-delimiters-depth-2">[</span><span class="org-highlight-numbers-number">0</span><span class="org-rainbow-delimiters-depth-2">]</span>, os.O_RDONLY<span class="org-rainbow-delimiters-depth-1">)</span>
+            <span class="org-keyword">return</span> fd
+        <span class="org-keyword">elif</span> op.op == <span class="org-string">'read'</span>:
+            text = os.read<span class="org-rainbow-delimiters-depth-1">(</span>op.args<span class="org-rainbow-delimiters-depth-2">[</span><span class="org-highlight-numbers-number">0</span><span class="org-rainbow-delimiters-depth-2">]</span>, <span class="org-highlight-numbers-number">10000</span><span class="org-rainbow-delimiters-depth-1">)</span>
+            <span class="org-keyword">return</span> text
+        <span class="org-keyword">elif</span> op.op == <span class="org-string">'close'</span>:
+            os.close<span class="org-rainbow-delimiters-depth-1">(</span>op.args<span class="org-rainbow-delimiters-depth-2">[</span><span class="org-highlight-numbers-number">0</span><span class="org-rainbow-delimiters-depth-2">]</span><span class="org-rainbow-delimiters-depth-1">)</span>
+            <span class="org-keyword">return</span> <span class="org-constant">None</span>
+
+    <span class="org-keyword">try</span>:
+        op = prog.send<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-constant">None</span><span class="org-rainbow-delimiters-depth-1">)</span>
+        <span class="org-keyword">while</span> <span class="org-constant">True</span>:
+            <span class="org-keyword">if</span> <span class="org-builtin">isinstance</span><span class="org-rainbow-delimiters-depth-1">(</span>op, Op<span class="org-rainbow-delimiters-depth-1">)</span>:
+                r = runOp<span class="org-rainbow-delimiters-depth-1">(</span>op<span class="org-rainbow-delimiters-depth-1">)</span>
+                op = prog.send<span class="org-rainbow-delimiters-depth-1">(</span>r<span class="org-rainbow-delimiters-depth-1">)</span>
+            <span class="org-keyword">elif</span> <span class="org-builtin">isinstance</span><span class="org-rainbow-delimiters-depth-1">(</span>op, types.GeneratorType<span class="org-rainbow-delimiters-depth-1">)</span>:
+                r = runProgram<span class="org-rainbow-delimiters-depth-1">(</span>op<span class="org-rainbow-delimiters-depth-1">)</span>
+                op = prog.send<span class="org-rainbow-delimiters-depth-1">(</span>r<span class="org-rainbow-delimiters-depth-1">)</span>
+
+    <span class="org-keyword">except</span> <span class="org-type">StopIteration</span> <span class="org-keyword">as</span> e:
+        <span class="org-keyword">return</span> e.value
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org9bc7923" class="outline-2">
+<h2 id="org9bc7923">Final thoughts</h2>
+<div class="outline-text-2" id="text-org9bc7923">
+<p>
+I think I've shown one way to achieve, at least parts of, what Ken talks about.
+The resulting code looks almost like "normal Python". There are some things to
+note:
+</p>
+
+<ol class="org-ol">
+<li>Exception handling is missing. I know of no way to inject an exception into a
+generator in Python so I'm guessing that exceptions from running the IO
+operations would have to be passed in via <code>generator.send</code> as a normal value,
+which means that exception handling code would have to look decidedly
+non-Pythonic.</li>
+<li>Using this approach means the language must have support for generators (or
+some other way to represent <i>the rest of the program</i>). I think this rules
+out Java, but probably it can be done in C#.</li>
+<li>I've only used a single interpreter here, but I see no issues with combining
+interpreters (to combine domains of operations like <i>file operations</i> and *
+network operations*). I also think it'd be possible to use it to realize what
+De Goes calls <a href="http://degoes.net/articles/modern-fp-part-2#onion-architecture">Onion Architecture</a>.</li>
+</ol>
+
+<p>
+Would I ever advocate this approach for a larger Python project, or even any
+project in an OO/imperative language?
+</p>
+
+<p>
+I'm not sure! I think that testing using mocks and stubs has lead to a smelly
+code base each an every time I've used it, but this approach feels a little too
+far from how OO/imperative code usually is written. I would love to try it out
+and see what the implications really are.
+</p>
+</div>
+</div>
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+
+<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+I know, I know, <i>coroutines</i>! I'm simplifying and brushing over details
+here, but I don't think I'm brushing over any details that are <i>important</i> for
+this example.
+</p></div></div>
+
+
+</div>
+</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-python.html">python</a> <a href="https://magnus.therning.org/tag-free_monad.html">free_monad</a> <div id="archive">
+<a href="https://magnus.therning.org/archive.html">Other posts</a>
+</div>
+</div>
+<div id="postamble" class="status"><!-- org-static-blog-page-postamble --></div>
+</body>
+</html>
