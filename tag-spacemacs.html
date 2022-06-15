@@ -12,6 +12,38 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <h1 class="title">Posts tagged "spacemacs":</h1>
+<div class="post-date">15 Jun 2022</div><h1 class="post-title"><a href="https://magnus.therning.org/2022-06-15-power-mode-in-spacemacs.html">Power-mode in Spacemacs</a></h1>
+<p>
+I just found the <a href="https://github.com/elizagamedev/power-mode.el">Power Mode</a> for Emacs. If you want to try it out in Spacemacs
+you can make sure that your <code>~/.spacemacs</code> contains the following
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">dotspacemacs-additional-packages
+'<span class="org-rainbow-delimiters-depth-1">(</span>
+  ...
+  <span class="org-rainbow-delimiters-depth-2">(</span>power-mode <span class="org-builtin">:location</span> <span class="org-rainbow-delimiters-depth-3">(</span>recipe
+                         <span class="org-builtin">:fetcher</span> github
+                         <span class="org-builtin">:repo</span> <span class="org-string">"elizagamedev/power-mode.el"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+After a restart Power Mode can be turned on using <code>SPC SPC power-mode</code>.
+</p>
+
+<p>
+Unfortunately I found that it slows down rendering so badly that Emacs isn't
+keeping up with my typing. Even though I removed it right away again it was fun
+to try it out, and I did learn how to add package to Spacemacs that aren't on
+MELPA.
+</p>
+
+<p>
+A useful resource is this <a href="https://github.com/melpa/melpa#recipe-format">reference on the recipe format</a>.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-spacemacs.html">spacemacs</a>
 <div class="post-date">23 Jul 2021</div><h1 class="post-title"><a href="https://magnus.therning.org/2021-07-23-keeping-todo-items-in-org-roam-v2.html">Keeping todo items in org-roam v2</a></h1>
 <p>
 Org-roam v2 has been <a href="https://blog.jethro.dev/posts/org_roam_v2/">released</a> and yes, it broke my config a bit. Unfortunately

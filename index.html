@@ -12,6 +12,38 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <header class="site-header" role="banner"><h1 class="title">Magnus web site</h1><h2 class="subtitle">Random stuff</h2></header>
+<div class="post-date">15 Jun 2022</div><h1 class="post-title"><a href="https://magnus.therning.org/2022-06-15-power-mode-in-spacemacs.html">Power-mode in Spacemacs</a></h1>
+<p>
+I just found the <a href="https://github.com/elizagamedev/power-mode.el">Power Mode</a> for Emacs. If you want to try it out in Spacemacs
+you can make sure that your <code>~/.spacemacs</code> contains the following
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">dotspacemacs-additional-packages
+'<span class="org-rainbow-delimiters-depth-1">(</span>
+  ...
+  <span class="org-rainbow-delimiters-depth-2">(</span>power-mode <span class="org-builtin">:location</span> <span class="org-rainbow-delimiters-depth-3">(</span>recipe
+                         <span class="org-builtin">:fetcher</span> github
+                         <span class="org-builtin">:repo</span> <span class="org-string">"elizagamedev/power-mode.el"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+After a restart Power Mode can be turned on using <code>SPC SPC power-mode</code>.
+</p>
+
+<p>
+Unfortunately I found that it slows down rendering so badly that Emacs isn't
+keeping up with my typing. Even though I removed it right away again it was fun
+to try it out, and I did learn how to add package to Spacemacs that aren't on
+MELPA.
+</p>
+
+<p>
+A useful resource is this <a href="https://github.com/melpa/melpa#recipe-format">reference on the recipe format</a>.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-spacemacs.html">spacemacs</a>
 <div class="post-date">09 May 2022</div><h1 class="post-title"><a href="https://magnus.therning.org/2022-05-09-comments-and-org-static-blog.html">Comments and org-static-blog</a></h1>
 <p>
 I'm using <a href="https://github.com/bastibe/org-static-blog">org-static-blog</a> to generate the contents of this site. So far I'm very
@@ -236,26 +268,7 @@ function for it, so I wrote one.
     <span class="org-rainbow-delimiters-depth-3">(</span>message <span class="org-string">"Tidied %d projects"</span> <span class="org-rainbow-delimiters-depth-4">(</span>length missing-dirs<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
 </pre>
 </div>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-elisp.html">elisp</a> <a href="https://magnus.therning.org/tag-projectile.html">projectile</a> </div>
-<div class="post-date">03 Jan 2022</div><h1 class="post-title"><a href="https://magnus.therning.org/2022-01-03-accessing-the-host-from-inside-a-docker-container.html">Accessing the host from inside a Docker container</a></h1>
-<p>
-To give the container access to a service running on the the host add
-<code>extra_hosts</code> to its definition in the Compose file:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-yaml"><span class="org-variable-name">svc</span>:
-  ...
-  <span class="org-variable-name">extra_hosts</span>:
-    - <span class="org-string">"host.docker.internal:host-gateway"</span>
-</pre>
-</div>
-
-<p>
-Then it's possible to access it as <code>host.docker.internal</code>. Just don't forget to
-bind the service on the host to something else than <code>127.0.0.1</code>.
-</p>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-compose.html">compose</a> <a href="https://magnus.therning.org/tag-docker.html">docker</a> </div><div id="archive">
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-elisp.html">elisp</a> <a href="https://magnus.therning.org/tag-projectile.html">projectile</a> </div><div id="archive">
 <a href="https://magnus.therning.org/archive.html">Other posts</a>
 </div>
 </div>
