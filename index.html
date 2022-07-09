@@ -12,6 +12,44 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <header class="site-header" role="banner"><h1 class="title">Magnus web site</h1><h2 class="subtitle">Random stuff</h2></header>
+<div class="post-date">09 Jul 2022</div><h1 class="post-title"><a href="https://magnus.therning.org/2022-07-09-playing-with-setting-up-emacs.html">Playing with setting up Emacs</a></h1>
+<p>
+TL;DR: I've put together a small-ish Emacs configuration that I call <a href="https://gitlab.com/magus/mes">MES</a>.
+Hopefully it can be of use to someone out there.
+</p>
+
+<div id="outline-container-orgc00253e" class="outline-2">
+<h2 id="orgc00253e">My Emacs Setup - MES</h2>
+<div class="outline-text-2" id="text-orgc00253e">
+<p>
+The other day I started watching some videos in the <a href="https://www.youtube.com/watch?v=74zOY-vgkyw&amp;list=PLEoMzSkcN8oPH1au7H6B7bBJ4ZO7BXjSZ">Emacs From Scratch</a> series
+from <a href="https://github.com/SystemCrafters">System Crafters</a>. It looked like something that could be fun to play with so
+over the last couple of days I've been tinkering with putting together the
+beginnings of a configuration.
+</p>
+
+<p>
+During the process I realised just how much work it'd be to put together
+something that comes close to the polish of <a href="http://spacemacs.org/">Spacemacs</a>, so I've currently no
+intention of actually using <i>MES</i> myself. It was fun though, and maybe it can
+serve as inspiration (or as a deterrent) for someone else.
+</p>
+
+<p>
+The major parts are
+</p>
+
+<ul class="org-ul">
+<li><a href="https://github.com/emacs-evil/evil">evil</a></li>
+<li><a href="https://github.com/minad/vertico">vertico</a>/<a href="https://github.com/minad/consult">consult</a>/&#x2026;</li>
+<li><a href="https://github.com/noctuid/general.el">general.el</a></li>
+<li><a href="https://magit.vc/">magit</a></li>
+<li><a href="https://github.com/mclear-tools/tabspaces">tabpspaces</a> (minimal config so I'm not sure it's useful)</li>
+<li><a href="https://orgmode.org/">orgmode</a> (only the very basics)</li>
+</ul>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a>
 <div class="post-date">15 Jun 2022</div><h1 class="post-title"><a href="https://magnus.therning.org/2022-06-15-power-mode-in-spacemacs.html">Power-mode in Spacemacs</a></h1>
 <p>
 I just found the <a href="https://github.com/elizagamedev/power-mode.el">Power Mode</a> for Emacs. If you want to try it out in Spacemacs
@@ -230,45 +268,7 @@ for development only. The decision of whether the expression is for building or
 for a development shell, <i>[2]</i>, then looks at the list of development tools
 passed in.
 </p>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-nix.html">nix</a> </div>
-<div class="post-date">30 Jan 2022</div><h1 class="post-title"><a href="https://magnus.therning.org/2022-01-30-keeping-projectile's-cache-tidy.html">Keeping Projectile's cache tidy</a></h1>
-<p>
-A while back I added a function to find all projects recursively from a
-directory and add them to Projectile's cache (see the <a href="2019-11-05-000-populating-projectile-s-cache.html">Populating Projectile's
-cache</a>). Since then I've just made a tiny change to also include containing a
-<code>.projectile</code> file.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">projectile-extra-add-projects-in-subfolders</span> <span class="org-rainbow-delimiters-depth-2">(</span>projects-root<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span> <span class="org-rainbow-delimiters-depth-3">(</span>list <span class="org-rainbow-delimiters-depth-4">(</span>read-directory-name <span class="org-string">"Add to known projects: "</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>message <span class="org-string">"Searching for projects in %s..."</span> projects-root<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">let*</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>proj-rx <span class="org-rainbow-delimiters-depth-5">(</span><span class="org-keyword">rx</span> <span class="org-rainbow-delimiters-depth-6">(</span><span class="org-keyword">and</span> line-start ?. <span class="org-rainbow-delimiters-depth-7">(</span><span class="org-keyword">or</span> <span class="org-string">"projectile"</span> <span class="org-string">"git"</span><span class="org-rainbow-delimiters-depth-7">)</span> line-end<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
-         <span class="org-rainbow-delimiters-depth-4">(</span>dirs <span class="org-rainbow-delimiters-depth-5">(</span>seq-map
-                'file-name-directory
-                <span class="org-rainbow-delimiters-depth-6">(</span>directory-files-recursively projects-root
-                                             proj-rx
-                                             t<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
-    <span class="org-rainbow-delimiters-depth-3">(</span>seq-do 'projectile-add-known-project dirs<span class="org-rainbow-delimiters-depth-3">)</span>
-    <span class="org-rainbow-delimiters-depth-3">(</span>message <span class="org-string">"Added %d projects"</span> <span class="org-rainbow-delimiters-depth-4">(</span>length dirs<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-Since then I've also found a need for tidying the cache, in my casse that means
-removing entries in the cache that no longer exist on disk. I didn't find a
-function for it, so I wrote one.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">projectile-extra-tidy-projects</span> <span class="org-rainbow-delimiters-depth-2">()</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">let</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>missing-dirs <span class="org-rainbow-delimiters-depth-5">(</span>seq-remove 'file-directory-p projectile-known-projects<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
-    <span class="org-rainbow-delimiters-depth-3">(</span>seq-do 'projectile-remove-known-project missing-dirs<span class="org-rainbow-delimiters-depth-3">)</span>
-    <span class="org-rainbow-delimiters-depth-3">(</span>message <span class="org-string">"Tidied %d projects"</span> <span class="org-rainbow-delimiters-depth-4">(</span>length missing-dirs<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-elisp.html">elisp</a> <a href="https://magnus.therning.org/tag-projectile.html">projectile</a> </div><div id="archive">
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-nix.html">nix</a> </div><div id="archive">
 <a href="https://magnus.therning.org/archive.html">Other posts</a>
 </div>
 </div>
