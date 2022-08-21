@@ -12,6 +12,47 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <h1 class="title">Posts tagged "nix":</h1>
+<div class="post-date">21 Aug 2022</div><h1 class="post-title"><a href="https://magnus.therning.org/2022-08-21-patching-in-nix.html">Patching in Nix</a></h1>
+<p>
+Today I wanted to move one of my Haskell projects to GHC 9.2.4 and found that
+<a href="https://hackage.haskell.org/package/envy-2.1.0.0">envy</a> didn't compile due to an upper bound on its dependency on <code>bytestring</code>, it
+didn't allow <code>0.11.*</code>.
+</p>
+
+<p>
+After creating a <a href="https://github.com/dmjio/envy/pull/49">PR</a> I decided I didn't want to wait for upstream so instead I
+started looking into options for patching the source of a derivation of a
+package from Hackage. In the past I've written about building <a href="https://magnus.therning.org/2020-11-30-1734-haskell__nix_and_using_packages_from_github.html">Haskell packages
+from GitHub</a> and an older one were I used <code>callHackageDirect</code> to build <a href="https://magnus.therning.org/2020-02-02-000-my-ghcide-build-for-nix.html">Haskell
+packages from Hackage</a>. I wasn't sure how to patch up a package from Hackage
+though, but after a bit of digging through <a href="https://github.com/NixOS/nixpkgs/tree/master/pkgs/development/haskell-modules">haskell-modules</a> I found <a href="https://github.com/NixOS/nixpkgs/blob/master/pkgs/development/haskell-modules/lib/default.nix#L194">appendPatch</a>.
+</p>
+
+<p>
+The patch wasn't too hard to put together once I recalled the name of the patch
+queue tool I used regularly years ago, <a href="https://savannah.nongnu.org/projects/quilt/">quilt</a>. I put the resulting patch in the
+<code>nix</code> folder I already had, and the full override ended up looking like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix">...
+<span class="org-nix-attribute">hl</span> = haskell.lib;
+<span class="org-nix-attribute">hsPkgs</span> = haskell.packages.ghc924;
+
+<span class="org-nix-attribute">extraHsPkgs</span> = hsPkgs.override <span class="org-rainbow-delimiters-depth-1">{</span>
+  <span class="org-nix-attribute">overrides</span> = self: super: <span class="org-rainbow-delimiters-depth-2">{</span>
+    <span class="org-nix-attribute">envy</span> = hl.appendPatch <span class="org-rainbow-delimiters-depth-3">(</span>self.callHackageDirect <span class="org-rainbow-delimiters-depth-4">{</span>
+      <span class="org-nix-attribute">pkg</span> = <span class="org-string">"envy"</span>;
+      <span class="org-nix-attribute">ver</span> = <span class="org-string">"2.1.0.0"</span>;
+      <span class="org-nix-attribute">sha256</span> =
+        <span class="org-string">"sha256-yk8ARRyhTf9ImFJhDnVwaDiEQi3Rp4yBvswsWVVgurg="</span>;
+    <span class="org-rainbow-delimiters-depth-4">}</span> <span class="org-rainbow-delimiters-depth-4">{</span> <span class="org-rainbow-delimiters-depth-4">}</span><span class="org-rainbow-delimiters-depth-3">)</span> <span class="org-nix-constant">./nix/envy-fix-deps.patch</span>;
+  <span class="org-rainbow-delimiters-depth-2">}</span>;
+<span class="org-rainbow-delimiters-depth-1">}</span>;
+...
+</pre>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-nix.html">nix</a>
 <div class="post-date">13 Mar 2022</div><h1 class="post-title"><a href="https://magnus.therning.org/2022-03-13-simple-nix-flake-for-haskell-development.html">Simple nix flake for Haskell development</a></h1>
 <p>
 Recently I've moved over to using <a href="https://nixos.wiki/wiki/Flakes">flakes</a> in my Haskell development projects. It
