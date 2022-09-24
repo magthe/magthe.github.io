@@ -12,6 +12,100 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <h1 class="title">Posts tagged "emacs":</h1>
+<div class="post-date">24 Sep 2022</div><h1 class="post-title"><a href="https://magnus.therning.org/2022-09-24-annotate-projects-in-emacs.html">Annotate projects in Emacs</a></h1>
+<p>
+Every now and then I've wished to write comments on files in a project, but I've
+never found a good way to do that. <a href="https://www.emacswiki.org/emacs/Annotate">annotate.el</a> and <a href="https://www.emacswiki.org/emacs/OrgAnnotateFile">org-annotate-file</a> both
+collect annotations in a central place (in my <code>$HOME</code>), while <a href="https://www.emacswiki.org/emacs/Marginalia">marginalia</a> puts
+annotations in files next to the source files but in a format that's rather
+cryptic and tends to be messed up when attached to multiple lines. None of them
+is ideal, I'd like the format to be org-mode, but not in a central file. At the
+same time having one annotation file per source file is simply too much.
+</p>
+
+<p>
+I tried wrapping <code>org-annotate-file</code>, setting <code>org-annotate-file-storage-file</code>
+and taking advantage of elisp's dynamic binding. However, it opens the
+annotation file in the current window, and I'd really like to split the window
+and open the annotations the right. Rather than trying to sort of "work it out
+backwards" I decided to write a small package and use as much of the
+functionality in <code>org-annotate-file.el</code> as possible.
+</p>
+
+<p>
+First off I decided that I want the annotation file to be called
+<code>projectile-annotations.org</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defvar</span> <span class="org-variable-name">org-projectile-annotate-file-name</span> <span class="org-string">"projectile-annotations.org"</span>
+  <span class="org-doc">"The name of the file to store project annotations."</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+Then I wanted a slightly modified version of <code>org-annotate-file-show-section</code>, I
+wanted it to respect the root of the project.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">org-projectile-annotate--file-show-section</span> <span class="org-rainbow-delimiters-depth-2">(</span>storage-file<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-doc">"Add or show annotation entry in STORAGE-FILE and return the buffer."</span>
+  <span class="org-comment-delimiter">;; </span><span class="org-comment">modified version of org-annotate-file-show-section</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">let*</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>proj-root <span class="org-rainbow-delimiters-depth-5">(</span>projectile-project-root<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+         <span class="org-rainbow-delimiters-depth-4">(</span>filename <span class="org-rainbow-delimiters-depth-5">(</span>file-relative-name buffer-file-name proj-root<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+         <span class="org-rainbow-delimiters-depth-4">(</span>line <span class="org-rainbow-delimiters-depth-5">(</span>buffer-substring-no-properties <span class="org-rainbow-delimiters-depth-6">(</span>point-at-bol<span class="org-rainbow-delimiters-depth-6">)</span> <span class="org-rainbow-delimiters-depth-6">(</span>point-at-eol<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+         <span class="org-rainbow-delimiters-depth-4">(</span>annotation-buffer <span class="org-rainbow-delimiters-depth-5">(</span>find-file-noselect storage-file<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">with-current-buffer</span> annotation-buffer
+      <span class="org-rainbow-delimiters-depth-4">(</span>org-annotate-file-annotate filename line<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    annotation-buffer<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+The main function can then simply work out where the file with annotations
+should be located and call <code>org-projectile-annotate--file-show-section</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">org-projectile-annotate</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">let</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>annot-fn <span class="org-rainbow-delimiters-depth-5">(</span>file-name-concat <span class="org-rainbow-delimiters-depth-6">(</span>projectile-project-root<span class="org-rainbow-delimiters-depth-6">)</span>
+                                    org-projectile-annotate-file-name<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>set-window-buffer <span class="org-rainbow-delimiters-depth-4">(</span>split-window-right<span class="org-rainbow-delimiters-depth-4">)</span>
+                       <span class="org-rainbow-delimiters-depth-4">(</span>org-projectile-annotate--file-show-section annot-fn<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+When testing it all out I noticed that <code>org-store-link</code> makes a link with a
+search text. In my case it would be much better to have links with line numbers.
+I found there's a hook to modify the behaviour of <code>org-store-link</code>,
+<code>org-create-file-search-functions</code>. So I wrote a function to get the kind of
+links I want, but only when the project annotation file is open in a buffer.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">org-projectile-annotate-file-search-func</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-doc">"A function returning the current line number when called in a</span>
+<span class="org-doc">project while the project annotation file is open.</span>
+
+<span class="org-doc">This function is designed for use in the hook</span>
+<span class="org-doc">'</span><span class="org-doc"><span class="org-constant">org-create-file-search-functions</span></span><span class="org-doc">'. It changes the behaviour of</span>
+<span class="org-doc">'</span><span class="org-doc"><span class="org-constant">org-store-link</span></span><span class="org-doc">' so it constructs a link with a line number</span>
+<span class="org-doc">instead of a search string."</span>
+  <span class="org-comment-delimiter">;; </span><span class="org-comment"><span class="custom">TODO:</span></span><span class="org-comment"> find a way to make the link description nicer</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">when</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">and</span> <span class="org-rainbow-delimiters-depth-4">(</span>projectile-project-p<span class="org-rainbow-delimiters-depth-4">)</span>
+             <span class="org-rainbow-delimiters-depth-4">(</span>get-buffer-window org-projectile-annotate-file-name<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>number-to-string <span class="org-rainbow-delimiters-depth-4">(</span>line-number-at-pos<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+That's it, now I only have to wait until the next time I want to comment on a
+project to see if it improves my way of working.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a>
 <div class="post-date">09 Jul 2022</div><h1 class="post-title"><a href="https://magnus.therning.org/2022-07-09-playing-with-setting-up-emacs.html">Playing with setting up Emacs</a></h1>
 <p>
 TL;DR: I've put together a small-ish Emacs configuration that I call <a href="https://gitlab.com/magus/mes">MES</a>.

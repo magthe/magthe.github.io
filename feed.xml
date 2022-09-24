@@ -4,7 +4,109 @@
 <title><![CDATA[Magnus web site]]></title>
 <description><![CDATA[Magnus web site]]></description>
 <link>https://magnus.therning.org/</link>
-<lastBuildDate>Sun, 21 Aug 2022 22:35:13 +0200</lastBuildDate>
+<lastBuildDate>Sat, 24 Sep 2022 23:45:55 +0200</lastBuildDate>
+<item>
+  <title><![CDATA[Annotate projects in Emacs]]></title>
+  <description><![CDATA[
+<p>
+Every now and then I've wished to write comments on files in a project, but I've
+never found a good way to do that. <a href="https://www.emacswiki.org/emacs/Annotate">annotate.el</a> and <a href="https://www.emacswiki.org/emacs/OrgAnnotateFile">org-annotate-file</a> both
+collect annotations in a central place (in my <code>$HOME</code>), while <a href="https://www.emacswiki.org/emacs/Marginalia">marginalia</a> puts
+annotations in files next to the source files but in a format that's rather
+cryptic and tends to be messed up when attached to multiple lines. None of them
+is ideal, I'd like the format to be org-mode, but not in a central file. At the
+same time having one annotation file per source file is simply too much.
+</p>
+
+<p>
+I tried wrapping <code>org-annotate-file</code>, setting <code>org-annotate-file-storage-file</code>
+and taking advantage of elisp's dynamic binding. However, it opens the
+annotation file in the current window, and I'd really like to split the window
+and open the annotations the right. Rather than trying to sort of "work it out
+backwards" I decided to write a small package and use as much of the
+functionality in <code>org-annotate-file.el</code> as possible.
+</p>
+
+<p>
+First off I decided that I want the annotation file to be called
+<code>projectile-annotations.org</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defvar</span> <span class="org-variable-name">org-projectile-annotate-file-name</span> <span class="org-string">"projectile-annotations.org"</span>
+  <span class="org-doc">"The name of the file to store project annotations."</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+Then I wanted a slightly modified version of <code>org-annotate-file-show-section</code>, I
+wanted it to respect the root of the project.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">org-projectile-annotate--file-show-section</span> <span class="org-rainbow-delimiters-depth-2">(</span>storage-file<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-doc">"Add or show annotation entry in STORAGE-FILE and return the buffer."</span>
+  <span class="org-comment-delimiter">;; </span><span class="org-comment">modified version of org-annotate-file-show-section</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">let*</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>proj-root <span class="org-rainbow-delimiters-depth-5">(</span>projectile-project-root<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+         <span class="org-rainbow-delimiters-depth-4">(</span>filename <span class="org-rainbow-delimiters-depth-5">(</span>file-relative-name buffer-file-name proj-root<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+         <span class="org-rainbow-delimiters-depth-4">(</span>line <span class="org-rainbow-delimiters-depth-5">(</span>buffer-substring-no-properties <span class="org-rainbow-delimiters-depth-6">(</span>point-at-bol<span class="org-rainbow-delimiters-depth-6">)</span> <span class="org-rainbow-delimiters-depth-6">(</span>point-at-eol<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+         <span class="org-rainbow-delimiters-depth-4">(</span>annotation-buffer <span class="org-rainbow-delimiters-depth-5">(</span>find-file-noselect storage-file<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">with-current-buffer</span> annotation-buffer
+      <span class="org-rainbow-delimiters-depth-4">(</span>org-annotate-file-annotate filename line<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    annotation-buffer<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+The main function can then simply work out where the file with annotations
+should be located and call <code>org-projectile-annotate--file-show-section</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">org-projectile-annotate</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">let</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>annot-fn <span class="org-rainbow-delimiters-depth-5">(</span>file-name-concat <span class="org-rainbow-delimiters-depth-6">(</span>projectile-project-root<span class="org-rainbow-delimiters-depth-6">)</span>
+                                    org-projectile-annotate-file-name<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>set-window-buffer <span class="org-rainbow-delimiters-depth-4">(</span>split-window-right<span class="org-rainbow-delimiters-depth-4">)</span>
+                       <span class="org-rainbow-delimiters-depth-4">(</span>org-projectile-annotate--file-show-section annot-fn<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+When testing it all out I noticed that <code>org-store-link</code> makes a link with a
+search text. In my case it would be much better to have links with line numbers.
+I found there's a hook to modify the behaviour of <code>org-store-link</code>,
+<code>org-create-file-search-functions</code>. So I wrote a function to get the kind of
+links I want, but only when the project annotation file is open in a buffer.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">org-projectile-annotate-file-search-func</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-doc">"A function returning the current line number when called in a</span>
+<span class="org-doc">project while the project annotation file is open.</span>
+
+<span class="org-doc">This function is designed for use in the hook</span>
+<span class="org-doc">'</span><span class="org-doc"><span class="org-constant">org-create-file-search-functions</span></span><span class="org-doc">'. It changes the behaviour of</span>
+<span class="org-doc">'</span><span class="org-doc"><span class="org-constant">org-store-link</span></span><span class="org-doc">' so it constructs a link with a line number</span>
+<span class="org-doc">instead of a search string."</span>
+  <span class="org-comment-delimiter">;; </span><span class="org-comment"><span class="custom">TODO:</span></span><span class="org-comment"> find a way to make the link description nicer</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">when</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">and</span> <span class="org-rainbow-delimiters-depth-4">(</span>projectile-project-p<span class="org-rainbow-delimiters-depth-4">)</span>
+             <span class="org-rainbow-delimiters-depth-4">(</span>get-buffer-window org-projectile-annotate-file-name<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>number-to-string <span class="org-rainbow-delimiters-depth-4">(</span>line-number-at-pos<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+That's it, now I only have to wait until the next time I want to comment on a
+project to see if it improves my way of working.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> ]]></description>
+  <category><![CDATA[emacs]]></category>
+  <category><![CDATA[org-mode]]></category>
+  <link>https://magnus.therning.org/2022-09-24-annotate-projects-in-emacs.html</link>
+  <guid>https://magnus.therning.org/2022-09-24-annotate-projects-in-emacs.html</guid>
+  <pubDate>Sat, 24 Sep 2022 22:42:00 +0200</pubDate>
+</item>
 <item>
   <title><![CDATA[Patching in Nix]]></title>
   <description><![CDATA[
@@ -527,64 +629,6 @@ I found two ways to deal with it, using a table and using <code>org-sbe</code>
   <link>https://magnus.therning.org/2022-01-01-trimming-newline-on-code-block-variable.html</link>
   <guid>https://magnus.therning.org/2022-01-01-trimming-newline-on-code-block-variable.html</guid>
   <pubDate>Sat, 01 Jan 2022 19:24:00 +0100</pubDate>
-</item>
-<item>
-  <title><![CDATA[Magit/forge and self-hosted GitLab]]></title>
-  <description><![CDATA[
-<p>
-As I found the documentation for adding a self-hosted instance of GitLab to to
-magit/forge a bit difficult, I thought I'd write a note for my future self (and
-anyone else who might find it useful).
-</p>
-
-<p>
-First put the following in `~/.gitconfig`
-</p>
-
-<div class="org-src-container">
-<pre class="src src-gitconfig">[<span class="org-type">gitlab</span> <span class="org-function-name">"gitlab.private.com/api/v4"</span>]
-  <span class="org-variable-name">user</span> = my.username
-</pre>
-</div>
-
-<p>
-Then create an access token on GitLab. I ticked <code>api</code> and <code>write_repository</code>,
-which seems to work fine so far. Put the token in <code>~/.authinfo.gpg</code>
-</p>
-
-<div class="org-src-container">
-<pre class="src src-authinfo"><span class="org-variable-name">machine</span> <span class="org-builtin">gitlab.private.com/api/v4</span> <span class="org-comment-delimiter">login</span> <span class="org-keyword">my.user^forge</span> <span class="org-comment-delimiter">password</span> <span class="org-doc">&lt;token&gt;</span>
-</pre>
-</div>
-
-<p>
-(Remember that a newline is needed at the end of the file.)
-</p>
-
-<p>
-Finally, add the GitLab instance to <code>'forge-alist</code>
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">setq</span>
- forge-alist
- '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-rainbow-delimiters-depth-3">(</span><span class="org-string">"gitlab.private.com"</span> <span class="org-string">"gitlab.private.com/api/v4"</span> <span class="org-string">"gitlab.private.com"</span> forge-gitlab-repository<span class="org-rainbow-delimiters-depth-3">)</span>
-   <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-string">"github.com"</span> <span class="org-string">"api.github.com"</span> <span class="org-string">"github.com"</span> forge-github-repository<span class="org-rainbow-delimiters-depth-3">)</span>
-   <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-string">"gitlab.com"</span> <span class="org-string">"gitlab.com/api/v4"</span> <span class="org-string">"gitlab.com"</span> forge-gitlab-repository<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
- <span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-That's it!
-</p>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-git.html">git</a> <a href="https://magnus.therning.org/tag-magit.html">magit</a> </div>]]></description>
-  <category><![CDATA[emacs]]></category>
-  <category><![CDATA[git]]></category>
-  <category><![CDATA[magit]]></category>
-  <link>https://magnus.therning.org/2021-12-08-magit_forge-and-self-hosted-gitlab.html</link>
-  <guid>https://magnus.therning.org/2021-12-08-magit_forge-and-self-hosted-gitlab.html</guid>
-  <pubDate>Wed, 08 Dec 2021 06:57:00 +0100</pubDate>
 </item>
 </channel>
 </rss>
