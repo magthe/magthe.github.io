@@ -39,20 +39,20 @@ hope, and I <i>really</i> want to know how applicable the ideas are in mainstrea
 OO/imperative languages.
 </p>
 
-<div id="outline-container-org250606d" class="outline-2">
-<h2 id="org250606d">The example</h2>
-<div class="outline-text-2" id="text-org250606d">
+<div id="outline-container-org1c80184" class="outline-2">
+<h2 id="org1c80184">The example</h2>
+<div class="outline-text-2" id="text-org1c80184">
 <p>
 To play around with this I picked the following function (in Python):
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python"><span class="org-keyword">def</span> <span class="org-function-name">count_chars_of_file</span><span class="org-rainbow-delimiters-depth-1">(</span>fn<span class="org-rainbow-delimiters-depth-1">)</span>:
-    <span class="org-variable-name">fd</span> = os.<span class="org-builtin">open</span><span class="org-rainbow-delimiters-depth-1">(</span>fn, os.O_RDONLY<span class="org-rainbow-delimiters-depth-1">)</span>
-    <span class="org-variable-name">text</span> = os.read<span class="org-rainbow-delimiters-depth-1">(</span>fd, <span class="org-highlight-numbers-number">10000</span><span class="org-rainbow-delimiters-depth-1">)</span>
-    <span class="org-variable-name">n</span> = <span class="org-builtin">len</span><span class="org-rainbow-delimiters-depth-1">(</span>text<span class="org-rainbow-delimiters-depth-1">)</span>
-    os.close<span class="org-rainbow-delimiters-depth-1">(</span>fd<span class="org-rainbow-delimiters-depth-1">)</span>
-    <span class="org-keyword">return</span> n
+<pre class="src src-python"><span class="org-tree-sitter-hl-faceXkeyword">.def</span> <span class="org-tree-sitter-hl-faceXfunction">count_chars_of_file</span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-tree-sitter-hl-faceXvariableXparameter">fn</span><span class="org-rainbow-delimiters-depth-1">)</span>:
+.    <span class="org-tree-sitter-hl-faceXvariable">fd</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> os.<span class="org-tree-sitter-hl-faceXproperty"><span class="org-tree-sitter-hl-faceXmethodXcall">open</span></span><span class="org-rainbow-delimiters-depth-1">(</span>fn, os.<span class="org-tree-sitter-hl-faceXproperty"><span class="org-tree-sitter-hl-faceXconstructor"><span class="org-tree-sitter-hl-faceXconstant">O_RDONLY</span></span></span><span class="org-rainbow-delimiters-depth-1">)</span>
+.    <span class="org-tree-sitter-hl-faceXvariable">text</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> os.<span class="org-tree-sitter-hl-faceXproperty"><span class="org-tree-sitter-hl-faceXmethodXcall">read</span></span><span class="org-rainbow-delimiters-depth-1">(</span>fd, <span class="org-tree-sitter-hl-faceXnumber">10000</span><span class="org-rainbow-delimiters-depth-1">)</span>
+.    <span class="org-tree-sitter-hl-faceXvariable">n</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXfunctionXcall"><span class="org-tree-sitter-hl-faceXfunctionXbuiltin">len</span></span><span class="org-rainbow-delimiters-depth-1">(</span>text<span class="org-rainbow-delimiters-depth-1">)</span>
+.    os.<span class="org-tree-sitter-hl-faceXproperty"><span class="org-tree-sitter-hl-faceXmethodXcall">close</span></span><span class="org-rainbow-delimiters-depth-1">(</span>fd<span class="org-rainbow-delimiters-depth-1">)</span>
+.    <span class="org-tree-sitter-hl-faceXkeyword">return</span> n
 </pre>
 </div>
 
@@ -66,9 +66,9 @@ conveying the intent of the operation. This data can later be passed to an
 </div>
 </div>
 
-<div id="outline-container-orgaecfdd2" class="outline-2">
-<h2 id="orgaecfdd2">Thoughts on the execution of actions and the interpreter pattern</h2>
-<div class="outline-text-2" id="text-orgaecfdd2">
+<div id="outline-container-orgaa18d0d" class="outline-2">
+<h2 id="orgaa18d0d">Thoughts on the execution of actions and the interpreter pattern</h2>
+<div class="outline-text-2" id="text-orgaa18d0d">
 <p>
 When reading the examples in the <a href="http://www.oodesign.com/interpreter-pattern.html">description of the interpreter pattern</a> what
 stands out to me is that they are either
@@ -116,15 +116,15 @@ Sure, but it's not really idiomatic Python code!
 </div>
 </div>
 
-<div id="outline-container-orgc3fe682" class="outline-2">
-<h2 id="orgc3fe682">Actions and continuations</h2>
-<div class="outline-text-2" id="text-orgc3fe682">
+<div id="outline-container-orgd3d06fd" class="outline-2">
+<h2 id="orgd3d06fd">Actions and continuations</h2>
+<div class="outline-text-2" id="text-orgd3d06fd">
 <p>
 The IO operations (actions) are represented as a named tuple:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python"><span class="org-variable-name">Op</span> = collections.namedtuple<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-string">'Op'</span>, <span class="org-rainbow-delimiters-depth-2">[</span><span class="org-string">'op'</span>, <span class="org-string">'args'</span>, <span class="org-string">'k'</span><span class="org-rainbow-delimiters-depth-2">]</span><span class="org-rainbow-delimiters-depth-1">)</span>
+<pre class="src src-python"><span class="org-tree-sitter-hl-faceXconstructor"><span class="org-tree-sitter-hl-faceXvariable">Op</span></span> <span class="org-tree-sitter-hl-faceXoperator">=</span> collections.<span class="org-tree-sitter-hl-faceXproperty"><span class="org-tree-sitter-hl-faceXmethodXcall">namedtuple</span></span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-tree-sitter-hl-faceXstring">'Op'</span>, <span class="org-rainbow-delimiters-depth-2">[</span><span class="org-tree-sitter-hl-faceXstring">'op'</span>, <span class="org-tree-sitter-hl-faceXstring">'args'</span>, <span class="org-tree-sitter-hl-faceXstring">'k'</span><span class="org-rainbow-delimiters-depth-2">]</span><span class="org-rainbow-delimiters-depth-1">)</span>
 </pre>
 </div>
 
@@ -133,14 +133,14 @@ and the functions returning actions can then be written as
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python"><span class="org-keyword">def</span> <span class="org-function-name">cps_open</span><span class="org-rainbow-delimiters-depth-1">(</span>fn, k<span class="org-rainbow-delimiters-depth-1">)</span>:
-    <span class="org-keyword">return</span> Op<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-string">'open'</span>, <span class="org-rainbow-delimiters-depth-2">[</span>fn<span class="org-rainbow-delimiters-depth-2">]</span>, k<span class="org-rainbow-delimiters-depth-1">)</span>
+<pre class="src src-python"><span class="org-tree-sitter-hl-faceXkeyword">.def</span> <span class="org-tree-sitter-hl-faceXfunction">cps_open</span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-tree-sitter-hl-faceXvariableXparameter">fn</span>, <span class="org-tree-sitter-hl-faceXvariableXparameter">k</span><span class="org-rainbow-delimiters-depth-1">)</span>:
+.    <span class="org-tree-sitter-hl-faceXkeyword">return</span> <span class="org-tree-sitter-hl-faceXfunctionXcall"><span class="org-tree-sitter-hl-faceXconstructor">Op</span></span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-tree-sitter-hl-faceXstring">'open'</span>, <span class="org-rainbow-delimiters-depth-2">[</span>fn<span class="org-rainbow-delimiters-depth-2">]</span>, k<span class="org-rainbow-delimiters-depth-1">)</span>
 
-<span class="org-keyword">def</span> <span class="org-function-name">cps_read</span><span class="org-rainbow-delimiters-depth-1">(</span>fd, k<span class="org-rainbow-delimiters-depth-1">)</span>:
-    <span class="org-keyword">return</span> Op<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-string">'read'</span>, <span class="org-rainbow-delimiters-depth-2">[</span>fd<span class="org-rainbow-delimiters-depth-2">]</span>, k<span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-tree-sitter-hl-faceXkeyword">.def</span> <span class="org-tree-sitter-hl-faceXfunction">cps_read</span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-tree-sitter-hl-faceXvariableXparameter">fd</span>, <span class="org-tree-sitter-hl-faceXvariableXparameter">k</span><span class="org-rainbow-delimiters-depth-1">)</span>:
+.    <span class="org-tree-sitter-hl-faceXkeyword">return</span> <span class="org-tree-sitter-hl-faceXfunctionXcall"><span class="org-tree-sitter-hl-faceXconstructor">Op</span></span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-tree-sitter-hl-faceXstring">'read'</span>, <span class="org-rainbow-delimiters-depth-2">[</span>fd<span class="org-rainbow-delimiters-depth-2">]</span>, k<span class="org-rainbow-delimiters-depth-1">)</span>
 
-<span class="org-keyword">def</span> <span class="org-function-name">cps_close</span><span class="org-rainbow-delimiters-depth-1">(</span>fd, k<span class="org-rainbow-delimiters-depth-1">)</span>:
-    <span class="org-keyword">return</span> Op<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-string">'close'</span>, <span class="org-rainbow-delimiters-depth-2">[</span>fd<span class="org-rainbow-delimiters-depth-2">]</span>, k<span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-tree-sitter-hl-faceXkeyword">.def</span> <span class="org-tree-sitter-hl-faceXfunction">cps_close</span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-tree-sitter-hl-faceXvariableXparameter">fd</span>, <span class="org-tree-sitter-hl-faceXvariableXparameter">k</span><span class="org-rainbow-delimiters-depth-1">)</span>:
+.    <span class="org-tree-sitter-hl-faceXkeyword">return</span> <span class="org-tree-sitter-hl-faceXfunctionXcall"><span class="org-tree-sitter-hl-faceXconstructor">Op</span></span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-tree-sitter-hl-faceXstring">'close'</span>, <span class="org-rainbow-delimiters-depth-2">[</span>fd<span class="org-rainbow-delimiters-depth-2">]</span>, k<span class="org-rainbow-delimiters-depth-1">)</span>
 </pre>
 </div>
 
@@ -151,27 +151,27 @@ program. I decided to wrap it directly in the program runner:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python"><span class="org-keyword">def</span> <span class="org-function-name">runProgram</span><span class="org-rainbow-delimiters-depth-1">(</span>prog<span class="org-rainbow-delimiters-depth-1">)</span>:
-    <span class="org-keyword">def</span> <span class="org-function-name">runOp</span><span class="org-rainbow-delimiters-depth-1">(</span>op<span class="org-rainbow-delimiters-depth-1">)</span>:
-        <span class="org-keyword">if</span> op.op == <span class="org-string">'open'</span>:
-            fd = os.<span class="org-builtin">open</span><span class="org-rainbow-delimiters-depth-1">(</span>*op.args, os.O_RDONLY<span class="org-rainbow-delimiters-depth-1">)</span>
-            <span class="org-keyword">return</span> op.k<span class="org-rainbow-delimiters-depth-1">(</span>fd<span class="org-rainbow-delimiters-depth-1">)</span>
-        <span class="org-keyword">elif</span> op.op == <span class="org-string">'read'</span>:
-            text = os.read<span class="org-rainbow-delimiters-depth-1">(</span>*op.args, <span class="org-highlight-numbers-number">10000</span><span class="org-rainbow-delimiters-depth-1">)</span>
-            <span class="org-keyword">return</span> op.k<span class="org-rainbow-delimiters-depth-1">(</span>text<span class="org-rainbow-delimiters-depth-1">)</span>
-        <span class="org-keyword">elif</span> op.op == <span class="org-string">'close'</span>:
-            os.close<span class="org-rainbow-delimiters-depth-1">(</span>*op.args<span class="org-rainbow-delimiters-depth-1">)</span>
-            <span class="org-keyword">return</span> op.k<span class="org-rainbow-delimiters-depth-1">()</span>
-
-    <span class="org-keyword">while</span> <span class="org-builtin">isinstance</span><span class="org-rainbow-delimiters-depth-1">(</span>prog, Op<span class="org-rainbow-delimiters-depth-1">)</span>:
-        prog = runOp<span class="org-rainbow-delimiters-depth-1">(</span>prog<span class="org-rainbow-delimiters-depth-1">)</span>
-
-    <span class="org-keyword">return</span> prog
+<pre class="src src-python"><span class="org-tree-sitter-hl-faceXkeyword">.def</span> <span class="org-tree-sitter-hl-faceXfunction">runProgram</span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-tree-sitter-hl-faceXvariableXparameter">prog</span><span class="org-rainbow-delimiters-depth-1">)</span>:
+..    <span class="org-tree-sitter-hl-faceXkeyword">def</span> <span class="org-tree-sitter-hl-faceXfunction">runOp</span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-tree-sitter-hl-faceXvariableXparameter">op</span><span class="org-rainbow-delimiters-depth-1">)</span>:
+..        <span class="org-tree-sitter-hl-faceXkeyword">if</span> op.<span class="org-tree-sitter-hl-faceXproperty">op</span> <span class="org-tree-sitter-hl-faceXoperator">==</span> <span class="org-tree-sitter-hl-faceXstring">'open'</span>:
+..            <span class="org-tree-sitter-hl-faceXvariable">fd</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> os.<span class="org-tree-sitter-hl-faceXproperty"><span class="org-tree-sitter-hl-faceXmethodXcall">open</span></span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-tree-sitter-hl-faceXoperator">*</span>op.<span class="org-tree-sitter-hl-faceXproperty">args</span>, os.<span class="org-tree-sitter-hl-faceXproperty"><span class="org-tree-sitter-hl-faceXconstructor"><span class="org-tree-sitter-hl-faceXconstant">O_RDONLY</span></span></span><span class="org-rainbow-delimiters-depth-1">)</span>
+..            <span class="org-tree-sitter-hl-faceXkeyword">return</span> op.<span class="org-tree-sitter-hl-faceXproperty"><span class="org-tree-sitter-hl-faceXmethodXcall">k</span></span><span class="org-rainbow-delimiters-depth-1">(</span>fd<span class="org-rainbow-delimiters-depth-1">)</span>
+..        <span class="org-tree-sitter-hl-faceXkeyword">elif</span> op.<span class="org-tree-sitter-hl-faceXproperty">op</span> <span class="org-tree-sitter-hl-faceXoperator">==</span> <span class="org-tree-sitter-hl-faceXstring">'read'</span>:
+..            <span class="org-tree-sitter-hl-faceXvariable">text</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> os.<span class="org-tree-sitter-hl-faceXproperty"><span class="org-tree-sitter-hl-faceXmethodXcall">read</span></span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-tree-sitter-hl-faceXoperator">*</span>op.<span class="org-tree-sitter-hl-faceXproperty">args</span>, <span class="org-tree-sitter-hl-faceXnumber">10000</span><span class="org-rainbow-delimiters-depth-1">)</span>
+..            <span class="org-tree-sitter-hl-faceXkeyword">return</span> op.<span class="org-tree-sitter-hl-faceXproperty"><span class="org-tree-sitter-hl-faceXmethodXcall">k</span></span><span class="org-rainbow-delimiters-depth-1">(</span>text<span class="org-rainbow-delimiters-depth-1">)</span>
+..        <span class="org-tree-sitter-hl-faceXkeyword">elif</span> op.<span class="org-tree-sitter-hl-faceXproperty">op</span> <span class="org-tree-sitter-hl-faceXoperator">==</span> <span class="org-tree-sitter-hl-faceXstring">'close'</span>:
+..            os.<span class="org-tree-sitter-hl-faceXproperty"><span class="org-tree-sitter-hl-faceXmethodXcall">close</span></span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-tree-sitter-hl-faceXoperator">*</span>op.<span class="org-tree-sitter-hl-faceXproperty">args</span><span class="org-rainbow-delimiters-depth-1">)</span>
+..            <span class="org-tree-sitter-hl-faceXkeyword">return</span> op.<span class="org-tree-sitter-hl-faceXproperty"><span class="org-tree-sitter-hl-faceXmethodXcall">k</span></span><span class="org-rainbow-delimiters-depth-1">()</span>
+.
+.    <span class="org-tree-sitter-hl-faceXkeyword">while</span> <span class="org-tree-sitter-hl-faceXfunctionXcall"><span class="org-tree-sitter-hl-faceXfunctionXbuiltin">isinstance</span></span><span class="org-rainbow-delimiters-depth-1">(</span>prog, <span class="org-tree-sitter-hl-faceXconstructor">Op</span><span class="org-rainbow-delimiters-depth-1">)</span>:
+.        <span class="org-tree-sitter-hl-faceXvariable">prog</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXfunctionXcall">runOp</span><span class="org-rainbow-delimiters-depth-1">(</span>prog<span class="org-rainbow-delimiters-depth-1">)</span>
+.
+.    <span class="org-tree-sitter-hl-faceXkeyword">return</span> prog
 </pre>
 </div>
 
 <p>
-So far so good, but what will `count<sub>char</sub><sub>of</sub><sub>file</sub>` all of this do to
+So far so good, but what will <code>count_char_of_file</code> all of this do to
 <code>count_chars_of_file</code>?
 </p>
 
@@ -180,24 +180,24 @@ Well, it's not quite as easy to read any more (basically it's rewritten in <a hr
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python"><span class="org-keyword">def</span> <span class="org-function-name">count_chars_of_file</span><span class="org-rainbow-delimiters-depth-1">(</span>fn<span class="org-rainbow-delimiters-depth-1">)</span>:
-
-    <span class="org-keyword">def</span> <span class="org-function-name">cont_1</span><span class="org-rainbow-delimiters-depth-1">(</span>text, fd<span class="org-rainbow-delimiters-depth-1">)</span>:
-        <span class="org-variable-name">n</span> = <span class="org-builtin">len</span><span class="org-rainbow-delimiters-depth-1">(</span>text<span class="org-rainbow-delimiters-depth-1">)</span>
-        <span class="org-keyword">return</span> cps_close<span class="org-rainbow-delimiters-depth-1">(</span>fd, <span class="org-keyword">lambda</span> n=n: n<span class="org-rainbow-delimiters-depth-1">)</span>
-
-    <span class="org-keyword">def</span> <span class="org-function-name">cont_0</span><span class="org-rainbow-delimiters-depth-1">(</span>fd<span class="org-rainbow-delimiters-depth-1">)</span>:
-        <span class="org-keyword">return</span> cps_read<span class="org-rainbow-delimiters-depth-1">(</span>fd, <span class="org-keyword">lambda</span> text, fd=fd: cont_1<span class="org-rainbow-delimiters-depth-2">(</span>text, fd<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-
-    <span class="org-keyword">return</span> cps_open<span class="org-rainbow-delimiters-depth-1">(</span>fn, cont_0<span class="org-rainbow-delimiters-depth-1">)</span>
+<pre class="src src-python"><span class="org-tree-sitter-hl-faceXkeyword">.def</span> <span class="org-tree-sitter-hl-faceXfunction">count_chars_of_file</span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-tree-sitter-hl-faceXvariableXparameter">fn</span><span class="org-rainbow-delimiters-depth-1">)</span>:
+.
+..    <span class="org-tree-sitter-hl-faceXkeyword">def</span> <span class="org-tree-sitter-hl-faceXfunction">cont_1</span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-tree-sitter-hl-faceXvariableXparameter">text</span>, <span class="org-tree-sitter-hl-faceXvariableXparameter">fd</span><span class="org-rainbow-delimiters-depth-1">)</span>:
+..        <span class="org-tree-sitter-hl-faceXvariable">n</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXfunctionXcall"><span class="org-tree-sitter-hl-faceXfunctionXbuiltin">len</span></span><span class="org-rainbow-delimiters-depth-1">(</span>text<span class="org-rainbow-delimiters-depth-1">)</span>
+..        <span class="org-tree-sitter-hl-faceXkeyword">return</span> <span class="org-tree-sitter-hl-faceXfunctionXcall">cps_close</span><span class="org-rainbow-delimiters-depth-1">(</span>fd, <span class="org-tree-sitter-hl-faceXkeyword">lambda</span> <span class="org-tree-sitter-hl-faceXvariableXparameter">n</span><span class="org-tree-sitter-hl-faceXoperator">=</span>n: n<span class="org-rainbow-delimiters-depth-1">)</span>
+.
+..    <span class="org-tree-sitter-hl-faceXkeyword">def</span> <span class="org-tree-sitter-hl-faceXfunction">cont_0</span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-tree-sitter-hl-faceXvariableXparameter">fd</span><span class="org-rainbow-delimiters-depth-1">)</span>:
+..        <span class="org-tree-sitter-hl-faceXkeyword">return</span> <span class="org-tree-sitter-hl-faceXfunctionXcall">cps_read</span><span class="org-rainbow-delimiters-depth-1">(</span>fd, <span class="org-tree-sitter-hl-faceXkeyword">lambda</span> <span class="org-tree-sitter-hl-faceXvariableXparameter">text</span>, <span class="org-tree-sitter-hl-faceXvariableXparameter">fd</span><span class="org-tree-sitter-hl-faceXoperator">=</span>fd: <span class="org-tree-sitter-hl-faceXfunctionXcall">cont_1</span><span class="org-rainbow-delimiters-depth-2">(</span>text, fd<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+.
+.    <span class="org-tree-sitter-hl-faceXkeyword">return</span> <span class="org-tree-sitter-hl-faceXfunctionXcall">cps_open</span><span class="org-rainbow-delimiters-depth-1">(</span>fn, cont_0<span class="org-rainbow-delimiters-depth-1">)</span>
 </pre>
 </div>
 </div>
 </div>
 
-<div id="outline-container-org9e5aa46" class="outline-2">
-<h2 id="org9e5aa46">Generators to the rescue</h2>
-<div class="outline-text-2" id="text-org9e5aa46">
+<div id="outline-container-org166b76c" class="outline-2">
+<h2 id="org166b76c">Generators to the rescue</h2>
+<div class="outline-text-2" id="text-org166b76c">
 <p>
 Python does have a notion of continuations in the form of generators.<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup> By
 making <code>count_char_of_file</code> into a generator it's possible to remove the
@@ -211,15 +211,15 @@ an argument:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python"><span class="org-variable-name">Op</span> = collections.namedtuple<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-string">'Op'</span>, <span class="org-rainbow-delimiters-depth-2">[</span><span class="org-string">'op'</span>, <span class="org-string">'args'</span><span class="org-rainbow-delimiters-depth-2">]</span><span class="org-rainbow-delimiters-depth-1">)</span>
+<pre class="src src-python"><span class="org-tree-sitter-hl-faceXconstructor"><span class="org-tree-sitter-hl-faceXvariable">Op</span></span> <span class="org-tree-sitter-hl-faceXoperator">=</span> collections.<span class="org-tree-sitter-hl-faceXproperty"><span class="org-tree-sitter-hl-faceXmethodXcall">namedtuple</span></span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-tree-sitter-hl-faceXstring">'Op'</span>, <span class="org-rainbow-delimiters-depth-2">[</span><span class="org-tree-sitter-hl-faceXstring">'op'</span>, <span class="org-tree-sitter-hl-faceXstring">'args'</span><span class="org-rainbow-delimiters-depth-2">]</span><span class="org-rainbow-delimiters-depth-1">)</span>
 
-<span class="org-keyword">def</span> <span class="org-function-name">gen_open</span><span class="org-rainbow-delimiters-depth-1">(</span>fn<span class="org-rainbow-delimiters-depth-1">)</span>:
-    <span class="org-keyword">return</span> Op<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-string">'open'</span>, <span class="org-rainbow-delimiters-depth-2">[</span>fn<span class="org-rainbow-delimiters-depth-2">]</span><span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-tree-sitter-hl-faceXkeyword">.def</span> <span class="org-tree-sitter-hl-faceXfunction">gen_open</span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-tree-sitter-hl-faceXvariableXparameter">fn</span><span class="org-rainbow-delimiters-depth-1">)</span>:
+.    <span class="org-tree-sitter-hl-faceXkeyword">return</span> <span class="org-tree-sitter-hl-faceXfunctionXcall"><span class="org-tree-sitter-hl-faceXconstructor">Op</span></span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-tree-sitter-hl-faceXstring">'open'</span>, <span class="org-rainbow-delimiters-depth-2">[</span>fn<span class="org-rainbow-delimiters-depth-2">]</span><span class="org-rainbow-delimiters-depth-1">)</span>
 
-<span class="org-keyword">def</span> <span class="org-function-name">gen_read</span><span class="org-rainbow-delimiters-depth-1">(</span>fd<span class="org-rainbow-delimiters-depth-1">)</span>:
-    <span class="org-keyword">return</span> Op<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-string">'read'</span>, <span class="org-rainbow-delimiters-depth-2">[</span>fd<span class="org-rainbow-delimiters-depth-2">]</span><span class="org-rainbow-delimiters-depth-1">)</span>
-<span class="org-keyword">def</span> <span class="org-function-name">gen_close</span><span class="org-rainbow-delimiters-depth-1">(</span>fd<span class="org-rainbow-delimiters-depth-1">)</span>:
-    <span class="org-keyword">return</span> Op<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-string">'close'</span>, <span class="org-rainbow-delimiters-depth-2">[</span>fd<span class="org-rainbow-delimiters-depth-2">]</span><span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-tree-sitter-hl-faceXkeyword">.def</span> <span class="org-tree-sitter-hl-faceXfunction">gen_read</span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-tree-sitter-hl-faceXvariableXparameter">fd</span><span class="org-rainbow-delimiters-depth-1">)</span>:
+.    <span class="org-tree-sitter-hl-faceXkeyword">return</span> <span class="org-tree-sitter-hl-faceXfunctionXcall"><span class="org-tree-sitter-hl-faceXconstructor">Op</span></span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-tree-sitter-hl-faceXstring">'read'</span>, <span class="org-rainbow-delimiters-depth-2">[</span>fd<span class="org-rainbow-delimiters-depth-2">]</span><span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-tree-sitter-hl-faceXkeyword">.def</span> <span class="org-tree-sitter-hl-faceXfunction">gen_close</span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-tree-sitter-hl-faceXvariableXparameter">fd</span><span class="org-rainbow-delimiters-depth-1">)</span>:
+.    <span class="org-tree-sitter-hl-faceXkeyword">return</span> <span class="org-tree-sitter-hl-faceXfunctionXcall"><span class="org-tree-sitter-hl-faceXconstructor">Op</span></span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-tree-sitter-hl-faceXstring">'close'</span>, <span class="org-rainbow-delimiters-depth-2">[</span>fd<span class="org-rainbow-delimiters-depth-2">]</span><span class="org-rainbow-delimiters-depth-1">)</span>
 </pre>
 </div>
 
@@ -229,25 +229,25 @@ its end:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python"><span class="org-keyword">def</span> <span class="org-function-name">runProgram</span><span class="org-rainbow-delimiters-depth-1">(</span>prog<span class="org-rainbow-delimiters-depth-1">)</span>:
-    <span class="org-keyword">def</span> <span class="org-function-name">runOp</span><span class="org-rainbow-delimiters-depth-1">(</span>op<span class="org-rainbow-delimiters-depth-1">)</span>:
-        <span class="org-keyword">if</span> op.op == <span class="org-string">'open'</span>:
-            fd = os.<span class="org-builtin">open</span><span class="org-rainbow-delimiters-depth-1">(</span>op.args<span class="org-rainbow-delimiters-depth-2">[</span><span class="org-highlight-numbers-number">0</span><span class="org-rainbow-delimiters-depth-2">]</span>, os.O_RDONLY<span class="org-rainbow-delimiters-depth-1">)</span>
-            <span class="org-keyword">return</span> fd
-        <span class="org-keyword">elif</span> op.op == <span class="org-string">'read'</span>:
-            text = os.read<span class="org-rainbow-delimiters-depth-1">(</span>op.args<span class="org-rainbow-delimiters-depth-2">[</span><span class="org-highlight-numbers-number">0</span><span class="org-rainbow-delimiters-depth-2">]</span>, <span class="org-highlight-numbers-number">10000</span><span class="org-rainbow-delimiters-depth-1">)</span>
-            <span class="org-keyword">return</span> text
-        <span class="org-keyword">elif</span> op.op == <span class="org-string">'close'</span>:
-            os.close<span class="org-rainbow-delimiters-depth-1">(</span>op.args<span class="org-rainbow-delimiters-depth-2">[</span><span class="org-highlight-numbers-number">0</span><span class="org-rainbow-delimiters-depth-2">]</span><span class="org-rainbow-delimiters-depth-1">)</span>
-            <span class="org-keyword">return</span> <span class="org-constant">None</span>
-
-    <span class="org-keyword">try</span>:
-        op = prog.send<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-constant">None</span><span class="org-rainbow-delimiters-depth-1">)</span>
-        <span class="org-keyword">while</span> <span class="org-constant">True</span>:
-            r = runOp<span class="org-rainbow-delimiters-depth-1">(</span>op<span class="org-rainbow-delimiters-depth-1">)</span>
-            op = prog.send<span class="org-rainbow-delimiters-depth-1">(</span>r<span class="org-rainbow-delimiters-depth-1">)</span>
-    <span class="org-keyword">except</span> <span class="org-type">StopIteration</span> <span class="org-keyword">as</span> e:
-        <span class="org-keyword">return</span> e.value
+<pre class="src src-python"><span class="org-tree-sitter-hl-faceXkeyword">.def</span> <span class="org-tree-sitter-hl-faceXfunction">runProgram</span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-tree-sitter-hl-faceXvariableXparameter">prog</span><span class="org-rainbow-delimiters-depth-1">)</span>:
+..    <span class="org-tree-sitter-hl-faceXkeyword">def</span> <span class="org-tree-sitter-hl-faceXfunction">runOp</span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-tree-sitter-hl-faceXvariableXparameter">op</span><span class="org-rainbow-delimiters-depth-1">)</span>:
+..        <span class="org-tree-sitter-hl-faceXkeyword">if</span> op.<span class="org-tree-sitter-hl-faceXproperty">op</span> <span class="org-tree-sitter-hl-faceXoperator">==</span> <span class="org-tree-sitter-hl-faceXstring">'open'</span>:
+..            <span class="org-tree-sitter-hl-faceXvariable">fd</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> os.<span class="org-tree-sitter-hl-faceXproperty"><span class="org-tree-sitter-hl-faceXmethodXcall">open</span></span><span class="org-rainbow-delimiters-depth-1">(</span>op.<span class="org-tree-sitter-hl-faceXproperty">args</span><span class="org-rainbow-delimiters-depth-2">[</span><span class="org-tree-sitter-hl-faceXnumber">0</span><span class="org-rainbow-delimiters-depth-2">]</span>, os.<span class="org-tree-sitter-hl-faceXproperty"><span class="org-tree-sitter-hl-faceXconstructor"><span class="org-tree-sitter-hl-faceXconstant">O_RDONLY</span></span></span><span class="org-rainbow-delimiters-depth-1">)</span>
+..            <span class="org-tree-sitter-hl-faceXkeyword">return</span> fd
+..        <span class="org-tree-sitter-hl-faceXkeyword">elif</span> op.<span class="org-tree-sitter-hl-faceXproperty">op</span> <span class="org-tree-sitter-hl-faceXoperator">==</span> <span class="org-tree-sitter-hl-faceXstring">'read'</span>:
+..            <span class="org-tree-sitter-hl-faceXvariable">text</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> os.<span class="org-tree-sitter-hl-faceXproperty"><span class="org-tree-sitter-hl-faceXmethodXcall">read</span></span><span class="org-rainbow-delimiters-depth-1">(</span>op.<span class="org-tree-sitter-hl-faceXproperty">args</span><span class="org-rainbow-delimiters-depth-2">[</span><span class="org-tree-sitter-hl-faceXnumber">0</span><span class="org-rainbow-delimiters-depth-2">]</span>, <span class="org-tree-sitter-hl-faceXnumber">10000</span><span class="org-rainbow-delimiters-depth-1">)</span>
+..            <span class="org-tree-sitter-hl-faceXkeyword">return</span> text
+..        <span class="org-tree-sitter-hl-faceXkeyword">elif</span> op.<span class="org-tree-sitter-hl-faceXproperty">op</span> <span class="org-tree-sitter-hl-faceXoperator">==</span> <span class="org-tree-sitter-hl-faceXstring">'close'</span>:
+..            os.<span class="org-tree-sitter-hl-faceXproperty"><span class="org-tree-sitter-hl-faceXmethodXcall">close</span></span><span class="org-rainbow-delimiters-depth-1">(</span>op.<span class="org-tree-sitter-hl-faceXproperty">args</span><span class="org-rainbow-delimiters-depth-2">[</span><span class="org-tree-sitter-hl-faceXnumber">0</span><span class="org-rainbow-delimiters-depth-2">]</span><span class="org-rainbow-delimiters-depth-1">)</span>
+..            <span class="org-tree-sitter-hl-faceXkeyword">return</span> <span class="org-tree-sitter-hl-faceXconstantXbuiltin">None</span>
+.
+.    <span class="org-tree-sitter-hl-faceXkeyword">try</span>:
+.        <span class="org-tree-sitter-hl-faceXvariable">op</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> prog.<span class="org-tree-sitter-hl-faceXproperty"><span class="org-tree-sitter-hl-faceXmethodXcall">send</span></span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-tree-sitter-hl-faceXconstantXbuiltin">None</span><span class="org-rainbow-delimiters-depth-1">)</span>
+.        <span class="org-tree-sitter-hl-faceXkeyword">while</span> <span class="org-tree-sitter-hl-faceXconstantXbuiltin">True</span>:
+.            <span class="org-tree-sitter-hl-faceXvariable">r</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXfunctionXcall">runOp</span><span class="org-rainbow-delimiters-depth-1">(</span>op<span class="org-rainbow-delimiters-depth-1">)</span>
+.            <span class="org-tree-sitter-hl-faceXvariable">op</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> prog.<span class="org-tree-sitter-hl-faceXproperty"><span class="org-tree-sitter-hl-faceXmethodXcall">send</span></span><span class="org-rainbow-delimiters-depth-1">(</span>r<span class="org-rainbow-delimiters-depth-1">)</span>
+.    <span class="org-tree-sitter-hl-faceXkeyword">except</span> <span class="org-tree-sitter-hl-faceXconstructor">StopIteration</span> <span class="org-tree-sitter-hl-faceXkeyword">as</span> e:
+.        <span class="org-tree-sitter-hl-faceXkeyword">return</span> e.<span class="org-tree-sitter-hl-faceXproperty">value</span>
 </pre>
 </div>
 
@@ -257,20 +257,20 @@ more readable:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python"><span class="org-keyword">def</span> <span class="org-function-name">count_chars_of_file</span><span class="org-rainbow-delimiters-depth-1">(</span>fn<span class="org-rainbow-delimiters-depth-1">)</span>:
-    <span class="org-variable-name">fd</span> = <span class="org-keyword">yield</span> gen_open<span class="org-rainbow-delimiters-depth-1">(</span>fn<span class="org-rainbow-delimiters-depth-1">)</span>
-    <span class="org-variable-name">text</span> = <span class="org-keyword">yield</span> gen_read<span class="org-rainbow-delimiters-depth-1">(</span>fd<span class="org-rainbow-delimiters-depth-1">)</span>
-    <span class="org-variable-name">n</span> = <span class="org-builtin">len</span><span class="org-rainbow-delimiters-depth-1">(</span>text<span class="org-rainbow-delimiters-depth-1">)</span>
-    <span class="org-keyword">yield</span> gen_close<span class="org-rainbow-delimiters-depth-1">(</span>fd<span class="org-rainbow-delimiters-depth-1">)</span>
-    <span class="org-keyword">return</span> n
+<pre class="src src-python"><span class="org-tree-sitter-hl-faceXkeyword">.def</span> <span class="org-tree-sitter-hl-faceXfunction">count_chars_of_file</span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-tree-sitter-hl-faceXvariableXparameter">fn</span><span class="org-rainbow-delimiters-depth-1">)</span>:
+.    <span class="org-tree-sitter-hl-faceXvariable">fd</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXkeyword">yield</span> <span class="org-tree-sitter-hl-faceXfunctionXcall">gen_open</span><span class="org-rainbow-delimiters-depth-1">(</span>fn<span class="org-rainbow-delimiters-depth-1">)</span>
+.    <span class="org-tree-sitter-hl-faceXvariable">text</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXkeyword">yield</span> <span class="org-tree-sitter-hl-faceXfunctionXcall">gen_read</span><span class="org-rainbow-delimiters-depth-1">(</span>fd<span class="org-rainbow-delimiters-depth-1">)</span>
+.    <span class="org-tree-sitter-hl-faceXvariable">n</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXfunctionXcall"><span class="org-tree-sitter-hl-faceXfunctionXbuiltin">len</span></span><span class="org-rainbow-delimiters-depth-1">(</span>text<span class="org-rainbow-delimiters-depth-1">)</span>
+.    <span class="org-tree-sitter-hl-faceXkeyword">yield</span> <span class="org-tree-sitter-hl-faceXfunctionXcall">gen_close</span><span class="org-rainbow-delimiters-depth-1">(</span>fd<span class="org-rainbow-delimiters-depth-1">)</span>
+.    <span class="org-tree-sitter-hl-faceXkeyword">return</span> n
 </pre>
 </div>
 </div>
 </div>
 
-<div id="outline-container-org7663bc0" class="outline-2">
-<h2 id="org7663bc0">Generators all the way</h2>
-<div class="outline-text-2" id="text-org7663bc0">
+<div id="outline-container-org2c9ca82" class="outline-2">
+<h2 id="org2c9ca82">Generators all the way</h2>
+<div class="outline-text-2" id="text-org2c9ca82">
 <p>
 Limitations of Python generators mean that we have either have to push the
 interpreter (<code>runProgram</code>) down to where <code>count_char_of_file</code> is used, or make
@@ -279,38 +279,38 @@ this. It could look something like this then:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python"><span class="org-keyword">def</span> <span class="org-function-name">runProgram</span><span class="org-rainbow-delimiters-depth-1">(</span>prog<span class="org-rainbow-delimiters-depth-1">)</span>:
-    <span class="org-keyword">def</span> <span class="org-function-name">runOp</span><span class="org-rainbow-delimiters-depth-1">(</span>op<span class="org-rainbow-delimiters-depth-1">)</span>:
-        <span class="org-keyword">if</span> op.op == <span class="org-string">'open'</span>:
-            fd = os.<span class="org-builtin">open</span><span class="org-rainbow-delimiters-depth-1">(</span>op.args<span class="org-rainbow-delimiters-depth-2">[</span><span class="org-highlight-numbers-number">0</span><span class="org-rainbow-delimiters-depth-2">]</span>, os.O_RDONLY<span class="org-rainbow-delimiters-depth-1">)</span>
-            <span class="org-keyword">return</span> fd
-        <span class="org-keyword">elif</span> op.op == <span class="org-string">'read'</span>:
-            text = os.read<span class="org-rainbow-delimiters-depth-1">(</span>op.args<span class="org-rainbow-delimiters-depth-2">[</span><span class="org-highlight-numbers-number">0</span><span class="org-rainbow-delimiters-depth-2">]</span>, <span class="org-highlight-numbers-number">10000</span><span class="org-rainbow-delimiters-depth-1">)</span>
-            <span class="org-keyword">return</span> text
-        <span class="org-keyword">elif</span> op.op == <span class="org-string">'close'</span>:
-            os.close<span class="org-rainbow-delimiters-depth-1">(</span>op.args<span class="org-rainbow-delimiters-depth-2">[</span><span class="org-highlight-numbers-number">0</span><span class="org-rainbow-delimiters-depth-2">]</span><span class="org-rainbow-delimiters-depth-1">)</span>
-            <span class="org-keyword">return</span> <span class="org-constant">None</span>
-
-    <span class="org-keyword">try</span>:
-        op = prog.send<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-constant">None</span><span class="org-rainbow-delimiters-depth-1">)</span>
-        <span class="org-keyword">while</span> <span class="org-constant">True</span>:
-            <span class="org-keyword">if</span> <span class="org-builtin">isinstance</span><span class="org-rainbow-delimiters-depth-1">(</span>op, Op<span class="org-rainbow-delimiters-depth-1">)</span>:
-                r = runOp<span class="org-rainbow-delimiters-depth-1">(</span>op<span class="org-rainbow-delimiters-depth-1">)</span>
-                op = prog.send<span class="org-rainbow-delimiters-depth-1">(</span>r<span class="org-rainbow-delimiters-depth-1">)</span>
-            <span class="org-keyword">elif</span> <span class="org-builtin">isinstance</span><span class="org-rainbow-delimiters-depth-1">(</span>op, types.GeneratorType<span class="org-rainbow-delimiters-depth-1">)</span>:
-                r = runProgram<span class="org-rainbow-delimiters-depth-1">(</span>op<span class="org-rainbow-delimiters-depth-1">)</span>
-                op = prog.send<span class="org-rainbow-delimiters-depth-1">(</span>r<span class="org-rainbow-delimiters-depth-1">)</span>
-
-    <span class="org-keyword">except</span> <span class="org-type">StopIteration</span> <span class="org-keyword">as</span> e:
-        <span class="org-keyword">return</span> e.value
+<pre class="src src-python"><span class="org-tree-sitter-hl-faceXkeyword">.def</span> <span class="org-tree-sitter-hl-faceXfunction">runProgram</span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-tree-sitter-hl-faceXvariableXparameter">prog</span><span class="org-rainbow-delimiters-depth-1">)</span>:
+..    <span class="org-tree-sitter-hl-faceXkeyword">def</span> <span class="org-tree-sitter-hl-faceXfunction">runOp</span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-tree-sitter-hl-faceXvariableXparameter">op</span><span class="org-rainbow-delimiters-depth-1">)</span>:
+..        <span class="org-tree-sitter-hl-faceXkeyword">if</span> op.<span class="org-tree-sitter-hl-faceXproperty">op</span> <span class="org-tree-sitter-hl-faceXoperator">==</span> <span class="org-tree-sitter-hl-faceXstring">'open'</span>:
+..            <span class="org-tree-sitter-hl-faceXvariable">fd</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> os.<span class="org-tree-sitter-hl-faceXproperty"><span class="org-tree-sitter-hl-faceXmethodXcall">open</span></span><span class="org-rainbow-delimiters-depth-1">(</span>op.<span class="org-tree-sitter-hl-faceXproperty">args</span><span class="org-rainbow-delimiters-depth-2">[</span><span class="org-tree-sitter-hl-faceXnumber">0</span><span class="org-rainbow-delimiters-depth-2">]</span>, os.<span class="org-tree-sitter-hl-faceXproperty"><span class="org-tree-sitter-hl-faceXconstructor"><span class="org-tree-sitter-hl-faceXconstant">O_RDONLY</span></span></span><span class="org-rainbow-delimiters-depth-1">)</span>
+..            <span class="org-tree-sitter-hl-faceXkeyword">return</span> fd
+..        <span class="org-tree-sitter-hl-faceXkeyword">elif</span> op.<span class="org-tree-sitter-hl-faceXproperty">op</span> <span class="org-tree-sitter-hl-faceXoperator">==</span> <span class="org-tree-sitter-hl-faceXstring">'read'</span>:
+..            <span class="org-tree-sitter-hl-faceXvariable">text</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> os.<span class="org-tree-sitter-hl-faceXproperty"><span class="org-tree-sitter-hl-faceXmethodXcall">read</span></span><span class="org-rainbow-delimiters-depth-1">(</span>op.<span class="org-tree-sitter-hl-faceXproperty">args</span><span class="org-rainbow-delimiters-depth-2">[</span><span class="org-tree-sitter-hl-faceXnumber">0</span><span class="org-rainbow-delimiters-depth-2">]</span>, <span class="org-tree-sitter-hl-faceXnumber">10000</span><span class="org-rainbow-delimiters-depth-1">)</span>
+..            <span class="org-tree-sitter-hl-faceXkeyword">return</span> text
+..        <span class="org-tree-sitter-hl-faceXkeyword">elif</span> op.<span class="org-tree-sitter-hl-faceXproperty">op</span> <span class="org-tree-sitter-hl-faceXoperator">==</span> <span class="org-tree-sitter-hl-faceXstring">'close'</span>:
+..            os.<span class="org-tree-sitter-hl-faceXproperty"><span class="org-tree-sitter-hl-faceXmethodXcall">close</span></span><span class="org-rainbow-delimiters-depth-1">(</span>op.<span class="org-tree-sitter-hl-faceXproperty">args</span><span class="org-rainbow-delimiters-depth-2">[</span><span class="org-tree-sitter-hl-faceXnumber">0</span><span class="org-rainbow-delimiters-depth-2">]</span><span class="org-rainbow-delimiters-depth-1">)</span>
+..            <span class="org-tree-sitter-hl-faceXkeyword">return</span> <span class="org-tree-sitter-hl-faceXconstantXbuiltin">None</span>
+.
+.    <span class="org-tree-sitter-hl-faceXkeyword">try</span>:
+.        <span class="org-tree-sitter-hl-faceXvariable">op</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> prog.<span class="org-tree-sitter-hl-faceXproperty"><span class="org-tree-sitter-hl-faceXmethodXcall">send</span></span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-tree-sitter-hl-faceXconstantXbuiltin">None</span><span class="org-rainbow-delimiters-depth-1">)</span>
+.        <span class="org-tree-sitter-hl-faceXkeyword">while</span> <span class="org-tree-sitter-hl-faceXconstantXbuiltin">True</span>:
+.            <span class="org-tree-sitter-hl-faceXkeyword">if</span> <span class="org-tree-sitter-hl-faceXfunctionXcall"><span class="org-tree-sitter-hl-faceXfunctionXbuiltin">isinstance</span></span><span class="org-rainbow-delimiters-depth-1">(</span>op, <span class="org-tree-sitter-hl-faceXconstructor">Op</span><span class="org-rainbow-delimiters-depth-1">)</span>:
+.                <span class="org-tree-sitter-hl-faceXvariable">r</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXfunctionXcall">runOp</span><span class="org-rainbow-delimiters-depth-1">(</span>op<span class="org-rainbow-delimiters-depth-1">)</span>
+.                <span class="org-tree-sitter-hl-faceXvariable">op</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> prog.<span class="org-tree-sitter-hl-faceXproperty"><span class="org-tree-sitter-hl-faceXmethodXcall">send</span></span><span class="org-rainbow-delimiters-depth-1">(</span>r<span class="org-rainbow-delimiters-depth-1">)</span>
+.            <span class="org-tree-sitter-hl-faceXkeyword">elif</span> <span class="org-tree-sitter-hl-faceXfunctionXcall"><span class="org-tree-sitter-hl-faceXfunctionXbuiltin">isinstance</span></span><span class="org-rainbow-delimiters-depth-1">(</span>op, types.<span class="org-tree-sitter-hl-faceXproperty"><span class="org-tree-sitter-hl-faceXconstructor">GeneratorType</span></span><span class="org-rainbow-delimiters-depth-1">)</span>:
+.                <span class="org-tree-sitter-hl-faceXvariable">r</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXfunctionXcall">runProgram</span><span class="org-rainbow-delimiters-depth-1">(</span>op<span class="org-rainbow-delimiters-depth-1">)</span>
+.                <span class="org-tree-sitter-hl-faceXvariable">op</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> prog.<span class="org-tree-sitter-hl-faceXproperty"><span class="org-tree-sitter-hl-faceXmethodXcall">send</span></span><span class="org-rainbow-delimiters-depth-1">(</span>r<span class="org-rainbow-delimiters-depth-1">)</span>
+.
+.    <span class="org-tree-sitter-hl-faceXkeyword">except</span> <span class="org-tree-sitter-hl-faceXconstructor">StopIteration</span> <span class="org-tree-sitter-hl-faceXkeyword">as</span> e:
+.        <span class="org-tree-sitter-hl-faceXkeyword">return</span> e.<span class="org-tree-sitter-hl-faceXproperty">value</span>
 </pre>
 </div>
 </div>
 </div>
 
-<div id="outline-container-org9bc7923" class="outline-2">
-<h2 id="org9bc7923">Final thoughts</h2>
-<div class="outline-text-2" id="text-org9bc7923">
+<div id="outline-container-orgb26ff58" class="outline-2">
+<h2 id="orgb26ff58">Final thoughts</h2>
+<div class="outline-text-2" id="text-orgb26ff58">
 <p>
 I think I've shown one way to achieve, at least parts of, what Ken talks about.
 The resulting code looks almost like "normal Python". There are some things to
