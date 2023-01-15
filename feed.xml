@@ -4,7 +4,129 @@
 <title><![CDATA[Magnus web site]]></title>
 <description><![CDATA[Magnus web site]]></description>
 <link>https://magnus.therning.org/</link>
-<lastBuildDate>Sat, 07 Jan 2023 09:09:02 +0100</lastBuildDate>
+<lastBuildDate>Sun, 15 Jan 2023 19:34:51 +0100</lastBuildDate>
+<item>
+  <title><![CDATA[Composing instances using <tt>deriving via</tt>]]></title>
+  <description><![CDATA[
+<p>
+Today I watched the very good, and short, video from Tweag on how to <a href="https://www.youtube.com/watch?v=UZaQuSIrO6s">Avoid
+boilerplate instances with -XDerivingVia</a>. It made me realise that I've read
+about this before, but then the topic was on reducing boilerplate with MTL-style
+code.
+</p>
+
+<p>
+Given that I'd forgotten about it I'm writing this mostly as a note to myself.
+</p>
+
+<div id="outline-container-orgd2c4425" class="outline-2">
+<h2 id="orgd2c4425">The example from the Tweag video, slightly changed</h2>
+<div class="outline-text-2" id="text-orgd2c4425">
+<p>
+The code for making film ratings into a <code>Monoid</code>, when translated to the UK,
+would look something like this:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">{-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
+module DeriveMonoid <span class="org-tree-sitter-hl-faceXkeyword">where</span>
+
+<span class="org-tree-sitter-hl-faceXkeyword">newtype</span> <span class="org-tree-sitter-hl-faceXtype">Supremum</span> <span class="org-tree-sitter-hl-faceXtype">a</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXconstructor">MkSup</span> <span class="org-tree-sitter-hl-faceXtype">a</span>
+    <span class="org-tree-sitter-hl-faceXkeyword">deriving</span> <span class="org-tree-sitter-hl-faceXkeyword">stock</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">Bounded</span><span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">Eq</span><span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">Ord</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
+    <span class="org-tree-sitter-hl-faceXkeyword">deriving</span> <span class="org-tree-sitter-hl-faceXkeyword">newtype</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">Show</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
+
+<span class="org-tree-sitter-hl-faceXkeyword">instance</span> <span class="org-tree-sitter-hl-faceXtype">Ord</span> <span class="org-tree-sitter-hl-faceXtype">a</span> <span class="org-tree-sitter-hl-faceXoperator">=&gt;</span> <span class="org-tree-sitter-hl-faceXtype">Semigroup</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">Supremum</span> <span class="org-tree-sitter-hl-faceXtype">a</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXkeyword">where</span>
+    <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXoperator">&lt;&gt;</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXvariable">max</span>
+
+<span class="org-tree-sitter-hl-faceXkeyword">instance</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">Bounded</span> <span class="org-tree-sitter-hl-faceXtype">a</span><span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">Ord</span> <span class="org-tree-sitter-hl-faceXtype">a</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXoperator">=&gt;</span> <span class="org-tree-sitter-hl-faceXtype">Monoid</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">Supremum</span> <span class="org-tree-sitter-hl-faceXtype">a</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXkeyword">where</span>
+    <span class="org-tree-sitter-hl-faceXfunction"><span class="org-tree-sitter-hl-faceXvariable">mempty</span></span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXvariable">minBound</span>
+
+<span class="org-tree-sitter-hl-faceXkeyword">data</span> <span class="org-tree-sitter-hl-faceXtype">FilmClassification</span>
+    <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXconstructor">Universal</span>
+    <span class="org-tree-sitter-hl-faceXoperator">|</span> <span class="org-tree-sitter-hl-faceXconstructor">ParentalGuidance</span>
+    <span class="org-tree-sitter-hl-faceXoperator">|</span> <span class="org-tree-sitter-hl-faceXconstructor">Suitable12</span>
+    <span class="org-tree-sitter-hl-faceXoperator">|</span> <span class="org-tree-sitter-hl-faceXconstructor">Suitable15</span>
+    <span class="org-tree-sitter-hl-faceXoperator">|</span> <span class="org-tree-sitter-hl-faceXconstructor">Adults</span>
+    <span class="org-tree-sitter-hl-faceXoperator">|</span> <span class="org-tree-sitter-hl-faceXconstructor">Restricted18</span>
+    <span class="org-tree-sitter-hl-faceXkeyword">deriving</span> <span class="org-tree-sitter-hl-faceXkeyword">stock</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">Bounded</span><span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">Eq</span><span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">Ord</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
+    <span class="org-tree-sitter-hl-faceXkeyword">deriving</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">Monoid</span><span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">Semigroup</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXkeyword">via</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">Supremum</span> <span class="org-tree-sitter-hl-faceXtype">FilmClassification</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org698756b" class="outline-2">
+<h2 id="org698756b">Composing by deriving</h2>
+<div class="outline-text-2" id="text-org698756b">
+<p>
+First let's write up a silly class for writing to <code>stdout</code>, a single operation will do.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-tree-sitter-hl-faceXkeyword">class</span> <span class="org-tree-sitter-hl-faceXtype">Monad</span> <span class="org-tree-sitter-hl-faceXtype">m</span> <span class="org-tree-sitter-hl-faceXoperator">=&gt;</span> <span class="org-tree-sitter-hl-faceXtype">StdoutWriter</span> <span class="org-tree-sitter-hl-faceXtype">m</span> <span class="org-tree-sitter-hl-faceXkeyword">where</span>
+    <span class="org-tree-sitter-hl-faceXtype"><span class="org-tree-sitter-hl-faceXvariable">writeStdoutLn</span></span> <span class="org-tree-sitter-hl-faceXoperator">::</span> <span class="org-tree-sitter-hl-faceXtype">String</span> <span class="org-tree-sitter-hl-faceXoperator">-&gt;</span> <span class="org-tree-sitter-hl-faceXtype">m</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+</pre>
+</div>
+
+<p>
+Then we'll need a type to attach the implementation to.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-tree-sitter-hl-faceXkeyword">newtype</span> <span class="org-tree-sitter-hl-faceXtype">SimpleStdoutWriter</span> <span class="org-tree-sitter-hl-faceXtype">m</span> <span class="org-tree-sitter-hl-faceXtype">a</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXconstructor">SimpleStdoutWriter</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">m</span> <span class="org-tree-sitter-hl-faceXtype">a</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
+    <span class="org-tree-sitter-hl-faceXkeyword">deriving</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">Functor</span><span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">Applicative</span><span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">Monad</span><span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">MonadIO</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
+</pre>
+</div>
+
+<p>
+and of course an implementation
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-tree-sitter-hl-faceXkeyword">instance</span> <span class="org-tree-sitter-hl-faceXtype">MonadIO</span> <span class="org-tree-sitter-hl-faceXtype">m</span> <span class="org-tree-sitter-hl-faceXoperator">=&gt;</span> <span class="org-tree-sitter-hl-faceXtype">StdoutWriter</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">SimpleStdoutWriter</span> <span class="org-tree-sitter-hl-faceXtype">m</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXkeyword">where</span>
+    <span class="org-tree-sitter-hl-faceXfunction"><span class="org-tree-sitter-hl-faceXvariable">writeStdoutLn</span></span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXfunction"><span class="org-tree-sitter-hl-faceXvariable">liftIO</span></span> <span class="org-tree-sitter-hl-faceXoperator">.</span> <span class="org-tree-sitter-hl-faceXfunction"><span class="org-tree-sitter-hl-faceXvariable">putStrLn</span></span>
+</pre>
+</div>
+
+<p>
+Now let's create an app environment based on <code>ReaderT</code> and use <code>deriving via</code> to
+give it an implementation of <code>StdoutWriter</code> via <code>SimpleStdoutWriter</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-tree-sitter-hl-faceXkeyword">newtype</span> <span class="org-tree-sitter-hl-faceXtype">AppEnv</span> <span class="org-tree-sitter-hl-faceXtype">a</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXconstructor">AppEnv</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">{</span></span><span class="org-tree-sitter-hl-faceXvariable">unAppEnv</span> <span class="org-tree-sitter-hl-faceXoperator">::</span> <span class="org-tree-sitter-hl-faceXtype">ReaderT</span> <span class="org-tree-sitter-hl-faceXtype">Int</span> <span class="org-tree-sitter-hl-faceXtype">IO</span> <span class="org-tree-sitter-hl-faceXtype">a</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">}</span></span>
+    <span class="org-tree-sitter-hl-faceXkeyword">deriving</span>
+        <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span> <span class="org-tree-sitter-hl-faceXtype">Functor</span>
+        <span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">Applicative</span>
+        <span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">Monad</span>
+        <span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">MonadIO</span>
+        <span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">MonadReader</span> <span class="org-tree-sitter-hl-faceXtype">Int</span>
+        <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
+    <span class="org-tree-sitter-hl-faceXkeyword">deriving</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">StdoutWriter</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXkeyword">via</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">SimpleStdoutWriter</span> <span class="org-tree-sitter-hl-faceXtype">AppEnv</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
+</pre>
+</div>
+
+<p>
+Then a quick test to show that it actually works.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-ghci">λ&gt; runReaderT (unAppEnv $ writeStdoutLn "hello, world!") 0
+hello, world!
+</pre>
+</div>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-monad_transformers.html">monad_transformers</a> </div>
+]]></description>
+  <category><![CDATA[haskell]]></category>
+  <category><![CDATA[monad_transformers]]></category>
+  <link>https://magnus.therning.org/2023-01-15-composing-instances-using-~deriving-via~.html</link>
+  <guid>https://magnus.therning.org/2023-01-15-composing-instances-using-~deriving-via~.html</guid>
+  <pubDate>Sun, 15 Jan 2023 18:34:00 +0100</pubDate>
+</item>
 <item>
   <title><![CDATA[Annotate projects in Emacs]]></title>
   <description><![CDATA[
@@ -531,110 +653,6 @@ bind the service on the host to something else than <code>127.0.0.1</code>.
   <link>https://magnus.therning.org/2022-01-03-accessing-the-host-from-inside-a-docker-container.html</link>
   <guid>https://magnus.therning.org/2022-01-03-accessing-the-host-from-inside-a-docker-container.html</guid>
   <pubDate>Mon, 03 Jan 2022 13:48:00 +0100</pubDate>
-</item>
-<item>
-  <title><![CDATA[Trimming newline on code block variable]]></title>
-  <description><![CDATA[
-<p>
-Today I found <a href="https://github.com/zweifisch/ob-http">ob-http</a> and decided to try it out a little. I quickly ran into a
-problem of a trailing newline. Basically I tried to do something like this:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-org"><span class="org-org-meta-line">#+name: id</span>
-<span class="org-org-block-begin-line">#+begin_src http :select .id :cache yes</span>
-<span class="org-org-block"><span class="org-constant">POST</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-function-name">/foo</span></span>
-<span class="org-org-block"><span class="org-variable-name">Content-Type</span></span><span class="org-org-block"><span class="org-comment">:</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-string">application/json</span></span>
-
-<span class="org-org-block"><span class="org-comment">{</span></span>
-<span class="org-org-block">  </span><span class="org-org-block"><span class="org-string">"foo"</span></span><span class="org-org-block"><span class="org-comment">:</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-string">"toto"</span></span><span class="org-org-block"><span class="org-comment">,</span></span>
-<span class="org-org-block">  </span><span class="org-org-block"><span class="org-string">"bar"</span></span><span class="org-org-block"><span class="org-comment">:</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-string">"tata"</span></span>
-<span class="org-org-block"><span class="org-comment">}</span></span>
-<span class="org-org-block-end-line">#+end_src</span>
-
-<span class="org-org-meta-line">#+RESULTS[c5fd99206822a2109d7ac1d140185e6ec3f4f1d9]: id</span>
-<span class="org-org-block-begin-line">#+begin_example</span>
-<span class="custom">48722051-f81b-433f-acb4-a65d961ec841</span>
-<span class="org-org-block-end-line">#+end_example</span>
-
-<span class="org-org-meta-line">#+header: :var id=id</span>
-<span class="org-org-block-begin-line">#+begin_src http</span>
-<span class="org-org-block"><span class="org-constant">POST</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-function-name">/foo/${id}/fix</span></span>
-<span class="org-org-block-end-line">#+end_src</span>
-</pre>
-</div>
-
-<p>
-The trailing newline messes up the URL though, and the second code block fails.
-</p>
-
-<p>
-I found two ways to deal with it, using a table and using <code>org-sbe</code>
-</p>
-
-<div id="outline-container-org3ef143c" class="outline-2">
-<h2 id="org3ef143c">Using a table</h2>
-<div class="outline-text-2" id="text-org3ef143c">
-<div class="org-src-container">
-<pre class="src src-org"><span class="org-org-meta-line">#+name: id</span>
-<span class="org-org-block-begin-line">#+begin_src http :select .id :cache yes :results table</span>
-<span class="org-org-block"><span class="org-constant">POST</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-function-name">/foo</span></span>
-<span class="org-org-block"><span class="org-variable-name">Content-Type</span></span><span class="org-org-block"><span class="org-comment">:</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-string">application/json</span></span>
-
-<span class="org-org-block"><span class="org-comment">{</span></span>
-<span class="org-org-block">  </span><span class="org-org-block"><span class="org-string">"foo"</span></span><span class="org-org-block"><span class="org-comment">:</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-string">"toto"</span></span><span class="org-org-block"><span class="org-comment">,</span></span>
-<span class="org-org-block">  </span><span class="org-org-block"><span class="org-string">"bar"</span></span><span class="org-org-block"><span class="org-comment">:</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-string">"tata"</span></span>
-<span class="org-org-block"><span class="org-comment">}</span></span>
-<span class="org-org-block-end-line">#+end_src</span>
-
-<span class="org-org-meta-line">#+RESULTS[c5fd99206822a2109d7ac1d140185e6ec3f4f1d9]: id</span>
-<span class="org-org-block-begin-line">#+begin_example</span>
-<span class="custom">| 48722051-f81b-433f-acb4-a65d961ec841 |</span>
-<span class="org-org-block-end-line">#+end_example</span>
-
-<span class="org-org-meta-line">#+header: :var id=id[0,0]</span>
-<span class="org-org-block-begin-line">#+begin_src http</span>
-<span class="org-org-block"><span class="org-constant">POST</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-function-name">/foo/${id}/fix</span></span>
-<span class="org-org-block-end-line">#+end_src</span>
-</pre>
-</div>
-</div>
-</div>
-
-<div id="outline-container-org33493ca" class="outline-2">
-<h2 id="org33493ca">Using <code>org-sbe</code></h2>
-<div class="outline-text-2" id="text-org33493ca">
-<div class="org-src-container">
-<pre class="src src-org"><span class="org-org-meta-line">#+name: id</span>
-<span class="org-org-block-begin-line">#+begin_src http :select .id :cache yes</span>
-<span class="org-org-block"><span class="org-constant">POST</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-function-name">/foo</span></span>
-<span class="org-org-block"><span class="org-variable-name">Content-Type</span></span><span class="org-org-block"><span class="org-comment">:</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-string">application/json</span></span>
-
-<span class="org-org-block"><span class="org-comment">{</span></span>
-<span class="org-org-block">  </span><span class="org-org-block"><span class="org-string">"foo"</span></span><span class="org-org-block"><span class="org-comment">:</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-string">"toto"</span></span><span class="org-org-block"><span class="org-comment">,</span></span>
-<span class="org-org-block">  </span><span class="org-org-block"><span class="org-string">"bar"</span></span><span class="org-org-block"><span class="org-comment">:</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-string">"tata"</span></span>
-<span class="org-org-block"><span class="org-comment">}</span></span>
-<span class="org-org-block-end-line">#+end_src</span>
-
-<span class="org-org-meta-line">#+RESULTS[c5fd99206822a2109d7ac1d140185e6ec3f4f1d9]: id</span>
-<span class="org-org-block-begin-line">#+begin_example</span>
-<span class="custom">48722051-f81b-433f-acb4-a65d961ec841</span>
-<span class="org-org-block-end-line">#+end_example</span>
-
-<span class="org-org-meta-line">#+header: :var id=(org-sbe id)</span>
-<span class="org-org-block-begin-line">#+begin_src http</span>
-<span class="org-org-block"><span class="org-constant">POST</span></span><span class="org-org-block"> </span><span class="org-org-block"><span class="org-function-name">/foo/${id}/fix</span></span>
-<span class="org-org-block-end-line">#+end_src</span>
-</pre>
-</div>
-</div>
-</div>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> </div>]]></description>
-  <category><![CDATA[emacs]]></category>
-  <category><![CDATA[org-mode]]></category>
-  <link>https://magnus.therning.org/2022-01-01-trimming-newline-on-code-block-variable.html</link>
-  <guid>https://magnus.therning.org/2022-01-01-trimming-newline-on-code-block-variable.html</guid>
-  <pubDate>Sat, 01 Jan 2022 19:24:00 +0100</pubDate>
 </item>
 </channel>
 </rss>

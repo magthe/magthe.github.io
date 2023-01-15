@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="alternate"
+      type="application/rss+xml"
+      href="https://magnus.therning.org/feed.xml"
+      title="RSS feed for https://magnus.therning.org/">
+<title>Composing instances using <tt>deriving via</tt></title>
+<meta name="author" content="Magnus Therning"><meta name="referrer" content="no-referrer"><link href= "static/style.css" rel="stylesheet" type="text/css" /><link href= "static/htmlize.css" rel="stylesheet" type="text/css" /><link href= "static/extra_style.css" rel="stylesheet" type="text/css" /></head>
+<body>
+<div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
+<div id="content">
+<div class="post-date">15 Jan 2023</div><h1 class="post-title"><a href="https://magnus.therning.org/2023-01-15-composing-instances-using-~deriving-via~.html">Composing instances using <tt>deriving via</tt></a></h1>
+<p>
+Today I watched the very good, and short, video from Tweag on how to <a href="https://www.youtube.com/watch?v=UZaQuSIrO6s">Avoid
+boilerplate instances with -XDerivingVia</a>. It made me realise that I've read
+about this before, but then the topic was on reducing boilerplate with MTL-style
+code.
+</p>
+
+<p>
+Given that I'd forgotten about it I'm writing this mostly as a note to myself.
+</p>
+
+<div id="outline-container-orgd2c4425" class="outline-2">
+<h2 id="orgd2c4425">The example from the Tweag video, slightly changed</h2>
+<div class="outline-text-2" id="text-orgd2c4425">
+<p>
+The code for making film ratings into a <code>Monoid</code>, when translated to the UK,
+would look something like this:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">{-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
+module DeriveMonoid <span class="org-tree-sitter-hl-faceXkeyword">where</span>
+
+<span class="org-tree-sitter-hl-faceXkeyword">newtype</span> <span class="org-tree-sitter-hl-faceXtype">Supremum</span> <span class="org-tree-sitter-hl-faceXtype">a</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXconstructor">MkSup</span> <span class="org-tree-sitter-hl-faceXtype">a</span>
+    <span class="org-tree-sitter-hl-faceXkeyword">deriving</span> <span class="org-tree-sitter-hl-faceXkeyword">stock</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">Bounded</span><span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">Eq</span><span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">Ord</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
+    <span class="org-tree-sitter-hl-faceXkeyword">deriving</span> <span class="org-tree-sitter-hl-faceXkeyword">newtype</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">Show</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
+
+<span class="org-tree-sitter-hl-faceXkeyword">instance</span> <span class="org-tree-sitter-hl-faceXtype">Ord</span> <span class="org-tree-sitter-hl-faceXtype">a</span> <span class="org-tree-sitter-hl-faceXoperator">=&gt;</span> <span class="org-tree-sitter-hl-faceXtype">Semigroup</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">Supremum</span> <span class="org-tree-sitter-hl-faceXtype">a</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXkeyword">where</span>
+    <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXoperator">&lt;&gt;</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXvariable">max</span>
+
+<span class="org-tree-sitter-hl-faceXkeyword">instance</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">Bounded</span> <span class="org-tree-sitter-hl-faceXtype">a</span><span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">Ord</span> <span class="org-tree-sitter-hl-faceXtype">a</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXoperator">=&gt;</span> <span class="org-tree-sitter-hl-faceXtype">Monoid</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">Supremum</span> <span class="org-tree-sitter-hl-faceXtype">a</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXkeyword">where</span>
+    <span class="org-tree-sitter-hl-faceXfunction"><span class="org-tree-sitter-hl-faceXvariable">mempty</span></span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXvariable">minBound</span>
+
+<span class="org-tree-sitter-hl-faceXkeyword">data</span> <span class="org-tree-sitter-hl-faceXtype">FilmClassification</span>
+    <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXconstructor">Universal</span>
+    <span class="org-tree-sitter-hl-faceXoperator">|</span> <span class="org-tree-sitter-hl-faceXconstructor">ParentalGuidance</span>
+    <span class="org-tree-sitter-hl-faceXoperator">|</span> <span class="org-tree-sitter-hl-faceXconstructor">Suitable12</span>
+    <span class="org-tree-sitter-hl-faceXoperator">|</span> <span class="org-tree-sitter-hl-faceXconstructor">Suitable15</span>
+    <span class="org-tree-sitter-hl-faceXoperator">|</span> <span class="org-tree-sitter-hl-faceXconstructor">Adults</span>
+    <span class="org-tree-sitter-hl-faceXoperator">|</span> <span class="org-tree-sitter-hl-faceXconstructor">Restricted18</span>
+    <span class="org-tree-sitter-hl-faceXkeyword">deriving</span> <span class="org-tree-sitter-hl-faceXkeyword">stock</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">Bounded</span><span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">Eq</span><span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">Ord</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
+    <span class="org-tree-sitter-hl-faceXkeyword">deriving</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">Monoid</span><span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">Semigroup</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXkeyword">via</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">Supremum</span> <span class="org-tree-sitter-hl-faceXtype">FilmClassification</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org698756b" class="outline-2">
+<h2 id="org698756b">Composing by deriving</h2>
+<div class="outline-text-2" id="text-org698756b">
+<p>
+First let's write up a silly class for writing to <code>stdout</code>, a single operation will do.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-tree-sitter-hl-faceXkeyword">class</span> <span class="org-tree-sitter-hl-faceXtype">Monad</span> <span class="org-tree-sitter-hl-faceXtype">m</span> <span class="org-tree-sitter-hl-faceXoperator">=&gt;</span> <span class="org-tree-sitter-hl-faceXtype">StdoutWriter</span> <span class="org-tree-sitter-hl-faceXtype">m</span> <span class="org-tree-sitter-hl-faceXkeyword">where</span>
+    <span class="org-tree-sitter-hl-faceXtype"><span class="org-tree-sitter-hl-faceXvariable">writeStdoutLn</span></span> <span class="org-tree-sitter-hl-faceXoperator">::</span> <span class="org-tree-sitter-hl-faceXtype">String</span> <span class="org-tree-sitter-hl-faceXoperator">-&gt;</span> <span class="org-tree-sitter-hl-faceXtype">m</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+</pre>
+</div>
+
+<p>
+Then we'll need a type to attach the implementation to.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-tree-sitter-hl-faceXkeyword">newtype</span> <span class="org-tree-sitter-hl-faceXtype">SimpleStdoutWriter</span> <span class="org-tree-sitter-hl-faceXtype">m</span> <span class="org-tree-sitter-hl-faceXtype">a</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXconstructor">SimpleStdoutWriter</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">m</span> <span class="org-tree-sitter-hl-faceXtype">a</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
+    <span class="org-tree-sitter-hl-faceXkeyword">deriving</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">Functor</span><span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">Applicative</span><span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">Monad</span><span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">MonadIO</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
+</pre>
+</div>
+
+<p>
+and of course an implementation
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-tree-sitter-hl-faceXkeyword">instance</span> <span class="org-tree-sitter-hl-faceXtype">MonadIO</span> <span class="org-tree-sitter-hl-faceXtype">m</span> <span class="org-tree-sitter-hl-faceXoperator">=&gt;</span> <span class="org-tree-sitter-hl-faceXtype">StdoutWriter</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">SimpleStdoutWriter</span> <span class="org-tree-sitter-hl-faceXtype">m</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXkeyword">where</span>
+    <span class="org-tree-sitter-hl-faceXfunction"><span class="org-tree-sitter-hl-faceXvariable">writeStdoutLn</span></span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXfunction"><span class="org-tree-sitter-hl-faceXvariable">liftIO</span></span> <span class="org-tree-sitter-hl-faceXoperator">.</span> <span class="org-tree-sitter-hl-faceXfunction"><span class="org-tree-sitter-hl-faceXvariable">putStrLn</span></span>
+</pre>
+</div>
+
+<p>
+Now let's create an app environment based on <code>ReaderT</code> and use <code>deriving via</code> to
+give it an implementation of <code>StdoutWriter</code> via <code>SimpleStdoutWriter</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-tree-sitter-hl-faceXkeyword">newtype</span> <span class="org-tree-sitter-hl-faceXtype">AppEnv</span> <span class="org-tree-sitter-hl-faceXtype">a</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXconstructor">AppEnv</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">{</span></span><span class="org-tree-sitter-hl-faceXvariable">unAppEnv</span> <span class="org-tree-sitter-hl-faceXoperator">::</span> <span class="org-tree-sitter-hl-faceXtype">ReaderT</span> <span class="org-tree-sitter-hl-faceXtype">Int</span> <span class="org-tree-sitter-hl-faceXtype">IO</span> <span class="org-tree-sitter-hl-faceXtype">a</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">}</span></span>
+    <span class="org-tree-sitter-hl-faceXkeyword">deriving</span>
+        <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span> <span class="org-tree-sitter-hl-faceXtype">Functor</span>
+        <span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">Applicative</span>
+        <span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">Monad</span>
+        <span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">MonadIO</span>
+        <span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">MonadReader</span> <span class="org-tree-sitter-hl-faceXtype">Int</span>
+        <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
+    <span class="org-tree-sitter-hl-faceXkeyword">deriving</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">StdoutWriter</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXkeyword">via</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">SimpleStdoutWriter</span> <span class="org-tree-sitter-hl-faceXtype">AppEnv</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
+</pre>
+</div>
+
+<p>
+Then a quick test to show that it actually works.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-ghci">λ&gt; runReaderT (unAppEnv $ writeStdoutLn "hello, world!") 0
+hello, world!
+</pre>
+</div>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-monad_transformers.html">monad_transformers</a> </div>
+<div id="comments">Comment <a href=mailto:magnus+blog.comment@therning.org?subject=Comment%20on%20INSERT%20POST%20URL%20HERE>here</a>.</div></div>
+<div id="postamble" class="status"><!-- org-static-blog-page-postamble --></div>
+</body>
+</html>
