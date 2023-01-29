@@ -4,7 +4,162 @@
 <title><![CDATA[Magnus web site]]></title>
 <description><![CDATA[Magnus web site]]></description>
 <link>https://magnus.therning.org/</link>
-<lastBuildDate>Sun, 15 Jan 2023 19:34:51 +0100</lastBuildDate>
+<lastBuildDate>Sun, 29 Jan 2023 23:13:57 +0100</lastBuildDate>
+<item>
+  <title><![CDATA[A take on log messages]]></title>
+  <description><![CDATA[
+<p>
+At <code>$DAYJOB</code> we use structured logging with rather little actual structure, the only rules are
+</p>
+
+<ol class="org-ol">
+<li>Log to <code>stdout</code>.</li>
+<li>Log one JSON object per line.</li>
+<li>The only required fields are
+<ul class="org-ul">
+<li><code>message</code> - a human readable string describing the event</li>
+<li><code>level</code> - the severity of the event, <code>debug</code>, <code>info</code>, <code>warn</code>, <code>error</code>, or <code>fatal</code>.</li>
+<li><code>timestamp</code> - the time of the event</li>
+<li><code>correlation-id</code> - an ID passed between services to allow to find related events</li>
+</ul></li>
+</ol>
+
+<p>
+Beyond that pretty much anything goes, any other fields that are useful in that
+service, or even in that one log message is OK.
+</p>
+
+<p>
+My first take was very ad-hoc, mostly becuase there were other parts of the
+question "How do I write a service in Haskell, actually?" that needed more
+attention &#x2013; then I read <a href="https://jship.github.io/posts/2022-05-17-announcing-monad-logger-aeson/">Announcing monad-logger-aeson: Structured logging in
+Haskell for cheap</a>. Sure, I'd looked at some of the logging libraries on
+Hackage but not really found anything that seemed like it would fit very well.
+Not until <a href="https://hackage.haskell.org/package/monad-logger-aeson">monad-logger-aeson</a>, that is. Well, at least until I realised it didn't
+quite fit the rules we have.
+</p>
+
+<p>
+It did give me some ideas of how to structure my current rather simple, but very
+awkward to use, current loggging code. This is what I came up with, and after
+using it in a handful services I find it kind of nice to work with. Let me know
+what you think.
+</p>
+
+<div id="outline-container-org7a41693" class="outline-2">
+<h2 id="org7a41693">The log message type</h2>
+<div class="outline-text-2" id="text-org7a41693">
+<p>
+I decided that a log message must always contain the text describing the event.
+It's the one thing that's sure to be known at the point where the developer
+writes the code to log an event. All the other mandatory parts can, and probably
+should as far as possible, be added by the logging library itself. So I ended up
+with this type.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-tree-sitter-hl-faceXkeyword">data</span> <span class="org-tree-sitter-hl-faceXtype">LogMsg</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXtype">Text</span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">[</span></span><span class="org-tree-sitter-hl-faceXtype">Pair</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">]</span></span>
+    <span class="org-tree-sitter-hl-faceXkeyword">deriving</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">Eq</span><span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">Show</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
+</pre>
+</div>
+
+<p>
+It should however be easy to add custom parts at the point of logging, so I
+added an operator for that.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXoperator">#+</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXoperator">::</span> <span class="org-tree-sitter-hl-faceXtype">LogMsg</span> <span class="org-tree-sitter-hl-faceXoperator">-&gt;</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">[</span></span><span class="org-tree-sitter-hl-faceXtype">Pair</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">]</span></span> <span class="org-tree-sitter-hl-faceXoperator">-&gt;</span> <span class="org-tree-sitter-hl-faceXtype">LogMsg</span>
+<span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXoperator">#+</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXvariable">msg</span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXvariable">ps0</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXvariable">ps1</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">msg</span></span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">ps0</span></span> <span class="org-tree-sitter-hl-faceXoperator">&lt;&gt;</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">ps1</span></span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
+</pre>
+</div>
+
+<p>
+The ordering is important, i.e. <code>ps0 &lt;&gt; ps1</code>, as <a href="https://hackage.haskell.org/package/monad-logger-aeson">aeson</a>'s <code>object</code> function will
+take the <i>last</i> value for a field and I want to be able to give keys in a log
+message new values by overwriting them later on.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org2d4772f" class="outline-2">
+<h2 id="org2d4772f">Instances to use it with fast-logger</h2>
+<div class="outline-text-2" id="text-org2d4772f">
+<p>
+The previous logging code used <a href="https://hackage.haskell.org/package/fast-logger">fast-logger</a> and it had worked really well so I
+decided to stick with it. Making <code>LogMsg</code> and instance of <code>ToLogStr</code> is key, and
+as the rules require logging of JSON objects it also needs to be an instance of
+<code>ToJSON</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-tree-sitter-hl-faceXkeyword">instance</span> <span class="org-tree-sitter-hl-faceXtype">ToJSON</span> <span class="org-tree-sitter-hl-faceXtype">LogMsg</span> <span class="org-tree-sitter-hl-faceXkeyword">where</span>
+    <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">toJSON</span></span> <span class="org-tree-sitter-hl-faceXvariableXparameter"><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span></span><span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXvariableXparameter">msg</span></span><span class="org-tree-sitter-hl-faceXvariableXparameter"> </span><span class="org-tree-sitter-hl-faceXvariableXparameter"><span class="org-tree-sitter-hl-faceXoperator">:#</span></span><span class="org-tree-sitter-hl-faceXvariableXparameter"> </span><span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXvariableXparameter">ps</span></span><span class="org-tree-sitter-hl-faceXvariableXparameter"><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span></span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">object</span></span> <span class="org-tree-sitter-hl-faceXoperator">$</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">ps</span></span> <span class="org-tree-sitter-hl-faceXoperator">&lt;&gt;</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">[</span></span><span class="org-tree-sitter-hl-faceXstring">"message"</span> <span class="org-tree-sitter-hl-faceXoperator">.=</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">msg</span></span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">]</span></span>
+
+<span class="org-tree-sitter-hl-faceXkeyword">instance</span> <span class="org-tree-sitter-hl-faceXtype">ToLogStr</span> <span class="org-tree-sitter-hl-faceXtype">LogMsg</span> <span class="org-tree-sitter-hl-faceXkeyword">where</span>
+    <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">toLogStr</span></span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXvariableXparameter">msg</span></span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">toLogStr</span></span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">encode</span></span> <span class="org-tree-sitter-hl-faceXvariable">msg</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXoperator">&lt;&gt;</span> <span class="org-tree-sitter-hl-faceXstring">"\n"</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org656d5ed" class="outline-2">
+<h2 id="org656d5ed">Instance to make it easy to log a string</h2>
+<div class="outline-text-2" id="text-org656d5ed">
+<p>
+It's common to just want to log a single string and nothing else, so it's handy
+if <code>LogMsg</code> is an instance of <code>IsString</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-tree-sitter-hl-faceXkeyword">instance</span> <span class="org-tree-sitter-hl-faceXtype">IsString</span> <span class="org-tree-sitter-hl-faceXtype">LogMsg</span> <span class="org-tree-sitter-hl-faceXkeyword">where</span>
+    <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">fromString</span></span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXvariableXparameter">msg</span></span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">pack</span></span> <span class="org-tree-sitter-hl-faceXvariable">msg</span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">[]</span></span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orga6d25c3" class="outline-2">
+<h2 id="orga6d25c3">Combining log messages</h2>
+<div class="outline-text-2" id="text-orga6d25c3">
+<p>
+When writing the previous logging code I'd regularly felt pain from the lack of
+a nice way to combine log messages. With the definition of <code>LogMsg</code> above it's
+not difficult to come up with reasonable instances for both <code>Semigroup</code> and
+<code>Monoid</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-tree-sitter-hl-faceXkeyword">instance</span> <span class="org-tree-sitter-hl-faceXtype">Semigroup</span> <span class="org-tree-sitter-hl-faceXtype">LogMsg</span> <span class="org-tree-sitter-hl-faceXkeyword">where</span>
+    <span class="org-tree-sitter-hl-faceXstring">""</span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXvariable">ps0</span> <span class="org-tree-sitter-hl-faceXoperator">&lt;&gt;</span> <span class="org-tree-sitter-hl-faceXvariable">msg1</span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXvariable">ps1</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">msg1</span></span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">ps0</span></span> <span class="org-tree-sitter-hl-faceXoperator">&lt;&gt;</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">ps1</span></span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
+    <span class="org-tree-sitter-hl-faceXvariable">msg0</span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXvariable">ps0</span> <span class="org-tree-sitter-hl-faceXoperator">&lt;&gt;</span> <span class="org-tree-sitter-hl-faceXstring">""</span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXvariable">ps1</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">msg0</span></span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">ps0</span></span> <span class="org-tree-sitter-hl-faceXoperator">&lt;&gt;</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">ps1</span></span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
+    <span class="org-tree-sitter-hl-faceXvariable">msg0</span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXvariable">ps0</span> <span class="org-tree-sitter-hl-faceXoperator">&lt;&gt;</span> <span class="org-tree-sitter-hl-faceXvariable">msg1</span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXvariable">ps1</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">msg0</span></span> <span class="org-tree-sitter-hl-faceXoperator">&lt;&gt;</span> <span class="org-tree-sitter-hl-faceXstring">" - "</span> <span class="org-tree-sitter-hl-faceXoperator">&lt;&gt;</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">msg1</span></span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">ps0</span></span> <span class="org-tree-sitter-hl-faceXoperator">&lt;&gt;</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">ps1</span></span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
+
+<span class="org-tree-sitter-hl-faceXkeyword">instance</span> <span class="org-tree-sitter-hl-faceXtype">Monoid</span> <span class="org-tree-sitter-hl-faceXtype">LogMsg</span> <span class="org-tree-sitter-hl-faceXkeyword">where</span>
+    <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">mempty</span></span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXstring">""</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org0b45515" class="outline-2">
+<h2 id="org0b45515">In closing</h2>
+<div class="outline-text-2" id="text-org0b45515">
+<p>
+What's missing above is the automatic handling of the remaining fields. I'll try
+to get back to that part soon. For now I'll just say that the log message API
+above made the implementation nice and straight forward.
+</p>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-logging.html">logging</a> </div>
+]]></description>
+  <category><![CDATA[haskell]]></category>
+  <category><![CDATA[logging]]></category>
+  <link>https://magnus.therning.org/2023-01-29-a-take-on-log-messages.html</link>
+  <guid>https://magnus.therning.org/2023-01-29-a-take-on-log-messages.html</guid>
+  <pubDate>Sun, 29 Jan 2023 22:12:00 +0100</pubDate>
+</item>
 <item>
   <title><![CDATA[Composing instances using <tt>deriving via</tt>]]></title>
   <description><![CDATA[
@@ -626,33 +781,6 @@ function for it, so I wrote one.
   <link>https://magnus.therning.org/2022-01-30-keeping-projectile's-cache-tidy.html</link>
   <guid>https://magnus.therning.org/2022-01-30-keeping-projectile's-cache-tidy.html</guid>
   <pubDate>Sun, 30 Jan 2022 15:14:00 +0100</pubDate>
-</item>
-<item>
-  <title><![CDATA[Accessing the host from inside a Docker container]]></title>
-  <description><![CDATA[
-<p>
-To give the container access to a service running on the the host add
-<code>extra_hosts</code> to its definition in the Compose file:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-yaml"><span class="org-variable-name">svc</span>:
-  ...
-  <span class="org-variable-name">extra_hosts</span>:
-    - <span class="org-string">"host.docker.internal:host-gateway"</span>
-</pre>
-</div>
-
-<p>
-Then it's possible to access it as <code>host.docker.internal</code>. Just don't forget to
-bind the service on the host to something else than <code>127.0.0.1</code>.
-</p>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-compose.html">compose</a> <a href="https://magnus.therning.org/tag-docker.html">docker</a> </div>]]></description>
-  <category><![CDATA[compose]]></category>
-  <category><![CDATA[docker]]></category>
-  <link>https://magnus.therning.org/2022-01-03-accessing-the-host-from-inside-a-docker-container.html</link>
-  <guid>https://magnus.therning.org/2022-01-03-accessing-the-host-from-inside-a-docker-container.html</guid>
-  <pubDate>Mon, 03 Jan 2022 13:48:00 +0100</pubDate>
 </item>
 </channel>
 </rss>
