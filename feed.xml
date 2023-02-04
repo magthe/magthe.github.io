@@ -4,7 +4,115 @@
 <title><![CDATA[Magnus web site]]></title>
 <description><![CDATA[Magnus web site]]></description>
 <link>https://magnus.therning.org/</link>
-<lastBuildDate>Sun, 29 Jan 2023 23:13:57 +0100</lastBuildDate>
+<lastBuildDate>Sat, 04 Feb 2023 22:48:30 +0100</lastBuildDate>
+<item>
+  <title><![CDATA[A take on logging]]></title>
+  <description><![CDATA[
+<p>
+In my <a href="https://magnus.therning.org/2023-01-29-a-take-on-log-messages.html">previous post</a> I described a type, with instances and a couple of useful
+functions for composing log messages. To actually make use of that there's a bit
+more needed, i.e. the actual logging. In this post I'll share that part of the
+logging setup I've been using in the Haskell services at <code>$DAYJOB</code>.
+</p>
+
+<div id="outline-container-orge3ca7c2" class="outline-2">
+<h2 id="orge3ca7c2">The logger type</h2>
+<div class="outline-text-2" id="text-orge3ca7c2">
+<p>
+The logger will be a wrapper around <a href="https://hackage.haskell.org/package/fast-logger">fast-logger</a>'s <code>FastLogger</code>, even though
+that's not really visible.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-tree-sitter-hl-faceXkeyword">newtype</span> <span class="org-tree-sitter-hl-faceXtype">Logger</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXconstructor">Logger</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">LogMsg</span> <span class="org-tree-sitter-hl-faceXoperator">-&gt;</span> <span class="org-tree-sitter-hl-faceXtype">IO</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-2">()</span></span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
+</pre>
+</div>
+
+<p>
+It's nature as a wrapper makes it natural to follow the API of fast-logger, with
+some calls to <code>liftIO</code> added.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunction">newLogger</span></span> <span class="org-tree-sitter-hl-faceXoperator">::</span> <span class="org-tree-sitter-hl-faceXtype">MonadIO</span> <span class="org-tree-sitter-hl-faceXtypeXargument">m</span> <span class="org-tree-sitter-hl-faceXoperator">=&gt;</span> <span class="org-tree-sitter-hl-faceXtypeXargument">m</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">Logger</span><span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtypeXargument">m</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-2">()</span></span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
+<span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">newLogger</span></span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">liftIO</span></span> <span class="org-tree-sitter-hl-faceXoperator">$</span> <span class="org-tree-sitter-hl-faceXkeyword">do</span>
+    <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXvariable">fastLogger</span><span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXvariable">cleanUp</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXoperator">&lt;-</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">newFastLogger</span></span> <span class="org-tree-sitter-hl-faceXoperator">$</span> <span class="org-tree-sitter-hl-faceXconstructor">LogStdout</span> <span class="org-tree-sitter-hl-faceXvariable">defaultBufSize</span>
+    <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">pure</span></span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXconstructor">Logger</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-2">(</span></span><span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">fastLogger</span></span> <span class="org-tree-sitter-hl-faceXoperator">.</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">toLogStr</span></span> <span class="org-tree-sitter-hl-faceXoperator">@</span><span class="org-tree-sitter-hl-faceXtype">LogMsg</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-2">)</span></span><span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">liftIO</span></span> <span class="org-tree-sitter-hl-faceXvariable">cleanUp</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
+</pre>
+</div>
+
+<p>
+The implementation of <code>withLogger</code> is pretty much a copy of what I found in
+fast-logger, just adapted to the <code>newLogger</code> above.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunction">withLogger</span></span> <span class="org-tree-sitter-hl-faceXoperator">::</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">MonadMask</span> <span class="org-tree-sitter-hl-faceXtypeXargument">m</span><span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">MonadIO</span> <span class="org-tree-sitter-hl-faceXtypeXargument">m</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXoperator">=&gt;</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">Logger</span> <span class="org-tree-sitter-hl-faceXoperator">-&gt;</span> <span class="org-tree-sitter-hl-faceXtypeXargument">m</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-2">()</span></span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXoperator">-&gt;</span> <span class="org-tree-sitter-hl-faceXtypeXargument">m</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+<span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">withLogger</span></span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXvariableXparameter">go</span></span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">bracket</span></span> <span class="org-tree-sitter-hl-faceXvariable">newLogger</span> <span class="org-tree-sitter-hl-faceXvariable">snd</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">go</span></span> <span class="org-tree-sitter-hl-faceXoperator">.</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">fst</span></span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orge51450b" class="outline-2">
+<h2 id="orge51450b">Logging functions</h2>
+<div class="outline-text-2" id="text-orge51450b">
+<p>
+All logging functions will follow the same pattern so it's easy to break out the
+common parts.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunction">logIO</span></span> <span class="org-tree-sitter-hl-faceXoperator">::</span> <span class="org-tree-sitter-hl-faceXtype">MonadIO</span> <span class="org-tree-sitter-hl-faceXtypeXargument">m</span> <span class="org-tree-sitter-hl-faceXoperator">=&gt;</span> <span class="org-tree-sitter-hl-faceXtype">Text</span> <span class="org-tree-sitter-hl-faceXoperator">-&gt;</span> <span class="org-tree-sitter-hl-faceXtype">Logger</span> <span class="org-tree-sitter-hl-faceXoperator">-&gt;</span> <span class="org-tree-sitter-hl-faceXtype">LogMsg</span> <span class="org-tree-sitter-hl-faceXoperator">-&gt;</span> <span class="org-tree-sitter-hl-faceXtypeXargument">m</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+<span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">logIO</span></span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXvariableXparameter">lvl</span></span><span class="org-tree-sitter-hl-faceXvariableXparameter"> </span><span class="org-tree-sitter-hl-faceXvariableXparameter"><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span></span><span class="org-tree-sitter-hl-faceXvariableXparameter"><span class="org-tree-sitter-hl-faceXconstructor">Logger</span></span><span class="org-tree-sitter-hl-faceXvariableXparameter"> </span><span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXvariableXparameter">ls</span></span><span class="org-tree-sitter-hl-faceXvariableXparameter"><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span></span><span class="org-tree-sitter-hl-faceXvariableXparameter"> </span><span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXvariableXparameter">msg</span></span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXkeyword">do</span>
+    <span class="org-tree-sitter-hl-faceXvariable">t</span> <span class="org-tree-sitter-hl-faceXoperator">&lt;-</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">formatTime</span></span> <span class="org-tree-sitter-hl-faceXvariable">defaultTimeLocale</span> <span class="org-tree-sitter-hl-faceXstring">"%y-%m-%dT%H:%M:%S%03QZ"</span> <span class="org-tree-sitter-hl-faceXoperator">&lt;$&gt;</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">liftIO</span></span> <span class="org-tree-sitter-hl-faceXvariable">getCurrentTime</span>
+    <span class="org-tree-sitter-hl-faceXkeyword">let</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">bmsg</span></span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXstring">""</span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">[</span></span> <span class="org-tree-sitter-hl-faceXstring">"correlation-id"</span> <span class="org-tree-sitter-hl-faceXoperator">.=</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-2">(</span></span><span class="org-tree-sitter-hl-faceXstring">"no-correlation-id"</span> <span class="org-tree-sitter-hl-faceXoperator">::</span> <span class="org-tree-sitter-hl-faceXtype">Text</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-2">)</span></span>
+                     <span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXstring">"timestamp"</span> <span class="org-tree-sitter-hl-faceXoperator">.=</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">t</span></span>
+                     <span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXstring">"level"</span> <span class="org-tree-sitter-hl-faceXoperator">.=</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">lvl</span></span>
+                     <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">]</span></span>
+    <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">liftIO</span></span> <span class="org-tree-sitter-hl-faceXoperator">$</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">ls</span></span> <span class="org-tree-sitter-hl-faceXoperator">$</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">bmsg</span></span> <span class="org-tree-sitter-hl-faceXoperator">&lt;&gt;</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">msg</span></span>
+</pre>
+</div>
+
+<p>
+With that in place the logging functions become very short and sweet.
+</p>
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunction">debugIO</span></span><span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunction">infoIO</span></span><span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunction">warnIO</span></span><span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunction">errIO</span></span><span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunction">fatalIO</span></span> <span class="org-tree-sitter-hl-faceXoperator">::</span> <span class="org-tree-sitter-hl-faceXtype">MonadIO</span> <span class="org-tree-sitter-hl-faceXtypeXargument">m</span> <span class="org-tree-sitter-hl-faceXoperator">=&gt;</span> <span class="org-tree-sitter-hl-faceXtype">Logger</span> <span class="org-tree-sitter-hl-faceXoperator">-&gt;</span> <span class="org-tree-sitter-hl-faceXtype">LogMsg</span> <span class="org-tree-sitter-hl-faceXoperator">-&gt;</span> <span class="org-tree-sitter-hl-faceXtypeXargument">m</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+<span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">debugIO</span></span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">logIO</span></span> <span class="org-tree-sitter-hl-faceXstring">"debug"</span>
+<span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">infoIO</span></span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">logIO</span></span> <span class="org-tree-sitter-hl-faceXstring">"info"</span>
+<span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">warnIO</span></span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">logIO</span></span> <span class="org-tree-sitter-hl-faceXstring">"warn"</span>
+<span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">errIO</span></span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">logIO</span></span> <span class="org-tree-sitter-hl-faceXstring">"error"</span>
+<span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">fatalIO</span></span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">logIO</span></span> <span class="org-tree-sitter-hl-faceXstring">"fatal"</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org6e0d3f7" class="outline-2">
+<h2 id="org6e0d3f7">Simple example of usage</h2>
+<div class="outline-text-2" id="text-org6e0d3f7">
+<p>
+A very simple example showing how it could be used would be something like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunction">main</span></span> <span class="org-tree-sitter-hl-faceXoperator">::</span> <span class="org-tree-sitter-hl-faceXtype">IO</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+<span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">main</span></span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">withLogger</span></span> <span class="org-tree-sitter-hl-faceXoperator">$</span> <span class="org-tree-sitter-hl-faceXoperator">\</span><span class="org-tree-sitter-hl-faceXvariable">logger</span> <span class="org-tree-sitter-hl-faceXoperator">-&gt;</span> <span class="org-tree-sitter-hl-faceXkeyword">do</span>
+    <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">debugIO</span></span> <span class="org-tree-sitter-hl-faceXvariable">logger</span> <span class="org-tree-sitter-hl-faceXstring">"a log line"</span>
+    <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">infoIO</span></span> <span class="org-tree-sitter-hl-faceXvariable">logger</span> <span class="org-tree-sitter-hl-faceXoperator">$</span> <span class="org-tree-sitter-hl-faceXstring">"another log line"</span> <span class="org-tree-sitter-hl-faceXoperator">#+</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">[</span></span><span class="org-tree-sitter-hl-faceXstring">"extras"</span> <span class="org-tree-sitter-hl-faceXoperator">.=</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-2">(</span></span><span class="org-tree-sitter-hl-faceXnumber">42</span> <span class="org-tree-sitter-hl-faceXoperator">::</span> <span class="org-tree-sitter-hl-faceXtype">Int</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-2">)</span></span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">]</span></span>
+</pre>
+</div>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-logging.html">logging</a> </div>
+]]></description>
+  <category><![CDATA[haskell]]></category>
+  <category><![CDATA[logging]]></category>
+  <link>https://magnus.therning.org/2023-02-04-a-take-on-logging.html</link>
+  <guid>https://magnus.therning.org/2023-02-04-a-take-on-logging.html</guid>
+  <pubDate>Sat, 04 Feb 2023 18:49:00 +0100</pubDate>
+</item>
 <item>
   <title><![CDATA[A take on log messages]]></title>
   <description><![CDATA[
@@ -734,53 +842,6 @@ passed in.
   <link>https://magnus.therning.org/2022-03-13-simple-nix-flake-for-haskell-development.html</link>
   <guid>https://magnus.therning.org/2022-03-13-simple-nix-flake-for-haskell-development.html</guid>
   <pubDate>Sun, 13 Mar 2022 07:29:00 +0100</pubDate>
-</item>
-<item>
-  <title><![CDATA[Keeping Projectile's cache tidy]]></title>
-  <description><![CDATA[
-<p>
-A while back I added a function to find all projects recursively from a
-directory and add them to Projectile's cache (see the <a href="2019-11-05-000-populating-projectile-s-cache.html">Populating Projectile's
-cache</a>). Since then I've just made a tiny change to also include containing a
-<code>.projectile</code> file.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">projectile-extra-add-projects-in-subfolders</span> <span class="org-rainbow-delimiters-depth-2">(</span>projects-root<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span> <span class="org-rainbow-delimiters-depth-3">(</span>list <span class="org-rainbow-delimiters-depth-4">(</span>read-directory-name <span class="org-string">"Add to known projects: "</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>message <span class="org-string">"Searching for projects in %s..."</span> projects-root<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">let*</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>proj-rx <span class="org-rainbow-delimiters-depth-5">(</span><span class="org-keyword">rx</span> <span class="org-rainbow-delimiters-depth-6">(</span><span class="org-keyword">and</span> line-start ?. <span class="org-rainbow-delimiters-depth-7">(</span><span class="org-keyword">or</span> <span class="org-string">"projectile"</span> <span class="org-string">"git"</span><span class="org-rainbow-delimiters-depth-7">)</span> line-end<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
-         <span class="org-rainbow-delimiters-depth-4">(</span>dirs <span class="org-rainbow-delimiters-depth-5">(</span>seq-map
-                'file-name-directory
-                <span class="org-rainbow-delimiters-depth-6">(</span>directory-files-recursively projects-root
-                                             proj-rx
-                                             t<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
-    <span class="org-rainbow-delimiters-depth-3">(</span>seq-do 'projectile-add-known-project dirs<span class="org-rainbow-delimiters-depth-3">)</span>
-    <span class="org-rainbow-delimiters-depth-3">(</span>message <span class="org-string">"Added %d projects"</span> <span class="org-rainbow-delimiters-depth-4">(</span>length dirs<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-Since then I've also found a need for tidying the cache, in my casse that means
-removing entries in the cache that no longer exist on disk. I didn't find a
-function for it, so I wrote one.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">projectile-extra-tidy-projects</span> <span class="org-rainbow-delimiters-depth-2">()</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">let</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>missing-dirs <span class="org-rainbow-delimiters-depth-5">(</span>seq-remove 'file-directory-p projectile-known-projects<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
-    <span class="org-rainbow-delimiters-depth-3">(</span>seq-do 'projectile-remove-known-project missing-dirs<span class="org-rainbow-delimiters-depth-3">)</span>
-    <span class="org-rainbow-delimiters-depth-3">(</span>message <span class="org-string">"Tidied %d projects"</span> <span class="org-rainbow-delimiters-depth-4">(</span>length missing-dirs<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-elisp.html">elisp</a> <a href="https://magnus.therning.org/tag-projectile.html">projectile</a> </div>]]></description>
-  <category><![CDATA[emacs]]></category>
-  <category><![CDATA[elisp]]></category>
-  <category><![CDATA[projectile]]></category>
-  <link>https://magnus.therning.org/2022-01-30-keeping-projectile's-cache-tidy.html</link>
-  <guid>https://magnus.therning.org/2022-01-30-keeping-projectile's-cache-tidy.html</guid>
-  <pubDate>Sun, 30 Jan 2022 15:14:00 +0100</pubDate>
 </item>
 </channel>
 </rss>
