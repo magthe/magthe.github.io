@@ -11,7 +11,7 @@
 <body>
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
-<h1 class="title">Posts tagged "projectile":</h1>
+<h1 class="title">Posts tagged "xref":</h1>
 <div class="post-date">03 Mar 2023</div><h1 class="post-title"><a href="https://magnus.therning.org/2023-03-03-per-project-xref-history-in-emacs.html">Per-project xref history in Emacs</a></h1>
 <p>
 When I write code I jump around in the code quite a bit, as I'm sure many other
@@ -112,69 +112,7 @@ and so far it's been working well.
 The full code is <a href="https://gitlab.com/magus/my-emacs-pkgs/-/blob/main/my-projectile-params/my-projectile-params.el">here</a>.
 </p>
 <div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-xref.html">xref</a> <a href="https://magnus.therning.org/tag-projectile.html">projectile</a> </div>
-
-<div class="post-date">30 Jan 2022</div><h1 class="post-title"><a href="https://magnus.therning.org/2022-01-30-keeping-projectile's-cache-tidy.html">Keeping Projectile's cache tidy</a></h1>
-<p>
-A while back I added a function to find all projects recursively from a
-directory and add them to Projectile's cache (see the <a href="2019-11-05-000-populating-projectile-s-cache.html">Populating Projectile's
-cache</a>). Since then I've just made a tiny change to also include containing a
-<code>.projectile</code> file.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">projectile-extra-add-projects-in-subfolders</span> <span class="org-rainbow-delimiters-depth-2">(</span>projects-root<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span> <span class="org-rainbow-delimiters-depth-3">(</span>list <span class="org-rainbow-delimiters-depth-4">(</span>read-directory-name <span class="org-string">"Add to known projects: "</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>message <span class="org-string">"Searching for projects in %s..."</span> projects-root<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">let*</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>proj-rx <span class="org-rainbow-delimiters-depth-5">(</span><span class="org-keyword">rx</span> <span class="org-rainbow-delimiters-depth-6">(</span><span class="org-keyword">and</span> line-start ?. <span class="org-rainbow-delimiters-depth-7">(</span><span class="org-keyword">or</span> <span class="org-string">"projectile"</span> <span class="org-string">"git"</span><span class="org-rainbow-delimiters-depth-7">)</span> line-end<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
-         <span class="org-rainbow-delimiters-depth-4">(</span>dirs <span class="org-rainbow-delimiters-depth-5">(</span>seq-map
-                'file-name-directory
-                <span class="org-rainbow-delimiters-depth-6">(</span>directory-files-recursively projects-root
-                                             proj-rx
-                                             t<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
-    <span class="org-rainbow-delimiters-depth-3">(</span>seq-do 'projectile-add-known-project dirs<span class="org-rainbow-delimiters-depth-3">)</span>
-    <span class="org-rainbow-delimiters-depth-3">(</span>message <span class="org-string">"Added %d projects"</span> <span class="org-rainbow-delimiters-depth-4">(</span>length dirs<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-Since then I've also found a need for tidying the cache, in my casse that means
-removing entries in the cache that no longer exist on disk. I didn't find a
-function for it, so I wrote one.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">projectile-extra-tidy-projects</span> <span class="org-rainbow-delimiters-depth-2">()</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">let</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>missing-dirs <span class="org-rainbow-delimiters-depth-5">(</span>seq-remove 'file-directory-p projectile-known-projects<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
-    <span class="org-rainbow-delimiters-depth-3">(</span>seq-do 'projectile-remove-known-project missing-dirs<span class="org-rainbow-delimiters-depth-3">)</span>
-    <span class="org-rainbow-delimiters-depth-3">(</span>message <span class="org-string">"Tidied %d projects"</span> <span class="org-rainbow-delimiters-depth-4">(</span>length missing-dirs<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-elisp.html">elisp</a> <a href="https://magnus.therning.org/tag-projectile.html">projectile</a> </div>
-<div class="post-date">05 Nov 2019</div><h1 class="post-title"><a href="https://magnus.therning.org/2019-11-05-000-populating-projectile-s-cache.html">Populating Projectile's cache</a></h1>
-<p>
-As I track the <i>develop</i> branch of <a href="https://github.com/syl20bnr/spacemacs/">Spacemacs</a> I occasionally clean out my cache
-of projects known to Projectile. Every time it takes a while before I'm back at
-a stage where I very rarely have to visit something that isn't already in the
-cache.
-</p>
-
-<p>
-However, today I found the function <code>projectile-add-known-project</code>, which
-prompted me to write the following function that'll help me quickly re-building
-the cache the next time I need to reset Spacemacs to a known state again.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">projectile-extra-add-projects-in-subfolders</span> <span class="org-rainbow-delimiters-depth-2">(</span>projects-root<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span> <span class="org-rainbow-delimiters-depth-3">(</span>list <span class="org-rainbow-delimiters-depth-4">(</span>read-directory-name <span class="org-string">"Add to known projects: "</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>message <span class="org-string">"Searching for projects in %s..."</span> projects-root<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">let</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>dirs <span class="org-rainbow-delimiters-depth-5">(</span>seq-map 'file-name-directory <span class="org-rainbow-delimiters-depth-6">(</span>directory-files-recursively projects-root <span class="org-string">"^.git$"</span> t<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
-    <span class="org-rainbow-delimiters-depth-3">(</span>seq-do 'projectile-add-known-project dirs<span class="org-rainbow-delimiters-depth-3">)</span>
-    <span class="org-rainbow-delimiters-depth-3">(</span>message <span class="org-string">"Added %d projects"</span> <span class="org-rainbow-delimiters-depth-4">(</span>length dirs<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-elisp.html">elisp</a> <a href="https://magnus.therning.org/tag-projectile.html">projectile</a> </div><div id="archive">
+<div id="archive">
 <a href="https://magnus.therning.org/archive.html">Other posts</a>
 </div>
 </div>
