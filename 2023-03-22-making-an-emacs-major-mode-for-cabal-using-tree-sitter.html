@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="alternate"
+      type="application/rss+xml"
+      href="https://magnus.therning.org/feed.xml"
+      title="RSS feed for https://magnus.therning.org/">
+<title>Making an Emacs major mode for Cabal using tree-sitter</title>
+<meta name="author" content="Magnus Therning"><meta name="referrer" content="no-referrer"><link href= "static/style.css" rel="stylesheet" type="text/css" /><link href= "static/htmlize.css" rel="stylesheet" type="text/css" /><link href= "static/extra_style.css" rel="stylesheet" type="text/css" /></head>
+<body>
+<div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
+<div id="content">
+<div class="post-date">22 Mar 2023</div><h1 class="post-title"><a href="https://magnus.therning.org/2023-03-22-making-an-emacs-major-mode-for-cabal-using-tree-sitter.html">Making an Emacs major mode for Cabal using tree-sitter</a></h1>
+<p>
+A few days ago I <a href="https://www.reddit.com/r/haskell/comments/11uvhsk/cabal_grammar_for_treesitter_at_least_the/">posted on r/haskell</a> that I'm attempting to put together a <a href="https://cabal.readthedocs.io/en/stable/index.html">Cabal</a>
+grammar for <a href="https://tree-sitter.github.io/tree-sitter/">tree-sitter</a>.  Some things are still missing, but it covers enough to
+start doing what I initially intended: experiment with writing an alternative
+Emacs major mode for Cabal.
+</p>
+
+<p>
+The documentation for the tree-sitter integration is very nice, and several of
+the major modes already have tree-sitter variants, called <code>X-ts-mode</code> where <code>X</code>
+is e.g. <code>python</code>, so putting together the beginning of a major mode wasn't too
+much work.
+</p>
+
+<div id="outline-container-orgaa93cd2" class="outline-2">
+<h2 id="orgaa93cd2">Configuring Emacs</h2>
+<div class="outline-text-2" id="text-orgaa93cd2">
+<p>
+First off I had to make sure the parser for Cabal was installed. The snippet for
+that looks like this<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> <span class="org-constant">treesit</span>
+  <span class="org-builtin">:straight</span> nil
+  <span class="org-builtin">:ensure</span> nil
+  <span class="org-builtin">:commands</span> <span class="org-rainbow-delimiters-depth-2">(</span>treesit-install-language-grammar<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-builtin">:init</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">setq</span> treesit-language-source-alist
+        '<span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>cabal . <span class="org-rainbow-delimiters-depth-5">(</span><span class="org-string">"https://gitlab.com/magus/tree-sitter-cabal.git"</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+With that in place the parser is installed using <code>M-x
+treesit-install-language-grammar</code> and choosing <code>cabal</code>.
+</p>
+
+<p>
+After that I removed my configuration for <code>haskell-mode</code> and added the following
+snippet to get my own major mode into my setup.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> <span class="org-constant">my-cabal-mode</span>
+  <span class="org-builtin">:straight</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-builtin">:type</span> git
+             <span class="org-builtin">:repo</span> <span class="org-string">"git@gitlab.com:magus/my-emacs-pkgs.git"</span>
+             <span class="org-builtin">:branch</span> <span class="org-string">"main"</span>
+             <span class="org-builtin">:files</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-builtin">:defaults</span> <span class="org-string">"my-cabal-mode/*el"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orge3a4a9a" class="outline-2">
+<h2 id="orge3a4a9a">The major mode and font-locking</h2>
+<div class="outline-text-2" id="text-orge3a4a9a">
+<p>
+The built-in elisp documentation actually has a section on writing a major mode
+with tree-sitter, so it was easy to get started. Setting up the font-locking
+took a bit of trial-and-error, but once I had comments looking the way I wanted
+it was easy to add to the setup. Oh, and yes, there's a section on font-locking
+with tree-sitter in the documentation too. At the moment it looks like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defvar</span> <span class="org-variable-name">cabal--treesit-font-lock-setting</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>treesit-font-lock-rules
+   <span class="org-builtin">:feature</span> 'comment
+   <span class="org-builtin">:language</span> 'cabal
+   '<span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>comment<span class="org-rainbow-delimiters-depth-4">)</span> @font-lock-comment-face<span class="org-rainbow-delimiters-depth-3">)</span>
+
+   <span class="org-builtin">:feature</span> 'cabal-version
+   <span class="org-builtin">:language</span> 'cabal
+   '<span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>cabal_version _<span class="org-rainbow-delimiters-depth-4">)</span> @font-lock-constant-face<span class="org-rainbow-delimiters-depth-3">)</span>
+
+   <span class="org-builtin">:feature</span> 'field-name
+   <span class="org-builtin">:language</span> 'cabal
+   '<span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>field_name<span class="org-rainbow-delimiters-depth-4">)</span> @font-lock-keyword-face<span class="org-rainbow-delimiters-depth-3">)</span>
+
+   <span class="org-builtin">:feature</span> 'section-name
+   <span class="org-builtin">:language</span> 'cabal
+   '<span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>section_name<span class="org-rainbow-delimiters-depth-4">)</span> @font-lock-variable-name-face<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-doc">"Tree-sitter font-lock settings."</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-comment-delimiter">;;;</span><span class="org-comment">###</span><span class="org-comment"><span class="org-warning">autoload</span></span>
+<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">define-derived-mode</span> <span class="org-function-name">my-cabal-mode</span> fundamental-mode <span class="org-string">"My Cabal"</span>
+  <span class="org-doc">"My mode for Cabal files"</span>
+
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">when</span> <span class="org-rainbow-delimiters-depth-3">(</span>treesit-ready-p 'cabal<span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>treesit-parser-create 'cabal<span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-comment-delimiter">;; </span><span class="org-comment">set up treesit</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">setq-local</span> treesit-font-lock-feature-list
+                '<span class="org-rainbow-delimiters-depth-4">(</span><span class="org-rainbow-delimiters-depth-5">(</span>comment field-name section-name<span class="org-rainbow-delimiters-depth-5">)</span>
+                  <span class="org-rainbow-delimiters-depth-5">(</span>cabal-version<span class="org-rainbow-delimiters-depth-5">)</span>
+                  <span class="org-rainbow-delimiters-depth-5">()</span> <span class="org-rainbow-delimiters-depth-5">()</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">setq-local</span> treesit-font-lock-settings cabal--treesit-font-lock-setting<span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>treesit-major-mode-setup<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-comment-delimiter">;;;</span><span class="org-comment">###</span><span class="org-comment"><span class="org-warning">autoload</span></span>
+<span class="org-rainbow-delimiters-depth-1">(</span>add-to-list 'auto-mode-alist '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"\\.cabal\\'"</span> . my-cabal-mode<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org5251e68" class="outline-2">
+<h2 id="org5251e68">Navigation</h2>
+<div class="outline-text-2" id="text-org5251e68">
+<p>
+One of the reasons I want to experiment with tree-sitter is to use it for code
+navigation. My first attempt is to translate <code>haskell-cabal-section-beginning</code>
+(in <code>haskell-mode</code>, <a href="https://github.com/haskell/haskell-mode/blob/master/haskell-cabal.el#L395">the source</a>) to using tree-sitter. First a convenience
+function to recognise if a node is a section or not
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">cabal--node-is-section-p</span> <span class="org-rainbow-delimiters-depth-2">(</span>n<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-doc">"Predicate to check if treesit node N is a Cabal section."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>member <span class="org-rainbow-delimiters-depth-3">(</span>treesit-node-type n<span class="org-rainbow-delimiters-depth-3">)</span>
+          '<span class="org-rainbow-delimiters-depth-3">(</span><span class="org-string">"benchmark"</span> <span class="org-string">"common"</span> <span class="org-string">"executable"</span> <span class="org-string">"flag"</span> <span class="org-string">"library"</span> <span class="org-string">"test_suite"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+That makes it possible to use <code>treesit-parent-until</code> to traverse the nodes until
+hitting a section node
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">cabal-goto-beginning-of-section</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-doc">"Go to the beginning of the current section."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">when-let*</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>node-at-point <span class="org-rainbow-delimiters-depth-5">(</span>treesit-node-at <span class="org-rainbow-delimiters-depth-6">(</span>point<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+              <span class="org-rainbow-delimiters-depth-4">(</span>section-node <span class="org-rainbow-delimiters-depth-5">(</span>treesit-parent-until node-at-point #'cabal--node-is-section-p<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+              <span class="org-rainbow-delimiters-depth-4">(</span>start-pos <span class="org-rainbow-delimiters-depth-5">(</span>treesit-node-start section-node<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>goto-char start-pos<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+And the companion function, to go to the end of a section is very similar
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">cabal-goto-end-of-section</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-doc">"Go to the end of the current section."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">when-let*</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>node-at-point <span class="org-rainbow-delimiters-depth-5">(</span>treesit-node-at <span class="org-rainbow-delimiters-depth-6">(</span>point<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+              <span class="org-rainbow-delimiters-depth-4">(</span>section-node <span class="org-rainbow-delimiters-depth-5">(</span>treesit-parent-until node-at-point #'cabal--node-is-section-p<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+              <span class="org-rainbow-delimiters-depth-4">(</span>end-pos <span class="org-rainbow-delimiters-depth-5">(</span>treesit-node-end section-node<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>goto-char end-pos<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+</div>
+</div>
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+
+<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+I'm using <a href="https://github.com/radian-software/straight.el">straight.el</a> and <code>use-package</code> in my setup, but hopefully the
+snippets can easily be converted to other ways of configuring Emacs.
+</p></div></div>
+
+
+</div>
+</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-cabal.html">cabal</a> <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-tree-sitter.html">tree-sitter</a> </div>
+<div id="comments">Comment <a href=https://www.reddit.com/r/emacs/comments/11yyw8u/making_a_major_mode_using_treesitter_emacs/>here</a>.</div></div>
+<div id="postamble" class="status"><!-- org-static-blog-page-postamble --></div>
+</body>
+</html>
