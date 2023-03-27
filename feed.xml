@@ -4,7 +4,227 @@
 <title><![CDATA[Magnus web site]]></title>
 <description><![CDATA[Magnus web site]]></description>
 <link>https://magnus.therning.org/</link>
-<lastBuildDate>Wed, 22 Mar 2023 23:20:47 +0100</lastBuildDate>
+<lastBuildDate>Mon, 27 Mar 2023 22:25:34 +0200</lastBuildDate>
+<item>
+  <title><![CDATA[Cabal, tree-sitter, and consult]]></title>
+  <description><![CDATA[
+<p>
+After my <a href="https://magnus.therning.org/2023-03-22-making-an-emacs-major-mode-for-cabal-using-tree-sitter.html">last post</a> I thought I'd move on to implement the rest of the functions
+in <a href="https://github.com/haskell/haskell-mode">haskell-mode</a>'s major mode for Cabal, functions like
+<code>haskell-cabal-goto-library-section</code> and
+<code>haskell-cabal-goto-executable-section</code>.  Then I realised that what <i>I</i> really
+want is a way to quickly jump to any section, that is, I want <code>consult-cabal</code>!
+</p>
+
+<p>
+What follows is very much a work-in-progress, but hopefully it'll show enough
+promise.
+</p>
+
+<div id="outline-container-orgf3a9dea" class="outline-2">
+<h2 id="orgf3a9dea">Listing the sections</h2>
+<div class="outline-text-2" id="text-orgf3a9dea">
+<p>
+As I have a <code>tree-sitter</code> parse tree to hand it is fairly easy to fetch all the
+nodes corresponding to sections.  Since the <a href="https://magnus.therning.org/2023-03-22-making-an-emacs-major-mode-for-cabal-using-tree-sitter.html">last post</a> I've made some
+improvements to the parser and now the parse tree looks like this (I can
+recommend the function <code>treesit-explore-mode</code> to expore the parse tree, I've
+found it invaluable ever since I realised it existed)
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span>cabal
+ ...
+ <span class="org-rainbow-delimiters-depth-2">(</span>properties ...<span class="org-rainbow-delimiters-depth-2">)</span>
+ <span class="org-rainbow-delimiters-depth-2">(</span>sections
+  <span class="org-rainbow-delimiters-depth-3">(</span>common common <span class="org-rainbow-delimiters-depth-4">(</span>section_name<span class="org-rainbow-delimiters-depth-4">)</span> ...<span class="org-rainbow-delimiters-depth-3">)</span>
+  <span class="org-rainbow-delimiters-depth-3">(</span>library library ...<span class="org-rainbow-delimiters-depth-3">)</span>
+  <span class="org-rainbow-delimiters-depth-3">(</span>executable executable <span class="org-rainbow-delimiters-depth-4">(</span>section_name<span class="org-rainbow-delimiters-depth-4">)</span> ...<span class="org-rainbow-delimiters-depth-3">)</span>
+  ...<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+That is, all the <i>sections</i> are children of the node called <code>sections</code>.
+</p>
+
+<p>
+The function to use for fetching all the nodes is <code>treesit-query-capture</code>, it
+needs a node to start on, which this case should be the full parse tree,
+i.e. <code>(treesit-buffer-root-node 'cabal)</code> and a query string.  Given the
+structure of the parse tree, and that I want to capture all children of
+<code>sections</code>, a query string like this one works
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-string">"(cabal (sections (_)* @section))"</span>
+</pre>
+</div>
+
+<p>
+Finally, by default <code>treesit-query-capture</code> returns a list of tuples of the form
+<code>(&lt;capture&gt; . &lt;node&gt;)</code>, but in this case I only want the list of nodes, so the
+full call will look like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span>treesit-query-capture <span class="org-rainbow-delimiters-depth-2">(</span>treesit-buffer-root-node 'cabal<span class="org-rainbow-delimiters-depth-2">)</span>
+                       <span class="org-string">"(cabal (sections (_)* @section))"</span>
+                       nil nil t<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org75c9fc7" class="outline-2">
+<h2 id="org75c9fc7">Hooking it up to consult</h2>
+<div class="outline-text-2" id="text-org75c9fc7">
+<p>
+As I envision adding more things to jump to in the future, I decided to make use
+of <code>consult--multi</code>. That in turn means I need to define a "source" for the
+sections. After a bit of digging and rummaging in the <a href="https://github.com/minad/consult/">consult source</a> I put
+together this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defvar</span> <span class="org-variable-name">consult-cabal--source-section</span>
+  `<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-builtin">:name</span> <span class="org-string">"Sections"</span>
+    <span class="org-builtin">:category</span> location
+    <span class="org-builtin">:action</span> ,#'consult-cabal--section-action
+    <span class="org-builtin">:items</span> ,#'consult-cabal--section-items<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-doc">"Definition of source for Cabal sections."</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+which means I need two functions, <code>consult-cabal--section-action</code> and
+<code>consult-cabal--section-items</code>. I started with the latter.
+</p>
+</div>
+
+<div id="outline-container-orga9a5fae" class="outline-3">
+<h3 id="orga9a5fae">Getting section nodes as items for consult</h3>
+<div class="outline-text-3" id="text-orga9a5fae">
+<p>
+It took me a while to work understand how this would ever be able to work. The
+function that <code>:items</code> point to must return a list of strings, but how would I
+ever be able to use just a string to jump to the correct location?
+</p>
+
+<p>
+The solution is in a comment in the documentation of <code>consult--multi</code>:
+</p>
+
+<blockquote>
+<p>
+:items - List of strings to select from or function returning
+ list of strings.  Note that the strings can use text properties
+ to carry metadata, which is then available to the :annotate,
+ :action and :state functions.
+</p>
+</blockquote>
+
+<p>
+I'd never come across <i>text properties</i> in Emacs before, so at first I
+completely missed those two words. Once I'd looked up the concept in the
+documentation everything fell into place. The function
+<code>consult-cabal--section-items</code> would simply attach the relevant node as a text
+property to the strings in the list.
+</p>
+
+<p>
+My current version, obviously a work-in-progress, takes a list of nodes and
+turns them naïvely into a string and attaches the node. I split it into two functions, like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">consult-cabal--section-to-string</span> <span class="org-rainbow-delimiters-depth-2">(</span>section<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-doc">"Convert a single SECTION node to a string."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>propertize <span class="org-rainbow-delimiters-depth-3">(</span>format <span class="org-string">"%S"</span> section<span class="org-rainbow-delimiters-depth-3">)</span>
+              <span class="org-builtin">:treesit-node</span> section<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">consult-cabal--section-items</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-doc">"Fetch all sections as a list of strings ."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">let</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>section-nodes <span class="org-rainbow-delimiters-depth-5">(</span>treesit-query-capture <span class="org-rainbow-delimiters-depth-6">(</span>treesit-buffer-root-node 'cabal<span class="org-rainbow-delimiters-depth-6">)</span>
+                                              <span class="org-string">"(cabal (sections (_)* @section))"</span>
+                                              nil nil t<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>mapcar #'consult-cabal--section-to-string section-nodes<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org7e0a1b9" class="outline-3">
+<h3 id="org7e0a1b9">Implementing the action</h3>
+<div class="outline-text-3" id="text-org7e0a1b9">
+<p>
+The action function is called with the selected item, i.e. with the string and
+its properties. That means, to jump to the selected section the function needs
+to extract the node property, <code>:treesit-node</code>, and jump to the start of it. the
+function to use is <code>get-text-property</code>, and as all characters in the string will
+have to property I just picked the first one. The jumping itself I copied from
+the navigation functions I'd written before.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">consult-cabal--section-action</span> <span class="org-rainbow-delimiters-depth-2">(</span>item<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-doc">"Go to the section referenced by ITEM."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">when-let*</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>node <span class="org-rainbow-delimiters-depth-5">(</span>get-text-property 0 <span class="org-builtin">:treesit-node</span> item<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+              <span class="org-rainbow-delimiters-depth-4">(</span>new-pos <span class="org-rainbow-delimiters-depth-5">(</span>treesit-node-start node<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>goto-char new-pos<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgbccdc85" class="outline-3">
+<h3 id="orgbccdc85">Tying it together with <code>consult--multi</code></h3>
+<div class="outline-text-3" id="text-orgbccdc85">
+<p>
+The final function, <code>consult-cabal</code>, looks like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">consult-cabal</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-doc">"Choose a Cabal construct and jump to it."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>consult--multi '<span class="org-rainbow-delimiters-depth-3">(</span>consult-cabal--source-section<span class="org-rainbow-delimiters-depth-3">)</span>
+                  <span class="org-builtin">:sort</span> nil<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org9b47401" class="outline-2">
+<h2 id="org9b47401">Conclusions and where to find the code</h2>
+<div class="outline-text-2" id="text-org9b47401">
+<p>
+The end result works as intended, but it's very rough. I'll try to improve it a
+bit more. In particular I want
+</p>
+
+<ol class="org-ol">
+<li>better strings - <code>(format "%S" node)</code> is all right to start with, but in the
+long run I want strings that describe the sections, and</li>
+<li>preview as I navigate between items - AFAIU this is what the <code>:state</code> field
+is for, but I still haven't looked into how it works.</li>
+</ol>
+
+<p>
+The source can be found <a href="https://gitlab.com/magus/my-emacs-pkgs/-/blob/main/my-cabal-mode/consult-cabal.el">here</a>.
+</p>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-cabal.html">cabal</a> <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-tree-sitter.html">tree-sitter</a> </div>
+]]></description>
+  <category><![CDATA[cabal]]></category>
+  <category><![CDATA[emacs]]></category>
+  <category><![CDATA[tree-sitter]]></category>
+  <link>https://magnus.therning.org/2023-03-27-cabal,-tree-sitter,-and-consult.html</link>
+  <guid>https://magnus.therning.org/2023-03-27-cabal,-tree-sitter,-and-consult.html</guid>
+  <pubDate>Mon, 27 Mar 2023 21:20:00 +0200</pubDate>
+</item>
 <item>
   <title><![CDATA[Making an Emacs major mode for Cabal using tree-sitter]]></title>
   <description><![CDATA[
@@ -1002,47 +1222,6 @@ The major parts are
   <link>https://magnus.therning.org/2022-07-09-playing-with-setting-up-emacs.html</link>
   <guid>https://magnus.therning.org/2022-07-09-playing-with-setting-up-emacs.html</guid>
   <pubDate>Sat, 09 Jul 2022 22:37:00 +0200</pubDate>
-</item>
-<item>
-  <title><![CDATA[Power-mode in Spacemacs]]></title>
-  <description><![CDATA[
-<p>
-I just found the <a href="https://github.com/elizagamedev/power-mode.el">Power Mode</a> for Emacs. If you want to try it out in Spacemacs
-you can make sure that your <code>~/.spacemacs</code> contains the following
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp">dotspacemacs-additional-packages
-'<span class="org-rainbow-delimiters-depth-1">(</span>
-  ...
-  <span class="org-rainbow-delimiters-depth-2">(</span>power-mode <span class="org-builtin">:location</span> <span class="org-rainbow-delimiters-depth-3">(</span>recipe
-                         <span class="org-builtin">:fetcher</span> github
-                         <span class="org-builtin">:repo</span> <span class="org-string">"elizagamedev/power-mode.el"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-After a restart Power Mode can be turned on using <code>SPC SPC power-mode</code>.
-</p>
-
-<p>
-Unfortunately I found that it slows down rendering so badly that Emacs isn't
-keeping up with my typing. Even though I removed it right away again it was fun
-to try it out, and I did learn how to add package to Spacemacs that aren't on
-MELPA.
-</p>
-
-<p>
-A useful resource is this <a href="https://github.com/melpa/melpa#recipe-format">reference on the recipe format</a>.
-</p>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-spacemacs.html">spacemacs</a> </div>
-]]></description>
-  <category><![CDATA[emacs]]></category>
-  <category><![CDATA[spacemacs]]></category>
-  <link>https://magnus.therning.org/2022-06-15-power-mode-in-spacemacs.html</link>
-  <guid>https://magnus.therning.org/2022-06-15-power-mode-in-spacemacs.html</guid>
-  <pubDate>Wed, 15 Jun 2022 08:08:00 +0200</pubDate>
 </item>
 </channel>
 </rss>

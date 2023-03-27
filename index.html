@@ -12,6 +12,217 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <header class="site-header" role="banner"><h1 class="title">Magnus web site</h1><h2 class="subtitle">Random stuff</h2></header>
+<div class="post-date">27 Mar 2023</div><h1 class="post-title"><a href="https://magnus.therning.org/2023-03-27-cabal,-tree-sitter,-and-consult.html">Cabal, tree-sitter, and consult</a></h1>
+<p>
+After my <a href="https://magnus.therning.org/2023-03-22-making-an-emacs-major-mode-for-cabal-using-tree-sitter.html">last post</a> I thought I'd move on to implement the rest of the functions
+in <a href="https://github.com/haskell/haskell-mode">haskell-mode</a>'s major mode for Cabal, functions like
+<code>haskell-cabal-goto-library-section</code> and
+<code>haskell-cabal-goto-executable-section</code>.  Then I realised that what <i>I</i> really
+want is a way to quickly jump to any section, that is, I want <code>consult-cabal</code>!
+</p>
+
+<p>
+What follows is very much a work-in-progress, but hopefully it'll show enough
+promise.
+</p>
+
+<div id="outline-container-orgf3a9dea" class="outline-2">
+<h2 id="orgf3a9dea">Listing the sections</h2>
+<div class="outline-text-2" id="text-orgf3a9dea">
+<p>
+As I have a <code>tree-sitter</code> parse tree to hand it is fairly easy to fetch all the
+nodes corresponding to sections.  Since the <a href="https://magnus.therning.org/2023-03-22-making-an-emacs-major-mode-for-cabal-using-tree-sitter.html">last post</a> I've made some
+improvements to the parser and now the parse tree looks like this (I can
+recommend the function <code>treesit-explore-mode</code> to expore the parse tree, I've
+found it invaluable ever since I realised it existed)
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span>cabal
+ ...
+ <span class="org-rainbow-delimiters-depth-2">(</span>properties ...<span class="org-rainbow-delimiters-depth-2">)</span>
+ <span class="org-rainbow-delimiters-depth-2">(</span>sections
+  <span class="org-rainbow-delimiters-depth-3">(</span>common common <span class="org-rainbow-delimiters-depth-4">(</span>section_name<span class="org-rainbow-delimiters-depth-4">)</span> ...<span class="org-rainbow-delimiters-depth-3">)</span>
+  <span class="org-rainbow-delimiters-depth-3">(</span>library library ...<span class="org-rainbow-delimiters-depth-3">)</span>
+  <span class="org-rainbow-delimiters-depth-3">(</span>executable executable <span class="org-rainbow-delimiters-depth-4">(</span>section_name<span class="org-rainbow-delimiters-depth-4">)</span> ...<span class="org-rainbow-delimiters-depth-3">)</span>
+  ...<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+That is, all the <i>sections</i> are children of the node called <code>sections</code>.
+</p>
+
+<p>
+The function to use for fetching all the nodes is <code>treesit-query-capture</code>, it
+needs a node to start on, which this case should be the full parse tree,
+i.e. <code>(treesit-buffer-root-node 'cabal)</code> and a query string.  Given the
+structure of the parse tree, and that I want to capture all children of
+<code>sections</code>, a query string like this one works
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-string">"(cabal (sections (_)* @section))"</span>
+</pre>
+</div>
+
+<p>
+Finally, by default <code>treesit-query-capture</code> returns a list of tuples of the form
+<code>(&lt;capture&gt; . &lt;node&gt;)</code>, but in this case I only want the list of nodes, so the
+full call will look like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span>treesit-query-capture <span class="org-rainbow-delimiters-depth-2">(</span>treesit-buffer-root-node 'cabal<span class="org-rainbow-delimiters-depth-2">)</span>
+                       <span class="org-string">"(cabal (sections (_)* @section))"</span>
+                       nil nil t<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org75c9fc7" class="outline-2">
+<h2 id="org75c9fc7">Hooking it up to consult</h2>
+<div class="outline-text-2" id="text-org75c9fc7">
+<p>
+As I envision adding more things to jump to in the future, I decided to make use
+of <code>consult--multi</code>. That in turn means I need to define a "source" for the
+sections. After a bit of digging and rummaging in the <a href="https://github.com/minad/consult/">consult source</a> I put
+together this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defvar</span> <span class="org-variable-name">consult-cabal--source-section</span>
+  `<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-builtin">:name</span> <span class="org-string">"Sections"</span>
+    <span class="org-builtin">:category</span> location
+    <span class="org-builtin">:action</span> ,#'consult-cabal--section-action
+    <span class="org-builtin">:items</span> ,#'consult-cabal--section-items<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-doc">"Definition of source for Cabal sections."</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+which means I need two functions, <code>consult-cabal--section-action</code> and
+<code>consult-cabal--section-items</code>. I started with the latter.
+</p>
+</div>
+
+<div id="outline-container-orga9a5fae" class="outline-3">
+<h3 id="orga9a5fae">Getting section nodes as items for consult</h3>
+<div class="outline-text-3" id="text-orga9a5fae">
+<p>
+It took me a while to work understand how this would ever be able to work. The
+function that <code>:items</code> point to must return a list of strings, but how would I
+ever be able to use just a string to jump to the correct location?
+</p>
+
+<p>
+The solution is in a comment in the documentation of <code>consult--multi</code>:
+</p>
+
+<blockquote>
+<p>
+:items - List of strings to select from or function returning
+ list of strings.  Note that the strings can use text properties
+ to carry metadata, which is then available to the :annotate,
+ :action and :state functions.
+</p>
+</blockquote>
+
+<p>
+I'd never come across <i>text properties</i> in Emacs before, so at first I
+completely missed those two words. Once I'd looked up the concept in the
+documentation everything fell into place. The function
+<code>consult-cabal--section-items</code> would simply attach the relevant node as a text
+property to the strings in the list.
+</p>
+
+<p>
+My current version, obviously a work-in-progress, takes a list of nodes and
+turns them naïvely into a string and attaches the node. I split it into two functions, like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">consult-cabal--section-to-string</span> <span class="org-rainbow-delimiters-depth-2">(</span>section<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-doc">"Convert a single SECTION node to a string."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>propertize <span class="org-rainbow-delimiters-depth-3">(</span>format <span class="org-string">"%S"</span> section<span class="org-rainbow-delimiters-depth-3">)</span>
+              <span class="org-builtin">:treesit-node</span> section<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">consult-cabal--section-items</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-doc">"Fetch all sections as a list of strings ."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">let</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>section-nodes <span class="org-rainbow-delimiters-depth-5">(</span>treesit-query-capture <span class="org-rainbow-delimiters-depth-6">(</span>treesit-buffer-root-node 'cabal<span class="org-rainbow-delimiters-depth-6">)</span>
+                                              <span class="org-string">"(cabal (sections (_)* @section))"</span>
+                                              nil nil t<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>mapcar #'consult-cabal--section-to-string section-nodes<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org7e0a1b9" class="outline-3">
+<h3 id="org7e0a1b9">Implementing the action</h3>
+<div class="outline-text-3" id="text-org7e0a1b9">
+<p>
+The action function is called with the selected item, i.e. with the string and
+its properties. That means, to jump to the selected section the function needs
+to extract the node property, <code>:treesit-node</code>, and jump to the start of it. the
+function to use is <code>get-text-property</code>, and as all characters in the string will
+have to property I just picked the first one. The jumping itself I copied from
+the navigation functions I'd written before.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">consult-cabal--section-action</span> <span class="org-rainbow-delimiters-depth-2">(</span>item<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-doc">"Go to the section referenced by ITEM."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">when-let*</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>node <span class="org-rainbow-delimiters-depth-5">(</span>get-text-property 0 <span class="org-builtin">:treesit-node</span> item<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+              <span class="org-rainbow-delimiters-depth-4">(</span>new-pos <span class="org-rainbow-delimiters-depth-5">(</span>treesit-node-start node<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>goto-char new-pos<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgbccdc85" class="outline-3">
+<h3 id="orgbccdc85">Tying it together with <code>consult--multi</code></h3>
+<div class="outline-text-3" id="text-orgbccdc85">
+<p>
+The final function, <code>consult-cabal</code>, looks like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">consult-cabal</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-doc">"Choose a Cabal construct and jump to it."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>consult--multi '<span class="org-rainbow-delimiters-depth-3">(</span>consult-cabal--source-section<span class="org-rainbow-delimiters-depth-3">)</span>
+                  <span class="org-builtin">:sort</span> nil<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org9b47401" class="outline-2">
+<h2 id="org9b47401">Conclusions and where to find the code</h2>
+<div class="outline-text-2" id="text-org9b47401">
+<p>
+The end result works as intended, but it's very rough. I'll try to improve it a
+bit more. In particular I want
+</p>
+
+<ol class="org-ol">
+<li>better strings - <code>(format "%S" node)</code> is all right to start with, but in the
+long run I want strings that describe the sections, and</li>
+<li>preview as I navigate between items - AFAIU this is what the <code>:state</code> field
+is for, but I still haven't looked into how it works.</li>
+</ol>
+
+<p>
+The source can be found <a href="https://gitlab.com/magus/my-emacs-pkgs/-/blob/main/my-cabal-mode/consult-cabal.el">here</a>.
+</p>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-cabal.html">cabal</a> <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-tree-sitter.html">tree-sitter</a> </div>
+
 <div class="post-date">22 Mar 2023</div><h1 class="post-title"><a href="https://magnus.therning.org/2023-03-22-making-an-emacs-major-mode-for-cabal-using-tree-sitter.html">Making an Emacs major mode for Cabal using tree-sitter</a></h1>
 <p>
 A few days ago I <a href="https://www.reddit.com/r/haskell/comments/11uvhsk/cabal_grammar_for_treesitter_at_least_the/">posted on r/haskell</a> that I'm attempting to put together a <a href="https://cabal.readthedocs.io/en/stable/index.html">Cabal</a>
@@ -495,153 +706,6 @@ A very simple example showing how it could be used would be something like this
     <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">infoIO</span></span> <span class="org-tree-sitter-hl-faceXvariable">logger</span> <span class="org-tree-sitter-hl-faceXoperator">$</span> <span class="org-tree-sitter-hl-faceXstring">"another log line"</span> <span class="org-tree-sitter-hl-faceXoperator">#+</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">[</span></span><span class="org-tree-sitter-hl-faceXstring">"extras"</span> <span class="org-tree-sitter-hl-faceXoperator">.=</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-2">(</span></span><span class="org-tree-sitter-hl-faceXnumber">42</span> <span class="org-tree-sitter-hl-faceXoperator">::</span> <span class="org-tree-sitter-hl-faceXtype">Int</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-2">)</span></span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">]</span></span>
 </pre>
 </div>
-</div>
-</div>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-logging.html">logging</a> </div>
-
-<div class="post-date">29 Jan 2023</div><h1 class="post-title"><a href="https://magnus.therning.org/2023-01-29-a-take-on-log-messages.html">A take on log messages</a></h1>
-<p>
-At <code>$DAYJOB</code> we use structured logging with rather little actual structure, the only rules are
-</p>
-
-<ol class="org-ol">
-<li>Log to <code>stdout</code>.</li>
-<li>Log one JSON object per line.</li>
-<li>The only required fields are
-<ul class="org-ul">
-<li><code>message</code> - a human readable string describing the event</li>
-<li><code>level</code> - the severity of the event, <code>debug</code>, <code>info</code>, <code>warn</code>, <code>error</code>, or <code>fatal</code>.</li>
-<li><code>timestamp</code> - the time of the event</li>
-<li><code>correlation-id</code> - an ID passed between services to allow to find related events</li>
-</ul></li>
-</ol>
-
-<p>
-Beyond that pretty much anything goes, any other fields that are useful in that
-service, or even in that one log message is OK.
-</p>
-
-<p>
-My first take was very ad-hoc, mostly becuase there were other parts of the
-question "How do I write a service in Haskell, actually?" that needed more
-attention &#x2013; then I read <a href="https://jship.github.io/posts/2022-05-17-announcing-monad-logger-aeson/">Announcing monad-logger-aeson: Structured logging in
-Haskell for cheap</a>. Sure, I'd looked at some of the logging libraries on
-Hackage but not really found anything that seemed like it would fit very well.
-Not until <a href="https://hackage.haskell.org/package/monad-logger-aeson">monad-logger-aeson</a>, that is. Well, at least until I realised it didn't
-quite fit the rules we have.
-</p>
-
-<p>
-It did give me some ideas of how to structure my current rather simple, but very
-awkward to use, current loggging code. This is what I came up with, and after
-using it in a handful services I find it kind of nice to work with. Let me know
-what you think.
-</p>
-
-<div id="outline-container-org7a41693" class="outline-2">
-<h2 id="org7a41693">The log message type</h2>
-<div class="outline-text-2" id="text-org7a41693">
-<p>
-I decided that a log message must always contain the text describing the event.
-It's the one thing that's sure to be known at the point where the developer
-writes the code to log an event. All the other mandatory parts can, and probably
-should as far as possible, be added by the logging library itself. So I ended up
-with this type.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-tree-sitter-hl-faceXkeyword">data</span> <span class="org-tree-sitter-hl-faceXtype">LogMsg</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXtype">Text</span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">[</span></span><span class="org-tree-sitter-hl-faceXtype">Pair</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">]</span></span>
-    <span class="org-tree-sitter-hl-faceXkeyword">deriving</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">Eq</span><span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">Show</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
-</pre>
-</div>
-
-<p>
-It should however be easy to add custom parts at the point of logging, so I
-added an operator for that.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXoperator">#+</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXoperator">::</span> <span class="org-tree-sitter-hl-faceXtype">LogMsg</span> <span class="org-tree-sitter-hl-faceXoperator">-&gt;</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">[</span></span><span class="org-tree-sitter-hl-faceXtype">Pair</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">]</span></span> <span class="org-tree-sitter-hl-faceXoperator">-&gt;</span> <span class="org-tree-sitter-hl-faceXtype">LogMsg</span>
-<span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXoperator">#+</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXvariable">msg</span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXvariable">ps0</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXvariable">ps1</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">msg</span></span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">ps0</span></span> <span class="org-tree-sitter-hl-faceXoperator">&lt;&gt;</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">ps1</span></span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
-</pre>
-</div>
-
-<p>
-The ordering is important, i.e. <code>ps0 &lt;&gt; ps1</code>, as <a href="https://hackage.haskell.org/package/monad-logger-aeson">aeson</a>'s <code>object</code> function will
-take the <i>last</i> value for a field and I want to be able to give keys in a log
-message new values by overwriting them later on.
-</p>
-</div>
-</div>
-
-<div id="outline-container-org2d4772f" class="outline-2">
-<h2 id="org2d4772f">Instances to use it with fast-logger</h2>
-<div class="outline-text-2" id="text-org2d4772f">
-<p>
-The previous logging code used <a href="https://hackage.haskell.org/package/fast-logger">fast-logger</a> and it had worked really well so I
-decided to stick with it. Making <code>LogMsg</code> and instance of <code>ToLogStr</code> is key, and
-as the rules require logging of JSON objects it also needs to be an instance of
-<code>ToJSON</code>.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-tree-sitter-hl-faceXkeyword">instance</span> <span class="org-tree-sitter-hl-faceXtype">ToJSON</span> <span class="org-tree-sitter-hl-faceXtype">LogMsg</span> <span class="org-tree-sitter-hl-faceXkeyword">where</span>
-    <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">toJSON</span></span> <span class="org-tree-sitter-hl-faceXvariableXparameter"><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span></span><span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXvariableXparameter">msg</span></span><span class="org-tree-sitter-hl-faceXvariableXparameter"> </span><span class="org-tree-sitter-hl-faceXvariableXparameter"><span class="org-tree-sitter-hl-faceXoperator">:#</span></span><span class="org-tree-sitter-hl-faceXvariableXparameter"> </span><span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXvariableXparameter">ps</span></span><span class="org-tree-sitter-hl-faceXvariableXparameter"><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span></span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">object</span></span> <span class="org-tree-sitter-hl-faceXoperator">$</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">ps</span></span> <span class="org-tree-sitter-hl-faceXoperator">&lt;&gt;</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">[</span></span><span class="org-tree-sitter-hl-faceXstring">"message"</span> <span class="org-tree-sitter-hl-faceXoperator">.=</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">msg</span></span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">]</span></span>
-
-<span class="org-tree-sitter-hl-faceXkeyword">instance</span> <span class="org-tree-sitter-hl-faceXtype">ToLogStr</span> <span class="org-tree-sitter-hl-faceXtype">LogMsg</span> <span class="org-tree-sitter-hl-faceXkeyword">where</span>
-    <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">toLogStr</span></span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXvariableXparameter">msg</span></span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">toLogStr</span></span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">encode</span></span> <span class="org-tree-sitter-hl-faceXvariable">msg</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXoperator">&lt;&gt;</span> <span class="org-tree-sitter-hl-faceXstring">"\n"</span>
-</pre>
-</div>
-</div>
-</div>
-
-<div id="outline-container-org656d5ed" class="outline-2">
-<h2 id="org656d5ed">Instance to make it easy to log a string</h2>
-<div class="outline-text-2" id="text-org656d5ed">
-<p>
-It's common to just want to log a single string and nothing else, so it's handy
-if <code>LogMsg</code> is an instance of <code>IsString</code>.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-tree-sitter-hl-faceXkeyword">instance</span> <span class="org-tree-sitter-hl-faceXtype">IsString</span> <span class="org-tree-sitter-hl-faceXtype">LogMsg</span> <span class="org-tree-sitter-hl-faceXkeyword">where</span>
-    <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">fromString</span></span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXvariableXparameter">msg</span></span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">pack</span></span> <span class="org-tree-sitter-hl-faceXvariable">msg</span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">[]</span></span>
-</pre>
-</div>
-</div>
-</div>
-
-<div id="outline-container-orga6d25c3" class="outline-2">
-<h2 id="orga6d25c3">Combining log messages</h2>
-<div class="outline-text-2" id="text-orga6d25c3">
-<p>
-When writing the previous logging code I'd regularly felt pain from the lack of
-a nice way to combine log messages. With the definition of <code>LogMsg</code> above it's
-not difficult to come up with reasonable instances for both <code>Semigroup</code> and
-<code>Monoid</code>.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-tree-sitter-hl-faceXkeyword">instance</span> <span class="org-tree-sitter-hl-faceXtype">Semigroup</span> <span class="org-tree-sitter-hl-faceXtype">LogMsg</span> <span class="org-tree-sitter-hl-faceXkeyword">where</span>
-    <span class="org-tree-sitter-hl-faceXstring">""</span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXvariable">ps0</span> <span class="org-tree-sitter-hl-faceXoperator">&lt;&gt;</span> <span class="org-tree-sitter-hl-faceXvariable">msg1</span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXvariable">ps1</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">msg1</span></span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">ps0</span></span> <span class="org-tree-sitter-hl-faceXoperator">&lt;&gt;</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">ps1</span></span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
-    <span class="org-tree-sitter-hl-faceXvariable">msg0</span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXvariable">ps0</span> <span class="org-tree-sitter-hl-faceXoperator">&lt;&gt;</span> <span class="org-tree-sitter-hl-faceXstring">""</span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXvariable">ps1</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">msg0</span></span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">ps0</span></span> <span class="org-tree-sitter-hl-faceXoperator">&lt;&gt;</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">ps1</span></span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
-    <span class="org-tree-sitter-hl-faceXvariable">msg0</span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXvariable">ps0</span> <span class="org-tree-sitter-hl-faceXoperator">&lt;&gt;</span> <span class="org-tree-sitter-hl-faceXvariable">msg1</span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXvariable">ps1</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">msg0</span></span> <span class="org-tree-sitter-hl-faceXoperator">&lt;&gt;</span> <span class="org-tree-sitter-hl-faceXstring">" - "</span> <span class="org-tree-sitter-hl-faceXoperator">&lt;&gt;</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">msg1</span></span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">ps0</span></span> <span class="org-tree-sitter-hl-faceXoperator">&lt;&gt;</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">ps1</span></span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
-
-<span class="org-tree-sitter-hl-faceXkeyword">instance</span> <span class="org-tree-sitter-hl-faceXtype">Monoid</span> <span class="org-tree-sitter-hl-faceXtype">LogMsg</span> <span class="org-tree-sitter-hl-faceXkeyword">where</span>
-    <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">mempty</span></span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXstring">""</span>
-</pre>
-</div>
-</div>
-</div>
-
-<div id="outline-container-org0b45515" class="outline-2">
-<h2 id="org0b45515">In closing</h2>
-<div class="outline-text-2" id="text-org0b45515">
-<p>
-What's missing above is the automatic handling of the remaining fields. I'll try
-to get back to that part soon. For now I'll just say that the log message API
-above made the implementation nice and straight forward.
-</p>
 </div>
 </div>
 <div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-logging.html">logging</a> </div>
