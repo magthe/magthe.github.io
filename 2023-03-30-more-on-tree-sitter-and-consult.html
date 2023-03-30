@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="alternate"
+      type="application/rss+xml"
+      href="https://magnus.therning.org/feed.xml"
+      title="RSS feed for https://magnus.therning.org/">
+<title>More on tree-sitter and consult</title>
+<meta name="author" content="Magnus Therning"><meta name="referrer" content="no-referrer"><link href= "static/style.css" rel="stylesheet" type="text/css" /><link href= "static/htmlize.css" rel="stylesheet" type="text/css" /><link href= "static/extra_style.css" rel="stylesheet" type="text/css" /></head>
+<body>
+<div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
+<div id="content">
+<div class="post-date">30 Mar 2023</div><h1 class="post-title"><a href="https://magnus.therning.org/2023-03-30-more-on-tree-sitter-and-consult.html">More on tree-sitter and consult</a></h1>
+<p>
+Here's a few things that I've gotten help with figuring out during the last few
+days. Both things are related to my playing with tree-sitter that I've written
+about earlier, <a href="https://magnus.therning.org/2023-03-22-making-an-emacs-major-mode-for-cabal-using-tree-sitter.html">here</a> and <a href="https://magnus.therning.org/2023-03-27-cabal,-tree-sitter,-and-consult.html">here</a>.
+</p>
+
+<p>
+You might also be interested in the two repositories where the full code
+is. (I've linked to the specific commits as of this writing.)
+</p>
+
+<ul class="org-ul">
+<li><a href="https://gitlab.com/magus/my-emacs-pkgs/-/tree/e739d1035f3d505f2495309126d891ca6b18cab8/my-cabal-mode">My Cabal mode</a></li>
+<li><a href="https://gitlab.com/magus/tree-sitter-cabal/-/tree/7d5fa6887ae05a0b06d046f1e754c197c8ad869b">tree-sitter-cabal</a></li>
+</ul>
+
+<div id="outline-container-org8a27db9" class="outline-2">
+<h2 id="org8a27db9">Anonymous nodes and matching in tree-sitter</h2>
+<div class="outline-text-2" id="text-org8a27db9">
+<p>
+In the grammar for Cabal I have a rule for sections that like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-javascript">sections: $ =&gt; repeat1<span class="org-rainbow-delimiters-depth-1">(</span>choice<span class="org-rainbow-delimiters-depth-2">(</span>
+    $.benchmark,
+    $.common,
+    $.executable,
+    $.flag,
+    $.library,
+    $.source_repository,
+    $.test_suite,
+<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>,
+</pre>
+</div>
+
+<p>
+where each section followed this pattern
+</p>
+
+<div class="org-src-container">
+<pre class="src src-javascript">benchmark: $ =&gt; seq<span class="org-rainbow-delimiters-depth-1">(</span>
+    repeat<span class="org-rainbow-delimiters-depth-2">(</span>$.comment<span class="org-rainbow-delimiters-depth-2">)</span>,
+    <span class="org-string">'benchmark'</span>,
+    field<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">'name'</span>, $.section_name<span class="org-rainbow-delimiters-depth-2">)</span>,
+    field<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">'properties'</span>, $.property_block<span class="org-rainbow-delimiters-depth-2">)</span>,
+<span class="org-rainbow-delimiters-depth-1">)</span>,
+</pre>
+</div>
+
+<p>
+This made it a little bit difficult to capture the relevant parts of each
+section to implement <code>consult-cabal</code>. I thought a pattern like this ought to
+work
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span class="org-rainbow-delimiters-depth-1">(</span>cabal
+ <span class="org-rainbow-delimiters-depth-2">(</span>sections
+  <span class="org-rainbow-delimiters-depth-3">(</span>_ _ @type
+     name: <span class="org-rainbow-delimiters-depth-4">(</span>section_name<span class="org-rainbow-delimiters-depth-4">)</span>? @name<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+but it didn't; I got way too many things captured in <code>type</code>. Clearly I had
+misunderstood something about the wildcards, or the query syntax. I attempted to
+add a field name to the anonymous node, i.e. change the sections rules like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-javascript">benchmark: $ =&gt; seq<span class="org-rainbow-delimiters-depth-1">(</span>
+    repeat<span class="org-rainbow-delimiters-depth-2">(</span>$.comment<span class="org-rainbow-delimiters-depth-2">)</span>,
+    field<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">'type'</span>, <span class="org-string">'benchmark'</span><span class="org-rainbow-delimiters-depth-2">)</span>,
+    field<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">'name'</span>, $.section_name<span class="org-rainbow-delimiters-depth-2">)</span>,
+    field<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">'properties'</span>, $.property_block<span class="org-rainbow-delimiters-depth-2">)</span>,
+<span class="org-rainbow-delimiters-depth-1">)</span>,
+</pre>
+</div>
+
+<p>
+It was accepted by <code>tree-sitter generate</code>, but the field <code>type</code> was nowhere to
+be found in the parse tree.
+</p>
+
+<p>
+Then I changed the query to list the anonymous nodes explicitly, like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span class="org-rainbow-delimiters-depth-1">(</span>cabal
+ <span class="org-rainbow-delimiters-depth-2">(</span>sections
+  <span class="org-rainbow-delimiters-depth-3">(</span>_ [<span class="org-string">"benchmark"</span> <span class="org-string">"common"</span> <span class="org-string">"executable"</span> ...] @type
+     name: <span class="org-rainbow-delimiters-depth-4">(</span>section_name<span class="org-rainbow-delimiters-depth-4">)</span>? @name<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+That worked, but listing all the sections like that in the query didn't sit
+right with me.
+</p>
+
+<p>
+Luckily there's a <a href="https://github.com/tree-sitter/tree-sitter/discussions">discussions area in tree-sitters GitHub</a> so a <a href="https://github.com/tree-sitter/tree-sitter/discussions/2161">fairly short
+discussion</a> later I had answers to why my query behaved like it did and a
+solution that would allow me to not list all the section types in the query. The
+trick is to wrap the string in a call to <code>alias</code> to make it a named node. After
+that it works to add a field name to it as well, of course. The section rules
+now look like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-javascript">benchmark: $ =&gt; seq<span class="org-rainbow-delimiters-depth-1">(</span>
+    repeat<span class="org-rainbow-delimiters-depth-2">(</span>$.comment<span class="org-rainbow-delimiters-depth-2">)</span>,
+    field<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">'type'</span>, alias<span class="org-rainbow-delimiters-depth-3">(</span><span class="org-string">'benchmark'</span>, $.section_type<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>,
+    field<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">'name'</span>, $.section_name<span class="org-rainbow-delimiters-depth-2">)</span>,
+    field<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">'properties'</span>, $.property_block<span class="org-rainbow-delimiters-depth-2">)</span>,
+<span class="org-rainbow-delimiters-depth-1">)</span>,
+</pre>
+</div>
+
+<p>
+and the final query looks like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span class="org-rainbow-delimiters-depth-1">(</span>cabal
+ <span class="org-rainbow-delimiters-depth-2">(</span>sections
+  <span class="org-rainbow-delimiters-depth-3">(</span>_
+   type: <span class="org-rainbow-delimiters-depth-4">(</span>section_type<span class="org-rainbow-delimiters-depth-4">)</span> @type
+   name: <span class="org-rainbow-delimiters-depth-4">(</span>section_name<span class="org-rainbow-delimiters-depth-4">)</span>? @name<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+With that in place I could improve on the function that collects all the items
+for <code>consult-cabal</code> so it now show the section's type and name instead of the
+string representation of the tree-sitter node.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgf3cee92" class="outline-2">
+<h2 id="orgf3cee92">State in a <code>consult</code> source for preview of lines in a buffer</h2>
+<div class="outline-text-2" id="text-orgf3cee92">
+<p>
+I was struggling with figuring out how to make a good <i>state</i> function in order
+to preview the items in <code>consult-cabal</code>. The <a href="https://github.com/minad/consult">GitHub repo for <code>consult</code></a> doesn't
+have discussions enabled, but after a <a href="https://github.com/minad/consult/issues/780">discussion in an issue</a> I'd arrived at a
+<i>state</i> function that works very well.
+</p>
+
+<p>
+The state function makes use of functions in <code>consult</code> and looks like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">consult-cabal--state</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-doc">"Create a state function for previewing sections."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">let</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>state <span class="org-rainbow-delimiters-depth-5">(</span>consult--jump-state<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">lambda</span> <span class="org-rainbow-delimiters-depth-4">(</span>action cand<span class="org-rainbow-delimiters-depth-4">)</span>
+      <span class="org-rainbow-delimiters-depth-4">(</span><span class="org-keyword">when</span> cand
+        <span class="org-rainbow-delimiters-depth-5">(</span><span class="org-keyword">let</span> <span class="org-rainbow-delimiters-depth-6">(</span><span class="org-rainbow-delimiters-depth-7">(</span>pos <span class="org-rainbow-delimiters-depth-8">(</span>get-text-property 0 'section-pos cand<span class="org-rainbow-delimiters-depth-8">)</span><span class="org-rainbow-delimiters-depth-7">)</span><span class="org-rainbow-delimiters-depth-6">)</span>
+          <span class="org-rainbow-delimiters-depth-6">(</span>funcall state action pos<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+The trick here was to figure out how the function returned by
+<code>consult--jump-state</code> actually works. On the surface it looks like it takes an
+<i>action</i> and a <i>candidate</i>, <code>(lambda (action cand) ...)</code>. However, the argument
+<code>cand</code> shouldn't be the currently selected item, but rather a postion (ideally a
+<code>marker</code>), so I had to attach another text property on the items (<code>section-pos</code>,
+which is fetched in the inner lambda). This position is then what's passed to
+the function returned by <code>consult--jump-state</code>.
+</p>
+
+<p>
+In hindsight it seems so easy, but I was struggling with this for an entire
+evening before finally asking the question the morning after.
+</p>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-consult.html">consult</a> <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-tree-sitter.html">tree-sitter</a> </div>
+<div id="comments">Comment <a href=//www.reddit.com/r/emacs/comments/126umaf/more_on_treesitter_and_consult/>here</a>.</div></div>
+<div id="postamble" class="status"><!-- org-static-blog-page-postamble --></div>
+</body>
+</html>
