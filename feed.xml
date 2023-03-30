@@ -4,7 +4,7 @@
 <title><![CDATA[Magnus web site]]></title>
 <description><![CDATA[Magnus web site]]></description>
 <link>https://magnus.therning.org/</link>
-<lastBuildDate>Mon, 27 Mar 2023 22:25:34 +0200</lastBuildDate>
+<lastBuildDate>Thu, 30 Mar 2023 20:01:07 +0200</lastBuildDate>
 <item>
   <title><![CDATA[Cabal, tree-sitter, and consult]]></title>
   <description><![CDATA[
@@ -21,9 +21,9 @@ What follows is very much a work-in-progress, but hopefully it'll show enough
 promise.
 </p>
 
-<div id="outline-container-orgf3a9dea" class="outline-2">
-<h2 id="orgf3a9dea">Listing the sections</h2>
-<div class="outline-text-2" id="text-orgf3a9dea">
+<div id="outline-container-org31e7014" class="outline-2">
+<h2 id="org31e7014">Listing the sections</h2>
+<div class="outline-text-2" id="text-org31e7014">
 <p>
 As I have a <code>tree-sitter</code> parse tree to hand it is fairly easy to fetch all the
 nodes corresponding to sections.  Since the <a href="https://magnus.therning.org/2023-03-22-making-an-emacs-major-mode-for-cabal-using-tree-sitter.html">last post</a> I've made some
@@ -76,9 +76,9 @@ full call will look like this
 </div>
 </div>
 
-<div id="outline-container-org75c9fc7" class="outline-2">
-<h2 id="org75c9fc7">Hooking it up to consult</h2>
-<div class="outline-text-2" id="text-org75c9fc7">
+<div id="outline-container-orgcead32c" class="outline-2">
+<h2 id="orgcead32c">Hooking it up to consult</h2>
+<div class="outline-text-2" id="text-orgcead32c">
 <p>
 As I envision adding more things to jump to in the future, I decided to make use
 of <code>consult--multi</code>. That in turn means I need to define a "source" for the
@@ -102,9 +102,9 @@ which means I need two functions, <code>consult-cabal--section-action</code> and
 </p>
 </div>
 
-<div id="outline-container-orga9a5fae" class="outline-3">
-<h3 id="orga9a5fae">Getting section nodes as items for consult</h3>
-<div class="outline-text-3" id="text-orga9a5fae">
+<div id="outline-container-org72b3791" class="outline-3">
+<h3 id="org72b3791">Getting section nodes as items for consult</h3>
+<div class="outline-text-3" id="text-org72b3791">
 <p>
 It took me a while to work understand how this would ever be able to work. The
 function that <code>:items</code> point to must return a list of strings, but how would I
@@ -154,9 +154,9 @@ turns them naïvely into a string and attaches the node. I split it into two fun
 </div>
 </div>
 
-<div id="outline-container-org7e0a1b9" class="outline-3">
-<h3 id="org7e0a1b9">Implementing the action</h3>
-<div class="outline-text-3" id="text-org7e0a1b9">
+<div id="outline-container-org83dad10" class="outline-3">
+<h3 id="org83dad10">Implementing the action</h3>
+<div class="outline-text-3" id="text-org83dad10">
 <p>
 The action function is called with the selected item, i.e. with the string and
 its properties. That means, to jump to the selected section the function needs
@@ -177,9 +177,9 @@ the navigation functions I'd written before.
 </div>
 </div>
 
-<div id="outline-container-orgbccdc85" class="outline-3">
-<h3 id="orgbccdc85">Tying it together with <code>consult--multi</code></h3>
-<div class="outline-text-3" id="text-orgbccdc85">
+<div id="outline-container-orgb0e4e64" class="outline-3">
+<h3 id="orgb0e4e64">Tying it together with <code>consult--multi</code></h3>
+<div class="outline-text-3" id="text-orgb0e4e64">
 <p>
 The final function, <code>consult-cabal</code>, looks like this
 </p>
@@ -196,9 +196,9 @@ The final function, <code>consult-cabal</code>, looks like this
 </div>
 </div>
 
-<div id="outline-container-org9b47401" class="outline-2">
-<h2 id="org9b47401">Conclusions and where to find the code</h2>
-<div class="outline-text-2" id="text-org9b47401">
+<div id="outline-container-org8f2653b" class="outline-2">
+<h2 id="org8f2653b">Conclusions and where to find the code</h2>
+<div class="outline-text-2" id="text-org8f2653b">
 <p>
 The end result works as intended, but it's very rough. I'll try to improve it a
 bit more. In particular I want
@@ -216,9 +216,10 @@ The source can be found <a href="https://gitlab.com/magus/my-emacs-pkgs/-/blob/m
 </p>
 </div>
 </div>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-cabal.html">cabal</a> <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-tree-sitter.html">tree-sitter</a> </div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-cabal.html">cabal</a> <a href="https://magnus.therning.org/tag-consult.html">consult</a> <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-tree-sitter.html">tree-sitter</a> </div>
 ]]></description>
   <category><![CDATA[cabal]]></category>
+  <category><![CDATA[consult]]></category>
   <category><![CDATA[emacs]]></category>
   <category><![CDATA[tree-sitter]]></category>
   <link>https://magnus.therning.org/2023-03-27-cabal,-tree-sitter,-and-consult.html</link>
