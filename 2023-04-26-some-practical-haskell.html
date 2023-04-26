@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="alternate"
+      type="application/rss+xml"
+      href="https://magnus.therning.org/feed.xml"
+      title="RSS feed for https://magnus.therning.org/">
+<title>Some practical Haskell</title>
+<meta name="author" content="Magnus Therning"><meta name="referrer" content="no-referrer"><link href= "static/style.css" rel="stylesheet" type="text/css" /><link href= "static/htmlize.css" rel="stylesheet" type="text/css" /><link href= "static/extra_style.css" rel="stylesheet" type="text/css" /></head>
+<body>
+<div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
+<div id="content">
+<div class="post-date">26 Apr 2023</div><h1 class="post-title"><a href="https://magnus.therning.org/2023-04-26-some-practical-haskell.html">Some practical Haskell</a></h1>
+<p>
+As I'm nearing the end of my time with my current employer I thought I'd put
+together some bits of practical Haskell that I've put into production. We only
+have a few services in Haskell, and basically I've had to sneak them into
+production. I'm hoping someone will find something useful. I'd be even happier
+if I get pointers on how to do this even better.
+</p>
+
+<div id="outline-container-org3790afb" class="outline-2">
+<h2 id="org3790afb">Logging</h2>
+<div class="outline-text-2" id="text-org3790afb">
+<p>
+I've written about that earlier in three posts:
+</p>
+
+<ol class="org-ol">
+<li><a href="https://magnus.therning.org/2023-01-29-a-take-on-log-messages.html">A take on log messages</a></li>
+<li><a href="https://magnus.therning.org/2023-02-04-a-take-on-logging.html">A take on logging</a></li>
+<li><a href="https://magnus.therning.org/2023-02-08-logging-with-class.html">Logging with class</a></li>
+</ol>
+</div>
+</div>
+
+<div id="outline-container-org377fbff" class="outline-2">
+<h2 id="org377fbff">Final exception handler</h2>
+<div class="outline-text-2" id="text-org377fbff">
+<p>
+After reading about the <i>uncaught exception handler</i> in <a href="https://serokell.io/blog/uncaught-exception-handling">Serokell's article</a> I've
+added the following snippet to all the services.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">main</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+<span class="org-haskell-definition">main</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+    <span class="org-haskell-operator">...</span>
+    originalHandler <span class="org-haskell-operator">&lt;-</span> getUncaughtExceptionHandler
+    setUncaughtExceptionHandler <span class="org-haskell-operator">$</span> handle originalHandler <span class="org-haskell-operator">.</span> lastExceptionHandler logger
+    <span class="org-haskell-operator">...</span>
+
+<span class="org-haskell-definition">lastExceptionHandler</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Logger</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">SomeException</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+<span class="org-haskell-definition">lastExceptionHandler</span> logger e <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+    fatalIO logger <span class="org-haskell-operator">$</span> lm <span class="org-haskell-operator">$</span> <span class="org-string">"uncaught exception: "</span> <span class="org-haskell-operator">&lt;&gt;</span> displayException e
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgc085bc5" class="outline-2">
+<h2 id="orgc085bc5">Handling signals</h2>
+<div class="outline-text-2" id="text-orgc085bc5">
+<p>
+To make sure the platform we're running our services on is happy with a service
+it needs to handle <code>SIGTERM</code>, and when running it locally during development,
+e.g. for manual testing, it's nice if it also handles <code>SIGINT</code>.
+</p>
+
+<p>
+The following snippet comes from a service that needs to make sure that every
+iteration of its processing is completed before shutting down, hence the <code>IORef</code>
+that's used to signal whether procession should continue or not.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">main</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+<span class="org-haskell-definition">main</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+    <span class="org-haskell-operator">...</span>
+    cont <span class="org-haskell-operator">&lt;-</span> newIORef <span class="org-haskell-constructor">True</span>
+    void <span class="org-haskell-operator">$</span> installHandler softwareTermination <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">Catch</span> <span class="org-haskell-operator">$</span> sigHandler logger cont<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-constructor">Nothing</span>
+    void <span class="org-haskell-operator">$</span> installHandler keyboardSignal <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">Catch</span> <span class="org-haskell-operator">$</span> sigHandler logger cont<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-constructor">Nothing</span>
+    <span class="org-haskell-operator">...</span>
+
+<span class="org-haskell-definition">sigHandler</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Logger</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">IORef</span> <span class="org-haskell-type">Bool</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+<span class="org-haskell-definition">sigHandler</span> logger cont <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+    infoIO logger <span class="org-string">"got a signal, shutting down"</span>
+    writeIORef cont <span class="org-haskell-constructor">False</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org0553b14" class="outline-2">
+<h2 id="org0553b14">Probes</h2>
+<div class="outline-text-2" id="text-org0553b14">
+<p>
+Due to some details about how networking works in our platform it's currently
+not possible to use network-based probing. Instead we have to use files. There
+are two probes that are of interest
+</p>
+
+<ul class="org-ul">
+<li>A startup probe, existance of the file signals that the service has started as
+is about being processing.</li>
+<li>A progress probe, a timestamp signals the time the most recent iteration of
+processing finished<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>.</li>
+</ul>
+
+<p>
+I've written a little bit about the latter before in <a href="https://magnus.therning.org/2022-05-08-a-little-haskell:-epoch-timestamp.html">A little Haskell: epoch
+timestamp</a>, but here I'm including both functions.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">createPidFile</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">FilePath</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+<span class="org-haskell-definition">createPidFile</span> fn <span class="org-haskell-operator">=</span> getProcessID <span class="org-haskell-operator">&gt;&gt;=</span> writeFile fn <span class="org-haskell-operator">.</span> show
+
+<span class="org-haskell-definition">writeTimestampFile</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">MonadIO</span> m <span class="org-haskell-operator">=&gt;</span> <span class="org-haskell-type">FilePath</span> <span class="org-haskell-operator">-&gt;</span> m <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
+<span class="org-haskell-definition">writeTimestampFile</span> fn <span class="org-haskell-operator">=</span> liftIO <span class="org-haskell-operator">$</span> <span class="org-haskell-keyword">do</span>
+    getPOSIXTime <span class="org-haskell-operator">&gt;&gt;=</span> <span class="org-rainbow-delimiters-depth-1">(</span>writeFile fn <span class="org-haskell-operator">.</span> show<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">.</span> truncate <span class="org-haskell-operator">@</span><span class="org-haskell-keyword">_</span> <span class="org-haskell-operator">@</span><span class="org-haskell-constructor">Int64</span> <span class="org-haskell-operator">.</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-operator">*</span> 1000<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+</div>
+</div>
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+
+<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+The actual probing is then done using a command that compares the saved
+timestamp with the current time. As long as the difference is smaller than a
+threshold the probe succeeds.
+</p></div></div>
+
+
+</div>
+</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> </div>
+<div id="comments">Comment <a href=//www.reddit.com/r/haskell/comments/12zgftb/some_practical_haskell/>here</a>.</div></div>
+<div id="postamble" class="status"><!-- org-static-blog-page-postamble --></div>
+</body>
+</html>
