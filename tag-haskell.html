@@ -21,9 +21,9 @@ production. I'm hoping someone will find something useful. I'd be even happier
 if I get pointers on how to do this even better.
 </p>
 
-<div id="outline-container-org3790afb" class="outline-2">
-<h2 id="org3790afb">Logging</h2>
-<div class="outline-text-2" id="text-org3790afb">
+<div id="outline-container-org6d67a5e" class="outline-2">
+<h2 id="org6d67a5e">Logging</h2>
+<div class="outline-text-2" id="text-org6d67a5e">
 <p>
 I've written about that earlier in three posts:
 </p>
@@ -36,9 +36,9 @@ I've written about that earlier in three posts:
 </div>
 </div>
 
-<div id="outline-container-org377fbff" class="outline-2">
-<h2 id="org377fbff">Final exception handler</h2>
-<div class="outline-text-2" id="text-org377fbff">
+<div id="outline-container-orga164ea9" class="outline-2">
+<h2 id="orga164ea9">Final exception handler</h2>
+<div class="outline-text-2" id="text-orga164ea9">
 <p>
 After reading about the <i>uncaught exception handler</i> in <a href="https://serokell.io/blog/uncaught-exception-handling">Serokell's article</a> I've
 added the following snippet to all the services.
@@ -60,9 +60,9 @@ added the following snippet to all the services.
 </div>
 </div>
 
-<div id="outline-container-orgc085bc5" class="outline-2">
-<h2 id="orgc085bc5">Handling signals</h2>
-<div class="outline-text-2" id="text-orgc085bc5">
+<div id="outline-container-org807a09b" class="outline-2">
+<h2 id="org807a09b">Handling signals</h2>
+<div class="outline-text-2" id="text-org807a09b">
 <p>
 To make sure the platform we're running our services on is happy with a service
 it needs to handle <code>SIGTERM</code>, and when running it locally during development,
@@ -93,9 +93,9 @@ that's used to signal whether procession should continue or not.
 </div>
 </div>
 
-<div id="outline-container-org0553b14" class="outline-2">
-<h2 id="org0553b14">Probes</h2>
-<div class="outline-text-2" id="text-org0553b14">
+<div id="outline-container-org8226fdb" class="outline-2">
+<h2 id="org8226fdb">Probes</h2>
+<div class="outline-text-2" id="text-org8226fdb">
 <p>
 Due to some details about how networking works in our platform it's currently
 not possible to use network-based probing. Instead we have to use files. There

@@ -126,9 +126,9 @@ production. I'm hoping someone will find something useful. I'd be even happier
 if I get pointers on how to do this even better.
 </p>
 
-<div id="outline-container-org3790afb" class="outline-2">
-<h2 id="org3790afb">Logging</h2>
-<div class="outline-text-2" id="text-org3790afb">
+<div id="outline-container-org6d67a5e" class="outline-2">
+<h2 id="org6d67a5e">Logging</h2>
+<div class="outline-text-2" id="text-org6d67a5e">
 <p>
 I've written about that earlier in three posts:
 </p>
@@ -141,9 +141,9 @@ I've written about that earlier in three posts:
 </div>
 </div>
 
-<div id="outline-container-org377fbff" class="outline-2">
-<h2 id="org377fbff">Final exception handler</h2>
-<div class="outline-text-2" id="text-org377fbff">
+<div id="outline-container-orga164ea9" class="outline-2">
+<h2 id="orga164ea9">Final exception handler</h2>
+<div class="outline-text-2" id="text-orga164ea9">
 <p>
 After reading about the <i>uncaught exception handler</i> in <a href="https://serokell.io/blog/uncaught-exception-handling">Serokell's article</a> I've
 added the following snippet to all the services.
@@ -165,9 +165,9 @@ added the following snippet to all the services.
 </div>
 </div>
 
-<div id="outline-container-orgc085bc5" class="outline-2">
-<h2 id="orgc085bc5">Handling signals</h2>
-<div class="outline-text-2" id="text-orgc085bc5">
+<div id="outline-container-org807a09b" class="outline-2">
+<h2 id="org807a09b">Handling signals</h2>
+<div class="outline-text-2" id="text-org807a09b">
 <p>
 To make sure the platform we're running our services on is happy with a service
 it needs to handle <code>SIGTERM</code>, and when running it locally during development,
@@ -198,9 +198,9 @@ that's used to signal whether procession should continue or not.
 </div>
 </div>
 
-<div id="outline-container-org0553b14" class="outline-2">
-<h2 id="org0553b14">Probes</h2>
-<div class="outline-text-2" id="text-org0553b14">
+<div id="outline-container-org8226fdb" class="outline-2">
+<h2 id="org8226fdb">Probes</h2>
+<div class="outline-text-2" id="text-org8226fdb">
 <p>
 Due to some details about how networking works in our platform it's currently
 not possible to use network-based probing. Instead we have to use files. There
@@ -261,9 +261,9 @@ is. (I've linked to the specific commits as of this writing.)
 <li><a href="https://gitlab.com/magus/tree-sitter-cabal/-/tree/7d5fa6887ae05a0b06d046f1e754c197c8ad869b">tree-sitter-cabal</a></li>
 </ul>
 
-<div id="outline-container-org8a27db9" class="outline-2">
-<h2 id="org8a27db9">Anonymous nodes and matching in tree-sitter</h2>
-<div class="outline-text-2" id="text-org8a27db9">
+<div id="outline-container-org49f0058" class="outline-2">
+<h2 id="org49f0058">Anonymous nodes and matching in tree-sitter</h2>
+<div class="outline-text-2" id="text-org49f0058">
 <p>
 In the grammar for Cabal I have a rule for sections that like this
 </p>
@@ -387,9 +387,9 @@ string representation of the tree-sitter node.
 </div>
 </div>
 
-<div id="outline-container-orgf3cee92" class="outline-2">
-<h2 id="orgf3cee92">State in a <code>consult</code> source for preview of lines in a buffer</h2>
-<div class="outline-text-2" id="text-orgf3cee92">
+<div id="outline-container-orgb7b6c84" class="outline-2">
+<h2 id="orgb7b6c84">State in a <code>consult</code> source for preview of lines in a buffer</h2>
+<div class="outline-text-2" id="text-orgb7b6c84">
 <p>
 I was struggling with figuring out how to make a good <i>state</i> function in order
 to preview the items in <code>consult-cabal</code>. The <a href="https://github.com/minad/consult">GitHub repo for <code>consult</code></a> doesn't
