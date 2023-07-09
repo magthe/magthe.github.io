@@ -12,6 +12,111 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <header class="site-header" role="banner"><h1 class="title">Magnus web site</h1><h2 class="subtitle">Random stuff</h2></header>
+<div class="post-date">09 Jul 2023</div><h1 class="post-title"><a href="https://magnus.therning.org/2023-07-09-general.el-and-two-ways-to-define-keybindings.html">general.el and two ways to define keybindings</a></h1>
+<p>
+When I abandoned <a href="https://www.spacemacs.org/">spacemacs</a> I really wanted to duplicate its keybindings using
+<code>SPC</code> as leader key and per-mode bindings available by pressing <code>,</code>. I found a
+nice setup using <a href="https://github.com/noctuid/general.el">general.el</a> in <a href="https://github.com/tshu-w/.emacs.d/">Tianshu Wang's Emacs config</a>. I made only minor
+modification and ended up with the following setup.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> <span class="org-constant">general</span>
+  <span class="org-builtin">:after</span> <span class="org-rainbow-delimiters-depth-2">(</span>evil evil-easymotion<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-builtin">:config</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>general-evil-setup<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>general-auto-unbind-keys<span class="org-rainbow-delimiters-depth-2">)</span>
+
+  <span class="org-rainbow-delimiters-depth-2">(</span>general-define-key
+   <span class="org-builtin">:states</span> '<span class="org-rainbow-delimiters-depth-3">(</span>normal insert motion visual emacs<span class="org-rainbow-delimiters-depth-3">)</span>
+   <span class="org-builtin">:keymaps</span> 'override
+   <span class="org-builtin">:prefix-map</span> 'tyrant-map
+   <span class="org-builtin">:prefix</span> <span class="org-string">"SPC"</span>
+   <span class="org-builtin">:non-normal-prefix</span> <span class="org-string">"M-SPC"</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">general-create-definer</span> mes/tyrant-def <span class="org-builtin">:keymaps</span> 'tyrant-map<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">mes/tyrant-def</span> <span class="org-string">""</span> nil<span class="org-rainbow-delimiters-depth-2">)</span>
+
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">general-create-definer</span> mes/despot-def
+    <span class="org-builtin">:states</span> '<span class="org-rainbow-delimiters-depth-3">(</span>normal insert motion visual emacs<span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-builtin">:keymaps</span> 'override
+    <span class="org-builtin">:major-modes</span> t
+    <span class="org-builtin">:prefix</span> <span class="org-string">","</span>
+    <span class="org-builtin">:non-normal-prefix</span> <span class="org-string">"M-,"</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">mes/despot-def</span> <span class="org-string">""</span> nil<span class="org-rainbow-delimiters-depth-2">)</span>
+
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">general-def</span> universal-argument-map
+    <span class="org-string">"SPC u"</span> 'universal-argument-more<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+One slightly surprising thing I found out is that two different ways to define
+keybindings can be used, one seems to work on both top and mode level, the other
+only on mode level.
+</p>
+
+<div id="outline-container-orgcb12477" class="outline-2">
+<h2 id="orgcb12477">Top-level keybindings (<code>SPC</code>)</h2>
+<div class="outline-text-2" id="text-orgcb12477">
+<p>
+At the top-level, i.e. when using <code>mes/tyrant-def</code>, I need to use a <code>cons</code> based
+configuration. This is part of my top-level keybindings:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">mes/tyrant-def</span>
+  <span class="org-string">"SPC"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"M-x"</span> . execute-extended-command<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"TAB"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"latest buffer"</span> . mode-line-other-buffer<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"!"</span> 'shell-command
+  <span class="org-string">"/"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"search"</span> . consult-ripgrep<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"u"</span> 'universal-argument
+
+  <span class="org-string">"b"</span> <span class="org-rainbow-delimiters-depth-2">(</span>cons <span class="org-string">"bufs"</span> <span class="org-rainbow-delimiters-depth-3">(</span>make-sparse-keymap<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"bb"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"switch"</span> . consult-buffer<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"bc"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"close"</span> . kill-this-buffer<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"be"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"erase"</span> . erase-buffer<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"bs"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"scratch"</span> . scratch-buffer<span class="org-rainbow-delimiters-depth-2">)</span>
+
+  <span class="org-comment-delimiter">;; </span><span class="org-comment">....</span>
+  <span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+When it's done this way <a href="https://github.com/justbur/emacs-which-key">which-key</a> picks up the descriptive strings.
+</p>
+
+<p>
+It did take me a while to figure out that this config style was necessary. Again
+<a href="https://github.com/tshu-w/.emacs.d/">Tianshu Wang's Emacs config</a> was what led me right.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org7f651e5" class="outline-2">
+<h2 id="org7f651e5">Mode-level keybindings (<code>,</code>)</h2>
+<div class="outline-text-2" id="text-org7f651e5">
+<p>
+At the mode-level, i.e. using <code>mes/despot-def</code>, I've found that I can, almost
+always, define keybindings following the documentation of <a href="https://github.com/noctuid/general.el">general.el</a>. Here's the
+keybindings I have for <code>nix-mode</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">mes/despot-def</span> nix-mode-map
+  <span class="org-string">"="</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-builtin">:ignore</span> t <span class="org-builtin">:wk</span> <span class="org-string">"format"</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"=b"</span> '<span class="org-rainbow-delimiters-depth-2">(</span>nix-format-buffer <span class="org-builtin">:wk</span> <span class="org-string">"buffer"</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+Just the other day I found that AUCTeX must be doing something with it's keymaps
+and I have to use the <code>cons</code>-based configuration style for its keymaps.
+</p>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> </div>
+
 <div class="post-date">26 Apr 2023</div><h1 class="post-title"><a href="https://magnus.therning.org/2023-04-26-some-practical-haskell.html">Some practical Haskell</a></h1>
 <p>
 As I'm nearing the end of my time with my current employer I thought I'd put
@@ -705,107 +810,6 @@ snippets can easily be converted to other ways of configuring Emacs.
 
 </div>
 </div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-cabal.html">cabal</a> <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-tree-sitter.html">tree-sitter</a> </div>
-
-<div class="post-date">03 Mar 2023</div><h1 class="post-title"><a href="https://magnus.therning.org/2023-03-03-per-project-xref-history-in-emacs.html">Per-project xref history in Emacs</a></h1>
-<p>
-When I write code I jump around in the code quite a bit, as I'm sure many other
-developers do. The ability to jump to the definition of a function, or a type,
-is invaluable when trying to understand code. In Emacs the built-in <a href="https://www.gnu.org/software/emacs/manual/html_node/emacs/Xref.html">xref package</a>
-provides the basic functionality for this, with many other packages providing
-their custom functions for looking up identifiers. This works beautifully except
-for one thing, there's only one global stack for keeping track of how you've
-jumped around.
-</p>
-
-<p>
-Well, that used to be the case.
-</p>
-
-<p>
-As I tend to have multiple projects open at a time I used to find it very
-confusing when I pop positions off the <code>xref</code> stack and all of a sudden find
-myself in another project. It would be so much nicer to have a per-project
-stack.
-</p>
-
-<p>
-I've only known of one solution for this, the <a href="https://github.com/nex3/perspective-el">perspective package</a>, but as I've
-been building <a href="https://magnus.therning.org/2022-07-09-playing-with-setting-up-emacs.html">my own Emacs config</a> I wanted to see if there were other options.
-It turns out there is one (almost) built into Emacs 29.
-</p>
-
-<p>
-In Emacs 29 there's built-in support for having per-window <code>xref</code> stacks, and
-the way that's done allows one to extend it further. There's now a variable,
-<code>xref-history-storage</code>, that controls access to the <code>xref</code> stack. The default is
-still a global stack (when the variable is set to <code>#'xref-global-history</code>), but
-to get per-window stacks one sets it to <code>#'xref-window-local-history</code>.
-</p>
-
-<p>
-After finding this out I thought I'd try to write my own, implementing
-per-project <code>xref</code> stacks (for <a href="https://github.com/bbatsov/projectile">projectile</a>).
-</p>
-
-<p>
-The function should take one optional argument, <code>new-value</code>, if it's provided
-the stack should be updated and if not, it should be returned. That is,
-something like this
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">projectile-param-xref-history</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-type">&amp;optional</span> new-value<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-doc">"Return project-local xref history for the current projectile.</span>
-
-<span class="org-doc">Override existing value with NEW-VALUE if it's set."</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">if</span> new-value
-      <span class="org-rainbow-delimiters-depth-3">(</span>projectile-param-set-parameter 'xref--history new-value<span class="org-rainbow-delimiters-depth-3">)</span>
-    <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">or</span> <span class="org-rainbow-delimiters-depth-4">(</span>projectile-param-get-parameter 'xref--history<span class="org-rainbow-delimiters-depth-4">)</span>
-        <span class="org-rainbow-delimiters-depth-4">(</span>projectile-param-set-parameter 'xref--history <span class="org-rainbow-delimiters-depth-5">(</span>xref--make-xref-history<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-Now I only had to write the two functions <code>projectile-param-get-parameter</code> and
-<code>projectile-param-set-parameter</code>. I thought a rather straight forward option
-would be to use a hashtable and store values under a tuple comprising the
-project name and the parameter passed in.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defvar</span> <span class="org-variable-name">projectile-params--store</span> <span class="org-rainbow-delimiters-depth-2">(</span>make-hash-table <span class="org-builtin">:test</span> 'equal<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-doc">"The store of project parameters."</span><span class="org-rainbow-delimiters-depth-1">)</span>
-
-<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">projectile-param-get-parameter</span> <span class="org-rainbow-delimiters-depth-2">(</span>param<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-doc">"Return project parameter PARAM, or nil if unset."</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">let</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>key <span class="org-rainbow-delimiters-depth-5">(</span>cons <span class="org-rainbow-delimiters-depth-6">(</span>projectile-project-name<span class="org-rainbow-delimiters-depth-6">)</span> param<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
-    <span class="org-rainbow-delimiters-depth-3">(</span>gethash key projectile-params--store nil<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-
-<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">projectile-param-set-parameter</span> <span class="org-rainbow-delimiters-depth-2">(</span>param value<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-doc">"Set the project parameter PARAM to VALUE."</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">let</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>key <span class="org-rainbow-delimiters-depth-5">(</span>cons <span class="org-rainbow-delimiters-depth-6">(</span>projectile-project-name<span class="org-rainbow-delimiters-depth-6">)</span> param<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
-    <span class="org-rainbow-delimiters-depth-3">(</span>puthash key value projectile-params--store<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  value<span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-Then I tried it out by setting <code>xref-history-storage</code>
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">setq</span> xref-history-storage #'projectile-param-xref-history<span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-and so far it's been working well.
-</p>
-
-<p>
-The full code is <a href="https://gitlab.com/magus/my-emacs-pkgs/-/blob/main/my-projectile-params/my-projectile-params.el">here</a>.
-</p>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-xref.html">xref</a> <a href="https://magnus.therning.org/tag-projectile.html">projectile</a> </div>
 <div id="archive">
 <a href="https://magnus.therning.org/archive.html">Other posts</a>
 </div>
