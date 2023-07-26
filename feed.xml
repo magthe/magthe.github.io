@@ -4,7 +4,100 @@
 <title><![CDATA[Magnus web site]]></title>
 <description><![CDATA[Magnus web site]]></description>
 <link>https://magnus.therning.org/</link>
-<lastBuildDate>Sun, 09 Jul 2023 12:58:02 +0200</lastBuildDate>
+<lastBuildDate>Wed, 26 Jul 2023 11:41:55 +0200</lastBuildDate>
+<item>
+  <title><![CDATA[Making keymaps prettier with general.el]]></title>
+  <description><![CDATA[
+<p>
+After my previous post on <a href="https://magnus.therning.org/2023-07-09-general.el-and-two-ways-to-define-keybindings.html">defining keymaps using general.el</a> I revisited some of
+my setup in order to make some package keymaps prettier when displayed by
+<a href="https://github.com/justbur/emacs-which-key">which-key</a>. The keymaps defined by packages are typically don't contain any
+description of the bindings, so <code>which-key</code> ends up displaying the name of the
+function bound to the key. It's not always easy to remember what a function does
+based just on its name, and sometimes the names are so long that <code>which-key</code>
+cuts the name short and all you see is a bunch of keybindings for seemingly the
+same function.
+</p>
+
+<p>
+The only remedy I've found is to re-define the keybindings decorating them with
+descriptions that (hopefully) are easier to understand than the function name.
+(At least, this way I only have myself to blame if it's a bad description.)
+</p>
+
+<p>
+One such keymap that I use somewhat frequently, and where the function names
+often confuse me is <code>evil-mc-key-map</code> from <a href="https://github.com/gabesoft/evil-mc">evil-mc</a>. The keymap is bound at <code>g .</code>
+in evil's normal and visual modes, and it also contains a few bindings using
+control (<code>C-</code>) and meta (<code>M-</code>) which I think would be better placed under
+sub-keymaps.
+</p>
+
+<p>
+I decided to group the "make and go" functions under <code>g . m</code> and the "skip and
+go" function under <code>g . s</code>. The rest I'm just giving descriptions. <code>general.el</code>
+makes it easy both to overwrite already existing bindings, but adding
+descriptions, and to add new ones, all in one call to <code>general-def</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">general-def</span> evil-mc-key-map
+  <span class="org-builtin">:states</span> '<span class="org-rainbow-delimiters-depth-2">(</span>normal visual<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.A"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"make end sel"</span> . evil-mc-make-cursor-in-visual-selection-end<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.I"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"make beg sel"</span> . evil-mc-make-cursor-in-visual-selection-beg<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.a"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"make all"</span> . evil-mc-make-all-cursors<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.q"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"undo all"</span> . evil-mc-undo-all-cursors<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.u"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"undo last"</span> . evil-mc-undo-last-added-cursor<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g. RET"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"make here"</span> . evil-mc-make-cursor-here<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.p"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"pause"</span> . evil-mc-pause-cursors<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.r"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"resume"</span> . evil-mc-resume-cursors<span class="org-rainbow-delimiters-depth-2">)</span>
+
+  <span class="org-string">"g.m"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-builtin">:ignore</span> t <span class="org-builtin">:wk</span> <span class="org-string">"make &amp; go"</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.m$"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to last cur"</span> . evil-mc-make-and-goto-last-cursor<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.m0"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to first cur"</span> . evil-mc-make-and-goto-first-cursor<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.mC"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to prev cur"</span> . evil-mc-make-and-goto-prev-cursor<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.mc"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to next cur"</span> . evil-mc-make-and-goto-next-cursor<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.mh"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to prev match"</span> . evil-mc-make-and-goto-prev-match<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.mj"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to next line"</span> . evil-mc-make-cursor-move-next-line<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.mk"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to prev line"</span> . evil-mc-make-cursor-move-prev-line<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.ml"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to next match"</span> . evil-mc-make-and-goto-next-match<span class="org-rainbow-delimiters-depth-2">)</span>
+
+  <span class="org-string">"g.s"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-builtin">:ignore</span> t <span class="org-builtin">:wk</span> <span class="org-string">"skip &amp; go"</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.sC"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to prev cur"</span> . evil-mc-skip-and-goto-prev-cursor<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.sc"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to next cur"</span> . evil-mc-skip-and-goto-next-cursor<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.sh"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to prev match"</span> . evil-mc-skip-and-goto-prev-match<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.sl"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to next match"</span> . evil-mc-skip-and-goto-next-match<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+Finally I want to remove the bindings that weren't overwritten. <code>general.el</code>
+makes that easy too with <code>general-undbind</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">general-unbind</span> '<span class="org-rainbow-delimiters-depth-2">(</span>normal visual<span class="org-rainbow-delimiters-depth-2">)</span> evil-mc-key-map
+  <span class="org-string">"g. C-n"</span> <span class="org-string">"g. C-S-n"</span>
+  <span class="org-string">"g. C-u"</span> <span class="org-string">"g. C-S-u"</span>
+  <span class="org-string">"g. C-p"</span> <span class="org-string">"g. C-r"</span>
+  <span class="org-string">"g. M-N"</span> <span class="org-string">"g. M-n"</span>
+  <span class="org-string">"g.N"</span> <span class="org-string">"g.O"</span> <span class="org-string">"g.n"</span> <span class="org-string">"g.o"</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+Yes, this is a bit of work, and so far I've only done this for a few keymaps
+(those containing bindings I use frequently and/or find difficult to remember).
+So far I've found it worth the cost.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-general.el.html">general.el</a> </div>
+]]></description>
+  <category><![CDATA[emacs]]></category>
+  <category><![CDATA[general.el]]></category>
+  <link>https://magnus.therning.org/2023-07-26-making-keymaps-prettier-with-general.el.html</link>
+  <guid>https://magnus.therning.org/2023-07-26-making-keymaps-prettier-with-general.el.html</guid>
+  <pubDate>Wed, 26 Jul 2023 10:56:00 +0200</pubDate>
+</item>
 <item>
   <title><![CDATA[general.el and two ways to define keybindings]]></title>
   <description><![CDATA[
@@ -1343,128 +1436,6 @@ above made the implementation nice and straight forward.
   <link>https://magnus.therning.org/2023-01-29-a-take-on-log-messages.html</link>
   <guid>https://magnus.therning.org/2023-01-29-a-take-on-log-messages.html</guid>
   <pubDate>Sun, 29 Jan 2023 22:12:00 +0100</pubDate>
-</item>
-<item>
-  <title><![CDATA[Composing instances using <tt>deriving via</tt>]]></title>
-  <description><![CDATA[
-<p>
-Today I watched the very good, and short, video from Tweag on how to <a href="https://www.youtube.com/watch?v=UZaQuSIrO6s">Avoid
-boilerplate instances with -XDerivingVia</a>. It made me realise that I've read
-about this before, but then the topic was on reducing boilerplate with MTL-style
-code.
-</p>
-
-<p>
-Given that I'd forgotten about it I'm writing this mostly as a note to myself.
-</p>
-
-<div id="outline-container-orgd2c4425" class="outline-2">
-<h2 id="orgd2c4425">The example from the Tweag video, slightly changed</h2>
-<div class="outline-text-2" id="text-orgd2c4425">
-<p>
-The code for making film ratings into a <code>Monoid</code>, when translated to the UK,
-would look something like this:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell">{-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-
-module DeriveMonoid <span class="org-tree-sitter-hl-faceXkeyword">where</span>
-
-<span class="org-tree-sitter-hl-faceXkeyword">newtype</span> <span class="org-tree-sitter-hl-faceXtype">Supremum</span> <span class="org-tree-sitter-hl-faceXtype">a</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXconstructor">MkSup</span> <span class="org-tree-sitter-hl-faceXtype">a</span>
-    <span class="org-tree-sitter-hl-faceXkeyword">deriving</span> <span class="org-tree-sitter-hl-faceXkeyword">stock</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">Bounded</span><span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">Eq</span><span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">Ord</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
-    <span class="org-tree-sitter-hl-faceXkeyword">deriving</span> <span class="org-tree-sitter-hl-faceXkeyword">newtype</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">Show</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
-
-<span class="org-tree-sitter-hl-faceXkeyword">instance</span> <span class="org-tree-sitter-hl-faceXtype">Ord</span> <span class="org-tree-sitter-hl-faceXtype">a</span> <span class="org-tree-sitter-hl-faceXoperator">=&gt;</span> <span class="org-tree-sitter-hl-faceXtype">Semigroup</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">Supremum</span> <span class="org-tree-sitter-hl-faceXtype">a</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXkeyword">where</span>
-    <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXoperator">&lt;&gt;</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXvariable">max</span>
-
-<span class="org-tree-sitter-hl-faceXkeyword">instance</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">Bounded</span> <span class="org-tree-sitter-hl-faceXtype">a</span><span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">Ord</span> <span class="org-tree-sitter-hl-faceXtype">a</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXoperator">=&gt;</span> <span class="org-tree-sitter-hl-faceXtype">Monoid</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">Supremum</span> <span class="org-tree-sitter-hl-faceXtype">a</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXkeyword">where</span>
-    <span class="org-tree-sitter-hl-faceXfunction"><span class="org-tree-sitter-hl-faceXvariable">mempty</span></span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXvariable">minBound</span>
-
-<span class="org-tree-sitter-hl-faceXkeyword">data</span> <span class="org-tree-sitter-hl-faceXtype">FilmClassification</span>
-    <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXconstructor">Universal</span>
-    <span class="org-tree-sitter-hl-faceXoperator">|</span> <span class="org-tree-sitter-hl-faceXconstructor">ParentalGuidance</span>
-    <span class="org-tree-sitter-hl-faceXoperator">|</span> <span class="org-tree-sitter-hl-faceXconstructor">Suitable12</span>
-    <span class="org-tree-sitter-hl-faceXoperator">|</span> <span class="org-tree-sitter-hl-faceXconstructor">Suitable15</span>
-    <span class="org-tree-sitter-hl-faceXoperator">|</span> <span class="org-tree-sitter-hl-faceXconstructor">Adults</span>
-    <span class="org-tree-sitter-hl-faceXoperator">|</span> <span class="org-tree-sitter-hl-faceXconstructor">Restricted18</span>
-    <span class="org-tree-sitter-hl-faceXkeyword">deriving</span> <span class="org-tree-sitter-hl-faceXkeyword">stock</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">Bounded</span><span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">Eq</span><span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">Ord</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
-    <span class="org-tree-sitter-hl-faceXkeyword">deriving</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">Monoid</span><span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">Semigroup</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXkeyword">via</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">Supremum</span> <span class="org-tree-sitter-hl-faceXtype">FilmClassification</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
-</pre>
-</div>
-</div>
-</div>
-
-<div id="outline-container-org698756b" class="outline-2">
-<h2 id="org698756b">Composing by deriving</h2>
-<div class="outline-text-2" id="text-org698756b">
-<p>
-First let's write up a silly class for writing to <code>stdout</code>, a single operation will do.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-tree-sitter-hl-faceXkeyword">class</span> <span class="org-tree-sitter-hl-faceXtype">Monad</span> <span class="org-tree-sitter-hl-faceXtype">m</span> <span class="org-tree-sitter-hl-faceXoperator">=&gt;</span> <span class="org-tree-sitter-hl-faceXtype">StdoutWriter</span> <span class="org-tree-sitter-hl-faceXtype">m</span> <span class="org-tree-sitter-hl-faceXkeyword">where</span>
-    <span class="org-tree-sitter-hl-faceXtype"><span class="org-tree-sitter-hl-faceXvariable">writeStdoutLn</span></span> <span class="org-tree-sitter-hl-faceXoperator">::</span> <span class="org-tree-sitter-hl-faceXtype">String</span> <span class="org-tree-sitter-hl-faceXoperator">-&gt;</span> <span class="org-tree-sitter-hl-faceXtype">m</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">()</span></span>
-</pre>
-</div>
-
-<p>
-Then we'll need a type to attach the implementation to.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-tree-sitter-hl-faceXkeyword">newtype</span> <span class="org-tree-sitter-hl-faceXtype">SimpleStdoutWriter</span> <span class="org-tree-sitter-hl-faceXtype">m</span> <span class="org-tree-sitter-hl-faceXtype">a</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXconstructor">SimpleStdoutWriter</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">m</span> <span class="org-tree-sitter-hl-faceXtype">a</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
-    <span class="org-tree-sitter-hl-faceXkeyword">deriving</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">Functor</span><span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">Applicative</span><span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">Monad</span><span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">MonadIO</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
-</pre>
-</div>
-
-<p>
-and of course an implementation
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-tree-sitter-hl-faceXkeyword">instance</span> <span class="org-tree-sitter-hl-faceXtype">MonadIO</span> <span class="org-tree-sitter-hl-faceXtype">m</span> <span class="org-tree-sitter-hl-faceXoperator">=&gt;</span> <span class="org-tree-sitter-hl-faceXtype">StdoutWriter</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">SimpleStdoutWriter</span> <span class="org-tree-sitter-hl-faceXtype">m</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXkeyword">where</span>
-    <span class="org-tree-sitter-hl-faceXfunction"><span class="org-tree-sitter-hl-faceXvariable">writeStdoutLn</span></span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXfunction"><span class="org-tree-sitter-hl-faceXvariable">liftIO</span></span> <span class="org-tree-sitter-hl-faceXoperator">.</span> <span class="org-tree-sitter-hl-faceXfunction"><span class="org-tree-sitter-hl-faceXvariable">putStrLn</span></span>
-</pre>
-</div>
-
-<p>
-Now let's create an app environment based on <code>ReaderT</code> and use <code>deriving via</code> to
-give it an implementation of <code>StdoutWriter</code> via <code>SimpleStdoutWriter</code>.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-tree-sitter-hl-faceXkeyword">newtype</span> <span class="org-tree-sitter-hl-faceXtype">AppEnv</span> <span class="org-tree-sitter-hl-faceXtype">a</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXconstructor">AppEnv</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">{</span></span><span class="org-tree-sitter-hl-faceXvariable">unAppEnv</span> <span class="org-tree-sitter-hl-faceXoperator">::</span> <span class="org-tree-sitter-hl-faceXtype">ReaderT</span> <span class="org-tree-sitter-hl-faceXtype">Int</span> <span class="org-tree-sitter-hl-faceXtype">IO</span> <span class="org-tree-sitter-hl-faceXtype">a</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">}</span></span>
-    <span class="org-tree-sitter-hl-faceXkeyword">deriving</span>
-        <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span> <span class="org-tree-sitter-hl-faceXtype">Functor</span>
-        <span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">Applicative</span>
-        <span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">Monad</span>
-        <span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">MonadIO</span>
-        <span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">MonadReader</span> <span class="org-tree-sitter-hl-faceXtype">Int</span>
-        <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
-    <span class="org-tree-sitter-hl-faceXkeyword">deriving</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">StdoutWriter</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXkeyword">via</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">SimpleStdoutWriter</span> <span class="org-tree-sitter-hl-faceXtype">AppEnv</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
-</pre>
-</div>
-
-<p>
-Then a quick test to show that it actually works.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-ghci">λ&gt; runReaderT (unAppEnv $ writeStdoutLn "hello, world!") 0
-hello, world!
-</pre>
-</div>
-</div>
-</div>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-monad_transformers.html">monad_transformers</a> </div>
-]]></description>
-  <category><![CDATA[haskell]]></category>
-  <category><![CDATA[monad_transformers]]></category>
-  <link>https://magnus.therning.org/2023-01-15-composing-instances-using-~deriving-via~.html</link>
-  <guid>https://magnus.therning.org/2023-01-15-composing-instances-using-~deriving-via~.html</guid>
-  <pubDate>Sun, 15 Jan 2023 18:34:00 +0100</pubDate>
 </item>
 </channel>
 </rss>

@@ -12,6 +12,91 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <header class="site-header" role="banner"><h1 class="title">Magnus web site</h1><h2 class="subtitle">Random stuff</h2></header>
+<div class="post-date">26 Jul 2023</div><h1 class="post-title"><a href="https://magnus.therning.org/2023-07-26-making-keymaps-prettier-with-general.el.html">Making keymaps prettier with general.el</a></h1>
+<p>
+After my previous post on <a href="https://magnus.therning.org/2023-07-09-general.el-and-two-ways-to-define-keybindings.html">defining keymaps using general.el</a> I revisited some of
+my setup in order to make some package keymaps prettier when displayed by
+<a href="https://github.com/justbur/emacs-which-key">which-key</a>. The keymaps defined by packages are typically don't contain any
+description of the bindings, so <code>which-key</code> ends up displaying the name of the
+function bound to the key. It's not always easy to remember what a function does
+based just on its name, and sometimes the names are so long that <code>which-key</code>
+cuts the name short and all you see is a bunch of keybindings for seemingly the
+same function.
+</p>
+
+<p>
+The only remedy I've found is to re-define the keybindings decorating them with
+descriptions that (hopefully) are easier to understand than the function name.
+(At least, this way I only have myself to blame if it's a bad description.)
+</p>
+
+<p>
+One such keymap that I use somewhat frequently, and where the function names
+often confuse me is <code>evil-mc-key-map</code> from <a href="https://github.com/gabesoft/evil-mc">evil-mc</a>. The keymap is bound at <code>g .</code>
+in evil's normal and visual modes, and it also contains a few bindings using
+control (<code>C-</code>) and meta (<code>M-</code>) which I think would be better placed under
+sub-keymaps.
+</p>
+
+<p>
+I decided to group the "make and go" functions under <code>g . m</code> and the "skip and
+go" function under <code>g . s</code>. The rest I'm just giving descriptions. <code>general.el</code>
+makes it easy both to overwrite already existing bindings, but adding
+descriptions, and to add new ones, all in one call to <code>general-def</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">general-def</span> evil-mc-key-map
+  <span class="org-builtin">:states</span> '<span class="org-rainbow-delimiters-depth-2">(</span>normal visual<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.A"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"make end sel"</span> . evil-mc-make-cursor-in-visual-selection-end<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.I"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"make beg sel"</span> . evil-mc-make-cursor-in-visual-selection-beg<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.a"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"make all"</span> . evil-mc-make-all-cursors<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.q"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"undo all"</span> . evil-mc-undo-all-cursors<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.u"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"undo last"</span> . evil-mc-undo-last-added-cursor<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g. RET"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"make here"</span> . evil-mc-make-cursor-here<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.p"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"pause"</span> . evil-mc-pause-cursors<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.r"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"resume"</span> . evil-mc-resume-cursors<span class="org-rainbow-delimiters-depth-2">)</span>
+
+  <span class="org-string">"g.m"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-builtin">:ignore</span> t <span class="org-builtin">:wk</span> <span class="org-string">"make &amp; go"</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.m$"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to last cur"</span> . evil-mc-make-and-goto-last-cursor<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.m0"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to first cur"</span> . evil-mc-make-and-goto-first-cursor<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.mC"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to prev cur"</span> . evil-mc-make-and-goto-prev-cursor<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.mc"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to next cur"</span> . evil-mc-make-and-goto-next-cursor<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.mh"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to prev match"</span> . evil-mc-make-and-goto-prev-match<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.mj"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to next line"</span> . evil-mc-make-cursor-move-next-line<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.mk"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to prev line"</span> . evil-mc-make-cursor-move-prev-line<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.ml"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to next match"</span> . evil-mc-make-and-goto-next-match<span class="org-rainbow-delimiters-depth-2">)</span>
+
+  <span class="org-string">"g.s"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-builtin">:ignore</span> t <span class="org-builtin">:wk</span> <span class="org-string">"skip &amp; go"</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.sC"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to prev cur"</span> . evil-mc-skip-and-goto-prev-cursor<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.sc"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to next cur"</span> . evil-mc-skip-and-goto-next-cursor<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.sh"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to prev match"</span> . evil-mc-skip-and-goto-prev-match<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.sl"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to next match"</span> . evil-mc-skip-and-goto-next-match<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+Finally I want to remove the bindings that weren't overwritten. <code>general.el</code>
+makes that easy too with <code>general-undbind</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">general-unbind</span> '<span class="org-rainbow-delimiters-depth-2">(</span>normal visual<span class="org-rainbow-delimiters-depth-2">)</span> evil-mc-key-map
+  <span class="org-string">"g. C-n"</span> <span class="org-string">"g. C-S-n"</span>
+  <span class="org-string">"g. C-u"</span> <span class="org-string">"g. C-S-u"</span>
+  <span class="org-string">"g. C-p"</span> <span class="org-string">"g. C-r"</span>
+  <span class="org-string">"g. M-N"</span> <span class="org-string">"g. M-n"</span>
+  <span class="org-string">"g.N"</span> <span class="org-string">"g.O"</span> <span class="org-string">"g.n"</span> <span class="org-string">"g.o"</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+Yes, this is a bit of work, and so far I've only done this for a few keymaps
+(those containing bindings I use frequently and/or find difficult to remember).
+So far I've found it worth the cost.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-general.el.html">general.el</a> </div>
+
 <div class="post-date">09 Jul 2023</div><h1 class="post-title"><a href="https://magnus.therning.org/2023-07-09-general.el-and-two-ways-to-define-keybindings.html">general.el and two ways to define keybindings</a></h1>
 <p>
 When I abandoned <a href="https://www.spacemacs.org/">spacemacs</a> I really wanted to duplicate its keybindings using
@@ -640,176 +725,6 @@ The source can be found <a href="https://gitlab.com/magus/my-emacs-pkgs/-/blob/m
 </div>
 </div>
 <div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-cabal.html">cabal</a> <a href="https://magnus.therning.org/tag-consult.html">consult</a> <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-tree-sitter.html">tree-sitter</a> </div>
-
-<div class="post-date">22 Mar 2023</div><h1 class="post-title"><a href="https://magnus.therning.org/2023-03-22-making-an-emacs-major-mode-for-cabal-using-tree-sitter.html">Making an Emacs major mode for Cabal using tree-sitter</a></h1>
-<p>
-A few days ago I <a href="https://www.reddit.com/r/haskell/comments/11uvhsk/cabal_grammar_for_treesitter_at_least_the/">posted on r/haskell</a> that I'm attempting to put together a <a href="https://cabal.readthedocs.io/en/stable/index.html">Cabal</a>
-grammar for <a href="https://tree-sitter.github.io/tree-sitter/">tree-sitter</a>.  Some things are still missing, but it covers enough to
-start doing what I initially intended: experiment with writing an alternative
-Emacs major mode for Cabal.
-</p>
-
-<p>
-The documentation for the tree-sitter integration is very nice, and several of
-the major modes already have tree-sitter variants, called <code>X-ts-mode</code> where <code>X</code>
-is e.g. <code>python</code>, so putting together the beginning of a major mode wasn't too
-much work.
-</p>
-
-<div id="outline-container-orgaa93cd2" class="outline-2">
-<h2 id="orgaa93cd2">Configuring Emacs</h2>
-<div class="outline-text-2" id="text-orgaa93cd2">
-<p>
-First off I had to make sure the parser for Cabal was installed. The snippet for
-that looks like this<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> <span class="org-constant">treesit</span>
-  <span class="org-builtin">:straight</span> nil
-  <span class="org-builtin">:ensure</span> nil
-  <span class="org-builtin">:commands</span> <span class="org-rainbow-delimiters-depth-2">(</span>treesit-install-language-grammar<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-builtin">:init</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">setq</span> treesit-language-source-alist
-        '<span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>cabal . <span class="org-rainbow-delimiters-depth-5">(</span><span class="org-string">"https://gitlab.com/magus/tree-sitter-cabal.git"</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-With that in place the parser is installed using <code>M-x
-treesit-install-language-grammar</code> and choosing <code>cabal</code>.
-</p>
-
-<p>
-After that I removed my configuration for <code>haskell-mode</code> and added the following
-snippet to get my own major mode into my setup.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> <span class="org-constant">my-cabal-mode</span>
-  <span class="org-builtin">:straight</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-builtin">:type</span> git
-             <span class="org-builtin">:repo</span> <span class="org-string">"git@gitlab.com:magus/my-emacs-pkgs.git"</span>
-             <span class="org-builtin">:branch</span> <span class="org-string">"main"</span>
-             <span class="org-builtin">:files</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-builtin">:defaults</span> <span class="org-string">"my-cabal-mode/*el"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-</div>
-</div>
-
-<div id="outline-container-orge3a4a9a" class="outline-2">
-<h2 id="orge3a4a9a">The major mode and font-locking</h2>
-<div class="outline-text-2" id="text-orge3a4a9a">
-<p>
-The built-in elisp documentation actually has a section on writing a major mode
-with tree-sitter, so it was easy to get started. Setting up the font-locking
-took a bit of trial-and-error, but once I had comments looking the way I wanted
-it was easy to add to the setup. Oh, and yes, there's a section on font-locking
-with tree-sitter in the documentation too. At the moment it looks like this
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defvar</span> <span class="org-variable-name">cabal--treesit-font-lock-setting</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>treesit-font-lock-rules
-   <span class="org-builtin">:feature</span> 'comment
-   <span class="org-builtin">:language</span> 'cabal
-   '<span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>comment<span class="org-rainbow-delimiters-depth-4">)</span> @font-lock-comment-face<span class="org-rainbow-delimiters-depth-3">)</span>
-
-   <span class="org-builtin">:feature</span> 'cabal-version
-   <span class="org-builtin">:language</span> 'cabal
-   '<span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>cabal_version _<span class="org-rainbow-delimiters-depth-4">)</span> @font-lock-constant-face<span class="org-rainbow-delimiters-depth-3">)</span>
-
-   <span class="org-builtin">:feature</span> 'field-name
-   <span class="org-builtin">:language</span> 'cabal
-   '<span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>field_name<span class="org-rainbow-delimiters-depth-4">)</span> @font-lock-keyword-face<span class="org-rainbow-delimiters-depth-3">)</span>
-
-   <span class="org-builtin">:feature</span> 'section-name
-   <span class="org-builtin">:language</span> 'cabal
-   '<span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>section_name<span class="org-rainbow-delimiters-depth-4">)</span> @font-lock-variable-name-face<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-doc">"Tree-sitter font-lock settings."</span><span class="org-rainbow-delimiters-depth-1">)</span>
-
-<span class="org-comment-delimiter">;;;</span><span class="org-comment">###</span><span class="org-comment"><span class="org-warning">autoload</span></span>
-<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">define-derived-mode</span> <span class="org-function-name">my-cabal-mode</span> fundamental-mode <span class="org-string">"My Cabal"</span>
-  <span class="org-doc">"My mode for Cabal files"</span>
-
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">when</span> <span class="org-rainbow-delimiters-depth-3">(</span>treesit-ready-p 'cabal<span class="org-rainbow-delimiters-depth-3">)</span>
-    <span class="org-rainbow-delimiters-depth-3">(</span>treesit-parser-create 'cabal<span class="org-rainbow-delimiters-depth-3">)</span>
-    <span class="org-comment-delimiter">;; </span><span class="org-comment">set up treesit</span>
-    <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">setq-local</span> treesit-font-lock-feature-list
-                '<span class="org-rainbow-delimiters-depth-4">(</span><span class="org-rainbow-delimiters-depth-5">(</span>comment field-name section-name<span class="org-rainbow-delimiters-depth-5">)</span>
-                  <span class="org-rainbow-delimiters-depth-5">(</span>cabal-version<span class="org-rainbow-delimiters-depth-5">)</span>
-                  <span class="org-rainbow-delimiters-depth-5">()</span> <span class="org-rainbow-delimiters-depth-5">()</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
-    <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">setq-local</span> treesit-font-lock-settings cabal--treesit-font-lock-setting<span class="org-rainbow-delimiters-depth-3">)</span>
-    <span class="org-rainbow-delimiters-depth-3">(</span>treesit-major-mode-setup<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-
-<span class="org-comment-delimiter">;;;</span><span class="org-comment">###</span><span class="org-comment"><span class="org-warning">autoload</span></span>
-<span class="org-rainbow-delimiters-depth-1">(</span>add-to-list 'auto-mode-alist '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"\\.cabal\\'"</span> . my-cabal-mode<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-</div>
-</div>
-
-<div id="outline-container-org5251e68" class="outline-2">
-<h2 id="org5251e68">Navigation</h2>
-<div class="outline-text-2" id="text-org5251e68">
-<p>
-One of the reasons I want to experiment with tree-sitter is to use it for code
-navigation. My first attempt is to translate <code>haskell-cabal-section-beginning</code>
-(in <code>haskell-mode</code>, <a href="https://github.com/haskell/haskell-mode/blob/master/haskell-cabal.el#L395">the source</a>) to using tree-sitter. First a convenience
-function to recognise if a node is a section or not
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">cabal--node-is-section-p</span> <span class="org-rainbow-delimiters-depth-2">(</span>n<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-doc">"Predicate to check if treesit node N is a Cabal section."</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>member <span class="org-rainbow-delimiters-depth-3">(</span>treesit-node-type n<span class="org-rainbow-delimiters-depth-3">)</span>
-          '<span class="org-rainbow-delimiters-depth-3">(</span><span class="org-string">"benchmark"</span> <span class="org-string">"common"</span> <span class="org-string">"executable"</span> <span class="org-string">"flag"</span> <span class="org-string">"library"</span> <span class="org-string">"test_suite"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-That makes it possible to use <code>treesit-parent-until</code> to traverse the nodes until
-hitting a section node
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">cabal-goto-beginning-of-section</span> <span class="org-rainbow-delimiters-depth-2">()</span>
-  <span class="org-doc">"Go to the beginning of the current section."</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">when-let*</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>node-at-point <span class="org-rainbow-delimiters-depth-5">(</span>treesit-node-at <span class="org-rainbow-delimiters-depth-6">(</span>point<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
-              <span class="org-rainbow-delimiters-depth-4">(</span>section-node <span class="org-rainbow-delimiters-depth-5">(</span>treesit-parent-until node-at-point #'cabal--node-is-section-p<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
-              <span class="org-rainbow-delimiters-depth-4">(</span>start-pos <span class="org-rainbow-delimiters-depth-5">(</span>treesit-node-start section-node<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
-    <span class="org-rainbow-delimiters-depth-3">(</span>goto-char start-pos<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-And the companion function, to go to the end of a section is very similar
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">cabal-goto-end-of-section</span> <span class="org-rainbow-delimiters-depth-2">()</span>
-  <span class="org-doc">"Go to the end of the current section."</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">when-let*</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>node-at-point <span class="org-rainbow-delimiters-depth-5">(</span>treesit-node-at <span class="org-rainbow-delimiters-depth-6">(</span>point<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
-              <span class="org-rainbow-delimiters-depth-4">(</span>section-node <span class="org-rainbow-delimiters-depth-5">(</span>treesit-parent-until node-at-point #'cabal--node-is-section-p<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
-              <span class="org-rainbow-delimiters-depth-4">(</span>end-pos <span class="org-rainbow-delimiters-depth-5">(</span>treesit-node-end section-node<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
-    <span class="org-rainbow-delimiters-depth-3">(</span>goto-char end-pos<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-</div>
-</div>
-<div id="footnotes">
-<h2 class="footnotes">Footnotes: </h2>
-<div id="text-footnotes">
-
-<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
-I'm using <a href="https://github.com/radian-software/straight.el">straight.el</a> and <code>use-package</code> in my setup, but hopefully the
-snippets can easily be converted to other ways of configuring Emacs.
-</p></div></div>
-
-
-</div>
-</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-cabal.html">cabal</a> <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-tree-sitter.html">tree-sitter</a> </div>
 <div id="archive">
 <a href="https://magnus.therning.org/archive.html">Other posts</a>
 </div>
