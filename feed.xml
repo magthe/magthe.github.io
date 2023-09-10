@@ -4,7 +4,127 @@
 <title><![CDATA[Magnus web site]]></title>
 <description><![CDATA[Magnus web site]]></description>
 <link>https://magnus.therning.org/</link>
-<lastBuildDate>Thu, 27 Jul 2023 04:50:30 +0200</lastBuildDate>
+<lastBuildDate>Sun, 10 Sep 2023 20:41:24 +0200</lastBuildDate>
+<item>
+  <title><![CDATA[Using emacs for the scrollback in terminal multiplexers]]></title>
+  <description><![CDATA[
+<p>
+I should start with saying that I still don't really know if this is a good idea
+or not, but it feels like it's worth trying out at least.
+</p>
+<div id="outline-container-org1ca78e4" class="outline-2">
+<h2 id="org1ca78e4">An irritating limitation in <a href="https://zellij.dev/">Zellij</a>, and a possible solution</h2>
+<div class="outline-text-2" id="text-org1ca78e4">
+<p>
+After seeing it mentioned in an online community I thought it might be worth
+trying out. I'm not really disappointed with <a href="https://github.com/tmux/tmux">tmux</a>, I've been using it for years
+but I actually only use a small part of what it can do. I create tabs, sometimes
+create panes, and I regularly use the scollback functionality to copy output of
+commands I've run earlier.
+</p>
+
+<p>
+Unfortunately, as is reported in a <a href="https://github.com/zellij-org/zellij/issues/947">ticket</a>, Zellij can't select and copy using
+the keyboard. From the discussion in that ticket it seems unlikely it ever will
+be able to. After finding that out I resigned to staying with Tmux &#x2013; I'm not
+ready to go back to using a pointing device to select and copy text in my
+terminal!
+</p>
+
+<p>
+When I was biking to the pool yesterday I realised a thing though: I'm already
+using a tool that is <i>very</i> good at manipulating text using the keyboard. Of
+course I'm talking about Emacs! So if I can just make Emacs start up quickly
+enough I ought to be able to use it for searching, selecting and copying from
+the scrollback buffer. I haven't found a way to do this in Tmu= yet, but
+Zellij has <a href="https://zellij.dev/documentation/keybindings-possible-actions#editscrollback">EditScrollBack</a> so I can at least try it out.
+</p>
+
+<p>
+A nice benefit is that I can cut back on the number of different shortcuts I use
+daily.
+</p>
+</div>
+</div>
+<div id="outline-container-org728fd4c" class="outline-2">
+<h2 id="org728fd4c">My slimmed down Emacs config</h2>
+<div class="outline-text-2" id="text-org728fd4c">
+<p>
+My current <a href="https://gitlab.com/magus/mes">Emacs config</a> starts up in less than 2s, which is good enough as I
+normally start Emacs at most a few times per day. However, if I have to wait 2s
+to open the scrollback buffer I suspect I'll tire very quickly and abandon the
+experiment. So I took my ordinary config and slimmed it down. Cutting away
+things that weren't related to navigation and searching.
+</p>
+
+<p>
+The list of packages is not very long:
+</p>
+
+<ul class="org-ul">
+<li><code>straight</code></li>
+<li><code>use-package</code></li>
+<li><code>evil</code></li>
+<li><code>general</code></li>
+<li><code>which-key</code></li>
+<li><code>vertico</code></li>
+<li><code>orderless</code></li>
+<li><code>marginalia</code></li>
+<li><code>consult</code></li>
+</ul>
+
+<p>
+The first 5 are for usability in general, and the last 4 are bring in the
+functions I use for searching through text.
+</p>
+
+<p>
+The resulting config starts in less than ¼s. That's more than acceptable, I find.
+</p>
+</div>
+</div>
+<div id="outline-container-org44d7ad0" class="outline-2">
+<h2 id="org44d7ad0">Copying to the Wayland clipboard</h2>
+<div class="outline-text-2" id="text-org44d7ad0">
+<p>
+It turns out that copying with `y` in <code>evil</code> does the right thing by default and
+the copied text ends up in the clipboard without any special configuration.
+</p>
+
+<p>
+From Tmux I'm used to being thrown out of copy-mode after copying something.
+While that's sometimes irritating, it's at other times exactly what I want.
+Given that <code>evil-yank</code> does the right thing it was easy to write a function for
+it:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">se/yank-n-kill</span> <span class="org-rainbow-delimiters-depth-2">(</span>beg end<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span> <span class="org-string">"r"</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>evil-yank beg end<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>kill-emacs<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org9e880a9" class="outline-2">
+<h2 id="org9e880a9">The config files</h2>
+<div class="outline-text-2" id="text-org9e880a9">
+<p>
+I'm keeping my dot-files in a private repo, but I put a snapshot of the Emacs
+and Zellij config in a <a href="https://gitlab.com/-/snippets/3595805">snippet</a>.
+</p>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-tmux.html">tmux</a> <a href="https://magnus.therning.org/tag-zellij.html">zellij</a> </div>
+]]></description>
+  <category><![CDATA[emacs]]></category>
+  <category><![CDATA[tmux]]></category>
+  <category><![CDATA[zellij]]></category>
+  <link>https://magnus.therning.org/2023-09-10-using-emacs-for-the-scrollback-in-terminal-multiplexers.html</link>
+  <guid>https://magnus.therning.org/2023-09-10-using-emacs-for-the-scrollback-in-terminal-multiplexers.html</guid>
+  <pubDate>Sun, 10 Sep 2023 13:17:00 +0200</pubDate>
+</item>
 <item>
   <title><![CDATA[Making keymaps prettier with general.el]]></title>
   <description><![CDATA[
@@ -1283,161 +1403,6 @@ A very simple example showing how it could be used would be something like this
   <link>https://magnus.therning.org/2023-02-04-a-take-on-logging.html</link>
   <guid>https://magnus.therning.org/2023-02-04-a-take-on-logging.html</guid>
   <pubDate>Sat, 04 Feb 2023 18:49:00 +0100</pubDate>
-</item>
-<item>
-  <title><![CDATA[A take on log messages]]></title>
-  <description><![CDATA[
-<p>
-At <code>$DAYJOB</code> we use structured logging with rather little actual structure, the only rules are
-</p>
-
-<ol class="org-ol">
-<li>Log to <code>stdout</code>.</li>
-<li>Log one JSON object per line.</li>
-<li>The only required fields are
-<ul class="org-ul">
-<li><code>message</code> - a human readable string describing the event</li>
-<li><code>level</code> - the severity of the event, <code>debug</code>, <code>info</code>, <code>warn</code>, <code>error</code>, or <code>fatal</code>.</li>
-<li><code>timestamp</code> - the time of the event</li>
-<li><code>correlation-id</code> - an ID passed between services to allow to find related events</li>
-</ul></li>
-</ol>
-
-<p>
-Beyond that pretty much anything goes, any other fields that are useful in that
-service, or even in that one log message is OK.
-</p>
-
-<p>
-My first take was very ad-hoc, mostly becuase there were other parts of the
-question "How do I write a service in Haskell, actually?" that needed more
-attention &#x2013; then I read <a href="https://jship.github.io/posts/2022-05-17-announcing-monad-logger-aeson/">Announcing monad-logger-aeson: Structured logging in
-Haskell for cheap</a>. Sure, I'd looked at some of the logging libraries on
-Hackage but not really found anything that seemed like it would fit very well.
-Not until <a href="https://hackage.haskell.org/package/monad-logger-aeson">monad-logger-aeson</a>, that is. Well, at least until I realised it didn't
-quite fit the rules we have.
-</p>
-
-<p>
-It did give me some ideas of how to structure my current rather simple, but very
-awkward to use, current loggging code. This is what I came up with, and after
-using it in a handful services I find it kind of nice to work with. Let me know
-what you think.
-</p>
-
-<div id="outline-container-org7a41693" class="outline-2">
-<h2 id="org7a41693">The log message type</h2>
-<div class="outline-text-2" id="text-org7a41693">
-<p>
-I decided that a log message must always contain the text describing the event.
-It's the one thing that's sure to be known at the point where the developer
-writes the code to log an event. All the other mandatory parts can, and probably
-should as far as possible, be added by the logging library itself. So I ended up
-with this type.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-tree-sitter-hl-faceXkeyword">data</span> <span class="org-tree-sitter-hl-faceXtype">LogMsg</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXtype">Text</span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">[</span></span><span class="org-tree-sitter-hl-faceXtype">Pair</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">]</span></span>
-    <span class="org-tree-sitter-hl-faceXkeyword">deriving</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXtype">Eq</span><span class="org-tree-sitter-hl-faceXpunctuationXdelimiter">,</span> <span class="org-tree-sitter-hl-faceXtype">Show</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
-</pre>
-</div>
-
-<p>
-It should however be easy to add custom parts at the point of logging, so I
-added an operator for that.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXoperator">#+</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXoperator">::</span> <span class="org-tree-sitter-hl-faceXtype">LogMsg</span> <span class="org-tree-sitter-hl-faceXoperator">-&gt;</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">[</span></span><span class="org-tree-sitter-hl-faceXtype">Pair</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">]</span></span> <span class="org-tree-sitter-hl-faceXoperator">-&gt;</span> <span class="org-tree-sitter-hl-faceXtype">LogMsg</span>
-<span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXoperator">#+</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXvariable">msg</span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXvariable">ps0</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXvariable">ps1</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">msg</span></span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">ps0</span></span> <span class="org-tree-sitter-hl-faceXoperator">&lt;&gt;</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">ps1</span></span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
-</pre>
-</div>
-
-<p>
-The ordering is important, i.e. <code>ps0 &lt;&gt; ps1</code>, as <a href="https://hackage.haskell.org/package/monad-logger-aeson">aeson</a>'s <code>object</code> function will
-take the <i>last</i> value for a field and I want to be able to give keys in a log
-message new values by overwriting them later on.
-</p>
-</div>
-</div>
-
-<div id="outline-container-org2d4772f" class="outline-2">
-<h2 id="org2d4772f">Instances to use it with fast-logger</h2>
-<div class="outline-text-2" id="text-org2d4772f">
-<p>
-The previous logging code used <a href="https://hackage.haskell.org/package/fast-logger">fast-logger</a> and it had worked really well so I
-decided to stick with it. Making <code>LogMsg</code> and instance of <code>ToLogStr</code> is key, and
-as the rules require logging of JSON objects it also needs to be an instance of
-<code>ToJSON</code>.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-tree-sitter-hl-faceXkeyword">instance</span> <span class="org-tree-sitter-hl-faceXtype">ToJSON</span> <span class="org-tree-sitter-hl-faceXtype">LogMsg</span> <span class="org-tree-sitter-hl-faceXkeyword">where</span>
-    <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">toJSON</span></span> <span class="org-tree-sitter-hl-faceXvariableXparameter"><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span></span><span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXvariableXparameter">msg</span></span><span class="org-tree-sitter-hl-faceXvariableXparameter"> </span><span class="org-tree-sitter-hl-faceXvariableXparameter"><span class="org-tree-sitter-hl-faceXoperator">:#</span></span><span class="org-tree-sitter-hl-faceXvariableXparameter"> </span><span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXvariableXparameter">ps</span></span><span class="org-tree-sitter-hl-faceXvariableXparameter"><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span></span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">object</span></span> <span class="org-tree-sitter-hl-faceXoperator">$</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">ps</span></span> <span class="org-tree-sitter-hl-faceXoperator">&lt;&gt;</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">[</span></span><span class="org-tree-sitter-hl-faceXstring">"message"</span> <span class="org-tree-sitter-hl-faceXoperator">.=</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">msg</span></span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">]</span></span>
-
-<span class="org-tree-sitter-hl-faceXkeyword">instance</span> <span class="org-tree-sitter-hl-faceXtype">ToLogStr</span> <span class="org-tree-sitter-hl-faceXtype">LogMsg</span> <span class="org-tree-sitter-hl-faceXkeyword">where</span>
-    <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">toLogStr</span></span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXvariableXparameter">msg</span></span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">toLogStr</span></span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">encode</span></span> <span class="org-tree-sitter-hl-faceXvariable">msg</span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXoperator">&lt;&gt;</span> <span class="org-tree-sitter-hl-faceXstring">"\n"</span>
-</pre>
-</div>
-</div>
-</div>
-
-<div id="outline-container-org656d5ed" class="outline-2">
-<h2 id="org656d5ed">Instance to make it easy to log a string</h2>
-<div class="outline-text-2" id="text-org656d5ed">
-<p>
-It's common to just want to log a single string and nothing else, so it's handy
-if <code>LogMsg</code> is an instance of <code>IsString</code>.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-tree-sitter-hl-faceXkeyword">instance</span> <span class="org-tree-sitter-hl-faceXtype">IsString</span> <span class="org-tree-sitter-hl-faceXtype">LogMsg</span> <span class="org-tree-sitter-hl-faceXkeyword">where</span>
-    <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">fromString</span></span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXvariableXparameter">msg</span></span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">pack</span></span> <span class="org-tree-sitter-hl-faceXvariable">msg</span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">[]</span></span>
-</pre>
-</div>
-</div>
-</div>
-
-<div id="outline-container-orga6d25c3" class="outline-2">
-<h2 id="orga6d25c3">Combining log messages</h2>
-<div class="outline-text-2" id="text-orga6d25c3">
-<p>
-When writing the previous logging code I'd regularly felt pain from the lack of
-a nice way to combine log messages. With the definition of <code>LogMsg</code> above it's
-not difficult to come up with reasonable instances for both <code>Semigroup</code> and
-<code>Monoid</code>.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-tree-sitter-hl-faceXkeyword">instance</span> <span class="org-tree-sitter-hl-faceXtype">Semigroup</span> <span class="org-tree-sitter-hl-faceXtype">LogMsg</span> <span class="org-tree-sitter-hl-faceXkeyword">where</span>
-    <span class="org-tree-sitter-hl-faceXstring">""</span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXvariable">ps0</span> <span class="org-tree-sitter-hl-faceXoperator">&lt;&gt;</span> <span class="org-tree-sitter-hl-faceXvariable">msg1</span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXvariable">ps1</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">msg1</span></span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">ps0</span></span> <span class="org-tree-sitter-hl-faceXoperator">&lt;&gt;</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">ps1</span></span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
-    <span class="org-tree-sitter-hl-faceXvariable">msg0</span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXvariable">ps0</span> <span class="org-tree-sitter-hl-faceXoperator">&lt;&gt;</span> <span class="org-tree-sitter-hl-faceXstring">""</span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXvariable">ps1</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">msg0</span></span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">ps0</span></span> <span class="org-tree-sitter-hl-faceXoperator">&lt;&gt;</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">ps1</span></span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
-    <span class="org-tree-sitter-hl-faceXvariable">msg0</span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXvariable">ps0</span> <span class="org-tree-sitter-hl-faceXoperator">&lt;&gt;</span> <span class="org-tree-sitter-hl-faceXvariable">msg1</span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXvariable">ps1</span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">msg0</span></span> <span class="org-tree-sitter-hl-faceXoperator">&lt;&gt;</span> <span class="org-tree-sitter-hl-faceXstring">" - "</span> <span class="org-tree-sitter-hl-faceXoperator">&lt;&gt;</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">msg1</span></span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-tree-sitter-hl-faceXoperator">:#</span> <span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">ps0</span></span> <span class="org-tree-sitter-hl-faceXoperator">&lt;&gt;</span> <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXproperty">ps1</span></span><span class="org-tree-sitter-hl-faceXpunctuationXbracket"><span class="org-rainbow-delimiters-depth-1">)</span></span>
-
-<span class="org-tree-sitter-hl-faceXkeyword">instance</span> <span class="org-tree-sitter-hl-faceXtype">Monoid</span> <span class="org-tree-sitter-hl-faceXtype">LogMsg</span> <span class="org-tree-sitter-hl-faceXkeyword">where</span>
-    <span class="org-tree-sitter-hl-faceXvariable"><span class="org-tree-sitter-hl-faceXfunctionXcall">mempty</span></span> <span class="org-tree-sitter-hl-faceXoperator">=</span> <span class="org-tree-sitter-hl-faceXstring">""</span>
-</pre>
-</div>
-</div>
-</div>
-
-<div id="outline-container-org0b45515" class="outline-2">
-<h2 id="org0b45515">In closing</h2>
-<div class="outline-text-2" id="text-org0b45515">
-<p>
-What's missing above is the automatic handling of the remaining fields. I'll try
-to get back to that part soon. For now I'll just say that the log message API
-above made the implementation nice and straight forward.
-</p>
-</div>
-</div>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-logging.html">logging</a> </div>
-]]></description>
-  <category><![CDATA[haskell]]></category>
-  <category><![CDATA[logging]]></category>
-  <link>https://magnus.therning.org/2023-01-29-a-take-on-log-messages.html</link>
-  <guid>https://magnus.therning.org/2023-01-29-a-take-on-log-messages.html</guid>
-  <pubDate>Sun, 29 Jan 2023 22:12:00 +0100</pubDate>
 </item>
 </channel>
 </rss>

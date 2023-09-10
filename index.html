@@ -12,6 +12,117 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <header class="site-header" role="banner"><h1 class="title">Magnus web site</h1><h2 class="subtitle">Random stuff</h2></header>
+<div class="post-date">10 Sep 2023</div><h1 class="post-title"><a href="https://magnus.therning.org/2023-09-10-using-emacs-for-the-scrollback-in-terminal-multiplexers.html">Using emacs for the scrollback in terminal multiplexers</a></h1>
+<p>
+I should start with saying that I still don't really know if this is a good idea
+or not, but it feels like it's worth trying out at least.
+</p>
+<div id="outline-container-org1ca78e4" class="outline-2">
+<h2 id="org1ca78e4">An irritating limitation in <a href="https://zellij.dev/">Zellij</a>, and a possible solution</h2>
+<div class="outline-text-2" id="text-org1ca78e4">
+<p>
+After seeing it mentioned in an online community I thought it might be worth
+trying out. I'm not really disappointed with <a href="https://github.com/tmux/tmux">tmux</a>, I've been using it for years
+but I actually only use a small part of what it can do. I create tabs, sometimes
+create panes, and I regularly use the scollback functionality to copy output of
+commands I've run earlier.
+</p>
+
+<p>
+Unfortunately, as is reported in a <a href="https://github.com/zellij-org/zellij/issues/947">ticket</a>, Zellij can't select and copy using
+the keyboard. From the discussion in that ticket it seems unlikely it ever will
+be able to. After finding that out I resigned to staying with Tmux &#x2013; I'm not
+ready to go back to using a pointing device to select and copy text in my
+terminal!
+</p>
+
+<p>
+When I was biking to the pool yesterday I realised a thing though: I'm already
+using a tool that is <i>very</i> good at manipulating text using the keyboard. Of
+course I'm talking about Emacs! So if I can just make Emacs start up quickly
+enough I ought to be able to use it for searching, selecting and copying from
+the scrollback buffer. I haven't found a way to do this in Tmu= yet, but
+Zellij has <a href="https://zellij.dev/documentation/keybindings-possible-actions#editscrollback">EditScrollBack</a> so I can at least try it out.
+</p>
+
+<p>
+A nice benefit is that I can cut back on the number of different shortcuts I use
+daily.
+</p>
+</div>
+</div>
+<div id="outline-container-org728fd4c" class="outline-2">
+<h2 id="org728fd4c">My slimmed down Emacs config</h2>
+<div class="outline-text-2" id="text-org728fd4c">
+<p>
+My current <a href="https://gitlab.com/magus/mes">Emacs config</a> starts up in less than 2s, which is good enough as I
+normally start Emacs at most a few times per day. However, if I have to wait 2s
+to open the scrollback buffer I suspect I'll tire very quickly and abandon the
+experiment. So I took my ordinary config and slimmed it down. Cutting away
+things that weren't related to navigation and searching.
+</p>
+
+<p>
+The list of packages is not very long:
+</p>
+
+<ul class="org-ul">
+<li><code>straight</code></li>
+<li><code>use-package</code></li>
+<li><code>evil</code></li>
+<li><code>general</code></li>
+<li><code>which-key</code></li>
+<li><code>vertico</code></li>
+<li><code>orderless</code></li>
+<li><code>marginalia</code></li>
+<li><code>consult</code></li>
+</ul>
+
+<p>
+The first 5 are for usability in general, and the last 4 are bring in the
+functions I use for searching through text.
+</p>
+
+<p>
+The resulting config starts in less than ¼s. That's more than acceptable, I find.
+</p>
+</div>
+</div>
+<div id="outline-container-org44d7ad0" class="outline-2">
+<h2 id="org44d7ad0">Copying to the Wayland clipboard</h2>
+<div class="outline-text-2" id="text-org44d7ad0">
+<p>
+It turns out that copying with `y` in <code>evil</code> does the right thing by default and
+the copied text ends up in the clipboard without any special configuration.
+</p>
+
+<p>
+From Tmux I'm used to being thrown out of copy-mode after copying something.
+While that's sometimes irritating, it's at other times exactly what I want.
+Given that <code>evil-yank</code> does the right thing it was easy to write a function for
+it:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">se/yank-n-kill</span> <span class="org-rainbow-delimiters-depth-2">(</span>beg end<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span> <span class="org-string">"r"</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>evil-yank beg end<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>kill-emacs<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org9e880a9" class="outline-2">
+<h2 id="org9e880a9">The config files</h2>
+<div class="outline-text-2" id="text-org9e880a9">
+<p>
+I'm keeping my dot-files in a private repo, but I put a snapshot of the Emacs
+and Zellij config in a <a href="https://gitlab.com/-/snippets/3595805">snippet</a>.
+</p>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-tmux.html">tmux</a> <a href="https://magnus.therning.org/tag-zellij.html">zellij</a> </div>
+
 <div class="post-date">26 Jul 2023</div><h1 class="post-title"><a href="https://magnus.therning.org/2023-07-26-making-keymaps-prettier-with-general.el.html">Making keymaps prettier with general.el</a></h1>
 <p>
 After my previous post on <a href="https://magnus.therning.org/2023-07-09-general.el-and-two-ways-to-define-keybindings.html">defining keymaps using general.el</a> I revisited some of
@@ -515,217 +626,6 @@ evening before finally asking the question the morning after.
 </div>
 </div>
 <div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-consult.html">consult</a> <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-tree-sitter.html">tree-sitter</a> </div>
-
-<div class="post-date">27 Mar 2023</div><h1 class="post-title"><a href="https://magnus.therning.org/2023-03-27-cabal,-tree-sitter,-and-consult.html">Cabal, tree-sitter, and consult</a></h1>
-<p>
-After my <a href="https://magnus.therning.org/2023-03-22-making-an-emacs-major-mode-for-cabal-using-tree-sitter.html">last post</a> I thought I'd move on to implement the rest of the functions
-in <a href="https://github.com/haskell/haskell-mode">haskell-mode</a>'s major mode for Cabal, functions like
-<code>haskell-cabal-goto-library-section</code> and
-<code>haskell-cabal-goto-executable-section</code>.  Then I realised that what <i>I</i> really
-want is a way to quickly jump to any section, that is, I want <code>consult-cabal</code>!
-</p>
-
-<p>
-What follows is very much a work-in-progress, but hopefully it'll show enough
-promise.
-</p>
-
-<div id="outline-container-org31e7014" class="outline-2">
-<h2 id="org31e7014">Listing the sections</h2>
-<div class="outline-text-2" id="text-org31e7014">
-<p>
-As I have a <code>tree-sitter</code> parse tree to hand it is fairly easy to fetch all the
-nodes corresponding to sections.  Since the <a href="https://magnus.therning.org/2023-03-22-making-an-emacs-major-mode-for-cabal-using-tree-sitter.html">last post</a> I've made some
-improvements to the parser and now the parse tree looks like this (I can
-recommend the function <code>treesit-explore-mode</code> to expore the parse tree, I've
-found it invaluable ever since I realised it existed)
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span>cabal
- ...
- <span class="org-rainbow-delimiters-depth-2">(</span>properties ...<span class="org-rainbow-delimiters-depth-2">)</span>
- <span class="org-rainbow-delimiters-depth-2">(</span>sections
-  <span class="org-rainbow-delimiters-depth-3">(</span>common common <span class="org-rainbow-delimiters-depth-4">(</span>section_name<span class="org-rainbow-delimiters-depth-4">)</span> ...<span class="org-rainbow-delimiters-depth-3">)</span>
-  <span class="org-rainbow-delimiters-depth-3">(</span>library library ...<span class="org-rainbow-delimiters-depth-3">)</span>
-  <span class="org-rainbow-delimiters-depth-3">(</span>executable executable <span class="org-rainbow-delimiters-depth-4">(</span>section_name<span class="org-rainbow-delimiters-depth-4">)</span> ...<span class="org-rainbow-delimiters-depth-3">)</span>
-  ...<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-That is, all the <i>sections</i> are children of the node called <code>sections</code>.
-</p>
-
-<p>
-The function to use for fetching all the nodes is <code>treesit-query-capture</code>, it
-needs a node to start on, which this case should be the full parse tree,
-i.e. <code>(treesit-buffer-root-node 'cabal)</code> and a query string.  Given the
-structure of the parse tree, and that I want to capture all children of
-<code>sections</code>, a query string like this one works
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-string">"(cabal (sections (_)* @section))"</span>
-</pre>
-</div>
-
-<p>
-Finally, by default <code>treesit-query-capture</code> returns a list of tuples of the form
-<code>(&lt;capture&gt; . &lt;node&gt;)</code>, but in this case I only want the list of nodes, so the
-full call will look like this
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span>treesit-query-capture <span class="org-rainbow-delimiters-depth-2">(</span>treesit-buffer-root-node 'cabal<span class="org-rainbow-delimiters-depth-2">)</span>
-                       <span class="org-string">"(cabal (sections (_)* @section))"</span>
-                       nil nil t<span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-</div>
-</div>
-
-<div id="outline-container-orgcead32c" class="outline-2">
-<h2 id="orgcead32c">Hooking it up to consult</h2>
-<div class="outline-text-2" id="text-orgcead32c">
-<p>
-As I envision adding more things to jump to in the future, I decided to make use
-of <code>consult--multi</code>. That in turn means I need to define a "source" for the
-sections. After a bit of digging and rummaging in the <a href="https://github.com/minad/consult/">consult source</a> I put
-together this
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defvar</span> <span class="org-variable-name">consult-cabal--source-section</span>
-  `<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-builtin">:name</span> <span class="org-string">"Sections"</span>
-    <span class="org-builtin">:category</span> location
-    <span class="org-builtin">:action</span> ,#'consult-cabal--section-action
-    <span class="org-builtin">:items</span> ,#'consult-cabal--section-items<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-doc">"Definition of source for Cabal sections."</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-which means I need two functions, <code>consult-cabal--section-action</code> and
-<code>consult-cabal--section-items</code>. I started with the latter.
-</p>
-</div>
-
-<div id="outline-container-org72b3791" class="outline-3">
-<h3 id="org72b3791">Getting section nodes as items for consult</h3>
-<div class="outline-text-3" id="text-org72b3791">
-<p>
-It took me a while to work understand how this would ever be able to work. The
-function that <code>:items</code> point to must return a list of strings, but how would I
-ever be able to use just a string to jump to the correct location?
-</p>
-
-<p>
-The solution is in a comment in the documentation of <code>consult--multi</code>:
-</p>
-
-<blockquote>
-<p>
-:items - List of strings to select from or function returning
- list of strings.  Note that the strings can use text properties
- to carry metadata, which is then available to the :annotate,
- :action and :state functions.
-</p>
-</blockquote>
-
-<p>
-I'd never come across <i>text properties</i> in Emacs before, so at first I
-completely missed those two words. Once I'd looked up the concept in the
-documentation everything fell into place. The function
-<code>consult-cabal--section-items</code> would simply attach the relevant node as a text
-property to the strings in the list.
-</p>
-
-<p>
-My current version, obviously a work-in-progress, takes a list of nodes and
-turns them naïvely into a string and attaches the node. I split it into two functions, like this
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">consult-cabal--section-to-string</span> <span class="org-rainbow-delimiters-depth-2">(</span>section<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-doc">"Convert a single SECTION node to a string."</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>propertize <span class="org-rainbow-delimiters-depth-3">(</span>format <span class="org-string">"%S"</span> section<span class="org-rainbow-delimiters-depth-3">)</span>
-              <span class="org-builtin">:treesit-node</span> section<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-
-<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">consult-cabal--section-items</span> <span class="org-rainbow-delimiters-depth-2">()</span>
-  <span class="org-doc">"Fetch all sections as a list of strings ."</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">let</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>section-nodes <span class="org-rainbow-delimiters-depth-5">(</span>treesit-query-capture <span class="org-rainbow-delimiters-depth-6">(</span>treesit-buffer-root-node 'cabal<span class="org-rainbow-delimiters-depth-6">)</span>
-                                              <span class="org-string">"(cabal (sections (_)* @section))"</span>
-                                              nil nil t<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
-    <span class="org-rainbow-delimiters-depth-3">(</span>mapcar #'consult-cabal--section-to-string section-nodes<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-</div>
-</div>
-
-<div id="outline-container-org83dad10" class="outline-3">
-<h3 id="org83dad10">Implementing the action</h3>
-<div class="outline-text-3" id="text-org83dad10">
-<p>
-The action function is called with the selected item, i.e. with the string and
-its properties. That means, to jump to the selected section the function needs
-to extract the node property, <code>:treesit-node</code>, and jump to the start of it. the
-function to use is <code>get-text-property</code>, and as all characters in the string will
-have to property I just picked the first one. The jumping itself I copied from
-the navigation functions I'd written before.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">consult-cabal--section-action</span> <span class="org-rainbow-delimiters-depth-2">(</span>item<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-doc">"Go to the section referenced by ITEM."</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">when-let*</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>node <span class="org-rainbow-delimiters-depth-5">(</span>get-text-property 0 <span class="org-builtin">:treesit-node</span> item<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
-              <span class="org-rainbow-delimiters-depth-4">(</span>new-pos <span class="org-rainbow-delimiters-depth-5">(</span>treesit-node-start node<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
-    <span class="org-rainbow-delimiters-depth-3">(</span>goto-char new-pos<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-</div>
-</div>
-
-<div id="outline-container-orgb0e4e64" class="outline-3">
-<h3 id="orgb0e4e64">Tying it together with <code>consult--multi</code></h3>
-<div class="outline-text-3" id="text-orgb0e4e64">
-<p>
-The final function, <code>consult-cabal</code>, looks like this
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">consult-cabal</span> <span class="org-rainbow-delimiters-depth-2">()</span>
-  <span class="org-doc">"Choose a Cabal construct and jump to it."</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>consult--multi '<span class="org-rainbow-delimiters-depth-3">(</span>consult-cabal--source-section<span class="org-rainbow-delimiters-depth-3">)</span>
-                  <span class="org-builtin">:sort</span> nil<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-</div>
-</div>
-</div>
-
-<div id="outline-container-org8f2653b" class="outline-2">
-<h2 id="org8f2653b">Conclusions and where to find the code</h2>
-<div class="outline-text-2" id="text-org8f2653b">
-<p>
-The end result works as intended, but it's very rough. I'll try to improve it a
-bit more. In particular I want
-</p>
-
-<ol class="org-ol">
-<li>better strings - <code>(format "%S" node)</code> is all right to start with, but in the
-long run I want strings that describe the sections, and</li>
-<li>preview as I navigate between items - AFAIU this is what the <code>:state</code> field
-is for, but I still haven't looked into how it works.</li>
-</ol>
-
-<p>
-The source can be found <a href="https://gitlab.com/magus/my-emacs-pkgs/-/blob/main/my-cabal-mode/consult-cabal.el">here</a>.
-</p>
-</div>
-</div>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-cabal.html">cabal</a> <a href="https://magnus.therning.org/tag-consult.html">consult</a> <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-tree-sitter.html">tree-sitter</a> </div>
 <div id="archive">
 <a href="https://magnus.therning.org/archive.html">Other posts</a>
 </div>
