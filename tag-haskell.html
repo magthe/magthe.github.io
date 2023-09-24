@@ -12,6 +12,65 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <h1 class="title">Posts tagged "haskell":</h1>
+<div class="post-date">24 Sep 2023</div><h1 class="post-title"><a href="https://magnus.therning.org/2023-09-24-defining-a-formatter-for-cabal-files.html">Defining a formatter for Cabal files</a></h1>
+<p>
+For Haskell code I can use <code>lsp-format-buffer</code> and <code>lsp-format-region</code> to keep
+my file looking nice, but I've never found a function for doing the same for
+Cabal files. There's a nice command line tool, <code>cabal-fmt</code>, for doing it, but it
+means having to jump to a terminal. It would of course be nicer to satisfy my
+needs for aesthetics directly from Emacs. A few times I've thought of writing
+the function myself, I mean how hard can it be? But then I've forgotten about it
+until then next time I'm editing a Cabal file.
+</p>
+
+<p>
+A few days ago I noticed <a href="https://github.com/purcell/emacs-reformatter">emacs-reformatter</a> popping up in my feeds. That
+removed all reasons to procrastinate. It turned out to be very easy to set up.
+</p>
+
+<p>
+The package doesn't have a recipe for <a href="https://github.com/radian-software/straight.el">straight.el</a> so it needs a <code>:straight</code>
+section. Also, the naming of the file in the package doesn't fit the package
+name, hence the slightly different name in the <code>use-package</code> declaration:<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> <span class="org-constant">reformatter</span>
+  <span class="org-builtin">:straight</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-builtin">:host</span> github
+             <span class="org-builtin">:repo</span> <span class="org-string">"purcell/emacs-reformatter"</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+Now the formatter can be defined
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">reformatter-define</span> cabal-format
+  <span class="org-builtin">:program</span> <span class="org-string">"cabal-fmt"</span>
+  <span class="org-builtin">:args</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"/dev/stdin"</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+in order to create functions for formatting, <code>cabal-format-buffer</code> and
+<code>cabal-format-region</code>, as well as a minor mode for formatting on saving a Cabal
+file.
+</p>
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+
+<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+I'm sure it's possible to use <code>:files</code> to deal with this, but I'm not sure
+how and my naive guess failed. It's OK to be like this until I figure it out
+properly.
+</p></div></div>
+
+
+</div>
+</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> </div>
+
 <div class="post-date">26 Apr 2023</div><h1 class="post-title"><a href="https://magnus.therning.org/2023-04-26-some-practical-haskell.html">Some practical Haskell</a></h1>
 <p>
 As I'm nearing the end of my time with my current employer I thought I'd put
