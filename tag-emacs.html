@@ -12,6 +12,102 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <h1 class="title">Posts tagged "emacs":</h1>
+<div class="post-date">30 Sep 2023</div><h1 class="post-title"><a href="https://magnus.therning.org/2023-09-30-using-emacs-as-$editor.html">Using Emacs as $EDITOR</a></h1>
+<p>
+Continuing on from my experiment with <a href="https://magnus.therning.org/2023-09-10-using-emacs-for-the-scrollback-in-terminal-multiplexers.html">using Emacs as for scrollback in my
+terminal multiplexer</a> I thought I'd try to use it as my <code>$EDITOR</code> as well.
+</p>
+
+<p>
+The two main cases where I use <code>$EDITOR</code> is
+</p>
+
+<ol class="org-ol">
+<li>The occasional use of <code>git</code> on the command line, rebasing or writing a commit
+message, and</li>
+<li>Use of ZSH's <code>edit-command-line</code> functionality.</li>
+</ol>
+
+<p>
+To make sure Emacs is starting up quickly enough I'm using the same small setup
+I created for the scrollback editing, so I'm now setting <code>EDITOR</code> like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell"><span class="org-builtin">export</span> <span class="org-variable-name">EDITOR</span>=<span class="org-string">"emacs -nw --init-directory ~/.se.d"</span>
+</pre>
+</div>
+
+<p>
+Now that I want to use the same setup for editing I can't really jump into
+<code>view-mode</code> every time Emacs starts so I have to be a bit more clever. The
+following bit won't do
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span>add-hook 'find-file-hook #'view-mode<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+I need to somehow find out what starts Emacs and then only modify the hook when
+needed. Unfortunately I haven't found anything that reveals that Emacs is
+started by <a href="https://zellij.dev/">zellij</a>. Creating a separate little script that <span class="underline">zellij</span> uses would be
+an option, of course, but for now I've opted to make it the default and instead
+refrain from adding the hook in the other two use cases.
+</p>
+
+<p>
+ZSH doesn't make it easy to find out that it's <code>edit-command-line</code> either, but
+as I've observed that the command line sometimes doesn't look right after
+leaving the editor I wanted to call <code>redisplay</code> to fix it up. That means I need
+to have a function anyway, so using an environment variable becomes an easy way
+to check if Emacs is being used to edit the command line.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell"><span class="org-keyword">function</span> <span class="org-function-name">se-edit-command-line</span><span class="org-rainbow-delimiters-depth-1">()</span> <span class="org-rainbow-delimiters-depth-1">{</span>
+    <span class="org-builtin">export</span> <span class="org-variable-name">SE_SKIP_VIEW</span>=y
+    zle edit-command-line
+    <span class="org-builtin">unset</span> SE_SKIP_VIEW
+    zle redisplay
+<span class="org-rainbow-delimiters-depth-1">}</span>
+zle -N se-edit-command-line
+
+<span class="org-builtin">bindkey</span> -M vicmd <span class="org-string">'^V'</span> se-edit-command-line
+<span class="org-builtin">bindkey</span> -M viins <span class="org-string">'^V'</span> se-edit-command-line
+</pre>
+</div>
+
+<p>
+Unfortunately is seems <code>zle edit-command-line</code> doesn't pass on non-exported
+environment variables, hence the explicit <code>export</code> and <code>unset</code>.
+</p>
+
+<p>
+When <span class="underline">git</span> starts an editor it sets a few environment variables so it was easy
+to just pick one that is set in both cases I care about. I picked
+<code>GIT_EXEC_PATH</code>.
+</p>
+
+<p>
+With these things in place I changed the slim setup to only add the hook when
+neither of the environment variables are present
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">unless</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">or</span> <span class="org-rainbow-delimiters-depth-3">(</span>getenv <span class="org-string">"SE_SKIP_VIEW"</span><span class="org-rainbow-delimiters-depth-3">)</span>
+            <span class="org-rainbow-delimiters-depth-3">(</span>getenv <span class="org-string">"GIT_EXEC_PATH"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>add-hook 'find-file-hook #'view-mode<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+Hopefully this works out well enough that I won't feel a need to go back to
+using <a href="https://neovim.io/">Neovim</a> as my <code>$EDITOR</code>.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-zsh.html">zsh</a> </div>
+
 <div class="post-date">24 Sep 2023</div><h1 class="post-title"><a href="https://magnus.therning.org/2023-09-24-defining-a-formatter-for-cabal-files.html">Defining a formatter for Cabal files</a></h1>
 <p>
 For Haskell code I can use <code>lsp-format-buffer</code> and <code>lsp-format-region</code> to keep

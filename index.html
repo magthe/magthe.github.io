@@ -12,6 +12,102 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <header class="site-header" role="banner"><h1 class="title">Magnus web site</h1><h2 class="subtitle">Random stuff</h2></header>
+<div class="post-date">30 Sep 2023</div><h1 class="post-title"><a href="https://magnus.therning.org/2023-09-30-using-emacs-as-$editor.html">Using Emacs as $EDITOR</a></h1>
+<p>
+Continuing on from my experiment with <a href="https://magnus.therning.org/2023-09-10-using-emacs-for-the-scrollback-in-terminal-multiplexers.html">using Emacs as for scrollback in my
+terminal multiplexer</a> I thought I'd try to use it as my <code>$EDITOR</code> as well.
+</p>
+
+<p>
+The two main cases where I use <code>$EDITOR</code> is
+</p>
+
+<ol class="org-ol">
+<li>The occasional use of <code>git</code> on the command line, rebasing or writing a commit
+message, and</li>
+<li>Use of ZSH's <code>edit-command-line</code> functionality.</li>
+</ol>
+
+<p>
+To make sure Emacs is starting up quickly enough I'm using the same small setup
+I created for the scrollback editing, so I'm now setting <code>EDITOR</code> like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell"><span class="org-builtin">export</span> <span class="org-variable-name">EDITOR</span>=<span class="org-string">"emacs -nw --init-directory ~/.se.d"</span>
+</pre>
+</div>
+
+<p>
+Now that I want to use the same setup for editing I can't really jump into
+<code>view-mode</code> every time Emacs starts so I have to be a bit more clever. The
+following bit won't do
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span>add-hook 'find-file-hook #'view-mode<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+I need to somehow find out what starts Emacs and then only modify the hook when
+needed. Unfortunately I haven't found anything that reveals that Emacs is
+started by <a href="https://zellij.dev/">zellij</a>. Creating a separate little script that <span class="underline">zellij</span> uses would be
+an option, of course, but for now I've opted to make it the default and instead
+refrain from adding the hook in the other two use cases.
+</p>
+
+<p>
+ZSH doesn't make it easy to find out that it's <code>edit-command-line</code> either, but
+as I've observed that the command line sometimes doesn't look right after
+leaving the editor I wanted to call <code>redisplay</code> to fix it up. That means I need
+to have a function anyway, so using an environment variable becomes an easy way
+to check if Emacs is being used to edit the command line.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell"><span class="org-keyword">function</span> <span class="org-function-name">se-edit-command-line</span><span class="org-rainbow-delimiters-depth-1">()</span> <span class="org-rainbow-delimiters-depth-1">{</span>
+    <span class="org-builtin">export</span> <span class="org-variable-name">SE_SKIP_VIEW</span>=y
+    zle edit-command-line
+    <span class="org-builtin">unset</span> SE_SKIP_VIEW
+    zle redisplay
+<span class="org-rainbow-delimiters-depth-1">}</span>
+zle -N se-edit-command-line
+
+<span class="org-builtin">bindkey</span> -M vicmd <span class="org-string">'^V'</span> se-edit-command-line
+<span class="org-builtin">bindkey</span> -M viins <span class="org-string">'^V'</span> se-edit-command-line
+</pre>
+</div>
+
+<p>
+Unfortunately is seems <code>zle edit-command-line</code> doesn't pass on non-exported
+environment variables, hence the explicit <code>export</code> and <code>unset</code>.
+</p>
+
+<p>
+When <span class="underline">git</span> starts an editor it sets a few environment variables so it was easy
+to just pick one that is set in both cases I care about. I picked
+<code>GIT_EXEC_PATH</code>.
+</p>
+
+<p>
+With these things in place I changed the slim setup to only add the hook when
+neither of the environment variables are present
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">unless</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">or</span> <span class="org-rainbow-delimiters-depth-3">(</span>getenv <span class="org-string">"SE_SKIP_VIEW"</span><span class="org-rainbow-delimiters-depth-3">)</span>
+            <span class="org-rainbow-delimiters-depth-3">(</span>getenv <span class="org-string">"GIT_EXEC_PATH"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>add-hook 'find-file-hook #'view-mode<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+Hopefully this works out well enough that I won't feel a need to go back to
+using <a href="https://neovim.io/">Neovim</a> as my <code>$EDITOR</code>.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-zsh.html">zsh</a> </div>
+
 <div class="post-date">24 Sep 2023</div><h1 class="post-title"><a href="https://magnus.therning.org/2023-09-24-defining-a-formatter-for-cabal-files.html">Defining a formatter for Cabal files</a></h1>
 <p>
 For Haskell code I can use <code>lsp-format-buffer</code> and <code>lsp-format-region</code> to keep
@@ -321,111 +417,6 @@ Yes, this is a bit of work, and so far I've only done this for a few keymaps
 (those containing bindings I use frequently and/or find difficult to remember).
 So far I've found it worth the cost.
 </p>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-general.el.html">general.el</a> </div>
-
-<div class="post-date">09 Jul 2023</div><h1 class="post-title"><a href="https://magnus.therning.org/2023-07-09-general.el-and-two-ways-to-define-keybindings.html">general.el and two ways to define keybindings</a></h1>
-<p>
-When I abandoned <a href="https://www.spacemacs.org/">spacemacs</a> I really wanted to duplicate its keybindings using
-<code>SPC</code> as leader key and per-mode bindings available by pressing <code>,</code>. I found a
-nice setup using <a href="https://github.com/noctuid/general.el">general.el</a> in <a href="https://github.com/tshu-w/.emacs.d/">Tianshu Wang's Emacs config</a>. I made only minor
-modification and ended up with the following setup.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> <span class="org-constant">general</span>
-  <span class="org-builtin">:after</span> <span class="org-rainbow-delimiters-depth-2">(</span>evil evil-easymotion<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-builtin">:config</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>general-evil-setup<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>general-auto-unbind-keys<span class="org-rainbow-delimiters-depth-2">)</span>
-
-  <span class="org-rainbow-delimiters-depth-2">(</span>general-define-key
-   <span class="org-builtin">:states</span> '<span class="org-rainbow-delimiters-depth-3">(</span>normal insert motion visual emacs<span class="org-rainbow-delimiters-depth-3">)</span>
-   <span class="org-builtin">:keymaps</span> 'override
-   <span class="org-builtin">:prefix-map</span> 'tyrant-map
-   <span class="org-builtin">:prefix</span> <span class="org-string">"SPC"</span>
-   <span class="org-builtin">:non-normal-prefix</span> <span class="org-string">"M-SPC"</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">general-create-definer</span> mes/tyrant-def <span class="org-builtin">:keymaps</span> 'tyrant-map<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">mes/tyrant-def</span> <span class="org-string">""</span> nil<span class="org-rainbow-delimiters-depth-2">)</span>
-
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">general-create-definer</span> mes/despot-def
-    <span class="org-builtin">:states</span> '<span class="org-rainbow-delimiters-depth-3">(</span>normal insert motion visual emacs<span class="org-rainbow-delimiters-depth-3">)</span>
-    <span class="org-builtin">:keymaps</span> 'override
-    <span class="org-builtin">:major-modes</span> t
-    <span class="org-builtin">:prefix</span> <span class="org-string">","</span>
-    <span class="org-builtin">:non-normal-prefix</span> <span class="org-string">"M-,"</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">mes/despot-def</span> <span class="org-string">""</span> nil<span class="org-rainbow-delimiters-depth-2">)</span>
-
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">general-def</span> universal-argument-map
-    <span class="org-string">"SPC u"</span> 'universal-argument-more<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-One slightly surprising thing I found out is that two different ways to define
-keybindings can be used, one seems to work on both top and mode level, the other
-only on mode level.
-</p>
-
-<div id="outline-container-orgca8de18" class="outline-2">
-<h2 id="orgca8de18">Top-level keybindings (<code>SPC</code>)</h2>
-<div class="outline-text-2" id="text-orgca8de18">
-<p>
-At the top-level, i.e. when using <code>mes/tyrant-def</code>, I need to use a <code>cons</code> based
-configuration. This is part of my top-level keybindings:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">mes/tyrant-def</span>
-  <span class="org-string">"SPC"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"M-x"</span> . execute-extended-command<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-string">"TAB"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"latest buffer"</span> . mode-line-other-buffer<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-string">"!"</span> 'shell-command
-  <span class="org-string">"/"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"search"</span> . consult-ripgrep<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-string">"u"</span> 'universal-argument
-
-  <span class="org-string">"b"</span> <span class="org-rainbow-delimiters-depth-2">(</span>cons <span class="org-string">"bufs"</span> <span class="org-rainbow-delimiters-depth-3">(</span>make-sparse-keymap<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-string">"bb"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"switch"</span> . consult-buffer<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-string">"bc"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"close"</span> . kill-this-buffer<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-string">"be"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"erase"</span> . erase-buffer<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-string">"bs"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"scratch"</span> . scratch-buffer<span class="org-rainbow-delimiters-depth-2">)</span>
-
-  <span class="org-comment-delimiter">;; </span><span class="org-comment">....</span>
-  <span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-When it's done this way <a href="https://github.com/justbur/emacs-which-key">which-key</a> picks up the descriptive strings.
-</p>
-
-<p>
-It did take me a while to figure out that this config style was necessary. Again
-<a href="https://github.com/tshu-w/.emacs.d/">Tianshu Wang's Emacs config</a> was what led me right.
-</p>
-</div>
-</div>
-
-<div id="outline-container-org80efaa0" class="outline-2">
-<h2 id="org80efaa0">Mode-level keybindings (<code>,</code>)</h2>
-<div class="outline-text-2" id="text-org80efaa0">
-<p>
-At the mode-level, i.e. using <code>mes/despot-def</code>, I've found that I can, almost
-always, define keybindings following the documentation of <a href="https://github.com/noctuid/general.el">general.el</a>. Here's the
-keybindings I have for <code>nix-mode</code>:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">mes/despot-def</span> nix-mode-map
-  <span class="org-string">"="</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-builtin">:ignore</span> t <span class="org-builtin">:wk</span> <span class="org-string">"format"</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-string">"=b"</span> '<span class="org-rainbow-delimiters-depth-2">(</span>nix-format-buffer <span class="org-builtin">:wk</span> <span class="org-string">"buffer"</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-Just the other day I found that AUCTeX must be doing something with it's keymaps
-and I have to use the <code>cons</code>-based configuration style for its keymaps.
-</p>
-</div>
-</div>
 <div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-general.el.html">general.el</a> </div>
 <div id="archive">
 <a href="https://magnus.therning.org/archive.html">Other posts</a>

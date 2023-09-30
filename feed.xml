@@ -4,7 +4,111 @@
 <title><![CDATA[Magnus web site]]></title>
 <description><![CDATA[Magnus web site]]></description>
 <link>https://magnus.therning.org/</link>
-<lastBuildDate>Sun, 24 Sep 2023 11:08:59 +0200</lastBuildDate>
+<lastBuildDate>Sat, 30 Sep 2023 17:11:04 +0200</lastBuildDate>
+<item>
+  <title><![CDATA[Using Emacs as $EDITOR]]></title>
+  <description><![CDATA[
+<p>
+Continuing on from my experiment with <a href="https://magnus.therning.org/2023-09-10-using-emacs-for-the-scrollback-in-terminal-multiplexers.html">using Emacs as for scrollback in my
+terminal multiplexer</a> I thought I'd try to use it as my <code>$EDITOR</code> as well.
+</p>
+
+<p>
+The two main cases where I use <code>$EDITOR</code> is
+</p>
+
+<ol class="org-ol">
+<li>The occasional use of <code>git</code> on the command line, rebasing or writing a commit
+message, and</li>
+<li>Use of ZSH's <code>edit-command-line</code> functionality.</li>
+</ol>
+
+<p>
+To make sure Emacs is starting up quickly enough I'm using the same small setup
+I created for the scrollback editing, so I'm now setting <code>EDITOR</code> like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell"><span class="org-builtin">export</span> <span class="org-variable-name">EDITOR</span>=<span class="org-string">"emacs -nw --init-directory ~/.se.d"</span>
+</pre>
+</div>
+
+<p>
+Now that I want to use the same setup for editing I can't really jump into
+<code>view-mode</code> every time Emacs starts so I have to be a bit more clever. The
+following bit won't do
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span>add-hook 'find-file-hook #'view-mode<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+I need to somehow find out what starts Emacs and then only modify the hook when
+needed. Unfortunately I haven't found anything that reveals that Emacs is
+started by <a href="https://zellij.dev/">zellij</a>. Creating a separate little script that <span class="underline">zellij</span> uses would be
+an option, of course, but for now I've opted to make it the default and instead
+refrain from adding the hook in the other two use cases.
+</p>
+
+<p>
+ZSH doesn't make it easy to find out that it's <code>edit-command-line</code> either, but
+as I've observed that the command line sometimes doesn't look right after
+leaving the editor I wanted to call <code>redisplay</code> to fix it up. That means I need
+to have a function anyway, so using an environment variable becomes an easy way
+to check if Emacs is being used to edit the command line.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell"><span class="org-keyword">function</span> <span class="org-function-name">se-edit-command-line</span><span class="org-rainbow-delimiters-depth-1">()</span> <span class="org-rainbow-delimiters-depth-1">{</span>
+    <span class="org-builtin">export</span> <span class="org-variable-name">SE_SKIP_VIEW</span>=y
+    zle edit-command-line
+    <span class="org-builtin">unset</span> SE_SKIP_VIEW
+    zle redisplay
+<span class="org-rainbow-delimiters-depth-1">}</span>
+zle -N se-edit-command-line
+
+<span class="org-builtin">bindkey</span> -M vicmd <span class="org-string">'^V'</span> se-edit-command-line
+<span class="org-builtin">bindkey</span> -M viins <span class="org-string">'^V'</span> se-edit-command-line
+</pre>
+</div>
+
+<p>
+Unfortunately is seems <code>zle edit-command-line</code> doesn't pass on non-exported
+environment variables, hence the explicit <code>export</code> and <code>unset</code>.
+</p>
+
+<p>
+When <span class="underline">git</span> starts an editor it sets a few environment variables so it was easy
+to just pick one that is set in both cases I care about. I picked
+<code>GIT_EXEC_PATH</code>.
+</p>
+
+<p>
+With these things in place I changed the slim setup to only add the hook when
+neither of the environment variables are present
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">unless</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">or</span> <span class="org-rainbow-delimiters-depth-3">(</span>getenv <span class="org-string">"SE_SKIP_VIEW"</span><span class="org-rainbow-delimiters-depth-3">)</span>
+            <span class="org-rainbow-delimiters-depth-3">(</span>getenv <span class="org-string">"GIT_EXEC_PATH"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>add-hook 'find-file-hook #'view-mode<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+Hopefully this works out well enough that I won't feel a need to go back to
+using <a href="https://neovim.io/">Neovim</a> as my <code>$EDITOR</code>.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-zsh.html">zsh</a> </div>
+]]></description>
+  <category><![CDATA[emacs]]></category>
+  <category><![CDATA[zsh]]></category>
+  <link>https://magnus.therning.org/2023-09-30-using-emacs-as-$editor.html</link>
+  <guid>https://magnus.therning.org/2023-09-30-using-emacs-as-$editor.html</guid>
+  <pubDate>Sat, 30 Sep 2023 15:24:00 +0200</pubDate>
+</item>
 <item>
   <title><![CDATA[Defining a formatter for Cabal files]]></title>
   <description><![CDATA[
@@ -1192,116 +1296,6 @@ snippets can easily be converted to other ways of configuring Emacs.
   <link>https://magnus.therning.org/2023-03-22-making-an-emacs-major-mode-for-cabal-using-tree-sitter.html</link>
   <guid>https://magnus.therning.org/2023-03-22-making-an-emacs-major-mode-for-cabal-using-tree-sitter.html</guid>
   <pubDate>Wed, 22 Mar 2023 15:39:00 +0100</pubDate>
-</item>
-<item>
-  <title><![CDATA[Per-project xref history in Emacs]]></title>
-  <description><![CDATA[
-<p>
-When I write code I jump around in the code quite a bit, as I'm sure many other
-developers do. The ability to jump to the definition of a function, or a type,
-is invaluable when trying to understand code. In Emacs the built-in <a href="https://www.gnu.org/software/emacs/manual/html_node/emacs/Xref.html">xref package</a>
-provides the basic functionality for this, with many other packages providing
-their custom functions for looking up identifiers. This works beautifully except
-for one thing, there's only one global stack for keeping track of how you've
-jumped around.
-</p>
-
-<p>
-Well, that used to be the case.
-</p>
-
-<p>
-As I tend to have multiple projects open at a time I used to find it very
-confusing when I pop positions off the <code>xref</code> stack and all of a sudden find
-myself in another project. It would be so much nicer to have a per-project
-stack.
-</p>
-
-<p>
-I've only known of one solution for this, the <a href="https://github.com/nex3/perspective-el">perspective package</a>, but as I've
-been building <a href="https://magnus.therning.org/2022-07-09-playing-with-setting-up-emacs.html">my own Emacs config</a> I wanted to see if there were other options.
-It turns out there is one (almost) built into Emacs 29.
-</p>
-
-<p>
-In Emacs 29 there's built-in support for having per-window <code>xref</code> stacks, and
-the way that's done allows one to extend it further. There's now a variable,
-<code>xref-history-storage</code>, that controls access to the <code>xref</code> stack. The default is
-still a global stack (when the variable is set to <code>#'xref-global-history</code>), but
-to get per-window stacks one sets it to <code>#'xref-window-local-history</code>.
-</p>
-
-<p>
-After finding this out I thought I'd try to write my own, implementing
-per-project <code>xref</code> stacks (for <a href="https://github.com/bbatsov/projectile">projectile</a>).
-</p>
-
-<p>
-The function should take one optional argument, <code>new-value</code>, if it's provided
-the stack should be updated and if not, it should be returned. That is,
-something like this
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">projectile-param-xref-history</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-type">&amp;optional</span> new-value<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-doc">"Return project-local xref history for the current projectile.</span>
-
-<span class="org-doc">Override existing value with NEW-VALUE if it's set."</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">if</span> new-value
-      <span class="org-rainbow-delimiters-depth-3">(</span>projectile-param-set-parameter 'xref--history new-value<span class="org-rainbow-delimiters-depth-3">)</span>
-    <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">or</span> <span class="org-rainbow-delimiters-depth-4">(</span>projectile-param-get-parameter 'xref--history<span class="org-rainbow-delimiters-depth-4">)</span>
-        <span class="org-rainbow-delimiters-depth-4">(</span>projectile-param-set-parameter 'xref--history <span class="org-rainbow-delimiters-depth-5">(</span>xref--make-xref-history<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-Now I only had to write the two functions <code>projectile-param-get-parameter</code> and
-<code>projectile-param-set-parameter</code>. I thought a rather straight forward option
-would be to use a hashtable and store values under a tuple comprising the
-project name and the parameter passed in.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defvar</span> <span class="org-variable-name">projectile-params--store</span> <span class="org-rainbow-delimiters-depth-2">(</span>make-hash-table <span class="org-builtin">:test</span> 'equal<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-doc">"The store of project parameters."</span><span class="org-rainbow-delimiters-depth-1">)</span>
-
-<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">projectile-param-get-parameter</span> <span class="org-rainbow-delimiters-depth-2">(</span>param<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-doc">"Return project parameter PARAM, or nil if unset."</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">let</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>key <span class="org-rainbow-delimiters-depth-5">(</span>cons <span class="org-rainbow-delimiters-depth-6">(</span>projectile-project-name<span class="org-rainbow-delimiters-depth-6">)</span> param<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
-    <span class="org-rainbow-delimiters-depth-3">(</span>gethash key projectile-params--store nil<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-
-<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">projectile-param-set-parameter</span> <span class="org-rainbow-delimiters-depth-2">(</span>param value<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-doc">"Set the project parameter PARAM to VALUE."</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">let</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>key <span class="org-rainbow-delimiters-depth-5">(</span>cons <span class="org-rainbow-delimiters-depth-6">(</span>projectile-project-name<span class="org-rainbow-delimiters-depth-6">)</span> param<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
-    <span class="org-rainbow-delimiters-depth-3">(</span>puthash key value projectile-params--store<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  value<span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-Then I tried it out by setting <code>xref-history-storage</code>
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">setq</span> xref-history-storage #'projectile-param-xref-history<span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-and so far it's been working well.
-</p>
-
-<p>
-The full code is <a href="https://gitlab.com/magus/my-emacs-pkgs/-/blob/main/my-projectile-params/my-projectile-params.el">here</a>.
-</p>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-xref.html">xref</a> <a href="https://magnus.therning.org/tag-projectile.html">projectile</a> </div>
-]]></description>
-  <category><![CDATA[emacs]]></category>
-  <category><![CDATA[xref]]></category>
-  <category><![CDATA[projectile]]></category>
-  <link>https://magnus.therning.org/2023-03-03-per-project-xref-history-in-emacs.html</link>
-  <guid>https://magnus.therning.org/2023-03-03-per-project-xref-history-in-emacs.html</guid>
-  <pubDate>Fri, 03 Mar 2023 21:38:00 +0100</pubDate>
 </item>
 </channel>
 </rss>
