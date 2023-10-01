@@ -12,6 +12,205 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <h1 class="title">Posts tagged "emacs":</h1>
+<div class="post-date">01 Oct 2023</div><h1 class="post-title"><a href="https://magnus.therning.org/2023-10-01-how-i-use-emacs.html">How I use Emacs</a></h1>
+<p>
+I've recently written <a href="https://magnus.therning.org/2023-09-10-using-emacs-for-the-scrollback-in-terminal-multiplexers.html">two</a> <a href="https://magnus.therning.org/2023-09-30-using-emacs-as-$editor.html">posts</a> about my attempts to use a slimmed down Emacs
+setup for some very specific use cases. I'be put both posts on Reddit, <a href="https://www.reddit.com/r/emacs/comments/16f7rbn/using_emacs_for_the_scrollback_in_terminal/">here</a> and
+<a href="https://www.reddit.com/r/emacs/comments/16w9bvh/using_emacs_as_editor/">here</a>, and in both cases the majority of comments have been telling me that I
+should use <code>emacsclient</code>. I know they have good intentions &#x2013; they want to share
+insight they've gained and benefit from on a daily basis. However, no matter how
+many Emacs devotees point out the benefits of <code>emacsclient</code> I'm not about to
+start using it. This post is an attempt to answer why that is.
+</p>
+
+<p>
+Up front I want to clarify a few things:
+</p>
+
+<ol class="org-ol">
+<li>Yes, I know how to use <code>emacsclient</code>, and</li>
+<li>yes, I know it is a good way to, in a way, improve Emacs startup time,<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup> and</li>
+<li>yes, I know how to turn on <code>server-mode</code> in Emacs, and finally</li>
+<li>yes, I know how to run Emacs using a user unit for SystemD.</li>
+</ol>
+
+<p>
+With that out of the way, here are the two ways I use Emacs
+</p>
+
+<ol class="org-ol">
+<li>As my starting point for work, i.e. writing code, keeping notes, tracking
+time, and writing my daily work journal.</li>
+<li>As my editor of ephemeral files.<sup><a id="fnr.2" class="footref" href="#fn.2" role="doc-backlink">2</a></sup></li>
+</ol>
+
+<p>
+The next two sections explain more about these two distinct ways I use Emacs
+</p>
+<div id="outline-container-org06ef619" class="outline-2">
+<h2 id="org06ef619">As my starting point for work</h2>
+<div class="outline-text-2" id="text-org06ef619">
+<table>
+
+
+<colgroup>
+<col  class="org-left">
+
+<col  class="org-left">
+</colgroup>
+<tbody>
+<tr>
+<td class="org-left">Number of packages</td>
+<td class="org-left">162</td>
+</tr>
+
+<tr>
+<td class="org-left">Init time (<code>emacs-init-time</code>)</td>
+<td class="org-left">1.883483s</td>
+</tr>
+
+<tr>
+<td class="org-left">Config size (by <code>du -bch</code>)</td>
+<td class="org-left">68K</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+Much of what I do on a daily basis starts in Emacs. I typically have one
+instance of Emacs open and I always keep it on the second virtual desktop. I
+always run it in the GUI. When I write code I start with opening a new tab, then
+I open a <code>dired</code> buffer in the project's folder (by using <code>consult-projectile</code>).
+When I need a terminal I open it from Emacs using on of
+<code>terminal-here-project-launch</code> or <code>terminal-here</code>. Occasionally I open a shell
+prompt inside Emacs using <code>shell-pop</code>.
+</p>
+
+<p>
+Back when I used Vim as my main editor I <i>always</i> started a terminal first and
+then opened files from there. Since switching to Emacs I've completely stopped
+doing that. Over the last 8 or so years of Emacs usage there's only been a
+handful of times when I've wanted to open a file from the terminal and I've run
+<code>M-x server-start</code> and used <code>emacsclient</code>. The last time was more than a year
+ago.
+</p>
+
+<p>
+As I typically keep exactly one Emacs open, and I start it soon after logging
+in, I'm not too concerned with startup time. I think under 2s is more than fast
+enough given the functionality I have in my setup.
+</p>
+
+<p>
+This setup I use for taking notes and writing my daily work journal, as well as
+reading email, and programming in a half-dozen languages. I have a large-ish set
+of keybindings that I've set up using <a href="https://github.com/noctuid/general.el">general.el</a>, inspired by Spacemacs at first
+but by now it's started to gain its own character.
+</p>
+</div>
+</div>
+<div id="outline-container-org9ecf44f" class="outline-2">
+<h2 id="org9ecf44f">As my editor of ephemeral files (<code>$EDITOR</code>)</h2>
+<div class="outline-text-2" id="text-org9ecf44f">
+<table>
+
+
+<colgroup>
+<col  class="org-left">
+
+<col  class="org-left">
+</colgroup>
+<tbody>
+<tr>
+<td class="org-left">Number of packages</td>
+<td class="org-left">22</td>
+</tr>
+
+<tr>
+<td class="org-left">Init time (<code>emacs-init-time</code>)</td>
+<td class="org-left">0.209298s</td>
+</tr>
+
+<tr>
+<td class="org-left">Config size (by <code>du -bch</code>)</td>
+<td class="org-left">6.7K</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+Ephemeral files are files I tend to edit for less than 30 seconds, maybe a
+minute at most. There are three main use cases for ephemeral files:
+</p>
+
+<ol class="org-ol">
+<li>Searching the scrollback buffer in <a href="https://zellij.dev/">zellij</a>, and copying bits to the clipboard
+for various uses.</li>
+<li>Editing files when running <code>git</code> from the command line. It's not something I
+do very often, but it happens.</li>
+<li>Editing shell commands. When they get a little too large to handle
+conveniently using ZSH directly I invoke <code>edit-command-line</code>.</li>
+</ol>
+
+<p>
+For a few reasons I decided to make a second, completely separate configuration
+just to handle ephemeral files.
+</p>
+
+<ul class="org-ul">
+<li>It will only be used in a terminal.</li>
+<li>I want to be able to have some special keybindings that suit a specific use,
+e.g. for the scrollback buffer I've bound `SPC Y` to copy the selected text to
+the clipboard and then exit Emacs. It's a thing that I use all the time with
+the scrollback buffer, but never otherwise.</li>
+<li>I have no need, nor any desire, to switch from editing a commit message, or
+searching a scrollback buffer, to reading email or editing an org-mode file.
+The complete separation is a feature.</li>
+</ul>
+
+<p>
+With a startup time of less than a quarter of a second it is well within the
+acceptable, and there is absolutely no need to use <code>emacsclient</code> just to speed
+things up. Given my desire for separation, I wouldn't want to use my main Emacs
+instance as a server and edit ephemeral files anyway.
+</p>
+</div>
+</div>
+<div id="outline-container-orgcadf982" class="outline-2">
+<h2 id="orgcadf982">Conclusion</h2>
+<div class="outline-text-2" id="text-orgcadf982">
+<p>
+I've found a setup that seems to work really well and tick all the requirements
+I have when it comes to separation between use cases and ability to have custom
+keybindings for them. Also, Emacs is starting up <i>very</i> fast with my slimmed
+down configuration. If starting Emacs with the slimmed configuration starts
+taking too long I'm more likely to go back to using Neovim than complicate
+things with <code>emacsclient</code>.
+</p>
+
+<p>
+So no, I am not going to start using <code>emacsclient</code> any time soon.
+</p>
+</div>
+</div>
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+
+<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+I write "in a way" as it actually does nothing for Emacs startup time, it
+just shifts it to a point in time so you don't have to sit and wait for it to
+start.
+</p></div></div>
+
+<div class="footdef"><sup><a id="fn.2" class="footnum" href="#fnr.2" role="doc-backlink">2</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+I used to use <a href="https://neovim.io/">Neovim</a>, without any config, for most of this until recently.
+</p></div></div>
+
+
+</div>
+</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> </div>
+
 <div class="post-date">30 Sep 2023</div><h1 class="post-title"><a href="https://magnus.therning.org/2023-09-30-using-emacs-as-$editor.html">Using Emacs as $EDITOR</a></h1>
 <p>
 Continuing on from my experiment with <a href="https://magnus.therning.org/2023-09-10-using-emacs-for-the-scrollback-in-terminal-multiplexers.html">using Emacs as for scrollback in my
