@@ -4,7 +4,62 @@
 <title><![CDATA[Magnus web site]]></title>
 <description><![CDATA[Magnus web site]]></description>
 <link>https://magnus.therning.org/</link>
-<lastBuildDate>Thu, 16 Nov 2023 08:10:28 +0100</lastBuildDate>
+<lastBuildDate>Sun, 19 Nov 2023 09:23:30 +0100</lastBuildDate>
+<item>
+  <title><![CDATA[Making Emacs without terminal emulator a little more usable]]></title>
+  <description><![CDATA[
+<p>
+After reading Andrey Listopadov's <a href="https://andreyor.st/posts/2023-10-27-you-dont-need-a-terminal-emulator/">You don't need a terminal emulator</a> (mentioned
+at <a href="https://irreal.org/blog/?p=11746">Irreal</a> too) I decided to give up on using Emacs as a terminal for my shell.
+In <i>my experience</i> Emacs simply isn't a very good terminal to run a shell in
+anyway. I removed the almost completely unused <a href="https://github.com/kyagi/shell-pop-el">shell-pop</a> from my configuration
+and the keybinding with a binding to <code>async-shell-command</code>. I'm keeping
+<a href="https://github.com/davidshepherd7/terminal-here">terminal-here</a> in my config for the time being though.
+</p>
+
+<p>
+I realised <a href="https://github.com/bbatsov/projectile">projectile</a> didn't have a function for running it in the root of a
+project, so I wrote one heavily based on <code>project-async-shell-command</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">mep-projectile-async-shell-command</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-doc">"Run `</span><span class="org-doc"><span class="org-constant">async-shell-command</span></span><span class="org-doc">' in the current project's root directory."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">declare</span> <span class="org-rainbow-delimiters-depth-3">(</span>interactive-only async-shell-command<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">let</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>default-directory <span class="org-rainbow-delimiters-depth-5">(</span>projectile-project-root<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>call-interactively #'async-shell-command<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+I quickly found that the completion offered by Emacs for <code>shell-command</code> and
+<code>async-shell-command</code> is far from as sophisticated as what I'm used to from Z
+shell. After a bit of searching I found <a href="https://github.com/szermatt/emacs-bash-completion">emacs-bash-completion</a>. Bash isn't my
+shell of choice, partly because I've found the completion to not be as good as
+in Z shell, but it's an improvement over what stock Emacs offers. The
+instructions in the repo was good, but had to be adjusted slightly:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> <span class="org-constant">bash-completion</span>
+  <span class="org-builtin">:straight</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-builtin">:host</span> github
+             <span class="org-builtin">:repo</span> <span class="org-string">"szermatt/emacs-bash-completion"</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-builtin">:config</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>add-hook 'shell-dynamic-complete-functions 'bash-completion-dynamic-complete<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+I just wish I'll find a package offering completions reaching Z shell levels.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> </div>
+]]></description>
+  <category><![CDATA[emacs]]></category>
+  <link>https://magnus.therning.org/2023-11-19-making-emacs-without-terminal-emulator-a-little-more-usable.html</link>
+  <guid>https://magnus.therning.org/2023-11-19-making-emacs-without-terminal-emulator-a-little-more-usable.html</guid>
+  <pubDate>Sun, 19 Nov 2023 08:50:00 +0100</pubDate>
+</item>
 <item>
   <title><![CDATA[Using the golang mode shipped with Emacs]]></title>
   <description><![CDATA[
@@ -1005,201 +1060,6 @@ threshold the probe succeeds.
   <link>https://magnus.therning.org/2023-04-26-some-practical-haskell.html</link>
   <guid>https://magnus.therning.org/2023-04-26-some-practical-haskell.html</guid>
   <pubDate>Wed, 26 Apr 2023 13:54:00 +0200</pubDate>
-</item>
-<item>
-  <title><![CDATA[More on tree-sitter and consult]]></title>
-  <description><![CDATA[
-<p>
-Here's a few things that I've gotten help with figuring out during the last few
-days. Both things are related to my playing with tree-sitter that I've written
-about earlier, <a href="https://magnus.therning.org/2023-03-22-making-an-emacs-major-mode-for-cabal-using-tree-sitter.html">here</a> and <a href="https://magnus.therning.org/2023-03-27-cabal,-tree-sitter,-and-consult.html">here</a>.
-</p>
-
-<p>
-You might also be interested in the two repositories where the full code
-is. (I've linked to the specific commits as of this writing.)
-</p>
-
-<ul class="org-ul">
-<li><a href="https://gitlab.com/magus/my-emacs-pkgs/-/tree/e739d1035f3d505f2495309126d891ca6b18cab8/my-cabal-mode">My Cabal mode</a></li>
-<li><a href="https://gitlab.com/magus/tree-sitter-cabal/-/tree/7d5fa6887ae05a0b06d046f1e754c197c8ad869b">tree-sitter-cabal</a></li>
-</ul>
-
-<div id="outline-container-org49f0058" class="outline-2">
-<h2 id="org49f0058">Anonymous nodes and matching in tree-sitter</h2>
-<div class="outline-text-2" id="text-org49f0058">
-<p>
-In the grammar for Cabal I have a rule for sections that like this
-</p>
-
-<div class="org-src-container">
-<pre class="src src-javascript">sections: $ =&gt; repeat1<span class="org-rainbow-delimiters-depth-1">(</span>choice<span class="org-rainbow-delimiters-depth-2">(</span>
-    $.benchmark,
-    $.common,
-    $.executable,
-    $.flag,
-    $.library,
-    $.source_repository,
-    $.test_suite,
-<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>,
-</pre>
-</div>
-
-<p>
-where each section followed this pattern
-</p>
-
-<div class="org-src-container">
-<pre class="src src-javascript">benchmark: $ =&gt; seq<span class="org-rainbow-delimiters-depth-1">(</span>
-    repeat<span class="org-rainbow-delimiters-depth-2">(</span>$.comment<span class="org-rainbow-delimiters-depth-2">)</span>,
-    <span class="org-string">'benchmark'</span>,
-    field<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">'name'</span>, $.section_name<span class="org-rainbow-delimiters-depth-2">)</span>,
-    field<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">'properties'</span>, $.property_block<span class="org-rainbow-delimiters-depth-2">)</span>,
-<span class="org-rainbow-delimiters-depth-1">)</span>,
-</pre>
-</div>
-
-<p>
-This made it a little bit difficult to capture the relevant parts of each
-section to implement <code>consult-cabal</code>. I thought a pattern like this ought to
-work
-</p>
-
-<div class="org-src-container">
-<pre class="src src-lisp"><span class="org-rainbow-delimiters-depth-1">(</span>cabal
- <span class="org-rainbow-delimiters-depth-2">(</span>sections
-  <span class="org-rainbow-delimiters-depth-3">(</span>_ _ @type
-     name: <span class="org-rainbow-delimiters-depth-4">(</span>section_name<span class="org-rainbow-delimiters-depth-4">)</span>? @name<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-but it didn't; I got way too many things captured in <code>type</code>. Clearly I had
-misunderstood something about the wildcards, or the query syntax. I attempted to
-add a field name to the anonymous node, i.e. change the sections rules like this
-</p>
-
-<div class="org-src-container">
-<pre class="src src-javascript">benchmark: $ =&gt; seq<span class="org-rainbow-delimiters-depth-1">(</span>
-    repeat<span class="org-rainbow-delimiters-depth-2">(</span>$.comment<span class="org-rainbow-delimiters-depth-2">)</span>,
-    field<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">'type'</span>, <span class="org-string">'benchmark'</span><span class="org-rainbow-delimiters-depth-2">)</span>,
-    field<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">'name'</span>, $.section_name<span class="org-rainbow-delimiters-depth-2">)</span>,
-    field<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">'properties'</span>, $.property_block<span class="org-rainbow-delimiters-depth-2">)</span>,
-<span class="org-rainbow-delimiters-depth-1">)</span>,
-</pre>
-</div>
-
-<p>
-It was accepted by <code>tree-sitter generate</code>, but the field <code>type</code> was nowhere to
-be found in the parse tree.
-</p>
-
-<p>
-Then I changed the query to list the anonymous nodes explicitly, like this
-</p>
-
-<div class="org-src-container">
-<pre class="src src-lisp"><span class="org-rainbow-delimiters-depth-1">(</span>cabal
- <span class="org-rainbow-delimiters-depth-2">(</span>sections
-  <span class="org-rainbow-delimiters-depth-3">(</span>_ [<span class="org-string">"benchmark"</span> <span class="org-string">"common"</span> <span class="org-string">"executable"</span> ...] @type
-     name: <span class="org-rainbow-delimiters-depth-4">(</span>section_name<span class="org-rainbow-delimiters-depth-4">)</span>? @name<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-That worked, but listing all the sections like that in the query didn't sit
-right with me.
-</p>
-
-<p>
-Luckily there's a <a href="https://github.com/tree-sitter/tree-sitter/discussions">discussions area in tree-sitters GitHub</a> so a <a href="https://github.com/tree-sitter/tree-sitter/discussions/2161">fairly short
-discussion</a> later I had answers to why my query behaved like it did and a
-solution that would allow me to not list all the section types in the query. The
-trick is to wrap the string in a call to <code>alias</code> to make it a named node. After
-that it works to add a field name to it as well, of course. The section rules
-now look like this
-</p>
-
-<div class="org-src-container">
-<pre class="src src-javascript">benchmark: $ =&gt; seq<span class="org-rainbow-delimiters-depth-1">(</span>
-    repeat<span class="org-rainbow-delimiters-depth-2">(</span>$.comment<span class="org-rainbow-delimiters-depth-2">)</span>,
-    field<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">'type'</span>, alias<span class="org-rainbow-delimiters-depth-3">(</span><span class="org-string">'benchmark'</span>, $.section_type<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>,
-    field<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">'name'</span>, $.section_name<span class="org-rainbow-delimiters-depth-2">)</span>,
-    field<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">'properties'</span>, $.property_block<span class="org-rainbow-delimiters-depth-2">)</span>,
-<span class="org-rainbow-delimiters-depth-1">)</span>,
-</pre>
-</div>
-
-<p>
-and the final query looks like this
-</p>
-
-<div class="org-src-container">
-<pre class="src src-lisp"><span class="org-rainbow-delimiters-depth-1">(</span>cabal
- <span class="org-rainbow-delimiters-depth-2">(</span>sections
-  <span class="org-rainbow-delimiters-depth-3">(</span>_
-   type: <span class="org-rainbow-delimiters-depth-4">(</span>section_type<span class="org-rainbow-delimiters-depth-4">)</span> @type
-   name: <span class="org-rainbow-delimiters-depth-4">(</span>section_name<span class="org-rainbow-delimiters-depth-4">)</span>? @name<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-With that in place I could improve on the function that collects all the items
-for <code>consult-cabal</code> so it now show the section's type and name instead of the
-string representation of the tree-sitter node.
-</p>
-</div>
-</div>
-
-<div id="outline-container-orgb7b6c84" class="outline-2">
-<h2 id="orgb7b6c84">State in a <code>consult</code> source for preview of lines in a buffer</h2>
-<div class="outline-text-2" id="text-orgb7b6c84">
-<p>
-I was struggling with figuring out how to make a good <i>state</i> function in order
-to preview the items in <code>consult-cabal</code>. The <a href="https://github.com/minad/consult">GitHub repo for <code>consult</code></a> doesn't
-have discussions enabled, but after a <a href="https://github.com/minad/consult/issues/780">discussion in an issue</a> I'd arrived at a
-<i>state</i> function that works very well.
-</p>
-
-<p>
-The state function makes use of functions in <code>consult</code> and looks like this
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">consult-cabal--state</span> <span class="org-rainbow-delimiters-depth-2">()</span>
-  <span class="org-doc">"Create a state function for previewing sections."</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">let</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>state <span class="org-rainbow-delimiters-depth-5">(</span>consult--jump-state<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
-    <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">lambda</span> <span class="org-rainbow-delimiters-depth-4">(</span>action cand<span class="org-rainbow-delimiters-depth-4">)</span>
-      <span class="org-rainbow-delimiters-depth-4">(</span><span class="org-keyword">when</span> cand
-        <span class="org-rainbow-delimiters-depth-5">(</span><span class="org-keyword">let</span> <span class="org-rainbow-delimiters-depth-6">(</span><span class="org-rainbow-delimiters-depth-7">(</span>pos <span class="org-rainbow-delimiters-depth-8">(</span>get-text-property 0 'section-pos cand<span class="org-rainbow-delimiters-depth-8">)</span><span class="org-rainbow-delimiters-depth-7">)</span><span class="org-rainbow-delimiters-depth-6">)</span>
-          <span class="org-rainbow-delimiters-depth-6">(</span>funcall state action pos<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-The trick here was to figure out how the function returned by
-<code>consult--jump-state</code> actually works. On the surface it looks like it takes an
-<i>action</i> and a <i>candidate</i>, <code>(lambda (action cand) ...)</code>. However, the argument
-<code>cand</code> shouldn't be the currently selected item, but rather a postion (ideally a
-<code>marker</code>), so I had to attach another text property on the items (<code>section-pos</code>,
-which is fetched in the inner lambda). This position is then what's passed to
-the function returned by <code>consult--jump-state</code>.
-</p>
-
-<p>
-In hindsight it seems so easy, but I was struggling with this for an entire
-evening before finally asking the question the morning after.
-</p>
-</div>
-</div>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-consult.html">consult</a> <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-tree-sitter.html">tree-sitter</a> </div>
-]]></description>
-  <category><![CDATA[consult]]></category>
-  <category><![CDATA[emacs]]></category>
-  <category><![CDATA[tree-sitter]]></category>
-  <link>https://magnus.therning.org/2023-03-30-more-on-tree-sitter-and-consult.html</link>
-  <guid>https://magnus.therning.org/2023-03-30-more-on-tree-sitter-and-consult.html</guid>
-  <pubDate>Thu, 30 Mar 2023 17:37:00 +0200</pubDate>
 </item>
 </channel>
 </rss>

@@ -12,6 +12,54 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <header class="site-header" role="banner"><h1 class="title">Magnus web site</h1><h2 class="subtitle">Random stuff</h2></header>
+<div class="post-date">19 Nov 2023</div><h1 class="post-title"><a href="https://magnus.therning.org/2023-11-19-making-emacs-without-terminal-emulator-a-little-more-usable.html">Making Emacs without terminal emulator a little more usable</a></h1>
+<p>
+After reading Andrey Listopadov's <a href="https://andreyor.st/posts/2023-10-27-you-dont-need-a-terminal-emulator/">You don't need a terminal emulator</a> (mentioned
+at <a href="https://irreal.org/blog/?p=11746">Irreal</a> too) I decided to give up on using Emacs as a terminal for my shell.
+In <i>my experience</i> Emacs simply isn't a very good terminal to run a shell in
+anyway. I removed the almost completely unused <a href="https://github.com/kyagi/shell-pop-el">shell-pop</a> from my configuration
+and the keybinding with a binding to <code>async-shell-command</code>. I'm keeping
+<a href="https://github.com/davidshepherd7/terminal-here">terminal-here</a> in my config for the time being though.
+</p>
+
+<p>
+I realised <a href="https://github.com/bbatsov/projectile">projectile</a> didn't have a function for running it in the root of a
+project, so I wrote one heavily based on <code>project-async-shell-command</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">mep-projectile-async-shell-command</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-doc">"Run `</span><span class="org-doc"><span class="org-constant">async-shell-command</span></span><span class="org-doc">' in the current project's root directory."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">declare</span> <span class="org-rainbow-delimiters-depth-3">(</span>interactive-only async-shell-command<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">let</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>default-directory <span class="org-rainbow-delimiters-depth-5">(</span>projectile-project-root<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>call-interactively #'async-shell-command<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+I quickly found that the completion offered by Emacs for <code>shell-command</code> and
+<code>async-shell-command</code> is far from as sophisticated as what I'm used to from Z
+shell. After a bit of searching I found <a href="https://github.com/szermatt/emacs-bash-completion">emacs-bash-completion</a>. Bash isn't my
+shell of choice, partly because I've found the completion to not be as good as
+in Z shell, but it's an improvement over what stock Emacs offers. The
+instructions in the repo was good, but had to be adjusted slightly:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> <span class="org-constant">bash-completion</span>
+  <span class="org-builtin">:straight</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-builtin">:host</span> github
+             <span class="org-builtin">:repo</span> <span class="org-string">"szermatt/emacs-bash-completion"</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-builtin">:config</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>add-hook 'shell-dynamic-complete-functions 'bash-completion-dynamic-complete<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+I just wish I'll find a package offering completions reaching Z shell levels.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> </div>
+
 <div class="post-date">16 Nov 2023</div><h1 class="post-title"><a href="https://magnus.therning.org/2023-11-16-using-the-golang-mode-shipped-with-emacs.html">Using the golang mode shipped with Emacs</a></h1>
 <p>
 A few weeks ago I wanted to try out tree-sitter and switched a few of the modes
@@ -456,61 +504,6 @@ properly.
 
 </div>
 </div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> </div>
-
-<div class="post-date">16 Sep 2023</div><h1 class="post-title"><a href="https://magnus.therning.org/2023-09-16-setting-up-emacs-openai-chatgpt.html">Setting up emacs-openai/chatgpt</a></h1>
-<p>
-Yesterday I decided to try to make more use of the ChatGPT account I have. What
-prompted it mostly was that I recalled that my employer has a paid subscription
-and that if we use it enough they'll get us access to ChatGPT4.
-</p>
-
-<p>
-After a bit of research<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup> I decided to start with <a href="https://github.com/emacs-openai/chatgpt">emacs-open/chatgpg</a>. However,
-as I found the instructions slightly lacking I'm sharing my setup.
-</p>
-
-<p>
-The instructions for <code>straight.el</code> fail to mention that one needs the <a href="https://github.com/emacs-openai/openai">openai</a>
-package too.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> <span class="org-constant">openai</span>
-  <span class="org-builtin">:straight</span> <span class="org-rainbow-delimiters-depth-2">(</span>openai <span class="org-builtin">:type</span> git <span class="org-builtin">:host</span> github <span class="org-builtin">:repo</span> <span class="org-string">"emacs-openai/openai"</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-The complete declaration for <code>use-package</code> ended up looking like this:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> <span class="org-constant">chatgpt</span>
-  <span class="org-builtin">:straight</span> <span class="org-rainbow-delimiters-depth-2">(</span>chatgpt <span class="org-builtin">:type</span> git <span class="org-builtin">:host</span> github <span class="org-builtin">:repo</span> <span class="org-string">"emacs-openai/chatgpt"</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-builtin">:requires</span> openai
-  <span class="org-builtin">:config</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">setq</span> openai-key #'openai-key-auth-source<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-Oh, and don't forget to put an entry into `~/.authinfo.gpg`. Something like this should do it
-</p>
-
-<pre class="example" id="org5080c7e">
-machine api.openai.com login &lt;anything&gt; password &lt;your key&gt;
-</pre>
-<div id="footnotes">
-<h2 class="footnotes">Footnotes: </h2>
-<div id="text-footnotes">
-
-<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
-I found <a href="https://notes.alexkehayias.com/using-chatgpt-with-emacs/">Alex Kehayias' note</a> to be a good starting point.
-</p></div></div>
-
-
-</div>
-</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-openai.html">openai</a> <a href="https://magnus.therning.org/tag-chatgpt.html">chatgpt</a> </div>
 <div id="archive">
 <a href="https://magnus.therning.org/archive.html">Other posts</a>
 </div>
