@@ -4,7 +4,76 @@
 <title><![CDATA[Magnus web site]]></title>
 <description><![CDATA[Magnus web site]]></description>
 <link>https://magnus.therning.org/</link>
-<lastBuildDate>Sun, 19 Nov 2023 09:23:30 +0100</lastBuildDate>
+<lastBuildDate>Sat, 09 Dec 2023 22:14:21 +0100</lastBuildDate>
+<item>
+  <title><![CDATA[Getting Amazonka S3 to work with localstack]]></title>
+  <description><![CDATA[
+<p>
+I'm writing this in case someone else is getting strange errors when trying to
+use <a href="https://hackage.haskell.org/package/amazonka-s3">amazonka-s3</a> with <a href="https://github.com/localstack/localstack">localstack</a>. It took me rather too long finding the answer
+and neither the errors I got from Amazonka nor from localstack were very
+helpful.
+</p>
+
+<p>
+The code I started with for setting up the connection looked like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">main</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+  awsEnv <span class="org-haskell-operator">&lt;-</span> AWS.overrideService localEndpoint <span class="org-haskell-operator">&lt;$&gt;</span> AWS.newEnv AWS.discover
+  <span class="org-comment-delimiter">-- </span><span class="org-comment">do S3 stuff</span>
+  <span class="org-haskell-keyword">where</span>
+    localEndpoint <span class="org-haskell-operator">=</span> AWS.setEndpoint <span class="org-haskell-constructor">False</span> <span class="org-string">"localhost"</span> 4566
+</pre>
+</div>
+
+<p>
+A few years ago, when I last wrote some Haskell to talk to S3 this was
+enough<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>, but now I got some strange errors.
+</p>
+
+<p>
+It turns out there are different ways to address buckets and the default, which
+is used by AWS itself, isn't used by localstack. The documentation of
+<a href="https://hackage.haskell.org/package/amazonka-2.0/docs/Amazonka.html#t:S3AddressingStyle"><code>S3AddressingStyle</code></a> has more details.
+</p>
+
+<p>
+So to get it to work I had to change the S3 addressing style as well and ended
+up with this code instead
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">main</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+  awsEnv <span class="org-haskell-operator">&lt;-</span> AWS.overrideService <span class="org-rainbow-delimiters-depth-1">(</span>s3AddrStyle <span class="org-haskell-operator">.</span> localEndpoint<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">&lt;$&gt;</span> AWS.newEnv AWS.discover
+  <span class="org-comment-delimiter">-- </span><span class="org-comment">do S3 stuff</span>
+  <span class="org-haskell-keyword">where</span>
+    localEndpoint <span class="org-haskell-operator">=</span> AWS.setEndpoint <span class="org-haskell-constructor">False</span> <span class="org-string">"localhost"</span> 4566
+    s3AddrStyle svc <span class="org-haskell-operator">=</span> svc <span class="org-rainbow-delimiters-depth-1">{</span>AWS.s3AddressingStyle <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">AWS.S3AddressingStylePath</span><span class="org-rainbow-delimiters-depth-1">}</span>
+</pre>
+</div>
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+
+<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+That was before version 2.0 of Amazonka, so it did look slightly different,
+but overriding the endpoint was all that was needed.
+</p></div></div>
+
+
+</div>
+</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-amazonka.html">amazonka</a> <a href="https://magnus.therning.org/tag-aws.html">aws</a> <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-localstack.html">localstack</a> </div>
+]]></description>
+  <category><![CDATA[amazonka]]></category>
+  <category><![CDATA[aws]]></category>
+  <category><![CDATA[haskell]]></category>
+  <category><![CDATA[localstack]]></category>
+  <link>https://magnus.therning.org/2023-12-09-getting-amazonka-s3-to-work-with-localstack.html</link>
+  <guid>https://magnus.therning.org/2023-12-09-getting-amazonka-s3-to-work-with-localstack.html</guid>
+  <pubDate>Sat, 09 Dec 2023 17:23:00 +0100</pubDate>
+</item>
 <item>
   <title><![CDATA[Making Emacs without terminal emulator a little more usable]]></title>
   <description><![CDATA[
@@ -926,140 +995,6 @@ and I have to use the <code>cons</code>-based configuration style for its keymap
   <link>https://magnus.therning.org/2023-07-09-general.el-and-two-ways-to-define-keybindings.html</link>
   <guid>https://magnus.therning.org/2023-07-09-general.el-and-two-ways-to-define-keybindings.html</guid>
   <pubDate>Sun, 09 Jul 2023 09:34:00 +0200</pubDate>
-</item>
-<item>
-  <title><![CDATA[Some practical Haskell]]></title>
-  <description><![CDATA[
-<p>
-As I'm nearing the end of my time with my current employer I thought I'd put
-together some bits of practical Haskell that I've put into production. We only
-have a few services in Haskell, and basically I've had to sneak them into
-production. I'm hoping someone will find something useful. I'd be even happier
-if I get pointers on how to do this even better.
-</p>
-
-<div id="outline-container-org6d67a5e" class="outline-2">
-<h2 id="org6d67a5e">Logging</h2>
-<div class="outline-text-2" id="text-org6d67a5e">
-<p>
-I've written about that earlier in three posts:
-</p>
-
-<ol class="org-ol">
-<li><a href="https://magnus.therning.org/2023-01-29-a-take-on-log-messages.html">A take on log messages</a></li>
-<li><a href="https://magnus.therning.org/2023-02-04-a-take-on-logging.html">A take on logging</a></li>
-<li><a href="https://magnus.therning.org/2023-02-08-logging-with-class.html">Logging with class</a></li>
-</ol>
-</div>
-</div>
-
-<div id="outline-container-orga164ea9" class="outline-2">
-<h2 id="orga164ea9">Final exception handler</h2>
-<div class="outline-text-2" id="text-orga164ea9">
-<p>
-After reading about the <i>uncaught exception handler</i> in <a href="https://serokell.io/blog/uncaught-exception-handling">Serokell's article</a> I've
-added the following snippet to all the services.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-haskell-definition">main</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
-<span class="org-haskell-definition">main</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
-    <span class="org-haskell-operator">...</span>
-    originalHandler <span class="org-haskell-operator">&lt;-</span> getUncaughtExceptionHandler
-    setUncaughtExceptionHandler <span class="org-haskell-operator">$</span> handle originalHandler <span class="org-haskell-operator">.</span> lastExceptionHandler logger
-    <span class="org-haskell-operator">...</span>
-
-<span class="org-haskell-definition">lastExceptionHandler</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Logger</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">SomeException</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
-<span class="org-haskell-definition">lastExceptionHandler</span> logger e <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
-    fatalIO logger <span class="org-haskell-operator">$</span> lm <span class="org-haskell-operator">$</span> <span class="org-string">"uncaught exception: "</span> <span class="org-haskell-operator">&lt;&gt;</span> displayException e
-</pre>
-</div>
-</div>
-</div>
-
-<div id="outline-container-org807a09b" class="outline-2">
-<h2 id="org807a09b">Handling signals</h2>
-<div class="outline-text-2" id="text-org807a09b">
-<p>
-To make sure the platform we're running our services on is happy with a service
-it needs to handle <code>SIGTERM</code>, and when running it locally during development,
-e.g. for manual testing, it's nice if it also handles <code>SIGINT</code>.
-</p>
-
-<p>
-The following snippet comes from a service that needs to make sure that every
-iteration of its processing is completed before shutting down, hence the <code>IORef</code>
-that's used to signal whether procession should continue or not.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-haskell-definition">main</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
-<span class="org-haskell-definition">main</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
-    <span class="org-haskell-operator">...</span>
-    cont <span class="org-haskell-operator">&lt;-</span> newIORef <span class="org-haskell-constructor">True</span>
-    void <span class="org-haskell-operator">$</span> installHandler softwareTermination <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">Catch</span> <span class="org-haskell-operator">$</span> sigHandler logger cont<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-constructor">Nothing</span>
-    void <span class="org-haskell-operator">$</span> installHandler keyboardSignal <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-constructor">Catch</span> <span class="org-haskell-operator">$</span> sigHandler logger cont<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-constructor">Nothing</span>
-    <span class="org-haskell-operator">...</span>
-
-<span class="org-haskell-definition">sigHandler</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">Logger</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">IORef</span> <span class="org-haskell-type">Bool</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
-<span class="org-haskell-definition">sigHandler</span> logger cont <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
-    infoIO logger <span class="org-string">"got a signal, shutting down"</span>
-    writeIORef cont <span class="org-haskell-constructor">False</span>
-</pre>
-</div>
-</div>
-</div>
-
-<div id="outline-container-org8226fdb" class="outline-2">
-<h2 id="org8226fdb">Probes</h2>
-<div class="outline-text-2" id="text-org8226fdb">
-<p>
-Due to some details about how networking works in our platform it's currently
-not possible to use network-based probing. Instead we have to use files. There
-are two probes that are of interest
-</p>
-
-<ul class="org-ul">
-<li>A startup probe, existance of the file signals that the service has started as
-is about being processing.</li>
-<li>A progress probe, a timestamp signals the time the most recent iteration of
-processing finished<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>.</li>
-</ul>
-
-<p>
-I've written a little bit about the latter before in <a href="https://magnus.therning.org/2022-05-08-a-little-haskell:-epoch-timestamp.html">A little Haskell: epoch
-timestamp</a>, but here I'm including both functions.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-haskell-definition">createPidFile</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">FilePath</span> <span class="org-haskell-operator">-&gt;</span> <span class="org-haskell-type">IO</span> <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
-<span class="org-haskell-definition">createPidFile</span> fn <span class="org-haskell-operator">=</span> getProcessID <span class="org-haskell-operator">&gt;&gt;=</span> writeFile fn <span class="org-haskell-operator">.</span> show
-
-<span class="org-haskell-definition">writeTimestampFile</span> <span class="org-haskell-operator">::</span> <span class="org-haskell-type">MonadIO</span> m <span class="org-haskell-operator">=&gt;</span> <span class="org-haskell-type">FilePath</span> <span class="org-haskell-operator">-&gt;</span> m <span class="org-haskell-constructor"><span class="org-rainbow-delimiters-depth-1">()</span></span>
-<span class="org-haskell-definition">writeTimestampFile</span> fn <span class="org-haskell-operator">=</span> liftIO <span class="org-haskell-operator">$</span> <span class="org-haskell-keyword">do</span>
-    getPOSIXTime <span class="org-haskell-operator">&gt;&gt;=</span> <span class="org-rainbow-delimiters-depth-1">(</span>writeFile fn <span class="org-haskell-operator">.</span> show<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">.</span> truncate <span class="org-haskell-operator">@</span><span class="org-haskell-keyword">_</span> <span class="org-haskell-operator">@</span><span class="org-haskell-constructor">Int64</span> <span class="org-haskell-operator">.</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-haskell-operator">*</span> 1000<span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-</div>
-</div>
-<div id="footnotes">
-<h2 class="footnotes">Footnotes: </h2>
-<div id="text-footnotes">
-
-<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
-The actual probing is then done using a command that compares the saved
-timestamp with the current time. As long as the difference is smaller than a
-threshold the probe succeeds.
-</p></div></div>
-
-
-</div>
-</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> </div>
-]]></description>
-  <category><![CDATA[haskell]]></category>
-  <link>https://magnus.therning.org/2023-04-26-some-practical-haskell.html</link>
-  <guid>https://magnus.therning.org/2023-04-26-some-practical-haskell.html</guid>
-  <pubDate>Wed, 26 Apr 2023 13:54:00 +0200</pubDate>
 </item>
 </channel>
 </rss>

@@ -12,6 +12,65 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <h1 class="title">Posts tagged "amazonka":</h1>
+<div class="post-date">09 Dec 2023</div><h1 class="post-title"><a href="https://magnus.therning.org/2023-12-09-getting-amazonka-s3-to-work-with-localstack.html">Getting Amazonka S3 to work with localstack</a></h1>
+<p>
+I'm writing this in case someone else is getting strange errors when trying to
+use <a href="https://hackage.haskell.org/package/amazonka-s3">amazonka-s3</a> with <a href="https://github.com/localstack/localstack">localstack</a>. It took me rather too long finding the answer
+and neither the errors I got from Amazonka nor from localstack were very
+helpful.
+</p>
+
+<p>
+The code I started with for setting up the connection looked like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">main</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+  awsEnv <span class="org-haskell-operator">&lt;-</span> AWS.overrideService localEndpoint <span class="org-haskell-operator">&lt;$&gt;</span> AWS.newEnv AWS.discover
+  <span class="org-comment-delimiter">-- </span><span class="org-comment">do S3 stuff</span>
+  <span class="org-haskell-keyword">where</span>
+    localEndpoint <span class="org-haskell-operator">=</span> AWS.setEndpoint <span class="org-haskell-constructor">False</span> <span class="org-string">"localhost"</span> 4566
+</pre>
+</div>
+
+<p>
+A few years ago, when I last wrote some Haskell to talk to S3 this was
+enough<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>, but now I got some strange errors.
+</p>
+
+<p>
+It turns out there are different ways to address buckets and the default, which
+is used by AWS itself, isn't used by localstack. The documentation of
+<a href="https://hackage.haskell.org/package/amazonka-2.0/docs/Amazonka.html#t:S3AddressingStyle"><code>S3AddressingStyle</code></a> has more details.
+</p>
+
+<p>
+So to get it to work I had to change the S3 addressing style as well and ended
+up with this code instead
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-haskell-definition">main</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
+  awsEnv <span class="org-haskell-operator">&lt;-</span> AWS.overrideService <span class="org-rainbow-delimiters-depth-1">(</span>s3AddrStyle <span class="org-haskell-operator">.</span> localEndpoint<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">&lt;$&gt;</span> AWS.newEnv AWS.discover
+  <span class="org-comment-delimiter">-- </span><span class="org-comment">do S3 stuff</span>
+  <span class="org-haskell-keyword">where</span>
+    localEndpoint <span class="org-haskell-operator">=</span> AWS.setEndpoint <span class="org-haskell-constructor">False</span> <span class="org-string">"localhost"</span> 4566
+    s3AddrStyle svc <span class="org-haskell-operator">=</span> svc <span class="org-rainbow-delimiters-depth-1">{</span>AWS.s3AddressingStyle <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">AWS.S3AddressingStylePath</span><span class="org-rainbow-delimiters-depth-1">}</span>
+</pre>
+</div>
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+
+<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+That was before version 2.0 of Amazonka, so it did look slightly different,
+but overriding the endpoint was all that was needed.
+</p></div></div>
+
+
+</div>
+</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-amazonka.html">amazonka</a> <a href="https://magnus.therning.org/tag-aws.html">aws</a> <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-localstack.html">localstack</a> </div>
+
 <div class="post-date">11 Nov 2020</div><h1 class="post-title"><a href="https://magnus.therning.org/2020-11-11-2222-combining_amazonka_and_conduit.html">Combining Amazonka and Conduit</a></h1>
 <p>
 Combining <a href="https://hackage.haskell.org/package/amazonka">amazonka</a> and <a href="https://hackage.haskell.org/package/conduit">conduit</a> turned out to be easier than I had expected.
