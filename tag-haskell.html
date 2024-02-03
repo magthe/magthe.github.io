@@ -12,6 +12,149 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <h1 class="title">Posts tagged "haskell":</h1>
+<div class="post-date">03 Feb 2024</div><h1 class="post-title"><a href="https://magnus.therning.org/2024-02-03-bending-warp.html">Bending Warp</a></h1>
+<p>
+In the past I've noticed that <a href="https://hackage.haskell.org/package/warp">Warp</a> both writes to <code>stdout</code> at times and produces
+some default HTTP responses, but I've never bothered taking the time to look up
+what possibilities it offers to changes this behaviour. I've also always thought
+that I ought to find out how Warp handles signals.
+</p>
+
+<p>
+If you wonder <i>why</i> this would be interesting to know there are three main points:
+</p>
+
+<ol class="org-ol">
+<li>The environments where the services run are set up to handle structured
+logging. In our case it should be <a href="https://jsonlines.org/">JSONL</a> written to <code>stdout</code>, i.e. one JSON
+object per line.</li>
+<li>We've decided that the error responses we produce in our code should be JSON,
+so it's irritating to have to document some special cases where this isn't
+true just because Warp has a few default error responses.</li>
+<li>Signal handling is, IMHO, a very important part of writing a service that
+runs well in <a href="https://kubernetes.io/">k8s</a> as it uses signals to handle the lifetime of pods.</li>
+</ol>
+<div id="outline-container-org1d2487a" class="outline-2">
+<h2 id="org1d2487a">Looking through the Warp API</h2>
+<div class="outline-text-2" id="text-org1d2487a">
+<p>
+Browsing through the <a href="https://hackage.haskell.org/package/warp-3.4.0/docs/Network-Wai-Handler-Warp.html">API documentation for Warp</a> it wasn't too difficult to find
+the interesting pieces, and that Warp follows a fairly common pattern in Haskell
+libraries
+</p>
+
+<ul class="org-ul">
+<li>There's a function called <code>runSettings</code> that takes an argument of type <code>Settings</code>.</li>
+<li>The default settings are available in a variable called <code>defaultSettings</code> (not very surprising).</li>
+<li><p>
+There are several functions for modifying the settings and they all have the same shape
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">setX :: <span class="org-type">X</span> <span class="org-operator">-&gt;</span> <span class="org-type">Settings</span> <span class="org-operator">-&gt;</span> Settings.
+</pre>
+</div>
+
+<p>
+which makes it easy to chain them together.
+</p></li>
+<li>The functions I'm interested in now are
+
+<dl class="org-dl">
+<dt><code>setOnException</code></dt><dd>the default handler, <code>defaultOnException</code>, prints the
+exception to <code>stdout</code> using its <code>Show</code> instance</dd>
+<dt><code>setOnExceptionResponse</code></dt><dd>the default responses are produced by
+<code>defaultOnExceptionResponse</code> and contain plain text response bodies</dd>
+<dt><code>setInstallShutdownHandler</code></dt><dd>the default behaviour is to wait for all
+ongoing requests and then shut done</dd>
+<dt><code>setGracefulShutdownTimeout</code></dt><dd>sets the number of seconds to wait for
+ongoing requests to finnish, the default is to wait indefinitely</dd>
+</dl></li>
+</ul>
+</div>
+</div>
+<div id="outline-container-org8be0074" class="outline-2">
+<h2 id="org8be0074">Some experimenting</h2>
+<div class="outline-text-2" id="text-org8be0074">
+<p>
+In order to experiment with these I put together a small API using <a href="https://hackage.haskell.org/package/servant">servant</a>,
+<code>app</code>, with a <code>main</code> function using <code>runSettings</code> and stringing together a bunch
+of modifications to <code>defaultSettings</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">main :: <span class="org-type">IO</span> <span class="org-rainbow-delimiters-depth-1">()</span>
+main = <span class="org-warning">Log</span>.withLogger <span class="org-operator">$</span> \logger -&gt; <span class="org-keyword">do</span>
+    <span class="org-warning">Log</span>.infoIO logger <span class="org-string">"starting the server"</span>
+    runSettings <span class="org-rainbow-delimiters-depth-1">(</span>mySettings logger defaultSettings<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-rainbow-delimiters-depth-1">(</span>app logger<span class="org-rainbow-delimiters-depth-1">)</span>
+    <span class="org-warning">Log</span>.infoIO logger <span class="org-string">"stopped the server"</span>
+  <span class="org-keyword">where</span>
+    mySettings logger = myShutdownHandler logger <span class="org-operator">.</span> myOnException logger <span class="org-operator">.</span> myOnExceptionResponse
+</pre>
+</div>
+
+<p>
+<code>myOnException</code> logs JSON objects (using the logging I've written about before,
+<a href="https://magnus.therning.org/2023-01-29-a-take-on-log-messages.html">here</a> and <a href="https://magnus.therning.org/2023-02-04-a-take-on-logging.html">here</a>). It decides wether to log or not using
+<code>defaultShouldDisplayException</code>, something I copied from <code>defaultOnException</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">myOnException :: Log.<span class="org-type">Logger</span> <span class="org-operator">-&gt;</span> <span class="org-type">Settings</span> <span class="org-operator">-&gt;</span> <span class="org-type">Settings</span>
+myOnException logger = setOnException handler
+  <span class="org-keyword">where</span>
+    handler mr e = when <span class="org-rainbow-delimiters-depth-1">(</span>defaultShouldDisplayException e<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">$</span> <span class="org-keyword">case</span> mr <span class="org-keyword">of</span>
+        Nothing -&gt; <span class="org-warning">Log</span>.warnIO logger <span class="org-operator">$</span> lm <span class="org-operator">$</span> <span class="org-string">"exception: "</span> <span class="org-operator">&lt;&gt;</span> <span class="org-warning">T</span>.pack <span class="org-rainbow-delimiters-depth-1">(</span>show e<span class="org-rainbow-delimiters-depth-1">)</span>
+        Just _ -&gt; <span class="org-keyword">do</span>
+            <span class="org-warning">Log</span>.warnIO logger <span class="org-operator">$</span> lm <span class="org-operator">$</span> <span class="org-string">"exception with request: "</span> <span class="org-operator">&lt;&gt;</span> <span class="org-warning">T</span>.pack <span class="org-rainbow-delimiters-depth-1">(</span>show e<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+<code>myExceptionResponse</code> responds with JSON objects. It's simpler than
+<code>defaultOnExceptionResponse</code>, but it suffices for my learning.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">myOnExceptionResponse :: <span class="org-type">Settings</span> <span class="org-operator">-&gt;</span> <span class="org-type">Settings</span>
+myOnExceptionResponse = setOnExceptionResponse handler
+  <span class="org-keyword">where</span>
+    handler _ =
+        responseLBS
+            <span class="org-warning">H</span>.internalServerError500
+            <span class="org-rainbow-delimiters-depth-1">[</span><span class="org-rainbow-delimiters-depth-2">(</span><span class="org-warning">H</span>.hContentType, <span class="org-string">"application/json; charset=utf-8"</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">]</span>
+            <span class="org-rainbow-delimiters-depth-1">(</span>encode <span class="org-operator">$</span> object <span class="org-rainbow-delimiters-depth-2">[</span><span class="org-string">"error"</span> <span class="org-operator">.=</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-string">"Something went wrong"</span> :: <span class="org-type">String</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">]</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+Finally, <code>myShutdownHandler</code> installs a handler for <code>SIGTERM</code> that logs and then
+shuts down.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">myShutdownHandler :: Log.<span class="org-type">Logger</span> <span class="org-operator">-&gt;</span> <span class="org-type">Settings</span> <span class="org-operator">-&gt;</span> <span class="org-type">Settings</span>
+myShutdownHandler logger = setInstallShutdownHandler shutdownHandler
+  <span class="org-keyword">where</span>
+    shutdownAction = <span class="org-warning">Log</span>.infoIO logger <span class="org-string">"closing down"</span>
+    shutdownHandler closeSocket = void <span class="org-operator">$</span> installHandler sigTERM <span class="org-rainbow-delimiters-depth-1">(</span>Catch <span class="org-operator">$</span> shutdownAction <span class="org-operator">&gt;&gt;</span> closeSocket<span class="org-rainbow-delimiters-depth-1">)</span> Nothing
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orga6ca7de" class="outline-2">
+<h2 id="orga6ca7de">Conclusion</h2>
+<div class="outline-text-2" id="text-orga6ca7de">
+<p>
+I really ought to have looked into this sooner, especially as it turns out that
+Warp offers all the knobs and dials I could wish for to control these aspects of
+its behaviour. The next step is to take this and put it to use in one of the
+services at <code>$DAYJOB</code>
+</p>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-warp.html">warp</a> </div>
+
 <div class="post-date">09 Dec 2023</div><h1 class="post-title"><a href="https://magnus.therning.org/2023-12-09-getting-amazonka-s3-to-work-with-localstack.html">Getting Amazonka S3 to work with localstack</a></h1>
 <p>
 I'm writing this in case someone else is getting strange errors when trying to
@@ -25,11 +168,11 @@ The code I started with for setting up the connection looked like this
 </p>
 
 <div class="org-src-container">
-<pre class="src src-haskell"><span class="org-haskell-definition">main</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
-  awsEnv <span class="org-haskell-operator">&lt;-</span> AWS.overrideService localEndpoint <span class="org-haskell-operator">&lt;$&gt;</span> AWS.newEnv AWS.discover
-  <span class="org-comment-delimiter">-- </span><span class="org-comment">do S3 stuff</span>
-  <span class="org-haskell-keyword">where</span>
-    localEndpoint <span class="org-haskell-operator">=</span> AWS.setEndpoint <span class="org-haskell-constructor">False</span> <span class="org-string">"localhost"</span> 4566
+<pre class="src src-haskell">main = <span class="org-keyword">do</span>
+  awsEnv &lt;- <span class="org-warning">AWS</span>.overrideService localEndpoint <span class="org-operator">&lt;$&gt;</span> <span class="org-warning">AWS</span>.newEnv <span class="org-warning">AWS</span>.discover
+  <span class="org-comment">-- do S3 stuff</span>
+  <span class="org-keyword">where</span>
+    localEndpoint = <span class="org-warning">AWS</span>.setEndpoint False <span class="org-string">"localhost"</span> <span class="org-number">4566</span>
 </pre>
 </div>
 
@@ -50,12 +193,12 @@ up with this code instead
 </p>
 
 <div class="org-src-container">
-<pre class="src src-haskell"><span class="org-haskell-definition">main</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
-  awsEnv <span class="org-haskell-operator">&lt;-</span> AWS.overrideService <span class="org-rainbow-delimiters-depth-1">(</span>s3AddrStyle <span class="org-haskell-operator">.</span> localEndpoint<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">&lt;$&gt;</span> AWS.newEnv AWS.discover
-  <span class="org-comment-delimiter">-- </span><span class="org-comment">do S3 stuff</span>
-  <span class="org-haskell-keyword">where</span>
-    localEndpoint <span class="org-haskell-operator">=</span> AWS.setEndpoint <span class="org-haskell-constructor">False</span> <span class="org-string">"localhost"</span> 4566
-    s3AddrStyle svc <span class="org-haskell-operator">=</span> svc <span class="org-rainbow-delimiters-depth-1">{</span>AWS.s3AddressingStyle <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">AWS.S3AddressingStylePath</span><span class="org-rainbow-delimiters-depth-1">}</span>
+<pre class="src src-haskell">main = <span class="org-keyword">do</span>
+  awsEnv &lt;- <span class="org-warning">AWS</span>.overrideService <span class="org-rainbow-delimiters-depth-1">(</span>s3AddrStyle <span class="org-operator">.</span> localEndpoint<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">&lt;$&gt;</span> <span class="org-warning">AWS</span>.newEnv <span class="org-warning">AWS</span>.discover
+  <span class="org-comment">-- do S3 stuff</span>
+  <span class="org-keyword">where</span>
+    localEndpoint = <span class="org-warning">AWS</span>.setEndpoint False <span class="org-string">"localhost"</span> <span class="org-number">4566</span>
+    s3AddrStyle svc = svc <span class="org-rainbow-delimiters-depth-1">{</span><span class="org-warning">AWS</span>.s3AddressingStyle = AWS.S3AddressingStylePath<span class="org-rainbow-delimiters-depth-1">}</span>
 </pre>
 </div>
 <div id="footnotes">

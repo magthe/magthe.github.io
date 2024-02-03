@@ -24,11 +24,11 @@ The code I started with for setting up the connection looked like this
 </p>
 
 <div class="org-src-container">
-<pre class="src src-haskell"><span class="org-haskell-definition">main</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
-  awsEnv <span class="org-haskell-operator">&lt;-</span> AWS.overrideService localEndpoint <span class="org-haskell-operator">&lt;$&gt;</span> AWS.newEnv AWS.discover
-  <span class="org-comment-delimiter">-- </span><span class="org-comment">do S3 stuff</span>
-  <span class="org-haskell-keyword">where</span>
-    localEndpoint <span class="org-haskell-operator">=</span> AWS.setEndpoint <span class="org-haskell-constructor">False</span> <span class="org-string">"localhost"</span> 4566
+<pre class="src src-haskell">main = <span class="org-keyword">do</span>
+  awsEnv &lt;- <span class="org-warning">AWS</span>.overrideService localEndpoint <span class="org-operator">&lt;$&gt;</span> <span class="org-warning">AWS</span>.newEnv <span class="org-warning">AWS</span>.discover
+  <span class="org-comment">-- do S3 stuff</span>
+  <span class="org-keyword">where</span>
+    localEndpoint = <span class="org-warning">AWS</span>.setEndpoint False <span class="org-string">"localhost"</span> <span class="org-number">4566</span>
 </pre>
 </div>
 
@@ -49,12 +49,12 @@ up with this code instead
 </p>
 
 <div class="org-src-container">
-<pre class="src src-haskell"><span class="org-haskell-definition">main</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
-  awsEnv <span class="org-haskell-operator">&lt;-</span> AWS.overrideService <span class="org-rainbow-delimiters-depth-1">(</span>s3AddrStyle <span class="org-haskell-operator">.</span> localEndpoint<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">&lt;$&gt;</span> AWS.newEnv AWS.discover
-  <span class="org-comment-delimiter">-- </span><span class="org-comment">do S3 stuff</span>
-  <span class="org-haskell-keyword">where</span>
-    localEndpoint <span class="org-haskell-operator">=</span> AWS.setEndpoint <span class="org-haskell-constructor">False</span> <span class="org-string">"localhost"</span> 4566
-    s3AddrStyle svc <span class="org-haskell-operator">=</span> svc <span class="org-rainbow-delimiters-depth-1">{</span>AWS.s3AddressingStyle <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">AWS.S3AddressingStylePath</span><span class="org-rainbow-delimiters-depth-1">}</span>
+<pre class="src src-haskell">main = <span class="org-keyword">do</span>
+  awsEnv &lt;- <span class="org-warning">AWS</span>.overrideService <span class="org-rainbow-delimiters-depth-1">(</span>s3AddrStyle <span class="org-operator">.</span> localEndpoint<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">&lt;$&gt;</span> <span class="org-warning">AWS</span>.newEnv <span class="org-warning">AWS</span>.discover
+  <span class="org-comment">-- do S3 stuff</span>
+  <span class="org-keyword">where</span>
+    localEndpoint = <span class="org-warning">AWS</span>.setEndpoint False <span class="org-string">"localhost"</span> <span class="org-number">4566</span>
+    s3AddrStyle svc = svc <span class="org-rainbow-delimiters-depth-1">{</span><span class="org-warning">AWS</span>.s3AddressingStyle = AWS.S3AddressingStylePath<span class="org-rainbow-delimiters-depth-1">}</span>
 </pre>
 </div>
 <div id="footnotes">

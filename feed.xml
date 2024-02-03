@@ -4,7 +4,158 @@
 <title><![CDATA[Magnus web site]]></title>
 <description><![CDATA[Magnus web site]]></description>
 <link>https://magnus.therning.org/</link>
-<lastBuildDate>Sat, 09 Dec 2023 22:14:21 +0100</lastBuildDate>
+<lastBuildDate>Sat, 03 Feb 2024 23:37:19 +0100</lastBuildDate>
+<item>
+  <title><![CDATA[Bending Warp]]></title>
+  <description><![CDATA[
+<p>
+In the past I've noticed that <a href="https://hackage.haskell.org/package/warp">Warp</a> both writes to <code>stdout</code> at times and produces
+some default HTTP responses, but I've never bothered taking the time to look up
+what possibilities it offers to changes this behaviour. I've also always thought
+that I ought to find out how Warp handles signals.
+</p>
+
+<p>
+If you wonder <i>why</i> this would be interesting to know there are three main points:
+</p>
+
+<ol class="org-ol">
+<li>The environments where the services run are set up to handle structured
+logging. In our case it should be <a href="https://jsonlines.org/">JSONL</a> written to <code>stdout</code>, i.e. one JSON
+object per line.</li>
+<li>We've decided that the error responses we produce in our code should be JSON,
+so it's irritating to have to document some special cases where this isn't
+true just because Warp has a few default error responses.</li>
+<li>Signal handling is, IMHO, a very important part of writing a service that
+runs well in <a href="https://kubernetes.io/">k8s</a> as it uses signals to handle the lifetime of pods.</li>
+</ol>
+<div id="outline-container-org1d2487a" class="outline-2">
+<h2 id="org1d2487a">Looking through the Warp API</h2>
+<div class="outline-text-2" id="text-org1d2487a">
+<p>
+Browsing through the <a href="https://hackage.haskell.org/package/warp-3.4.0/docs/Network-Wai-Handler-Warp.html">API documentation for Warp</a> it wasn't too difficult to find
+the interesting pieces, and that Warp follows a fairly common pattern in Haskell
+libraries
+</p>
+
+<ul class="org-ul">
+<li>There's a function called <code>runSettings</code> that takes an argument of type <code>Settings</code>.</li>
+<li>The default settings are available in a variable called <code>defaultSettings</code> (not very surprising).</li>
+<li><p>
+There are several functions for modifying the settings and they all have the same shape
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">setX :: <span class="org-type">X</span> <span class="org-operator">-&gt;</span> <span class="org-type">Settings</span> <span class="org-operator">-&gt;</span> Settings.
+</pre>
+</div>
+
+<p>
+which makes it easy to chain them together.
+</p></li>
+<li>The functions I'm interested in now are
+
+<dl class="org-dl">
+<dt><code>setOnException</code></dt><dd>the default handler, <code>defaultOnException</code>, prints the
+exception to <code>stdout</code> using its <code>Show</code> instance</dd>
+<dt><code>setOnExceptionResponse</code></dt><dd>the default responses are produced by
+<code>defaultOnExceptionResponse</code> and contain plain text response bodies</dd>
+<dt><code>setInstallShutdownHandler</code></dt><dd>the default behaviour is to wait for all
+ongoing requests and then shut done</dd>
+<dt><code>setGracefulShutdownTimeout</code></dt><dd>sets the number of seconds to wait for
+ongoing requests to finnish, the default is to wait indefinitely</dd>
+</dl></li>
+</ul>
+</div>
+</div>
+<div id="outline-container-org8be0074" class="outline-2">
+<h2 id="org8be0074">Some experimenting</h2>
+<div class="outline-text-2" id="text-org8be0074">
+<p>
+In order to experiment with these I put together a small API using <a href="https://hackage.haskell.org/package/servant">servant</a>,
+<code>app</code>, with a <code>main</code> function using <code>runSettings</code> and stringing together a bunch
+of modifications to <code>defaultSettings</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">main :: <span class="org-type">IO</span> <span class="org-rainbow-delimiters-depth-1">()</span>
+main = <span class="org-warning">Log</span>.withLogger <span class="org-operator">$</span> \logger -&gt; <span class="org-keyword">do</span>
+    <span class="org-warning">Log</span>.infoIO logger <span class="org-string">"starting the server"</span>
+    runSettings <span class="org-rainbow-delimiters-depth-1">(</span>mySettings logger defaultSettings<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-rainbow-delimiters-depth-1">(</span>app logger<span class="org-rainbow-delimiters-depth-1">)</span>
+    <span class="org-warning">Log</span>.infoIO logger <span class="org-string">"stopped the server"</span>
+  <span class="org-keyword">where</span>
+    mySettings logger = myShutdownHandler logger <span class="org-operator">.</span> myOnException logger <span class="org-operator">.</span> myOnExceptionResponse
+</pre>
+</div>
+
+<p>
+<code>myOnException</code> logs JSON objects (using the logging I've written about before,
+<a href="https://magnus.therning.org/2023-01-29-a-take-on-log-messages.html">here</a> and <a href="https://magnus.therning.org/2023-02-04-a-take-on-logging.html">here</a>). It decides wether to log or not using
+<code>defaultShouldDisplayException</code>, something I copied from <code>defaultOnException</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">myOnException :: Log.<span class="org-type">Logger</span> <span class="org-operator">-&gt;</span> <span class="org-type">Settings</span> <span class="org-operator">-&gt;</span> <span class="org-type">Settings</span>
+myOnException logger = setOnException handler
+  <span class="org-keyword">where</span>
+    handler mr e = when <span class="org-rainbow-delimiters-depth-1">(</span>defaultShouldDisplayException e<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">$</span> <span class="org-keyword">case</span> mr <span class="org-keyword">of</span>
+        Nothing -&gt; <span class="org-warning">Log</span>.warnIO logger <span class="org-operator">$</span> lm <span class="org-operator">$</span> <span class="org-string">"exception: "</span> <span class="org-operator">&lt;&gt;</span> <span class="org-warning">T</span>.pack <span class="org-rainbow-delimiters-depth-1">(</span>show e<span class="org-rainbow-delimiters-depth-1">)</span>
+        Just _ -&gt; <span class="org-keyword">do</span>
+            <span class="org-warning">Log</span>.warnIO logger <span class="org-operator">$</span> lm <span class="org-operator">$</span> <span class="org-string">"exception with request: "</span> <span class="org-operator">&lt;&gt;</span> <span class="org-warning">T</span>.pack <span class="org-rainbow-delimiters-depth-1">(</span>show e<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+<code>myExceptionResponse</code> responds with JSON objects. It's simpler than
+<code>defaultOnExceptionResponse</code>, but it suffices for my learning.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">myOnExceptionResponse :: <span class="org-type">Settings</span> <span class="org-operator">-&gt;</span> <span class="org-type">Settings</span>
+myOnExceptionResponse = setOnExceptionResponse handler
+  <span class="org-keyword">where</span>
+    handler _ =
+        responseLBS
+            <span class="org-warning">H</span>.internalServerError500
+            <span class="org-rainbow-delimiters-depth-1">[</span><span class="org-rainbow-delimiters-depth-2">(</span><span class="org-warning">H</span>.hContentType, <span class="org-string">"application/json; charset=utf-8"</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">]</span>
+            <span class="org-rainbow-delimiters-depth-1">(</span>encode <span class="org-operator">$</span> object <span class="org-rainbow-delimiters-depth-2">[</span><span class="org-string">"error"</span> <span class="org-operator">.=</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-string">"Something went wrong"</span> :: <span class="org-type">String</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">]</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+Finally, <code>myShutdownHandler</code> installs a handler for <code>SIGTERM</code> that logs and then
+shuts down.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">myShutdownHandler :: Log.<span class="org-type">Logger</span> <span class="org-operator">-&gt;</span> <span class="org-type">Settings</span> <span class="org-operator">-&gt;</span> <span class="org-type">Settings</span>
+myShutdownHandler logger = setInstallShutdownHandler shutdownHandler
+  <span class="org-keyword">where</span>
+    shutdownAction = <span class="org-warning">Log</span>.infoIO logger <span class="org-string">"closing down"</span>
+    shutdownHandler closeSocket = void <span class="org-operator">$</span> installHandler sigTERM <span class="org-rainbow-delimiters-depth-1">(</span>Catch <span class="org-operator">$</span> shutdownAction <span class="org-operator">&gt;&gt;</span> closeSocket<span class="org-rainbow-delimiters-depth-1">)</span> Nothing
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orga6ca7de" class="outline-2">
+<h2 id="orga6ca7de">Conclusion</h2>
+<div class="outline-text-2" id="text-orga6ca7de">
+<p>
+I really ought to have looked into this sooner, especially as it turns out that
+Warp offers all the knobs and dials I could wish for to control these aspects of
+its behaviour. The next step is to take this and put it to use in one of the
+services at <code>$DAYJOB</code>
+</p>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-warp.html">warp</a> </div>
+]]></description>
+  <category><![CDATA[haskell]]></category>
+  <category><![CDATA[warp]]></category>
+  <link>https://magnus.therning.org/2024-02-03-bending-warp.html</link>
+  <guid>https://magnus.therning.org/2024-02-03-bending-warp.html</guid>
+  <pubDate>Sat, 03 Feb 2024 22:16:00 +0100</pubDate>
+</item>
 <item>
   <title><![CDATA[Getting Amazonka S3 to work with localstack]]></title>
   <description><![CDATA[
@@ -20,11 +171,11 @@ The code I started with for setting up the connection looked like this
 </p>
 
 <div class="org-src-container">
-<pre class="src src-haskell"><span class="org-haskell-definition">main</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
-  awsEnv <span class="org-haskell-operator">&lt;-</span> AWS.overrideService localEndpoint <span class="org-haskell-operator">&lt;$&gt;</span> AWS.newEnv AWS.discover
-  <span class="org-comment-delimiter">-- </span><span class="org-comment">do S3 stuff</span>
-  <span class="org-haskell-keyword">where</span>
-    localEndpoint <span class="org-haskell-operator">=</span> AWS.setEndpoint <span class="org-haskell-constructor">False</span> <span class="org-string">"localhost"</span> 4566
+<pre class="src src-haskell">main = <span class="org-keyword">do</span>
+  awsEnv &lt;- <span class="org-warning">AWS</span>.overrideService localEndpoint <span class="org-operator">&lt;$&gt;</span> <span class="org-warning">AWS</span>.newEnv <span class="org-warning">AWS</span>.discover
+  <span class="org-comment">-- do S3 stuff</span>
+  <span class="org-keyword">where</span>
+    localEndpoint = <span class="org-warning">AWS</span>.setEndpoint False <span class="org-string">"localhost"</span> <span class="org-number">4566</span>
 </pre>
 </div>
 
@@ -45,12 +196,12 @@ up with this code instead
 </p>
 
 <div class="org-src-container">
-<pre class="src src-haskell"><span class="org-haskell-definition">main</span> <span class="org-haskell-operator">=</span> <span class="org-haskell-keyword">do</span>
-  awsEnv <span class="org-haskell-operator">&lt;-</span> AWS.overrideService <span class="org-rainbow-delimiters-depth-1">(</span>s3AddrStyle <span class="org-haskell-operator">.</span> localEndpoint<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-haskell-operator">&lt;$&gt;</span> AWS.newEnv AWS.discover
-  <span class="org-comment-delimiter">-- </span><span class="org-comment">do S3 stuff</span>
-  <span class="org-haskell-keyword">where</span>
-    localEndpoint <span class="org-haskell-operator">=</span> AWS.setEndpoint <span class="org-haskell-constructor">False</span> <span class="org-string">"localhost"</span> 4566
-    s3AddrStyle svc <span class="org-haskell-operator">=</span> svc <span class="org-rainbow-delimiters-depth-1">{</span>AWS.s3AddressingStyle <span class="org-haskell-operator">=</span> <span class="org-haskell-constructor">AWS.S3AddressingStylePath</span><span class="org-rainbow-delimiters-depth-1">}</span>
+<pre class="src src-haskell">main = <span class="org-keyword">do</span>
+  awsEnv &lt;- <span class="org-warning">AWS</span>.overrideService <span class="org-rainbow-delimiters-depth-1">(</span>s3AddrStyle <span class="org-operator">.</span> localEndpoint<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">&lt;$&gt;</span> <span class="org-warning">AWS</span>.newEnv <span class="org-warning">AWS</span>.discover
+  <span class="org-comment">-- do S3 stuff</span>
+  <span class="org-keyword">where</span>
+    localEndpoint = <span class="org-warning">AWS</span>.setEndpoint False <span class="org-string">"localhost"</span> <span class="org-number">4566</span>
+    s3AddrStyle svc = svc <span class="org-rainbow-delimiters-depth-1">{</span><span class="org-warning">AWS</span>.s3AddressingStyle = AWS.S3AddressingStylePath<span class="org-rainbow-delimiters-depth-1">}</span>
 </pre>
 </div>
 <div id="footnotes">
@@ -882,119 +1033,6 @@ So far I've found it worth the cost.
   <link>https://magnus.therning.org/2023-07-26-making-keymaps-prettier-with-general.el.html</link>
   <guid>https://magnus.therning.org/2023-07-26-making-keymaps-prettier-with-general.el.html</guid>
   <pubDate>Wed, 26 Jul 2023 10:56:00 +0200</pubDate>
-</item>
-<item>
-  <title><![CDATA[general.el and two ways to define keybindings]]></title>
-  <description><![CDATA[
-<p>
-When I abandoned <a href="https://www.spacemacs.org/">spacemacs</a> I really wanted to duplicate its keybindings using
-<code>SPC</code> as leader key and per-mode bindings available by pressing <code>,</code>. I found a
-nice setup using <a href="https://github.com/noctuid/general.el">general.el</a> in <a href="https://github.com/tshu-w/.emacs.d/">Tianshu Wang's Emacs config</a>. I made only minor
-modification and ended up with the following setup.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> <span class="org-constant">general</span>
-  <span class="org-builtin">:after</span> <span class="org-rainbow-delimiters-depth-2">(</span>evil evil-easymotion<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-builtin">:config</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>general-evil-setup<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>general-auto-unbind-keys<span class="org-rainbow-delimiters-depth-2">)</span>
-
-  <span class="org-rainbow-delimiters-depth-2">(</span>general-define-key
-   <span class="org-builtin">:states</span> '<span class="org-rainbow-delimiters-depth-3">(</span>normal insert motion visual emacs<span class="org-rainbow-delimiters-depth-3">)</span>
-   <span class="org-builtin">:keymaps</span> 'override
-   <span class="org-builtin">:prefix-map</span> 'tyrant-map
-   <span class="org-builtin">:prefix</span> <span class="org-string">"SPC"</span>
-   <span class="org-builtin">:non-normal-prefix</span> <span class="org-string">"M-SPC"</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">general-create-definer</span> mes/tyrant-def <span class="org-builtin">:keymaps</span> 'tyrant-map<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">mes/tyrant-def</span> <span class="org-string">""</span> nil<span class="org-rainbow-delimiters-depth-2">)</span>
-
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">general-create-definer</span> mes/despot-def
-    <span class="org-builtin">:states</span> '<span class="org-rainbow-delimiters-depth-3">(</span>normal insert motion visual emacs<span class="org-rainbow-delimiters-depth-3">)</span>
-    <span class="org-builtin">:keymaps</span> 'override
-    <span class="org-builtin">:major-modes</span> t
-    <span class="org-builtin">:prefix</span> <span class="org-string">","</span>
-    <span class="org-builtin">:non-normal-prefix</span> <span class="org-string">"M-,"</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">mes/despot-def</span> <span class="org-string">""</span> nil<span class="org-rainbow-delimiters-depth-2">)</span>
-
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">general-def</span> universal-argument-map
-    <span class="org-string">"SPC u"</span> 'universal-argument-more<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-One slightly surprising thing I found out is that two different ways to define
-keybindings can be used, one seems to work on both top and mode level, the other
-only on mode level.
-</p>
-
-<div id="outline-container-orgca8de18" class="outline-2">
-<h2 id="orgca8de18">Top-level keybindings (<code>SPC</code>)</h2>
-<div class="outline-text-2" id="text-orgca8de18">
-<p>
-At the top-level, i.e. when using <code>mes/tyrant-def</code>, I need to use a <code>cons</code> based
-configuration. This is part of my top-level keybindings:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">mes/tyrant-def</span>
-  <span class="org-string">"SPC"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"M-x"</span> . execute-extended-command<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-string">"TAB"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"latest buffer"</span> . mode-line-other-buffer<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-string">"!"</span> 'shell-command
-  <span class="org-string">"/"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"search"</span> . consult-ripgrep<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-string">"u"</span> 'universal-argument
-
-  <span class="org-string">"b"</span> <span class="org-rainbow-delimiters-depth-2">(</span>cons <span class="org-string">"bufs"</span> <span class="org-rainbow-delimiters-depth-3">(</span>make-sparse-keymap<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-string">"bb"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"switch"</span> . consult-buffer<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-string">"bc"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"close"</span> . kill-this-buffer<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-string">"be"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"erase"</span> . erase-buffer<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-string">"bs"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"scratch"</span> . scratch-buffer<span class="org-rainbow-delimiters-depth-2">)</span>
-
-  <span class="org-comment-delimiter">;; </span><span class="org-comment">....</span>
-  <span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-When it's done this way <a href="https://github.com/justbur/emacs-which-key">which-key</a> picks up the descriptive strings.
-</p>
-
-<p>
-It did take me a while to figure out that this config style was necessary. Again
-<a href="https://github.com/tshu-w/.emacs.d/">Tianshu Wang's Emacs config</a> was what led me right.
-</p>
-</div>
-</div>
-
-<div id="outline-container-org80efaa0" class="outline-2">
-<h2 id="org80efaa0">Mode-level keybindings (<code>,</code>)</h2>
-<div class="outline-text-2" id="text-org80efaa0">
-<p>
-At the mode-level, i.e. using <code>mes/despot-def</code>, I've found that I can, almost
-always, define keybindings following the documentation of <a href="https://github.com/noctuid/general.el">general.el</a>. Here's the
-keybindings I have for <code>nix-mode</code>:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">mes/despot-def</span> nix-mode-map
-  <span class="org-string">"="</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-builtin">:ignore</span> t <span class="org-builtin">:wk</span> <span class="org-string">"format"</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-string">"=b"</span> '<span class="org-rainbow-delimiters-depth-2">(</span>nix-format-buffer <span class="org-builtin">:wk</span> <span class="org-string">"buffer"</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-Just the other day I found that AUCTeX must be doing something with it's keymaps
-and I have to use the <code>cons</code>-based configuration style for its keymaps.
-</p>
-</div>
-</div>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-general.el.html">general.el</a> </div>
-]]></description>
-  <category><![CDATA[emacs]]></category>
-  <category><![CDATA[general.el]]></category>
-  <link>https://magnus.therning.org/2023-07-09-general.el-and-two-ways-to-define-keybindings.html</link>
-  <guid>https://magnus.therning.org/2023-07-09-general.el-and-two-ways-to-define-keybindings.html</guid>
-  <pubDate>Sun, 09 Jul 2023 09:34:00 +0200</pubDate>
 </item>
 </channel>
 </rss>
