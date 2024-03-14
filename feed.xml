@@ -4,7 +4,89 @@
 <title><![CDATA[Magnus web site]]></title>
 <description><![CDATA[Magnus web site]]></description>
 <link>https://magnus.therning.org/</link>
-<lastBuildDate>Sat, 03 Feb 2024 23:37:19 +0100</lastBuildDate>
+<lastBuildDate>Thu, 14 Mar 2024 23:30:29 +0100</lastBuildDate>
+<item>
+  <title><![CDATA[Hackage revisions in Nix]]></title>
+  <description><![CDATA[
+<p>
+Today I got very confused when using <code>callHackageDirect</code> to add the <code>openapi3</code>
+package gave me errors like this
+</p>
+
+<pre class="example" id="orgd0094e9">
+&gt; Using Parsec parser
+&gt; Configuring openapi3-3.2.3...
+&gt; CallStack (from HasCallStack):
+&gt;   withMetadata, called at libraries/Cabal/Cabal/src/Distribution/Simple/Ut...
+&gt; Error: Setup: Encountered missing or private dependencies:
+&gt; base &gt;=4.11.1.0 &amp;&amp; &lt;4.18,
+&gt; base-compat-batteries &gt;=0.11.1 &amp;&amp; &lt;0.13,
+&gt; template-haskell &gt;=2.13.0.0 &amp;&amp; &lt;2.20
+</pre>
+
+<p>
+When looking at its <a href="https://hackage.haskell.org/package/openapi3-3.2.3">entry on Hackage</a> those weren't the version ranges for the
+dependencies. Also, running <code>ghc-pkg list</code> told me that I already had all
+required packages at versions matching what Hackage said. So, what's actually
+happening here?
+</p>
+
+<p>
+It took me a while before remembering about <a href="https://hackage.haskell.org/package/openapi3-3.2.3/revisions/">revisions</a> but once I did it was
+clear that <code>callHackageDirect</code> always fetches the initial revision of a package
+(i.e. it fetches the original tar-ball uploaded by the author). After realising
+this it makes perfect sense &#x2013; it's the only revision that's guaranteed to be
+there and won't change. However, it would be very useful to be able to pick a
+revision that actually builds.
+</p>
+
+<p>
+I'm not the first one to find this, of course. It's been noted and written about
+on the <a href="https://discourse.nixos.org/t/watch-out-hackage-revisions/14588">discource</a> several years ago. What I didn't find though was a way to
+influence what revision that's picked. It took a bit of rummaging around in the
+<code>nixpkgs</code> code but finally I found two variables that's used in the Hackage
+derivation to control this
+</p>
+
+<ul class="org-ul">
+<li><code>revision</code> - a string with the number of the revision, and</li>
+<li><code>editedCabalFile</code> - the SHA256 of the modified Cabal file.</li>
+</ul>
+
+<p>
+Setting them is done using the <code>overrideCabal</code> function. This is a piece of my
+setup for a modified set of Haskell packages:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix"><span class="org-nix-attribute">hl</span> = nixpkgs.haskell.lib.compose;
+
+<span class="org-nix-attribute">hsPkgs</span> = nixpkgs.haskell.packages.ghc963.override <span class="org-rainbow-delimiters-depth-1">{</span>
+  <span class="org-nix-attribute">overrides</span> = newpkgs: oldpkgs: <span class="org-rainbow-delimiters-depth-2">{</span>
+    <span class="org-nix-attribute">openapi3</span> = hl.overrideCabal <span class="org-rainbow-delimiters-depth-3">(</span>drv: <span class="org-rainbow-delimiters-depth-4">{</span>
+      <span class="org-nix-attribute">revision</span> = <span class="org-string">"4"</span>;
+      <span class="org-nix-attribute">editedCabalFile</span> =
+        <span class="org-string">"sha256-a5C58iYrL7eAEHCzinICiJpbNTGwiOFFAYik28et7fI="</span>;
+    <span class="org-rainbow-delimiters-depth-4">}</span><span class="org-rainbow-delimiters-depth-3">)</span> <span class="org-rainbow-delimiters-depth-3">(</span>oldpkgs.callHackageDirect <span class="org-rainbow-delimiters-depth-4">{</span>
+      <span class="org-nix-attribute">pkg</span> = <span class="org-string">"openapi3"</span>;
+      <span class="org-nix-attribute">ver</span> = <span class="org-string">"3.2.3"</span>;
+      <span class="org-nix-attribute">sha256</span> = <span class="org-string">"sha256-0F16o3oqOB5ri6KBdPFEFHB4dv1z+Pw6E5f1rwkqwi8="</span>;
+    <span class="org-rainbow-delimiters-depth-4">}</span> <span class="org-rainbow-delimiters-depth-4">{</span> <span class="org-rainbow-delimiters-depth-4">}</span><span class="org-rainbow-delimiters-depth-3">)</span>;
+</pre>
+</div>
+
+<p>
+It's not very ergonomic, and I think an extended version of <code>callHackageDirect</code>
+would make sense.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-nix.html">nix</a> </div>
+]]></description>
+  <category><![CDATA[haskell]]></category>
+  <category><![CDATA[nix]]></category>
+  <link>https://magnus.therning.org/2024-03-14-hackage-revisions-in-nix.html</link>
+  <guid>https://magnus.therning.org/2024-03-14-hackage-revisions-in-nix.html</guid>
+  <pubDate>Thu, 14 Mar 2024 22:31:00 +0100</pubDate>
+</item>
 <item>
   <title><![CDATA[Bending Warp]]></title>
   <description><![CDATA[
@@ -939,100 +1021,6 @@ and Zellij config in a <a href="https://gitlab.com/-/snippets/3595805">snippet</
   <link>https://magnus.therning.org/2023-09-10-using-emacs-for-the-scrollback-in-terminal-multiplexers.html</link>
   <guid>https://magnus.therning.org/2023-09-10-using-emacs-for-the-scrollback-in-terminal-multiplexers.html</guid>
   <pubDate>Sun, 10 Sep 2023 13:17:00 +0200</pubDate>
-</item>
-<item>
-  <title><![CDATA[Making keymaps prettier with general.el]]></title>
-  <description><![CDATA[
-<p>
-After my previous post on <a href="https://magnus.therning.org/2023-07-09-general.el-and-two-ways-to-define-keybindings.html">defining keymaps using general.el</a> I revisited some of
-my setup in order to make some package keymaps prettier when displayed by
-<a href="https://github.com/justbur/emacs-which-key">which-key</a>. The keymaps defined by packages are typically don't contain any
-description of the bindings, so <code>which-key</code> ends up displaying the name of the
-function bound to the key. It's not always easy to remember what a function does
-based just on its name, and sometimes the names are so long that <code>which-key</code>
-cuts the name short and all you see is a bunch of keybindings for seemingly the
-same function.
-</p>
-
-<p>
-The only remedy I've found is to re-define the keybindings decorating them with
-descriptions that (hopefully) are easier to understand than the function name.
-(At least, this way I only have myself to blame if it's a bad description.)
-</p>
-
-<p>
-One such keymap that I use somewhat frequently, and where the function names
-often confuse me is <code>evil-mc-key-map</code> from <a href="https://github.com/gabesoft/evil-mc">evil-mc</a>. The keymap is bound at <code>g .</code>
-in evil's normal and visual modes, and it also contains a few bindings using
-control (<code>C-</code>) and meta (<code>M-</code>) which I think would be better placed under
-sub-keymaps.
-</p>
-
-<p>
-I decided to group the "make and go" functions under <code>g . m</code> and the "skip and
-go" function under <code>g . s</code>. The rest I'm just giving descriptions. <code>general.el</code>
-makes it easy both to overwrite already existing bindings, but adding
-descriptions, and to add new ones, all in one call to <code>general-def</code>:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">general-def</span> evil-mc-key-map
-  <span class="org-builtin">:states</span> '<span class="org-rainbow-delimiters-depth-2">(</span>normal visual<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-string">"g.A"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"make end sel"</span> . evil-mc-make-cursor-in-visual-selection-end<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-string">"g.I"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"make beg sel"</span> . evil-mc-make-cursor-in-visual-selection-beg<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-string">"g.a"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"make all"</span> . evil-mc-make-all-cursors<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-string">"g.q"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"undo all"</span> . evil-mc-undo-all-cursors<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-string">"g.u"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"undo last"</span> . evil-mc-undo-last-added-cursor<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-string">"g. RET"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"make here"</span> . evil-mc-make-cursor-here<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-string">"g.p"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"pause"</span> . evil-mc-pause-cursors<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-string">"g.r"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"resume"</span> . evil-mc-resume-cursors<span class="org-rainbow-delimiters-depth-2">)</span>
-
-  <span class="org-string">"g.m"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-builtin">:ignore</span> t <span class="org-builtin">:wk</span> <span class="org-string">"make &amp; go"</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-string">"g.m$"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to last cur"</span> . evil-mc-make-and-goto-last-cursor<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-string">"g.m0"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to first cur"</span> . evil-mc-make-and-goto-first-cursor<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-string">"g.mC"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to prev cur"</span> . evil-mc-make-and-goto-prev-cursor<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-string">"g.mc"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to next cur"</span> . evil-mc-make-and-goto-next-cursor<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-string">"g.mh"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to prev match"</span> . evil-mc-make-and-goto-prev-match<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-string">"g.mj"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to next line"</span> . evil-mc-make-cursor-move-next-line<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-string">"g.mk"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to prev line"</span> . evil-mc-make-cursor-move-prev-line<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-string">"g.ml"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to next match"</span> . evil-mc-make-and-goto-next-match<span class="org-rainbow-delimiters-depth-2">)</span>
-
-  <span class="org-string">"g.s"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-builtin">:ignore</span> t <span class="org-builtin">:wk</span> <span class="org-string">"skip &amp; go"</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-string">"g.sC"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to prev cur"</span> . evil-mc-skip-and-goto-prev-cursor<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-string">"g.sc"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to next cur"</span> . evil-mc-skip-and-goto-next-cursor<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-string">"g.sh"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to prev match"</span> . evil-mc-skip-and-goto-prev-match<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-string">"g.sl"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to next match"</span> . evil-mc-skip-and-goto-next-match<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-Finally I want to remove the bindings that weren't overwritten. <code>general.el</code>
-makes that easy too with <code>general-undbind</code>:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">general-unbind</span> '<span class="org-rainbow-delimiters-depth-2">(</span>normal visual<span class="org-rainbow-delimiters-depth-2">)</span> evil-mc-key-map
-  <span class="org-string">"g.$"</span> <span class="org-string">"g.0"</span>
-  <span class="org-string">"g. C-n"</span> <span class="org-string">"g. C-S-n"</span>
-  <span class="org-string">"g. C-u"</span> <span class="org-string">"g. C-S-u"</span>
-  <span class="org-string">"g. C-p"</span> <span class="org-string">"g. C-r"</span>
-  <span class="org-string">"g. M-N"</span> <span class="org-string">"g. M-n"</span>
-  <span class="org-string">"g.N"</span> <span class="org-string">"g.O"</span> <span class="org-string">"g.n"</span> <span class="org-string">"g.o"</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-Yes, this is a bit of work, and so far I've only done this for a few keymaps
-(those containing bindings I use frequently and/or find difficult to remember).
-So far I've found it worth the cost.
-</p>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-general.el.html">general.el</a> </div>
-]]></description>
-  <category><![CDATA[emacs]]></category>
-  <category><![CDATA[general.el]]></category>
-  <link>https://magnus.therning.org/2023-07-26-making-keymaps-prettier-with-general.el.html</link>
-  <guid>https://magnus.therning.org/2023-07-26-making-keymaps-prettier-with-general.el.html</guid>
-  <pubDate>Wed, 26 Jul 2023 10:56:00 +0200</pubDate>
 </item>
 </channel>
 </rss>

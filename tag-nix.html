@@ -12,6 +12,80 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <h1 class="title">Posts tagged "nix":</h1>
+<div class="post-date">14 Mar 2024</div><h1 class="post-title"><a href="https://magnus.therning.org/2024-03-14-hackage-revisions-in-nix.html">Hackage revisions in Nix</a></h1>
+<p>
+Today I got very confused when using <code>callHackageDirect</code> to add the <code>openapi3</code>
+package gave me errors like this
+</p>
+
+<pre class="example" id="orgd0094e9">
+&gt; Using Parsec parser
+&gt; Configuring openapi3-3.2.3...
+&gt; CallStack (from HasCallStack):
+&gt;   withMetadata, called at libraries/Cabal/Cabal/src/Distribution/Simple/Ut...
+&gt; Error: Setup: Encountered missing or private dependencies:
+&gt; base &gt;=4.11.1.0 &amp;&amp; &lt;4.18,
+&gt; base-compat-batteries &gt;=0.11.1 &amp;&amp; &lt;0.13,
+&gt; template-haskell &gt;=2.13.0.0 &amp;&amp; &lt;2.20
+</pre>
+
+<p>
+When looking at its <a href="https://hackage.haskell.org/package/openapi3-3.2.3">entry on Hackage</a> those weren't the version ranges for the
+dependencies. Also, running <code>ghc-pkg list</code> told me that I already had all
+required packages at versions matching what Hackage said. So, what's actually
+happening here?
+</p>
+
+<p>
+It took me a while before remembering about <a href="https://hackage.haskell.org/package/openapi3-3.2.3/revisions/">revisions</a> but once I did it was
+clear that <code>callHackageDirect</code> always fetches the initial revision of a package
+(i.e. it fetches the original tar-ball uploaded by the author). After realising
+this it makes perfect sense &#x2013; it's the only revision that's guaranteed to be
+there and won't change. However, it would be very useful to be able to pick a
+revision that actually builds.
+</p>
+
+<p>
+I'm not the first one to find this, of course. It's been noted and written about
+on the <a href="https://discourse.nixos.org/t/watch-out-hackage-revisions/14588">discource</a> several years ago. What I didn't find though was a way to
+influence what revision that's picked. It took a bit of rummaging around in the
+<code>nixpkgs</code> code but finally I found two variables that's used in the Hackage
+derivation to control this
+</p>
+
+<ul class="org-ul">
+<li><code>revision</code> - a string with the number of the revision, and</li>
+<li><code>editedCabalFile</code> - the SHA256 of the modified Cabal file.</li>
+</ul>
+
+<p>
+Setting them is done using the <code>overrideCabal</code> function. This is a piece of my
+setup for a modified set of Haskell packages:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix"><span class="org-nix-attribute">hl</span> = nixpkgs.haskell.lib.compose;
+
+<span class="org-nix-attribute">hsPkgs</span> = nixpkgs.haskell.packages.ghc963.override <span class="org-rainbow-delimiters-depth-1">{</span>
+  <span class="org-nix-attribute">overrides</span> = newpkgs: oldpkgs: <span class="org-rainbow-delimiters-depth-2">{</span>
+    <span class="org-nix-attribute">openapi3</span> = hl.overrideCabal <span class="org-rainbow-delimiters-depth-3">(</span>drv: <span class="org-rainbow-delimiters-depth-4">{</span>
+      <span class="org-nix-attribute">revision</span> = <span class="org-string">"4"</span>;
+      <span class="org-nix-attribute">editedCabalFile</span> =
+        <span class="org-string">"sha256-a5C58iYrL7eAEHCzinICiJpbNTGwiOFFAYik28et7fI="</span>;
+    <span class="org-rainbow-delimiters-depth-4">}</span><span class="org-rainbow-delimiters-depth-3">)</span> <span class="org-rainbow-delimiters-depth-3">(</span>oldpkgs.callHackageDirect <span class="org-rainbow-delimiters-depth-4">{</span>
+      <span class="org-nix-attribute">pkg</span> = <span class="org-string">"openapi3"</span>;
+      <span class="org-nix-attribute">ver</span> = <span class="org-string">"3.2.3"</span>;
+      <span class="org-nix-attribute">sha256</span> = <span class="org-string">"sha256-0F16o3oqOB5ri6KBdPFEFHB4dv1z+Pw6E5f1rwkqwi8="</span>;
+    <span class="org-rainbow-delimiters-depth-4">}</span> <span class="org-rainbow-delimiters-depth-4">{</span> <span class="org-rainbow-delimiters-depth-4">}</span><span class="org-rainbow-delimiters-depth-3">)</span>;
+</pre>
+</div>
+
+<p>
+It's not very ergonomic, and I think an extended version of <code>callHackageDirect</code>
+would make sense.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-nix.html">nix</a> </div>
+
 <div class="post-date">21 Aug 2022</div><h1 class="post-title"><a href="https://magnus.therning.org/2022-08-21-patching-in-nix.html">Patching in Nix</a></h1>
 <p>
 Today I wanted to move one of my Haskell projects to GHC 9.2.4 and found that

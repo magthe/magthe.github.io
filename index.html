@@ -12,6 +12,80 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <header class="site-header" role="banner"><h1 class="title">Magnus web site</h1><h2 class="subtitle">Random stuff</h2></header>
+<div class="post-date">14 Mar 2024</div><h1 class="post-title"><a href="https://magnus.therning.org/2024-03-14-hackage-revisions-in-nix.html">Hackage revisions in Nix</a></h1>
+<p>
+Today I got very confused when using <code>callHackageDirect</code> to add the <code>openapi3</code>
+package gave me errors like this
+</p>
+
+<pre class="example" id="orgd0094e9">
+&gt; Using Parsec parser
+&gt; Configuring openapi3-3.2.3...
+&gt; CallStack (from HasCallStack):
+&gt;   withMetadata, called at libraries/Cabal/Cabal/src/Distribution/Simple/Ut...
+&gt; Error: Setup: Encountered missing or private dependencies:
+&gt; base &gt;=4.11.1.0 &amp;&amp; &lt;4.18,
+&gt; base-compat-batteries &gt;=0.11.1 &amp;&amp; &lt;0.13,
+&gt; template-haskell &gt;=2.13.0.0 &amp;&amp; &lt;2.20
+</pre>
+
+<p>
+When looking at its <a href="https://hackage.haskell.org/package/openapi3-3.2.3">entry on Hackage</a> those weren't the version ranges for the
+dependencies. Also, running <code>ghc-pkg list</code> told me that I already had all
+required packages at versions matching what Hackage said. So, what's actually
+happening here?
+</p>
+
+<p>
+It took me a while before remembering about <a href="https://hackage.haskell.org/package/openapi3-3.2.3/revisions/">revisions</a> but once I did it was
+clear that <code>callHackageDirect</code> always fetches the initial revision of a package
+(i.e. it fetches the original tar-ball uploaded by the author). After realising
+this it makes perfect sense &#x2013; it's the only revision that's guaranteed to be
+there and won't change. However, it would be very useful to be able to pick a
+revision that actually builds.
+</p>
+
+<p>
+I'm not the first one to find this, of course. It's been noted and written about
+on the <a href="https://discourse.nixos.org/t/watch-out-hackage-revisions/14588">discource</a> several years ago. What I didn't find though was a way to
+influence what revision that's picked. It took a bit of rummaging around in the
+<code>nixpkgs</code> code but finally I found two variables that's used in the Hackage
+derivation to control this
+</p>
+
+<ul class="org-ul">
+<li><code>revision</code> - a string with the number of the revision, and</li>
+<li><code>editedCabalFile</code> - the SHA256 of the modified Cabal file.</li>
+</ul>
+
+<p>
+Setting them is done using the <code>overrideCabal</code> function. This is a piece of my
+setup for a modified set of Haskell packages:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix"><span class="org-nix-attribute">hl</span> = nixpkgs.haskell.lib.compose;
+
+<span class="org-nix-attribute">hsPkgs</span> = nixpkgs.haskell.packages.ghc963.override <span class="org-rainbow-delimiters-depth-1">{</span>
+  <span class="org-nix-attribute">overrides</span> = newpkgs: oldpkgs: <span class="org-rainbow-delimiters-depth-2">{</span>
+    <span class="org-nix-attribute">openapi3</span> = hl.overrideCabal <span class="org-rainbow-delimiters-depth-3">(</span>drv: <span class="org-rainbow-delimiters-depth-4">{</span>
+      <span class="org-nix-attribute">revision</span> = <span class="org-string">"4"</span>;
+      <span class="org-nix-attribute">editedCabalFile</span> =
+        <span class="org-string">"sha256-a5C58iYrL7eAEHCzinICiJpbNTGwiOFFAYik28et7fI="</span>;
+    <span class="org-rainbow-delimiters-depth-4">}</span><span class="org-rainbow-delimiters-depth-3">)</span> <span class="org-rainbow-delimiters-depth-3">(</span>oldpkgs.callHackageDirect <span class="org-rainbow-delimiters-depth-4">{</span>
+      <span class="org-nix-attribute">pkg</span> = <span class="org-string">"openapi3"</span>;
+      <span class="org-nix-attribute">ver</span> = <span class="org-string">"3.2.3"</span>;
+      <span class="org-nix-attribute">sha256</span> = <span class="org-string">"sha256-0F16o3oqOB5ri6KBdPFEFHB4dv1z+Pw6E5f1rwkqwi8="</span>;
+    <span class="org-rainbow-delimiters-depth-4">}</span> <span class="org-rainbow-delimiters-depth-4">{</span> <span class="org-rainbow-delimiters-depth-4">}</span><span class="org-rainbow-delimiters-depth-3">)</span>;
+</pre>
+</div>
+
+<p>
+It's not very ergonomic, and I think an extended version of <code>callHackageDirect</code>
+would make sense.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-nix.html">nix</a> </div>
+
 <div class="post-date">03 Feb 2024</div><h1 class="post-title"><a href="https://magnus.therning.org/2024-02-03-bending-warp.html">Bending Warp</a></h1>
 <p>
 In the past I've noticed that <a href="https://hackage.haskell.org/package/warp">Warp</a> both writes to <code>stdout</code> at times and produces
@@ -352,205 +426,6 @@ The full file is <a href="https://gitlab.com/magus/mes/-/blob/main/lisp/mes-dev-
 
 </div>
 </div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-tree-sitter.html">tree-sitter</a> </div>
-
-<div class="post-date">01 Oct 2023</div><h1 class="post-title"><a href="https://magnus.therning.org/2023-10-01-how-i-use-emacs.html">How I use Emacs</a></h1>
-<p>
-I've recently written <a href="https://magnus.therning.org/2023-09-10-using-emacs-for-the-scrollback-in-terminal-multiplexers.html">two</a> <a href="https://magnus.therning.org/2023-09-30-using-emacs-as-$editor.html">posts</a> about my attempts to use a slimmed down Emacs
-setup for some very specific use cases. I'be put both posts on Reddit, <a href="https://www.reddit.com/r/emacs/comments/16f7rbn/using_emacs_for_the_scrollback_in_terminal/">here</a> and
-<a href="https://www.reddit.com/r/emacs/comments/16w9bvh/using_emacs_as_editor/">here</a>, and in both cases the majority of comments have been telling me that I
-should use <code>emacsclient</code>. I know they have good intentions &#x2013; they want to share
-insight they've gained and benefit from on a daily basis. However, no matter how
-many Emacs devotees point out the benefits of <code>emacsclient</code> I'm not about to
-start using it. This post is an attempt to answer why that is.
-</p>
-
-<p>
-Up front I want to clarify a few things:
-</p>
-
-<ol class="org-ol">
-<li>Yes, I know how to use <code>emacsclient</code>, and</li>
-<li>yes, I know it is a good way to, in a way, improve Emacs startup time,<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup> and</li>
-<li>yes, I know how to turn on <code>server-mode</code> in Emacs, and finally</li>
-<li>yes, I know how to run Emacs using a user unit for SystemD.</li>
-</ol>
-
-<p>
-With that out of the way, here are the two ways I use Emacs
-</p>
-
-<ol class="org-ol">
-<li>As my starting point for work, i.e. writing code, keeping notes, tracking
-time, and writing my daily work journal.</li>
-<li>As my editor of ephemeral files.<sup><a id="fnr.2" class="footref" href="#fn.2" role="doc-backlink">2</a></sup></li>
-</ol>
-
-<p>
-The next two sections explain more about these two distinct ways I use Emacs
-</p>
-<div id="outline-container-org06ef619" class="outline-2">
-<h2 id="org06ef619">As my starting point for work</h2>
-<div class="outline-text-2" id="text-org06ef619">
-<table>
-
-
-<colgroup>
-<col  class="org-left">
-
-<col  class="org-left">
-</colgroup>
-<tbody>
-<tr>
-<td class="org-left">Number of packages</td>
-<td class="org-left">162</td>
-</tr>
-
-<tr>
-<td class="org-left">Init time (<code>emacs-init-time</code>)</td>
-<td class="org-left">1.883483s</td>
-</tr>
-
-<tr>
-<td class="org-left">Config size (by <code>du -bch</code>)</td>
-<td class="org-left">68K</td>
-</tr>
-</tbody>
-</table>
-
-<p>
-Much of what I do on a daily basis starts in Emacs. I typically have one
-instance of Emacs open and I always keep it on the second virtual desktop. I
-always run it in the GUI. When I write code I start with opening a new tab, then
-I open a <code>dired</code> buffer in the project's folder (by using <code>consult-projectile</code>).
-When I need a terminal I open it from Emacs using on of
-<code>terminal-here-project-launch</code> or <code>terminal-here</code>. Occasionally I open a shell
-prompt inside Emacs using <code>shell-pop</code>.
-</p>
-
-<p>
-Back when I used Vim as my main editor I <i>always</i> started a terminal first and
-then opened files from there. Since switching to Emacs I've completely stopped
-doing that. Over the last 8 or so years of Emacs usage there's only been a
-handful of times when I've wanted to open a file from the terminal and I've run
-<code>M-x server-start</code> and used <code>emacsclient</code>. The last time was more than a year
-ago.
-</p>
-
-<p>
-As I typically keep exactly one Emacs open, and I start it soon after logging
-in, I'm not too concerned with startup time. I think under 2s is more than fast
-enough given the functionality I have in my setup.
-</p>
-
-<p>
-This setup I use for taking notes and writing my daily work journal, as well as
-reading email, and programming in a half-dozen languages. I have a large-ish set
-of keybindings that I've set up using <a href="https://github.com/noctuid/general.el">general.el</a>, inspired by Spacemacs at first
-but by now it's started to gain its own character.
-</p>
-</div>
-</div>
-<div id="outline-container-org9ecf44f" class="outline-2">
-<h2 id="org9ecf44f">As my editor of ephemeral files (<code>$EDITOR</code>)</h2>
-<div class="outline-text-2" id="text-org9ecf44f">
-<table>
-
-
-<colgroup>
-<col  class="org-left">
-
-<col  class="org-left">
-</colgroup>
-<tbody>
-<tr>
-<td class="org-left">Number of packages</td>
-<td class="org-left">22</td>
-</tr>
-
-<tr>
-<td class="org-left">Init time (<code>emacs-init-time</code>)</td>
-<td class="org-left">0.209298s</td>
-</tr>
-
-<tr>
-<td class="org-left">Config size (by <code>du -bch</code>)</td>
-<td class="org-left">6.7K</td>
-</tr>
-</tbody>
-</table>
-
-<p>
-Ephemeral files are files I tend to edit for less than 30 seconds, maybe a
-minute at most. There are three main use cases for ephemeral files:
-</p>
-
-<ol class="org-ol">
-<li>Searching the scrollback buffer in <a href="https://zellij.dev/">zellij</a>, and copying bits to the clipboard
-for various uses.</li>
-<li>Editing files when running <code>git</code> from the command line. It's not something I
-do very often, but it happens.</li>
-<li>Editing shell commands. When they get a little too large to handle
-conveniently using ZSH directly I invoke <code>edit-command-line</code>.</li>
-</ol>
-
-<p>
-For a few reasons I decided to make a second, completely separate configuration
-just to handle ephemeral files.
-</p>
-
-<ul class="org-ul">
-<li>It will only be used in a terminal.</li>
-<li>I want to be able to have some special keybindings that suit a specific use,
-e.g. for the scrollback buffer I've bound `SPC Y` to copy the selected text to
-the clipboard and then exit Emacs. It's a thing that I use all the time with
-the scrollback buffer, but never otherwise.</li>
-<li>I have no need, nor any desire, to switch from editing a commit message, or
-searching a scrollback buffer, to reading email or editing an org-mode file.
-The complete separation is a feature.</li>
-</ul>
-
-<p>
-With a startup time of less than a quarter of a second it is well within the
-acceptable, and there is absolutely no need to use <code>emacsclient</code> just to speed
-things up. Given my desire for separation, I wouldn't want to use my main Emacs
-instance as a server and edit ephemeral files anyway.
-</p>
-</div>
-</div>
-<div id="outline-container-orgcadf982" class="outline-2">
-<h2 id="orgcadf982">Conclusion</h2>
-<div class="outline-text-2" id="text-orgcadf982">
-<p>
-I've found a setup that seems to work really well and tick all the requirements
-I have when it comes to separation between use cases and ability to have custom
-keybindings for them. Also, Emacs is starting up <i>very</i> fast with my slimmed
-down configuration. If starting Emacs with the slimmed configuration starts
-taking too long I'm more likely to go back to using Neovim than complicate
-things with <code>emacsclient</code>.
-</p>
-
-<p>
-So no, I am not going to start using <code>emacsclient</code> any time soon.
-</p>
-</div>
-</div>
-<div id="footnotes">
-<h2 class="footnotes">Footnotes: </h2>
-<div id="text-footnotes">
-
-<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
-I write "in a way" as it actually does nothing for Emacs startup time, it
-just shifts it to a point in time so you don't have to sit and wait for it to
-start.
-</p></div></div>
-
-<div class="footdef"><sup><a id="fn.2" class="footnum" href="#fnr.2" role="doc-backlink">2</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
-I used to use <a href="https://neovim.io/">Neovim</a>, without any config, for most of this until recently.
-</p></div></div>
-
-
-</div>
-</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> </div>
 <div id="archive">
 <a href="https://magnus.therning.org/archive.html">Other posts</a>
 </div>
