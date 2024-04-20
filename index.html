@@ -12,6 +12,36 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <header class="site-header" role="banner"><h1 class="title">Magnus web site</h1><h2 class="subtitle">Random stuff</h2></header>
+<div class="post-date">20 Apr 2024</div><h1 class="post-title"><a href="https://magnus.therning.org/2024-04-20-update-to-hackage-revisions-in-nix.html">Update to Hackage revisions in Nix</a></h1>
+<p>
+A few days after I published <a href="https://magnus.therning.org/2024-03-14-hackage-revisions-in-nix.html">Hackage revisions in Nix</a> I got a comment from
+Wolfgang W that the next release of Nix will have a <code>callHackageDirect</code> with
+support for specifying revisions.
+</p>
+
+<p>
+The code in <a href="https://github.com/NixOS/nixpkgs/pull/284490">PR #284490</a> makes <code>callHackageDirect</code> accept a <code>rev</code> argument. Like
+this:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix">haskellPackages.callHackageDirect <span class="org-rainbow-delimiters-depth-1">{</span>
+  <span class="org-nix-attribute">pkg</span> = <span class="org-string">"openapi3"</span>;
+  <span class="org-nix-attribute">ver</span> = <span class="org-string">"3.2.3"</span>;
+  <span class="org-nix-attribute">sha256</span> = <span class="org-string">"sha256-0F16o3oqOB5ri6KBdPFEFHB4dv1z+Pw6E5f1rwkqwi8="</span>;
+  <span class="org-nix-attribute">rev</span> = <span class="org-rainbow-delimiters-depth-2">{</span>
+    <span class="org-nix-attribute">revision</span> = <span class="org-string">"4"</span>;
+    <span class="org-nix-attribute">sha256</span> = <span class="org-string">"sha256-a5C58iYrL7eAEHCzinICiJpbNTGwiOFFAYik28et7fI="</span>;
+  <span class="org-rainbow-delimiters-depth-2">}</span>;
+<span class="org-rainbow-delimiters-depth-1">}</span> <span class="org-rainbow-delimiters-depth-1">{</span> <span class="org-rainbow-delimiters-depth-1">}</span>
+</pre>
+</div>
+
+<p>
+That's a lot better than using <code>overrideCabal</code>!
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-nix.html">nix</a> </div>
+
 <div class="post-date">14 Mar 2024</div><h1 class="post-title"><a href="https://magnus.therning.org/2024-03-14-hackage-revisions-in-nix.html">Hackage revisions in Nix</a></h1>
 <p>
 Today I got very confused when using <code>callHackageDirect</code> to add the <code>openapi3</code>
@@ -335,97 +365,6 @@ instructions in the repo was good, but had to be adjusted slightly:
 I just wish I'll find a package offering completions reaching Z shell levels.
 </p>
 <div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> </div>
-
-<div class="post-date">16 Nov 2023</div><h1 class="post-title"><a href="https://magnus.therning.org/2023-11-16-using-the-golang-mode-shipped-with-emacs.html">Using the golang mode shipped with Emacs</a></h1>
-<p>
-A few weeks ago I wanted to try out tree-sitter and switched a few of the modes
-I use for coding to their <code>-ts-mode</code> variants. Based on the excellent <a href="https://www.masteringemacs.org/article/how-to-get-started-tree-sitter">How to Get
-Started with Tree-Sitter</a> I added bits like this to the setup I have for coding
-modes:<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> <span class="org-constant">X-mode</span>
-  <span class="org-builtin">:init</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>add-to-list 'treesit-language-source-alist '<span class="org-rainbow-delimiters-depth-3">(</span>X <span class="org-string">"https://github.com/tree-sitter/tree-sitter-X"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-comment-delimiter">;; </span><span class="org-comment">(treesit-install-language-grammar 'X)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>add-to-list 'major-mode-remap-alist '<span class="org-rainbow-delimiters-depth-3">(</span>X-mode . X-ts-mode<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-comment-delimiter">;; </span><span class="org-comment">...</span>
-  <span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-I then manually evaluated the expression that's commented out to download and
-compile the tree-sitter grammar. It's a rather small change, it works, and I can
-switch over language by language. I swapped a couple of languages to the
-tree-sitter modes like this, including golang. The only mode that I noticed
-changes in was golang, in particular my adding of <code>gofmt-before-save</code> to
-<code>before-save-hook</code> had stopped having any effect.
-</p>
-
-<p>
-What I hadn't realised was that the <a href="https://github.com/dominikh/go-mode.el"><code>go-mode</code> I was using</a> didn't ship with Emacs
-and that when I switched to <code>go-ts-mode</code> I switched to one that was. It turns
-out that <code>gofmt-before-save</code> is hard-wired to work only in <code>go-mode</code>,
-something others have <a href="https://github.com/dominikh/go-mode.el/issues/396#issuecomment-1366716882">noticed</a>.
-</p>
-
-<p>
-I don't feel like waiting for <code>go-mode</code> to fix that though, especially not when
-there's a perfectly fine golang mode shipping with Emacs now, and not when
-<a href="https://github.com/purcell/emacs-reformatter">emacs-reformatter</a> make it so easy to define formatters (as I've <a href="https://magnus.therning.org/2023-09-24-defining-a-formatter-for-cabal-files.html">written about
-before</a>).
-</p>
-
-<p>
-My golang setup, sans keybindings, now looks like this:<sup><a id="fnr.2" class="footref" href="#fn.2" role="doc-backlink">2</a></sup>
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> <span class="org-constant">go-ts-mode</span>
-  <span class="org-builtin">:hook</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>go-ts-mode . lsp-deferred<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>go-ts-mode . go-format-on-save-mode<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-builtin">:init</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>add-to-list 'treesit-language-source-alist '<span class="org-rainbow-delimiters-depth-3">(</span>go <span class="org-string">"https://github.com/tree-sitter/tree-sitter-go"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>add-to-list 'treesit-language-source-alist '<span class="org-rainbow-delimiters-depth-3">(</span>gomod <span class="org-string">"https://github.com/camdencheek/tree-sitter-go-mod"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-comment-delimiter">;; </span><span class="org-comment">(dolist (lang '(go gomod)) (treesit-install-language-grammar lang))</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>add-to-list 'auto-mode-alist '<span class="org-rainbow-delimiters-depth-3">(</span><span class="org-string">"\\.go\\'"</span> . go-ts-mode<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>add-to-list 'auto-mode-alist '<span class="org-rainbow-delimiters-depth-3">(</span><span class="org-string">"/go\\.mod\\'"</span> . go-mod-ts-mode<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-builtin">:config</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">reformatter-define</span> go-format
-    <span class="org-builtin">:program</span> <span class="org-string">"goimports"</span>
-    <span class="org-builtin">:args</span> '<span class="org-rainbow-delimiters-depth-3">(</span><span class="org-string">"/dev/stdin"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-builtin">:general</span>
-  <span class="org-comment-delimiter">;; </span><span class="org-comment">...</span>
-  <span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-So far I'm happy with the built-in <code>go-ts-mode</code> and I've got to say that using a
-minor mode for the format-on-save functionality is more elegant than adding a
-function to <code>before-save-hook</code> (something that <code>go-mode</code> may get through this
-<a href="https://github.com/dominikh/go-mode.el/pull/426">PR</a>).
-</p>
-<div id="footnotes">
-<h2 class="footnotes">Footnotes: </h2>
-<div id="text-footnotes">
-
-<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
-There were a few more things that I needed to modify. As the tree-sitter
-modes are completely separate from the non-tree-sitter modes things like hooks
-and keybindings in the modes' keymaps.
-</p></div></div>
-
-<div class="footdef"><sup><a id="fn.2" class="footnum" href="#fnr.2" role="doc-backlink">2</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
-The full file is <a href="https://gitlab.com/magus/mes/-/blob/main/lisp/mes-dev-go.el">here</a>.
-</p></div></div>
-
-
-</div>
-</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-tree-sitter.html">tree-sitter</a> </div>
 <div id="archive">
 <a href="https://magnus.therning.org/archive.html">Other posts</a>
 </div>

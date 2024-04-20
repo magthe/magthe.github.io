@@ -12,6 +12,36 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <h1 class="title">Posts tagged "haskell":</h1>
+<div class="post-date">20 Apr 2024</div><h1 class="post-title"><a href="https://magnus.therning.org/2024-04-20-update-to-hackage-revisions-in-nix.html">Update to Hackage revisions in Nix</a></h1>
+<p>
+A few days after I published <a href="https://magnus.therning.org/2024-03-14-hackage-revisions-in-nix.html">Hackage revisions in Nix</a> I got a comment from
+Wolfgang W that the next release of Nix will have a <code>callHackageDirect</code> with
+support for specifying revisions.
+</p>
+
+<p>
+The code in <a href="https://github.com/NixOS/nixpkgs/pull/284490">PR #284490</a> makes <code>callHackageDirect</code> accept a <code>rev</code> argument. Like
+this:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix">haskellPackages.callHackageDirect <span class="org-rainbow-delimiters-depth-1">{</span>
+  <span class="org-nix-attribute">pkg</span> = <span class="org-string">"openapi3"</span>;
+  <span class="org-nix-attribute">ver</span> = <span class="org-string">"3.2.3"</span>;
+  <span class="org-nix-attribute">sha256</span> = <span class="org-string">"sha256-0F16o3oqOB5ri6KBdPFEFHB4dv1z+Pw6E5f1rwkqwi8="</span>;
+  <span class="org-nix-attribute">rev</span> = <span class="org-rainbow-delimiters-depth-2">{</span>
+    <span class="org-nix-attribute">revision</span> = <span class="org-string">"4"</span>;
+    <span class="org-nix-attribute">sha256</span> = <span class="org-string">"sha256-a5C58iYrL7eAEHCzinICiJpbNTGwiOFFAYik28et7fI="</span>;
+  <span class="org-rainbow-delimiters-depth-2">}</span>;
+<span class="org-rainbow-delimiters-depth-1">}</span> <span class="org-rainbow-delimiters-depth-1">{</span> <span class="org-rainbow-delimiters-depth-1">}</span>
+</pre>
+</div>
+
+<p>
+That's a lot better than using <code>overrideCabal</code>!
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-nix.html">nix</a> </div>
+
 <div class="post-date">14 Mar 2024</div><h1 class="post-title"><a href="https://magnus.therning.org/2024-03-14-hackage-revisions-in-nix.html">Hackage revisions in Nix</a></h1>
 <p>
 Today I got very confused when using <code>callHackageDirect</code> to add the <code>openapi3</code>

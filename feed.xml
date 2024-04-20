@@ -4,7 +4,45 @@
 <title><![CDATA[Magnus web site]]></title>
 <description><![CDATA[Magnus web site]]></description>
 <link>https://magnus.therning.org/</link>
-<lastBuildDate>Sat, 20 Apr 2024 10:55:42 +0200</lastBuildDate>
+<lastBuildDate>Sat, 20 Apr 2024 11:20:02 +0200</lastBuildDate>
+<item>
+  <title><![CDATA[Update to Hackage revisions in Nix]]></title>
+  <description><![CDATA[
+<p>
+A few days after I published <a href="https://magnus.therning.org/2024-03-14-hackage-revisions-in-nix.html">Hackage revisions in Nix</a> I got a comment from
+Wolfgang W that the next release of Nix will have a <code>callHackageDirect</code> with
+support for specifying revisions.
+</p>
+
+<p>
+The code in <a href="https://github.com/NixOS/nixpkgs/pull/284490">PR #284490</a> makes <code>callHackageDirect</code> accept a <code>rev</code> argument. Like
+this:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix">haskellPackages.callHackageDirect <span class="org-rainbow-delimiters-depth-1">{</span>
+  <span class="org-nix-attribute">pkg</span> = <span class="org-string">"openapi3"</span>;
+  <span class="org-nix-attribute">ver</span> = <span class="org-string">"3.2.3"</span>;
+  <span class="org-nix-attribute">sha256</span> = <span class="org-string">"sha256-0F16o3oqOB5ri6KBdPFEFHB4dv1z+Pw6E5f1rwkqwi8="</span>;
+  <span class="org-nix-attribute">rev</span> = <span class="org-rainbow-delimiters-depth-2">{</span>
+    <span class="org-nix-attribute">revision</span> = <span class="org-string">"4"</span>;
+    <span class="org-nix-attribute">sha256</span> = <span class="org-string">"sha256-a5C58iYrL7eAEHCzinICiJpbNTGwiOFFAYik28et7fI="</span>;
+  <span class="org-rainbow-delimiters-depth-2">}</span>;
+<span class="org-rainbow-delimiters-depth-1">}</span> <span class="org-rainbow-delimiters-depth-1">{</span> <span class="org-rainbow-delimiters-depth-1">}</span>
+</pre>
+</div>
+
+<p>
+That's a lot better than using <code>overrideCabal</code>!
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-nix.html">nix</a> </div>
+]]></description>
+  <category><![CDATA[haskell]]></category>
+  <category><![CDATA[nix]]></category>
+  <link>https://magnus.therning.org/2024-04-20-update-to-hackage-revisions-in-nix.html</link>
+  <guid>https://magnus.therning.org/2024-04-20-update-to-hackage-revisions-in-nix.html</guid>
+  <pubDate>Sat, 20 Apr 2024 11:04:00 +0200</pubDate>
+</item>
 <item>
   <title><![CDATA[Hackage revisions in Nix]]></title>
   <description><![CDATA[
@@ -901,126 +939,6 @@ I found <a href="https://notes.alexkehayias.com/using-chatgpt-with-emacs/">Alex 
   <link>https://magnus.therning.org/2023-09-16-setting-up-emacs-openai-chatgpt.html</link>
   <guid>https://magnus.therning.org/2023-09-16-setting-up-emacs-openai-chatgpt.html</guid>
   <pubDate>Sat, 16 Sep 2023 06:22:00 +0200</pubDate>
-</item>
-<item>
-  <title><![CDATA[Using emacs for the scrollback in terminal multiplexers]]></title>
-  <description><![CDATA[
-<p>
-I should start with saying that I still don't really know if this is a good idea
-or not, but it feels like it's worth trying out at least.
-</p>
-<div id="outline-container-org1ca78e4" class="outline-2">
-<h2 id="org1ca78e4">An irritating limitation in <a href="https://zellij.dev/">Zellij</a>, and a possible solution</h2>
-<div class="outline-text-2" id="text-org1ca78e4">
-<p>
-After seeing it mentioned in an online community I thought it might be worth
-trying out. I'm not really disappointed with <a href="https://github.com/tmux/tmux">tmux</a>, I've been using it for years
-but I actually only use a small part of what it can do. I create tabs, sometimes
-create panes, and I regularly use the scollback functionality to copy output of
-commands I've run earlier.
-</p>
-
-<p>
-Unfortunately, as is reported in a <a href="https://github.com/zellij-org/zellij/issues/947">ticket</a>, Zellij can't select and copy using
-the keyboard. From the discussion in that ticket it seems unlikely it ever will
-be able to. After finding that out I resigned to staying with Tmux &#x2013; I'm not
-ready to go back to using a pointing device to select and copy text in my
-terminal!
-</p>
-
-<p>
-When I was biking to the pool yesterday I realised a thing though: I'm already
-using a tool that is <i>very</i> good at manipulating text using the keyboard. Of
-course I'm talking about Emacs! So if I can just make Emacs start up quickly
-enough I ought to be able to use it for searching, selecting and copying from
-the scrollback buffer. I haven't found a way to do this in Tmu= yet, but
-Zellij has <a href="https://zellij.dev/documentation/keybindings-possible-actions#editscrollback">EditScrollBack</a> so I can at least try it out.
-</p>
-
-<p>
-A nice benefit is that I can cut back on the number of different shortcuts I use
-daily.
-</p>
-</div>
-</div>
-<div id="outline-container-org728fd4c" class="outline-2">
-<h2 id="org728fd4c">My slimmed down Emacs config</h2>
-<div class="outline-text-2" id="text-org728fd4c">
-<p>
-My current <a href="https://gitlab.com/magus/mes">Emacs config</a> starts up in less than 2s, which is good enough as I
-normally start Emacs at most a few times per day. However, if I have to wait 2s
-to open the scrollback buffer I suspect I'll tire very quickly and abandon the
-experiment. So I took my ordinary config and slimmed it down. Cutting away
-things that weren't related to navigation and searching.
-</p>
-
-<p>
-The list of packages is not very long:
-</p>
-
-<ul class="org-ul">
-<li><code>straight</code></li>
-<li><code>use-package</code></li>
-<li><code>evil</code></li>
-<li><code>general</code></li>
-<li><code>which-key</code></li>
-<li><code>vertico</code></li>
-<li><code>orderless</code></li>
-<li><code>marginalia</code></li>
-<li><code>consult</code></li>
-</ul>
-
-<p>
-The first 5 are for usability in general, and the last 4 are bring in the
-functions I use for searching through text.
-</p>
-
-<p>
-The resulting config starts in less than ¼s. That's more than acceptable, I find.
-</p>
-</div>
-</div>
-<div id="outline-container-org44d7ad0" class="outline-2">
-<h2 id="org44d7ad0">Copying to the Wayland clipboard</h2>
-<div class="outline-text-2" id="text-org44d7ad0">
-<p>
-It turns out that copying with `y` in <code>evil</code> does the right thing by default and
-the copied text ends up in the clipboard without any special configuration.
-</p>
-
-<p>
-From Tmux I'm used to being thrown out of copy-mode after copying something.
-While that's sometimes irritating, it's at other times exactly what I want.
-Given that <code>evil-yank</code> does the right thing it was easy to write a function for
-it:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">se/yank-n-kill</span> <span class="org-rainbow-delimiters-depth-2">(</span>beg end<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span> <span class="org-string">"r"</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>evil-yank beg end<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>kill-emacs<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-</div>
-</div>
-<div id="outline-container-org9e880a9" class="outline-2">
-<h2 id="org9e880a9">The config files</h2>
-<div class="outline-text-2" id="text-org9e880a9">
-<p>
-I'm keeping my dot-files in a private repo, but I put a snapshot of the Emacs
-and Zellij config in a <a href="https://gitlab.com/-/snippets/3595805">snippet</a>.
-</p>
-</div>
-</div>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-tmux.html">tmux</a> <a href="https://magnus.therning.org/tag-zellij.html">zellij</a> </div>
-]]></description>
-  <category><![CDATA[emacs]]></category>
-  <category><![CDATA[tmux]]></category>
-  <category><![CDATA[zellij]]></category>
-  <link>https://magnus.therning.org/2023-09-10-using-emacs-for-the-scrollback-in-terminal-multiplexers.html</link>
-  <guid>https://magnus.therning.org/2023-09-10-using-emacs-for-the-scrollback-in-terminal-multiplexers.html</guid>
-  <pubDate>Sun, 10 Sep 2023 13:17:00 +0200</pubDate>
 </item>
 </channel>
 </rss>
