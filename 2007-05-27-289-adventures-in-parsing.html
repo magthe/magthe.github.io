@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="alternate"
+      type="application/rss+xml"
+      href="https://magnus.therning.org/feed.xml"
+      title="RSS feed for https://magnus.therning.org/">
+<title>Adventures in parsing</title>
+<meta name="author" content="Magnus Therning"><meta name="referrer" content="no-referrer"><link href= "static/style.css" rel="stylesheet" type="text/css" /><link href= "static/htmlize.css" rel="stylesheet" type="text/css" /><link href= "static/extra_style.css" rel="stylesheet" type="text/css" /></head>
+<body>
+<div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
+<div id="content">
+<div class="post-date">27 May 2007</div><h1 class="post-title"><a href="https://magnus.therning.org/2007-05-27-289-adventures-in-parsing.html">Adventures in parsing</a></h1>
+<p>
+I've long wanted to dip my toes in the <code>Parsec</code> water. I've made some attempts
+before, but always stumbled on something that put me in the doldrums for so long
+that I managed to repress all memories of ever having tried. A few files
+scattered in my <code>~/devo/test/haskell</code> directory tells the story of my failed
+attempts. Until now that is :-)
+</p>
+
+<p>
+I picked a nice and regular task for my first real attempt: parsing
+<code>/proc/&lt;pid&gt;/maps</code>. First a look at the man-page offers a good description of
+the format of a line:
+</p>
+
+<pre class="example" id="org4947f04">
+address           perms offset  dev   inode      pathname
+08048000-08056000 r-xp 00000000 03:0c 64593      /usr/sbin/gpm
+</pre>
+
+<p>
+So, I started putting together some datatypes. First off the address range:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-keyword">data</span> <span class="org-type">Address</span> = Address <span class="org-rainbow-delimiters-depth-1">{</span> start :: <span class="org-type">Integer</span>, end :: <span class="org-type">Integer</span> <span class="org-rainbow-delimiters-depth-1">}</span>
+    <span class="org-keyword">deriving</span> <span class="org-type">Show</span>
+</pre>
+</div>
+
+<p>
+Then I decided that the 's'/'p' in the permissions should be called <code>Access</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-keyword">data</span> <span class="org-type">Access</span> = Shared | Private
+    <span class="org-keyword">deriving</span> <span class="org-type">Show</span>
+</pre>
+</div>
+
+<p>
+The basic permissions (<code>rwx</code>) are simply represented as booleans:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-keyword">data</span> <span class="org-type">Perms</span> = Perms <span class="org-rainbow-delimiters-depth-1">{</span>
+        read :: <span class="org-type">Bool</span>,
+        write :: <span class="org-type">Bool</span>,
+        executable :: <span class="org-type">Bool</span>,
+        access :: <span class="org-type">Access</span>
+    <span class="org-rainbow-delimiters-depth-1">}</span>
+    <span class="org-keyword">deriving</span> <span class="org-type">Show</span>
+</pre>
+</div>
+
+<p>
+The device is straightforward as well:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-keyword">data</span> <span class="org-type">Device</span> = Device <span class="org-rainbow-delimiters-depth-1">{</span> major :: <span class="org-type">Integer</span>, minor :: <span class="org-type">Integer</span> <span class="org-rainbow-delimiters-depth-1">}</span>
+    <span class="org-keyword">deriving</span> <span class="org-type">Show</span>
+</pre>
+</div>
+
+<p>
+At last I tie it all together in a final datatype that represents a memory region:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-keyword">data</span> <span class="org-type">MemRegion</span> = MemRegion <span class="org-rainbow-delimiters-depth-1">{</span>
+        address :: <span class="org-type">Address</span>,
+        perms :: <span class="org-type">Perms</span>,
+        offset :: <span class="org-type">Integer</span>,
+        device :: <span class="org-type">Device</span>,
+        inode :: <span class="org-type">Integer</span>,
+        pathname :: <span class="org-type">String</span>
+    <span class="org-rainbow-delimiters-depth-1">}</span>
+    <span class="org-keyword">deriving</span> <span class="org-type">Show</span>
+</pre>
+</div>
+
+<p>
+All types derive <code>Show</code> (and receive default implementations of <code>show</code>, at least
+when using GHC) so that they are easy to print.
+</p>
+
+<p>
+Now, on to the actual "parsec-ing". Faced with the option of writing it top-down
+or bottom-up I chose the latter. However, since the format of a single line in
+the <code>maps</code> file is so simple it's easy to imagine what the final function will
+look like. I settled on bottom-up since the datatypes provide me with such an
+obvious splitting of the line. First off, parsing the address range:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">parseAddress = <span class="org-keyword">let</span>
+        hexStr2Int = <span class="org-warning">Prelude</span>.read <span class="org-operator">.</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-string">"0x"</span> <span class="org-operator">++</span><span class="org-rainbow-delimiters-depth-1">)</span>
+    <span class="org-keyword">in</span> <span class="org-keyword">do</span>
+        start &lt;- many1 hexDigit
+        char <span class="org-string">'-'</span>
+        end &lt;- many1 hexDigit
+        return <span class="org-operator">$</span> Address <span class="org-rainbow-delimiters-depth-1">(</span>hexStr2Int start<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-rainbow-delimiters-depth-1">(</span>hexStr2Int end<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+Since the addresses themselves are in hexadecimal and always are of at least
+length 1 I use <code>many1 hexDigit</code> to read them. I think it would be safe to assume
+the addresses always are 8 characters (at least on a 32-bit machine) so it would
+be possible to use <code>count 8 hexDigit</code> but I haven't tried it. I've found two
+ways of converting a string representation of a hexadecimal number into an
+<code>Integer</code>. Above I use the fact that <code>Prelude.read</code> interprets a string
+beginning with <code>0x</code> as a hexadecimal number. The other way I've found is the
+slightly less readable <code>fst . (!! 0) . readHex</code>. According to the man-page the
+addresses are separated by a single dash so I've hardcoded that in there.
+</p>
+
+<p>
+Testing the function is fairly simple. Using <code>gchi</code>, first load the source file
+then use <code>parse</code>:
+</p>
+
+<pre class="example" id="org6268880">
+*Main&gt; parse parseAddress "" "0-1"
+Right (Address {start = 0, end = 1})
+*Main&gt; parse parseAddress "hhh" "01234567-89abcdef"
+Right (Address {start = 19088743, end = 2309737967})
+</pre>
+
+<p>
+Seems to work well enough. :-)
+</p>
+
+<p>
+Next up, parsing the permissions. This is so very straightforward that I don't
+think I need to comment on it:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">parsePerms = <span class="org-keyword">let</span>
+        cA a = <span class="org-keyword">case</span> a <span class="org-keyword">of</span>
+            <span class="org-string">'p'</span> -&gt; Private
+            <span class="org-string">'s'</span> -&gt; Shared
+    <span class="org-keyword">in</span> <span class="org-keyword">do</span>
+        r &lt;- anyChar
+        w &lt;- anyChar
+        x &lt;- anyChar
+        a &lt;- anyChar
+        return <span class="org-operator">$</span> Perms <span class="org-rainbow-delimiters-depth-1">(</span>r <span class="org-operator">==</span> <span class="org-string">'r'</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-rainbow-delimiters-depth-1">(</span>w <span class="org-operator">==</span> <span class="org-string">'w'</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-rainbow-delimiters-depth-1">(</span>x <span class="org-operator">==</span> <span class="org-string">'x'</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-rainbow-delimiters-depth-1">(</span>cA a<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+For parsing the device information I use the same strategy as for the address
+range above, this time however the separating charachter is a colon:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">parseDevice = <span class="org-keyword">let</span>
+        hexStr2Int = <span class="org-warning">Prelude</span>.read <span class="org-operator">.</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-string">"0x"</span> <span class="org-operator">++</span><span class="org-rainbow-delimiters-depth-1">)</span>
+    <span class="org-keyword">in</span> <span class="org-keyword">do</span>
+        maj &lt;- many1 digit
+        char <span class="org-string">':'</span>
+        min &lt;- many1 digit
+        return <span class="org-operator">$</span> Device <span class="org-rainbow-delimiters-depth-1">(</span>hexStr2Int maj<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-rainbow-delimiters-depth-1">(</span>hexStr2Int min<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+Next is to tie it all together and create a MemRegion instance:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">parseRegion = <span class="org-keyword">let</span>
+        hexStr2Int = <span class="org-warning">Prelude</span>.read <span class="org-operator">.</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-string">"0x"</span> <span class="org-operator">++</span><span class="org-rainbow-delimiters-depth-1">)</span>
+        parsePath = <span class="org-rainbow-delimiters-depth-1">(</span>many1 <span class="org-operator">$</span> char <span class="org-string">' '</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">&gt;&gt;</span> <span class="org-rainbow-delimiters-depth-1">(</span>many1 <span class="org-operator">$</span> anyChar<span class="org-rainbow-delimiters-depth-1">)</span>
+    <span class="org-keyword">in</span> <span class="org-keyword">do</span>
+        addr &lt;- parseAddress
+        char <span class="org-string">' '</span>
+        perm &lt;- parsePerms
+        char <span class="org-string">' '</span>
+        offset &lt;- many1 hexDigit
+        char <span class="org-string">' '</span>
+        dev &lt;- parseDevice
+        char <span class="org-string">' '</span>
+        inode &lt;- many1 digit
+        char <span class="org-string">' '</span>
+        path &lt;- parsePath <span class="org-operator">&lt;|&gt;</span> string <span class="org-string">""</span>
+        return <span class="org-operator">$</span> MemRegion addr perm <span class="org-rainbow-delimiters-depth-1">(</span>hexStr2Int offset<span class="org-rainbow-delimiters-depth-1">)</span> dev <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-warning">Prelude</span>.read inode<span class="org-rainbow-delimiters-depth-1">)</span> path
+</pre>
+</div>
+
+<p>
+The only little trick here is that there are lines that lack the pathname.
+Here's an example from the man-page:
+</p>
+
+<pre class="example" id="org089070b">
+address           perms offset  dev   inode      pathname
+08058000-0805b000 rwxp 00000000 00:00 0
+</pre>
+
+<p>
+It should be noted that it seems there is a space after the inode entry so I
+keep a <code>char ' '</code> in the main function. Then I try to parse the line for a path,
+if there is none that attempt will fail immediately and instead I parse for an
+empty string, <code>parsePath &lt;|&gt; string ""</code>. The pathname seems to be prefixed with
+a fixed number of spaces, but I'm lazy and just consume one or more. I'm not
+sure exactly what characters are allowed in the pathname itself so I'm lazy once
+more and just gobble up whatever I find.
+</p>
+
+<p>
+To exercise what I had so far I decided to write a function that reads the
+<code>maps</code> file for a specific process, based on its <code>pid</code>, parses the contents and
+collects all the <code>MemRegion</code> instances in a list.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">getMemRegions pid = <span class="org-keyword">let</span>
+        fp = <span class="org-string">"/proc"</span> <span class="org-operator">&lt;/&gt;</span> show pid <span class="org-operator">&lt;/&gt;</span> <span class="org-string">"maps"</span>
+        doParseLine' = parse parseRegion <span class="org-string">"parseRegion"</span>
+        doParseLine l = <span class="org-keyword">case</span> <span class="org-rainbow-delimiters-depth-1">(</span>doParseLine' l<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-keyword">of</span>
+            Left _ -&gt; error <span class="org-string">"Failed to parse line"</span>
+            Right x -&gt; x
+    <span class="org-keyword">in</span> <span class="org-keyword">do</span>
+        mapContent &lt;- liftM lines <span class="org-operator">$</span> readFile fp
+        return <span class="org-operator">$</span> map doParseLine mapContent
+</pre>
+</div>
+
+<p>
+The only thing that really is going on here is that the lines are passed from
+inside an IO monad into the Parser monad and then back again. After this I can
+try it out by:
+</p>
+
+<pre class="example" id="orgd35bcdb">
+*Main&gt; getMemRegions 1
+</pre>
+
+<p>
+This produces a lot of output so while playing with it I limited the mapping to
+the four first lines by using <code>take</code>. The last line then becomes:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">return <span class="org-operator">$</span> map doParseLine <span class="org-rainbow-delimiters-depth-1">(</span>take <span class="org-number">4</span> mapContent<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+Now it's easy to add a <code>main</code> that uses the first command line argument as the
+<code>pid</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">main = <span class="org-keyword">do</span>
+    pid &lt;- liftM <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-warning">Prelude</span>.read <span class="org-operator">.</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-operator">!!</span> <span class="org-number">0</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span> getArgs
+    regs &lt;- getMemRegions pid
+    mapM_ <span class="org-rainbow-delimiters-depth-1">(</span>putStrLn <span class="org-operator">.</span> show<span class="org-rainbow-delimiters-depth-1">)</span> regs
+</pre>
+</div>
+
+<p>
+Well, that concludes my first adventure in parsing :-)
+</p>
+
+<p>
+<i>Edit (27-05-2007):</i> I received an email asking for it so here are the import
+statements I ended up with:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-keyword">import</span> Control.Monad
+<span class="org-keyword">import</span> System
+<span class="org-keyword">import</span> System.FilePath
+<span class="org-keyword">import</span> Text.ParserCombinators.Parsec
+</pre>
+</div>
+
+<p>
+<i>Comment by Conal Elliot:</i>
+</p>
+
+<p>
+Congrats on your parser!
+</p>
+
+<p>
+Here's an idea that for getting more functional/applicative formulations.
+Replace all of the explicitly sequential (<code>do</code>) parsec code with <code>liftM</code>,
+<code>liftM2</code>, &#x2026;. From a quick read-through, I think you can do it. For
+<code>parseRegion</code>, you could use an auxiliary function that discards a following
+space, e.g. <code>thenSpace (many1 digit)</code>.
+</p>
+
+<p>
+Also, play with factoring out some of the repeated patterns in <code>parseAddress</code>,
+<code>parsePerms</code> and <code>parseDevice</code>.
+</p>
+
+<p>
+The more I play with refactoring in my code, the more elegant it gets and the
+more insight I get. Have fun!
+</p>
+
+<p>
+<i>Response to Conal:</i>
+</p>
+
+<p>
+Good suggestion. At least if I understand what you mean :-)
+</p>
+
+<p>
+Something along the lines of
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">thenChar c f = f <span class="org-operator">&gt;&gt;=</span> <span class="org-rainbow-delimiters-depth-1">(</span>\ r -&gt; char c <span class="org-operator">&gt;&gt;</span> return r<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+with a specialised one for spaces maybe
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">thenSpace = thenChar <span class="org-string">' '</span>
+</pre>
+</div>
+
+<p>
+I suppose <code>liftM</code> and friends can be employed to remove the function calling in
+the creation of <code>Address</code>, <code>Device</code> and <code>MemRegion</code>. I'll try to venture into
+<code>Parsec</code> territory once again soon and report on my findings. :-)
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-parsec.html">parsec</a> <a href="https://magnus.therning.org/tag-parsing.html">parsing</a> </div>
+<div id="comments">Comment <a href=mailto:magnus+blog.comment@therning.org?subject=Comment%20on%20INSERT%20POST%20URL%20HERE>here</a>.</div></div>
+<div id="postamble" class="status"><!-- org-static-blog-page-postamble --></div>
+</body>
+</html>

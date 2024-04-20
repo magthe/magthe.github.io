@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="alternate"
+      type="application/rss+xml"
+      href="https://magnus.therning.org/feed.xml"
+      title="RSS feed for https://magnus.therning.org/">
+<title>Adventures in parsing, part 4</title>
+<meta name="author" content="Magnus Therning"><meta name="referrer" content="no-referrer"><link href= "static/style.css" rel="stylesheet" type="text/css" /><link href= "static/htmlize.css" rel="stylesheet" type="text/css" /><link href= "static/extra_style.css" rel="stylesheet" type="text/css" /></head>
+<body>
+<div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
+<div id="content">
+<div class="post-date">05 Jun 2007</div><h1 class="post-title"><a href="https://magnus.therning.org/2007-06-05-296-adventures-in-parsing,-part-4.html">Adventures in parsing, part 4</a></h1>
+<p>
+I received a few comments on <a href="https://magnus.therning.org/2007-06-03-295-adventures-in-parsing,-part-3.html">part 3</a> of this little mini-series and I just wanted
+to address them. While doing this I still want the main functions of the parser
+<code>parseXxx</code> to read like the <code>maps</code> file itself. That means I want to avoid
+"reversing order" like <code>thenChar</code> and <code>thenSpace</code> did in <a href="https://magnus.therning.org/2007-05-29-290-more-adventures-in-parsing.html">part 2</a>. I also don't
+want to hide things, e.g. I don't want to introduce a function that turns <code>(a &lt;*
+char ' ') &lt;*&gt; b</code> into <code>a &lt;#&gt; b</code>.
+</p>
+
+<p>
+So, first up is to do something about <code>hexStr2Int &lt;$&gt; many1 hexDigit</code> which
+appears all over the place. I made it appear in even more places by moving
+around a few parentheses; the following two functions are the same:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">foo = a <span class="org-operator">&lt;$&gt;</span> <span class="org-rainbow-delimiters-depth-1">(</span>b <span class="org-operator">&lt;*</span> c<span class="org-rainbow-delimiters-depth-1">)</span>
+bar = <span class="org-rainbow-delimiters-depth-1">(</span>a <span class="org-operator">&lt;$&gt;</span> b<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">&lt;*</span> c
+</pre>
+</div>
+
+<p>
+Then I scrapped <code>hexStr2Int</code> completely and instead introduced <code>hexStr</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">hexStr = <span class="org-warning">Prelude</span>.read <span class="org-operator">.</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-string">"0x"</span> <span class="org-operator">++</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">&lt;$&gt;</span> many1 hexDigit
+</pre>
+</div>
+
+<p>
+This means that <code>parseAddress</code> can be rewritten to:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">parseAddress = Address <span class="org-operator">&lt;$&gt;</span>
+    hexStr <span class="org-operator">&lt;*</span> char <span class="org-string">'-'</span> <span class="org-operator">&lt;*&gt;</span>
+    hexStr
+</pre>
+</div>
+
+<p>
+Rather than, as Conal suggested, introduce an infix operation that addresses the
+pattern <code>(a &lt;* char ' ') &lt;*&gt; b</code> I decided to do something about <code>a &lt;* char c</code>. I
+feel Conal's suggestion, while shortening the code more than my solution, goes
+against my wish to not hide things. This is the definition of <code>&lt;##&gt;</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-operator">&lt;##&gt;</span><span class="org-rainbow-delimiters-depth-1">)</span> l r = l <span class="org-operator">&lt;*</span> char r
+</pre>
+</div>
+
+<p>
+After this I rewrote <code>parseAddress</code> into:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">parseAddress = Address <span class="org-operator">&lt;$&gt;</span>
+    hexStr <span class="org-operator">&lt;##&gt;</span> <span class="org-string">'-'</span> <span class="org-operator">&lt;*&gt;</span>
+    hexStr
+</pre>
+</div>
+
+<p>
+The pattern <code>(== c) &lt;$&gt; anyChar</code> appears three times in <code>parsePerms</code> so it got a
+name and moved down into the <code>where</code> clause. I also modified <code>cA</code> to use pattern
+matching. I haven't spent much time considering error handling in the parser, so
+I didn't introduce a pattern matching everything else.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">parsePerms = Perms <span class="org-operator">&lt;$&gt;</span>
+    pP <span class="org-string">'r'</span> <span class="org-operator">&lt;*&gt;</span>
+    pP <span class="org-string">'w'</span> <span class="org-operator">&lt;*&gt;</span>
+    pP <span class="org-string">'x'</span> <span class="org-operator">&lt;*&gt;</span>
+    <span class="org-rainbow-delimiters-depth-1">(</span>cA <span class="org-operator">&lt;$&gt;</span> anyChar<span class="org-rainbow-delimiters-depth-1">)</span>
+
+    <span class="org-keyword">where</span>
+        pP c = <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-operator">==</span> c<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">&lt;$&gt;</span> anyChar
+        cA <span class="org-string">'p'</span> = Private
+        cA <span class="org-string">'s'</span> = Shared
+</pre>
+</div>
+
+<p>
+The last change I did was remove a bunch of parentheses. I'm always a little
+hesitant removing parentheses and relying on precedence rules, I find I'm even
+more hesitant doing it when programming Haskell. Probably due to Haskell having
+<i>a lot</i> of infix operators that I'm unused to.
+</p>
+
+<p>
+The rest of the parser now looks like this:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">parseDevice = Device <span class="org-operator">&lt;$&gt;</span>
+    hexStr <span class="org-operator">&lt;##&gt;</span> <span class="org-string">':'</span> <span class="org-operator">&lt;*&gt;</span>
+    hexStr
+
+parseRegion = MemRegion <span class="org-operator">&lt;$&gt;</span>
+    parseAddress <span class="org-operator">&lt;##&gt;</span> <span class="org-string">' '</span> <span class="org-operator">&lt;*&gt;</span>
+    parsePerms <span class="org-operator">&lt;##&gt;</span> <span class="org-string">' '</span> <span class="org-operator">&lt;*&gt;</span>
+    hexStr <span class="org-operator">&lt;##&gt;</span> <span class="org-string">' '</span> <span class="org-operator">&lt;*&gt;</span>
+    parseDevice <span class="org-operator">&lt;##&gt;</span> <span class="org-string">' '</span> <span class="org-operator">&lt;*&gt;</span>
+    <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-warning">Prelude</span>.read <span class="org-operator">&lt;$&gt;</span> many1 digit<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">&lt;##&gt;</span> <span class="org-string">' '</span> <span class="org-operator">&lt;*&gt;</span>
+    <span class="org-rainbow-delimiters-depth-1">(</span>parsePath <span class="org-operator">&lt;|&gt;</span> string <span class="org-string">""</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+    <span class="org-keyword">where</span>
+        parsePath = <span class="org-rainbow-delimiters-depth-1">(</span>many1 <span class="org-operator">$</span> char <span class="org-string">' '</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">*&gt;</span> <span class="org-rainbow-delimiters-depth-1">(</span>many1 anyChar<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+I think these changes address most of the comments Conal and Twan made on the
+previous part. Where they don't I hope I've explained why I decided not to take
+their advice.
+</p>
+
+<p>
+<i>Comment by Jedaï:</i>
+</p>
+
+<p>
+That's really pretty ! Code you can read, but concise, Haskell is really good at
+that, though I need to look at how Applicative works its magic. :)
+</p>
+
+<p>
+Good work !
+</p>
+
+<p>
+<i>Comment by Conal Elliot:</i>
+</p>
+
+<p>
+Magnus wrote
+</p>
+
+<blockquote>
+<p>
+I also don’t want to hide things, e.g. I don’t want to introduce a function that
+turns <code>(a &lt;* char ' ') &lt;*&gt; b</code> into <code>a &lt;#&gt; b</code>.
+</p>
+</blockquote>
+
+<p>
+I'm puzzled about this comment. Aren't all of your definitions (as well as much
+of Parsec and other Haskell libraries) "hiding things"?
+</p>
+
+<p>
+What appeals to me about <code>a &lt;#&gt; b = (a &lt;* char ' ') &lt;*&gt; b</code> (and similarly for,
+say "<code>a &lt;:&gt; b</code>", is that it captures the combination of a character separator
+and <code>&lt;*&gt;</code>-style application. As your example illustrates (and hadn't previously
+occurred to me), this combination is very common.
+</p>
+
+<p>
+<i>Response to Conal:</i>
+</p>
+
+<p>
+Conal, you are right and I was unclear in what I meant. Basically I like the
+idea of reading the <code>parseXxx</code> functions and see the structure of the original
+<code>maps</code> file. At the moment I think that
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">parseAddress = Address <span class="org-operator">&lt;$&gt;</span>
+    hexStr <span class="org-operator">&lt;##&gt;</span> <span class="org-string">'-'</span> <span class="org-operator">&lt;*&gt;</span>
+    hexStr
+</pre>
+</div>
+
+<p>
+better reflects the structure of the <code>maps</code> file than hiding away the separator
+inside an operator. I also find it doesn't require me to carry a lot of "mental
+baggage" when reading the code (I suspect this is the thing that's been
+bothering me with the love of introducing operators that seems so prevalent
+among Haskell developers, thanks for helping me put a finger on it). However,
+your persistence might be paying off ;-) I'm warming to the idea. I just have to
+come up with a scheme for naming operators that allows easy reading of the code.
+</p>
+
+<p>
+<i>Comment by Conal Elliott:</i>
+</p>
+
+<p>
+Oh! I'm finally getting what you've meant about "hiding things" vs "reflect[ing]
+the structure of the <code>maps</code> file". I think you want the separator characters to
+show up in the parser, and between the sub-parsers that they separate.
+</p>
+
+<p>
+Maybe what's missing in my <code>&lt;#&gt;</code> suggestion is that the choice of the space
+character as a separator is far from obvious, and I guess that's what you're
+saying about "mental baggage" naming the operators for easy reading.
+</p>
+
+<p>
+I suppose you could use <code>sepSpace</code> and <code>sepColon</code> as operator names.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">parseAddress = Address <span class="org-operator">&lt;$&gt;</span> hexStr `sepColon` hexStr
+
+parseRegion = MemRegion <span class="org-operator">&lt;$&gt;</span>
+    parseAddress `sepSpace`
+    parsePerms `sepSpace`
+    ...
+</pre>
+</div>
+
+<p>
+Still, an actual space/colon character would probably be clearer. For colon, you
+could use <code>&lt;:&gt;</code>, but what for space?
+</p>
+
+<p>
+<i>Response to Conal:</i>
+</p>
+
+<p>
+Conal, that's exactly what I mean, just much more clearly expressed than I could
+ever hope to do.
+</p>
+
+<p>
+I too was thinking of the problem with <code>space</code> in an operator&#x2026;
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-parsec.html">parsec</a> <a href="https://magnus.therning.org/tag-parsing.html">parsing</a> </div>
+<div id="comments">Comment <a href=mailto:magnus+blog.comment@therning.org?subject=Comment%20on%20INSERT%20POST%20URL%20HERE>here</a>.</div></div>
+<div id="postamble" class="status"><!-- org-static-blog-page-postamble --></div>
+</body>
+</html>

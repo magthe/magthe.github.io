@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="alternate"
+      type="application/rss+xml"
+      href="https://magnus.therning.org/feed.xml"
+      title="RSS feed for https://magnus.therning.org/">
+<title>Magnus web site</title>
+<meta name="author" content="Magnus Therning"><meta name="referrer" content="no-referrer"><link href= "static/style.css" rel="stylesheet" type="text/css" /><link href= "static/htmlize.css" rel="stylesheet" type="text/css" /><link href= "static/extra_style.css" rel="stylesheet" type="text/css" /></head>
+<body>
+<div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
+<div id="content">
+<h1 class="title">Posts tagged "parsec":</h1>
+<div class="post-date">05 Jun 2007</div><h1 class="post-title"><a href="https://magnus.therning.org/2007-06-05-296-adventures-in-parsing,-part-4.html">Adventures in parsing, part 4</a></h1>
+<p>
+I received a few comments on <a href="https://magnus.therning.org/2007-06-03-295-adventures-in-parsing,-part-3.html">part 3</a> of this little mini-series and I just wanted
+to address them. While doing this I still want the main functions of the parser
+<code>parseXxx</code> to read like the <code>maps</code> file itself. That means I want to avoid
+"reversing order" like <code>thenChar</code> and <code>thenSpace</code> did in <a href="https://magnus.therning.org/2007-05-29-290-more-adventures-in-parsing.html">part 2</a>. I also don't
+want to hide things, e.g. I don't want to introduce a function that turns <code>(a &lt;*
+char ' ') &lt;*&gt; b</code> into <code>a &lt;#&gt; b</code>.
+</p>
+
+<p>
+So, first up is to do something about <code>hexStr2Int &lt;$&gt; many1 hexDigit</code> which
+appears all over the place. I made it appear in even more places by moving
+around a few parentheses; the following two functions are the same:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">foo = a <span class="org-operator">&lt;$&gt;</span> <span class="org-rainbow-delimiters-depth-1">(</span>b <span class="org-operator">&lt;*</span> c<span class="org-rainbow-delimiters-depth-1">)</span>
+bar = <span class="org-rainbow-delimiters-depth-1">(</span>a <span class="org-operator">&lt;$&gt;</span> b<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">&lt;*</span> c
+</pre>
+</div>
+
+<p>
+Then I scrapped <code>hexStr2Int</code> completely and instead introduced <code>hexStr</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">hexStr = <span class="org-warning">Prelude</span>.read <span class="org-operator">.</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-string">"0x"</span> <span class="org-operator">++</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">&lt;$&gt;</span> many1 hexDigit
+</pre>
+</div>
+
+<p>
+This means that <code>parseAddress</code> can be rewritten to:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">parseAddress = Address <span class="org-operator">&lt;$&gt;</span>
+    hexStr <span class="org-operator">&lt;*</span> char <span class="org-string">'-'</span> <span class="org-operator">&lt;*&gt;</span>
+    hexStr
+</pre>
+</div>
+
+<p>
+Rather than, as Conal suggested, introduce an infix operation that addresses the
+pattern <code>(a &lt;* char ' ') &lt;*&gt; b</code> I decided to do something about <code>a &lt;* char c</code>. I
+feel Conal's suggestion, while shortening the code more than my solution, goes
+against my wish to not hide things. This is the definition of <code>&lt;##&gt;</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-operator">&lt;##&gt;</span><span class="org-rainbow-delimiters-depth-1">)</span> l r = l <span class="org-operator">&lt;*</span> char r
+</pre>
+</div>
+
+<p>
+After this I rewrote <code>parseAddress</code> into:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">parseAddress = Address <span class="org-operator">&lt;$&gt;</span>
+    hexStr <span class="org-operator">&lt;##&gt;</span> <span class="org-string">'-'</span> <span class="org-operator">&lt;*&gt;</span>
+    hexStr
+</pre>
+</div>
+
+<p>
+The pattern <code>(== c) &lt;$&gt; anyChar</code> appears three times in <code>parsePerms</code> so it got a
+name and moved down into the <code>where</code> clause. I also modified <code>cA</code> to use pattern
+matching. I haven't spent much time considering error handling in the parser, so
+I didn't introduce a pattern matching everything else.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">parsePerms = Perms <span class="org-operator">&lt;$&gt;</span>
+    pP <span class="org-string">'r'</span> <span class="org-operator">&lt;*&gt;</span>
+    pP <span class="org-string">'w'</span> <span class="org-operator">&lt;*&gt;</span>
+    pP <span class="org-string">'x'</span> <span class="org-operator">&lt;*&gt;</span>
+    <span class="org-rainbow-delimiters-depth-1">(</span>cA <span class="org-operator">&lt;$&gt;</span> anyChar<span class="org-rainbow-delimiters-depth-1">)</span>
+
+    <span class="org-keyword">where</span>
+        pP c = <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-operator">==</span> c<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">&lt;$&gt;</span> anyChar
+        cA <span class="org-string">'p'</span> = Private
+        cA <span class="org-string">'s'</span> = Shared
+</pre>
+</div>
+
+<p>
+The last change I did was remove a bunch of parentheses. I'm always a little
+hesitant removing parentheses and relying on precedence rules, I find I'm even
+more hesitant doing it when programming Haskell. Probably due to Haskell having
+<i>a lot</i> of infix operators that I'm unused to.
+</p>
+
+<p>
+The rest of the parser now looks like this:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">parseDevice = Device <span class="org-operator">&lt;$&gt;</span>
+    hexStr <span class="org-operator">&lt;##&gt;</span> <span class="org-string">':'</span> <span class="org-operator">&lt;*&gt;</span>
+    hexStr
+
+parseRegion = MemRegion <span class="org-operator">&lt;$&gt;</span>
+    parseAddress <span class="org-operator">&lt;##&gt;</span> <span class="org-string">' '</span> <span class="org-operator">&lt;*&gt;</span>
+    parsePerms <span class="org-operator">&lt;##&gt;</span> <span class="org-string">' '</span> <span class="org-operator">&lt;*&gt;</span>
+    hexStr <span class="org-operator">&lt;##&gt;</span> <span class="org-string">' '</span> <span class="org-operator">&lt;*&gt;</span>
+    parseDevice <span class="org-operator">&lt;##&gt;</span> <span class="org-string">' '</span> <span class="org-operator">&lt;*&gt;</span>
+    <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-warning">Prelude</span>.read <span class="org-operator">&lt;$&gt;</span> many1 digit<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">&lt;##&gt;</span> <span class="org-string">' '</span> <span class="org-operator">&lt;*&gt;</span>
+    <span class="org-rainbow-delimiters-depth-1">(</span>parsePath <span class="org-operator">&lt;|&gt;</span> string <span class="org-string">""</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+    <span class="org-keyword">where</span>
+        parsePath = <span class="org-rainbow-delimiters-depth-1">(</span>many1 <span class="org-operator">$</span> char <span class="org-string">' '</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">*&gt;</span> <span class="org-rainbow-delimiters-depth-1">(</span>many1 anyChar<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+I think these changes address most of the comments Conal and Twan made on the
+previous part. Where they don't I hope I've explained why I decided not to take
+their advice.
+</p>
+
+<p>
+<i>Comment by Jedaï:</i>
+</p>
+
+<p>
+That's really pretty ! Code you can read, but concise, Haskell is really good at
+that, though I need to look at how Applicative works its magic. :)
+</p>
+
+<p>
+Good work !
+</p>
+
+<p>
+<i>Comment by Conal Elliot:</i>
+</p>
+
+<p>
+Magnus wrote
+</p>
+
+<blockquote>
+<p>
+I also don’t want to hide things, e.g. I don’t want to introduce a function that
+turns <code>(a &lt;* char ' ') &lt;*&gt; b</code> into <code>a &lt;#&gt; b</code>.
+</p>
+</blockquote>
+
+<p>
+I'm puzzled about this comment. Aren't all of your definitions (as well as much
+of Parsec and other Haskell libraries) "hiding things"?
+</p>
+
+<p>
+What appeals to me about <code>a &lt;#&gt; b = (a &lt;* char ' ') &lt;*&gt; b</code> (and similarly for,
+say "<code>a &lt;:&gt; b</code>", is that it captures the combination of a character separator
+and <code>&lt;*&gt;</code>-style application. As your example illustrates (and hadn't previously
+occurred to me), this combination is very common.
+</p>
+
+<p>
+<i>Response to Conal:</i>
+</p>
+
+<p>
+Conal, you are right and I was unclear in what I meant. Basically I like the
+idea of reading the <code>parseXxx</code> functions and see the structure of the original
+<code>maps</code> file. At the moment I think that
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">parseAddress = Address <span class="org-operator">&lt;$&gt;</span>
+    hexStr <span class="org-operator">&lt;##&gt;</span> <span class="org-string">'-'</span> <span class="org-operator">&lt;*&gt;</span>
+    hexStr
+</pre>
+</div>
+
+<p>
+better reflects the structure of the <code>maps</code> file than hiding away the separator
+inside an operator. I also find it doesn't require me to carry a lot of "mental
+baggage" when reading the code (I suspect this is the thing that's been
+bothering me with the love of introducing operators that seems so prevalent
+among Haskell developers, thanks for helping me put a finger on it). However,
+your persistence might be paying off ;-) I'm warming to the idea. I just have to
+come up with a scheme for naming operators that allows easy reading of the code.
+</p>
+
+<p>
+<i>Comment by Conal Elliott:</i>
+</p>
+
+<p>
+Oh! I'm finally getting what you've meant about "hiding things" vs "reflect[ing]
+the structure of the <code>maps</code> file". I think you want the separator characters to
+show up in the parser, and between the sub-parsers that they separate.
+</p>
+
+<p>
+Maybe what's missing in my <code>&lt;#&gt;</code> suggestion is that the choice of the space
+character as a separator is far from obvious, and I guess that's what you're
+saying about "mental baggage" naming the operators for easy reading.
+</p>
+
+<p>
+I suppose you could use <code>sepSpace</code> and <code>sepColon</code> as operator names.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">parseAddress = Address <span class="org-operator">&lt;$&gt;</span> hexStr `sepColon` hexStr
+
+parseRegion = MemRegion <span class="org-operator">&lt;$&gt;</span>
+    parseAddress `sepSpace`
+    parsePerms `sepSpace`
+    ...
+</pre>
+</div>
+
+<p>
+Still, an actual space/colon character would probably be clearer. For colon, you
+could use <code>&lt;:&gt;</code>, but what for space?
+</p>
+
+<p>
+<i>Response to Conal:</i>
+</p>
+
+<p>
+Conal, that's exactly what I mean, just much more clearly expressed than I could
+ever hope to do.
+</p>
+
+<p>
+I too was thinking of the problem with <code>space</code> in an operator&#x2026;
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-parsec.html">parsec</a> <a href="https://magnus.therning.org/tag-parsing.html">parsing</a> </div>
+
+<div class="post-date">03 Jun 2007</div><h1 class="post-title"><a href="https://magnus.therning.org/2007-06-03-295-adventures-in-parsing,-part-3.html">Adventures in parsing, part 3</a></h1>
+<p>
+I got a great many comments, at least by my standards, on my earlier <a href="https://magnus.therning.org/2007-05-29-290-more-adventures-in-parsing.html">two</a> <a href="https://magnus.therning.org/2007-05-27-289-adventures-in-parsing.html">posts</a>
+on parsing in Haskell. Especially on the latest one. Conal posted a comment on
+the first pointing me towards <code>liftM</code> and its siblings, without telling me that
+it would only be the first step towards "applicative style". So, here I go
+again&#x2026;
+</p>
+
+<p>
+First off, importing <code>Control.Applicative</code>. Apparently <code>&lt;|&gt;</code> is defined in both
+<code>Applicative</code> and in <code>Parsec</code>. I do use <code>&lt;|&gt;</code> from <code>Parsec</code> so preventing
+importing it from <code>Applicative</code> seemed like a good idea:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-keyword">import</span> Control.Applicative hiding <span class="org-rainbow-delimiters-depth-1">(</span> <span class="org-rainbow-delimiters-depth-2">(</span>&lt;|&gt;<span class="org-rainbow-delimiters-depth-2">)</span> <span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+Second, Cale pointed out that I need to make an instance for
+<code>Control.Applicative.Applicative</code> for <code>GenParser</code>. He was nice enough to point
+out how to do that, leaving syntax the only thing I had to struggle with:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-keyword">instance</span> <span class="org-type">Applicative</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-type">GenParser</span> c st<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-keyword">where</span>
+    pure = return
+    <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-operator">&lt;*&gt;</span><span class="org-rainbow-delimiters-depth-1">)</span> = ap
+</pre>
+</div>
+
+<p>
+I decided to take baby-steps and I started with <code>parseAddress</code>. Here's what it
+used to look like:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">parseAddress = <span class="org-keyword">let</span>
+        hexStr2Int = <span class="org-warning">Prelude</span>.read <span class="org-operator">.</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-string">"0x"</span> <span class="org-operator">++</span><span class="org-rainbow-delimiters-depth-1">)</span>
+    <span class="org-keyword">in</span> <span class="org-keyword">do</span>
+        start &lt;- liftM hexStr2Int <span class="org-operator">$</span> thenChar <span class="org-string">'-'</span> <span class="org-operator">$</span> many1 hexDigit
+        end &lt;- liftM hexStr2Int <span class="org-operator">$</span> many1 hexDigit
+        return <span class="org-operator">$</span> Address start end
+</pre>
+</div>
+
+<p>
+On Twan's suggestion I rewrote it using <code>where</code> rather than <code>let ... in</code> and
+since this was my first function I decided to go via the <code>ap</code> function (at the
+same time I broke out <code>hexStr2Int</code> since it's used in so many places):
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">parseAddress = <span class="org-keyword">do</span>
+    start &lt;- return hexStr2Int `ap` <span class="org-rainbow-delimiters-depth-1">(</span>thenChar <span class="org-string">'-'</span> <span class="org-operator">$</span> many1 hexDigit<span class="org-rainbow-delimiters-depth-1">)</span>
+    end &lt;- return hexStr2Int `ap` <span class="org-rainbow-delimiters-depth-1">(</span>many1 hexDigit<span class="org-rainbow-delimiters-depth-1">)</span>
+    return <span class="org-operator">$</span> Address start end
+</pre>
+</div>
+
+<p>
+Then on to applying some functions from <code>Applicative</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">parseAddress = Address start end
+    <span class="org-keyword">where</span>
+        start = hexStr2Int <span class="org-operator">&lt;$&gt;</span> <span class="org-rainbow-delimiters-depth-1">(</span>thenChar <span class="org-string">'-'</span> <span class="org-operator">$</span> many1 hexDigit<span class="org-rainbow-delimiters-depth-1">)</span>
+        end = hexStr2Int <span class="org-operator">&lt;$&gt;</span> <span class="org-rainbow-delimiters-depth-1">(</span>many1 hexDigit<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+By now the use of <code>thenChar</code> looks a little silly so I changed that part into
+<code>many1 hexDigit &lt;* char '-'</code> instead. Finally I removed the <code>where</code> part
+altogether and use <code>&lt;*&gt;</code> to string it all together:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">parseAddress = Address <span class="org-operator">&lt;$&gt;</span>
+    <span class="org-rainbow-delimiters-depth-1">(</span>hexStr2Int <span class="org-operator">&lt;$&gt;</span> many1 hexDigit <span class="org-operator">&lt;*</span> char <span class="org-string">'-'</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">&lt;*&gt;</span>
+    <span class="org-rainbow-delimiters-depth-1">(</span>hexStr2Int <span class="org-operator">&lt;$&gt;</span> <span class="org-rainbow-delimiters-depth-2">(</span>many1 hexDigit<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+From here on I skipped the intermediate steps and went straight for the last
+form. Here's what I ended up with:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">parsePerms = Perms <span class="org-operator">&lt;$&gt;</span>
+    <span class="org-rainbow-delimiters-depth-1">(</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-operator">==</span> <span class="org-string">'r'</span><span class="org-rainbow-delimiters-depth-2">)</span> <span class="org-operator">&lt;$&gt;</span> anyChar<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">&lt;*&gt;</span>
+    <span class="org-rainbow-delimiters-depth-1">(</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-operator">==</span> <span class="org-string">'w'</span><span class="org-rainbow-delimiters-depth-2">)</span> <span class="org-operator">&lt;$&gt;</span> anyChar<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">&lt;*&gt;</span>
+    <span class="org-rainbow-delimiters-depth-1">(</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-operator">==</span> <span class="org-string">'x'</span><span class="org-rainbow-delimiters-depth-2">)</span> <span class="org-operator">&lt;$&gt;</span> anyChar<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">&lt;*&gt;</span>
+    <span class="org-rainbow-delimiters-depth-1">(</span>cA <span class="org-operator">&lt;$&gt;</span> anyChar<span class="org-rainbow-delimiters-depth-1">)</span>
+
+    <span class="org-keyword">where</span>
+        cA a = <span class="org-keyword">case</span> a <span class="org-keyword">of</span>
+            <span class="org-string">'p'</span> -&gt; Private
+            <span class="org-string">'s'</span> -&gt; Shared
+
+parseDevice = Device <span class="org-operator">&lt;$&gt;</span>
+    <span class="org-rainbow-delimiters-depth-1">(</span>hexStr2Int <span class="org-operator">&lt;$&gt;</span> many1 hexDigit <span class="org-operator">&lt;*</span> char <span class="org-string">':'</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">&lt;*&gt;</span>
+    <span class="org-rainbow-delimiters-depth-1">(</span>hexStr2Int <span class="org-operator">&lt;$&gt;</span> <span class="org-rainbow-delimiters-depth-2">(</span>many1 hexDigit<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+parseRegion = MemRegion <span class="org-operator">&lt;$&gt;</span>
+    <span class="org-rainbow-delimiters-depth-1">(</span>parseAddress <span class="org-operator">&lt;*</span> char <span class="org-string">' '</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">&lt;*&gt;</span>
+    <span class="org-rainbow-delimiters-depth-1">(</span>parsePerms <span class="org-operator">&lt;*</span> char <span class="org-string">' '</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">&lt;*&gt;</span>
+    <span class="org-rainbow-delimiters-depth-1">(</span>hexStr2Int <span class="org-operator">&lt;$&gt;</span> <span class="org-rainbow-delimiters-depth-2">(</span>many1 hexDigit <span class="org-operator">&lt;*</span> char <span class="org-string">' '</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">&lt;*&gt;</span>
+    <span class="org-rainbow-delimiters-depth-1">(</span>parseDevice <span class="org-operator">&lt;*</span> char <span class="org-string">' '</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">&lt;*&gt;</span>
+    <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-warning">Prelude</span>.read <span class="org-operator">&lt;$&gt;</span> <span class="org-rainbow-delimiters-depth-2">(</span>many1 digit <span class="org-operator">&lt;*</span> char <span class="org-string">' '</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">&lt;*&gt;</span>
+    <span class="org-rainbow-delimiters-depth-1">(</span>parsePath <span class="org-operator">&lt;|&gt;</span> string <span class="org-string">""</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+    <span class="org-keyword">where</span>
+        parsePath = <span class="org-rainbow-delimiters-depth-1">(</span>many1 <span class="org-operator">$</span> char <span class="org-string">' '</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">*&gt;</span> <span class="org-rainbow-delimiters-depth-1">(</span>many1 anyChar<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+I have to say I'm fairly pleased with this version of the parser. It reads about
+as easy as the first version and there's none of the "reversing" that <code>thenChar</code>
+introduced.
+</p>
+
+<p>
+<i>Comment by Conal Elliott:</i>
+</p>
+
+<p>
+A thing of beauty!  I'm glad you stuck with it, Magnus.
+</p>
+
+<p>
+Some much smaller points:
+</p>
+
+<ul class="org-ul">
+<li>The pattern <code>(== c) &lt;$&gt; anyChar</code> (nicely written, btw) arises three times, so
+it might merit a name.</li>
+<li>Similarly for <code>hexStr2Int &lt;$&gt; many1 hexDigit</code>, especially when you rewrite <code>f
+  &lt;$&gt; (a &lt;* b)</code> to <code>(f &lt;$&gt; a) &lt;* b</code>.</li>
+<li>The pattern <code>(a &lt;* char ' ') &lt;*&gt; b</code> comes up a lot. How about naming it also,
+with a nice infix op, say <code>a &lt;#&gt; b</code>?</li>
+<li>The cA definition could use pattern matching instead (e.g., <code>cA 'p' = Private</code>
+and <code>cA 's' = Shared</code>).</li>
+<li>Some of your parens are unnecessary (3rd line of <code>parseDevice</code> and last of
+<code>parseRegion</code>), since application binds more tightly than infix ops.</li>
+</ul>
+
+<p>
+<i>Comment by Twan van Laarhoven:</i>
+</p>
+
+<p>
+First of all, note that you don't need parentheses around <code>parseSomething &lt;*
+char ' '</code>.
+</p>
+
+<p>
+You can also simplify things a bit more by combining <code>hexStr2Int &lt;$&gt; many1
+hexDigit</code> into a function, then you could say:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">parseHex = hexStr2Int <span class="org-operator">&lt;$&gt;</span> many1 hexDigit
+parseAddress = Address <span class="org-operator">&lt;$&gt;</span> parseHex <span class="org-operator">&lt;*</span> char <span class="org-string">'-'</span> <span class="org-operator">&lt;*&gt;</span> parseHex
+parseDevice  = Device <span class="org-operator">&lt;$&gt;</span> parseHex <span class="org-operator">&lt;&lt;/</span>em<span class="org-operator">&gt;</span> char <span class="org-string">':'</span> <span class="org-operator">&lt;*&gt;</span> parseHex
+</pre>
+</div>
+
+<p>
+Also, in <code>cA</code>, should there be a case for character other than 'p' or 's'?
+Otherwise the program could fail with a pattern match error.
+</p>
+
+<p>
+<i>Response to Conal and Twan:</i>
+</p>
+
+<p>
+Conal and Twan, thanks for your suggestions. I'll put them into practice and
+post the "final" result as soon as I find some time.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-parsec.html">parsec</a> <a href="https://magnus.therning.org/tag-parsing.html">parsing</a> </div>
+
+<div class="post-date">29 May 2007</div><h1 class="post-title"><a href="https://magnus.therning.org/2007-05-29-290-more-adventures-in-parsing.html">More adventures in parsing</a></h1>
+<p>
+I received an interesting comment from Conal Elliott on my <a href="https://magnus.therning.org/2007-05-27-289-adventures-in-parsing.html">previous post on
+parsing</a> I have to admit I wasn't sure I understood him at first, I'm still not
+sure I do, but I think I have an idea of what he means :-)
+</p>
+
+<p>
+Basically my code is very sequential in that I use the <code>do</code> construct everywhere
+in the parsing code. Personally I thought that makes the parser very easy to
+read since the code very much mimics the structure of the <code>maps</code> file. I do
+realise the code isn't very "functional" though so I thought I'd take Conal's
+comments to heart and see what the result would be.
+</p>
+
+<p>
+Let's start with observation that every entity in a line is separated by a
+space. However some things are separated by other characters. So the first thing
+I did was write a higher-order function that first reads something, then reads a
+character and returns the first thing that was read:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">thenChar c f = f <span class="org-operator">&gt;&gt;=</span> <span class="org-rainbow-delimiters-depth-1">(</span>\ r -&gt; char c <span class="org-operator">&gt;&gt;</span> return r<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+Since space is used as a separator so often I added a short-cut for that:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">thenSpace  = thenChar <span class="org-string">' '</span>
+</pre>
+</div>
+
+<p>
+Then I put that to use on <code>parseAddress</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">parseAddress = <span class="org-keyword">let</span>
+        hexStr2Int = <span class="org-warning">Prelude</span>.read <span class="org-operator">.</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-string">"0x"</span> <span class="org-operator">++</span><span class="org-rainbow-delimiters-depth-1">)</span>
+    <span class="org-keyword">in</span> <span class="org-keyword">do</span>
+        start &lt;- thenChar <span class="org-string">'-'</span> <span class="org-operator">$</span> many1 hexDigit
+        end &lt;- many1 hexDigit
+        return <span class="org-operator">$</span> Address <span class="org-rainbow-delimiters-depth-1">(</span>hexStr2Int start<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-rainbow-delimiters-depth-1">(</span>hexStr2Int end<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+Modifying the other parsing functions using =thenChar~ and <code>thenSpace</code> is
+straight forward.
+</p>
+
+<p>
+I'm not entirely sure I understand what Conal meant with the part about <code>liftM</code>
+in his comment. I suspect his referring to the fact that I first read characters
+and then convert them in the "constructors". By using <code>liftM</code> I can move the
+conversion "up in the code". Here's <code>parseAddress</code> after I've moved the calls to
+<code>hexStr2Int</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">parseAddress = <span class="org-keyword">let</span>
+        hexStr2Int = <span class="org-warning">Prelude</span>.read <span class="org-operator">.</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-string">"0x"</span> <span class="org-operator">++</span><span class="org-rainbow-delimiters-depth-1">)</span>
+    <span class="org-keyword">in</span> <span class="org-keyword">do</span>
+        start &lt;- liftM hexStr2Int <span class="org-operator">$</span> thenChar <span class="org-string">'-'</span> <span class="org-operator">$</span> many1 hexDigit
+        end &lt;- liftM hexStr2Int <span class="org-operator">$</span> many1 hexDigit
+        return <span class="org-operator">$</span> Address start end
+</pre>
+</div>
+
+<p>
+After modifying the other parsing functions in a similar way I ended up with this:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">parsePerms = <span class="org-keyword">let</span>
+        cA a = <span class="org-keyword">case</span> a <span class="org-keyword">of</span>
+            <span class="org-string">'p'</span> -&gt; Private
+            <span class="org-string">'s'</span> -&gt; Shared
+    <span class="org-keyword">in</span> <span class="org-keyword">do</span>
+        r &lt;- liftM <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-operator">==</span> <span class="org-string">'r'</span><span class="org-rainbow-delimiters-depth-1">)</span> anyChar
+        w &lt;- liftM <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-operator">==</span> <span class="org-string">'w'</span><span class="org-rainbow-delimiters-depth-1">)</span> anyChar
+        x &lt;- liftM <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-operator">==</span> <span class="org-string">'x'</span><span class="org-rainbow-delimiters-depth-1">)</span> anyChar
+        a &lt;- liftM cA anyChar
+        return <span class="org-operator">$</span> Perms r w x a
+
+parseDevice = <span class="org-keyword">let</span>
+        hexStr2Int = <span class="org-warning">Prelude</span>.read <span class="org-operator">.</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-string">"0x"</span> <span class="org-operator">++</span><span class="org-rainbow-delimiters-depth-1">)</span>
+    <span class="org-keyword">in</span> <span class="org-keyword">do</span>
+        maj &lt;- liftM hexStr2Int <span class="org-operator">$</span> thenChar <span class="org-string">':'</span> <span class="org-operator">$</span> many1 hexDigit
+        min &lt;- liftM hexStr2Int <span class="org-operator">$</span> many1 hexDigit
+        return <span class="org-operator">$</span> Device maj min
+
+parseRegion = <span class="org-keyword">let</span>
+        hexStr2Int = <span class="org-warning">Prelude</span>.read <span class="org-operator">.</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-string">"0x"</span> <span class="org-operator">++</span><span class="org-rainbow-delimiters-depth-1">)</span>
+        parsePath = <span class="org-rainbow-delimiters-depth-1">(</span>many1 <span class="org-operator">$</span> char <span class="org-string">' '</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">&gt;&gt;</span> <span class="org-rainbow-delimiters-depth-1">(</span>many1 <span class="org-operator">$</span> anyChar<span class="org-rainbow-delimiters-depth-1">)</span>
+    <span class="org-keyword">in</span> <span class="org-keyword">do</span>
+        addr &lt;- thenSpace parseAddress
+        perm &lt;- thenSpace parsePerms
+        offset &lt;- liftM hexStr2Int <span class="org-operator">$</span> thenSpace <span class="org-operator">$</span> many1 hexDigit
+        dev &lt;- thenSpace parseDevice
+        inode &lt;- liftM <span class="org-warning">Prelude</span>.read <span class="org-operator">$</span> thenSpace <span class="org-operator">$</span> many1 digit
+        path &lt;- parsePath <span class="org-operator">&lt;|&gt;</span> string <span class="org-string">""</span>
+        return <span class="org-operator">$</span> MemRegion addr perm offset dev inode path
+</pre>
+</div>
+
+<p>
+Is this code more "functional"? Is it easier to read? You'll have to be the
+judge of that&#x2026;
+</p>
+
+<p>
+Conal, if I got the intention of your comment completely wrong then feel free to
+tell me I'm an idiot ;-)
+</p>
+
+<p>
+<i>Comment by Holger:</i>
+</p>
+
+<p>
+Your story and Conal's comment inspired me to
+play around with liftM and I came up with this version of parseAddress:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">parseAddress = <span class="org-keyword">let</span>
+        hexStr2Int = <span class="org-warning">Prelude</span>.read <span class="org-operator">.</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-string">"0x"</span> <span class="org-operator">++</span><span class="org-rainbow-delimiters-depth-1">)</span>
+    <span class="org-keyword">in</span>
+        liftM3 <span class="org-rainbow-delimiters-depth-1">(</span>\ x _ y -&gt; Address <span class="org-rainbow-delimiters-depth-2">(</span>hexStr2Int x<span class="org-rainbow-delimiters-depth-2">)</span> <span class="org-rainbow-delimiters-depth-2">(</span>hexStr2Int y<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-rainbow-delimiters-depth-1">(</span>many1 hexDigit<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-rainbow-delimiters-depth-1">(</span>char <span class="org-string">'-'</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-rainbow-delimiters-depth-1">(</span>many1 hexDigit<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+You could probably rewrite all the functions in a similar way, but honestly I find your original code in do-notation much easier to read.
+</p>
+
+<p>
+<i>Response to Holger:</i>
+</p>
+
+<p>
+Yeah, the same line of thought made it a little difficult to fall asleep
+yesterday (yes, I know, nerdiness taken to new levels). My thoughts was
+something like this:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">parseAddress = <span class="org-keyword">let</span>
+        hexStr2Int = ...
+    <span class="org-keyword">in</span>
+        liftM2 Address
+            <span class="org-rainbow-delimiters-depth-1">(</span>liftM hexStr2Int <span class="org-operator">$</span> thenChar <span class="org-string">'-'</span> <span class="org-operator">$</span> many1 hexDigit<span class="org-rainbow-delimiters-depth-1">)</span>
+            <span class="org-rainbow-delimiters-depth-1">(</span>liftM hexStr2Int <span class="org-operator">$</span> many1 hexDigit<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+I agree with you on readability. I also wonder if laziness could bite back or if
+`liftM2` guarantees an order of evaluation.
+</p>
+
+<p>
+<i>Comment by Holger:</i>
+</p>
+
+<p>
+I just looked at the source of liftM2/3 and it seems that it basically just
+resolves to an expression in do-notation. So it's just a shortcut and therefore
+should yield the same program.
+</p>
+
+<p>
+<i>Comment by Cale Gibbard:</i>
+</p>
+
+<p>
+<code>liftM2</code> guarantees an ordering on the monadic computation, because it's defined like:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">liftM2 f x y = <span class="org-keyword">do</span> <span class="org-rainbow-delimiters-depth-1">{</span> u &lt;- x; v &lt;- y; return <span class="org-rainbow-delimiters-depth-2">(</span>f u v<span class="org-rainbow-delimiters-depth-2">)</span> <span class="org-rainbow-delimiters-depth-1">}</span>
+</pre>
+</div>
+
+<p>
+Though, that's a little different from guaranteeing an order of evaluation &#x2013;
+depending on the monad, the order of evaluation will vary. In any case, it
+shouldn't be much different from what you originally had.
+</p>
+
+<p>
+Another thing you might like to play around with, at least in your head, is the
+fact that:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">liftM2 f x y = return f `ap` x `ap` y
+
+liftM3 f x y z = return f `ap` x `ap` y `ap` z
+</pre>
+</div>
+
+<p>
+and so on, which leads up to the style embodied by the Control.Applicative
+library, though if you really want to play around with that, you'll need to
+write a quick instance of Applicative for GenParser, which should just consist
+of making <code>pure = return</code> and <code>(&lt;*&gt;) = ap</code>.
+</p>
+
+<p>
+<i>Comment by Twan van Laarhoven:</i>
+</p>
+
+<p>
+The best way to make parsing code readable is to use Data.Applicative. Also,
+most people prefer where to <code>let..in</code> if possible. This gives something like:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">parseHexStr = <span class="org-warning">Prelude</span>.read <span class="org-operator">.</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-string">"0x"</span> <span class="org-operator">++</span><span class="org-rainbow-delimiters-depth-1">)</span>  many1 hexDigit
+parsePath   = many1 <span class="org-rainbow-delimiters-depth-1">(</span>char <span class="org-string">' '</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">*&gt;</span> many1 anyChar
+
+parseAddress = Address  hexStr <span class="org-operator">*&gt;</span> char <span class="org-string">'-'</span>  hexStr
+
+parseRegion = MemRegion
+            parseAddress <span class="org-operator">*&gt;</span> char <span class="org-string">' '</span>
+            parsePerms   <span class="org-operator">*&gt;</span> char <span class="org-string">' '</span>
+            parseHexStr  <span class="org-operator">*&gt;</span> char <span class="org-string">' '</span>
+            parseDevice  <span class="org-operator">*&gt;</span> char <span class="org-string">' '</span>
+            <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-warning">Prelude</span>.read  many1 digit<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">*&gt;</span> char <span class="org-string">' '</span>
+            <span class="org-rainbow-delimiters-depth-1">(</span>parsePath  return <span class="org-string">""</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+Basicly <code>(liftM# f x y z)</code> can be written as <code>f  x &lt;*&gt; y &lt;*&gt; z</code>.
+</p>
+
+<p>
+<i>Comment by Nick:</i>
+</p>
+
+<p>
+I find the <code>thenSpace</code> a bit difficult to read.I think something like this is
+more natural, as it maintains the left-to-right relationship of the parsed data
+and the following space:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">aChar c r = char c <span class="org-operator">&gt;&gt;</span> return r
+aSpace = aChar <span class="org-string">' '</span>
+
+...
+    <span class="org-keyword">do</span>
+        start &lt;-  many1 hexDigit <span class="org-operator">&gt;&gt;</span> aChar
+....
+</pre>
+</div>
+
+<p>
+note that I haven't tested this and my haskell-fu is not very strong, so I could
+be way off here.
+</p>
+
+<p>
+<i>Comment by Conal Elliot:</i>
+</p>
+
+<p>
+Yes, that's exactly the direction i had in mind. once you switch from "do" style
+to "liftM#" style, it's a simple step to replace the monad operators to
+applicative functor operators.
+</p>
+
+<p>
+<i>Response to Nick:</i>
+</p>
+
+<p>
+Nick, yes your way of writing it is easier to read. You'll need to change to
+using <code>&gt;&gt;=</code> though:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-keyword">do</span>
+    start &lt;- many1 hexDigit <span class="org-operator">&gt;&gt;=</span> aChar <span class="org-string">'-'</span>
+</pre>
+</div>
+
+<p>
+Then you can mix in `liftM` as well:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-keyword">do</span>
+    start &lt;- liftM hexStr2Int <span class="org-operator">$</span> many1 hexDigit <span class="org-operator">&gt;&gt;=</span> aChar <span class="org-string">'-'</span>
+</pre>
+</div>
+
+<p>
+to do the conversion. However, I think my initial version is even clearer:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-keyword">do</span>
+    start &lt;- liftM hexStr2Int <span class="org-operator">$</span> many1 hexDigitc
+    char <span class="org-string">'-'</span>
+</pre>
+</div>
+
+<p>
+<i>Response to Conal Elliot:</i>
+</p>
+
+<p>
+Conal, ok, you're one sneaky little b&#x2026; ;-) I'll have to look at the
+applicative operators to see what I think of them.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-parsec.html">parsec</a> <a href="https://magnus.therning.org/tag-parsing.html">parsing</a> </div>
+
+<div class="post-date">27 May 2007</div><h1 class="post-title"><a href="https://magnus.therning.org/2007-05-27-289-adventures-in-parsing.html">Adventures in parsing</a></h1>
+<p>
+I've long wanted to dip my toes in the <code>Parsec</code> water. I've made some attempts
+before, but always stumbled on something that put me in the doldrums for so long
+that I managed to repress all memories of ever having tried. A few files
+scattered in my <code>~/devo/test/haskell</code> directory tells the story of my failed
+attempts. Until now that is :-)
+</p>
+
+<p>
+I picked a nice and regular task for my first real attempt: parsing
+<code>/proc/&lt;pid&gt;/maps</code>. First a look at the man-page offers a good description of
+the format of a line:
+</p>
+
+<pre class="example" id="org4947f04">
+address           perms offset  dev   inode      pathname
+08048000-08056000 r-xp 00000000 03:0c 64593      /usr/sbin/gpm
+</pre>
+
+<p>
+So, I started putting together some datatypes. First off the address range:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-keyword">data</span> <span class="org-type">Address</span> = Address <span class="org-rainbow-delimiters-depth-1">{</span> start :: <span class="org-type">Integer</span>, end :: <span class="org-type">Integer</span> <span class="org-rainbow-delimiters-depth-1">}</span>
+    <span class="org-keyword">deriving</span> <span class="org-type">Show</span>
+</pre>
+</div>
+
+<p>
+Then I decided that the 's'/'p' in the permissions should be called <code>Access</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-keyword">data</span> <span class="org-type">Access</span> = Shared | Private
+    <span class="org-keyword">deriving</span> <span class="org-type">Show</span>
+</pre>
+</div>
+
+<p>
+The basic permissions (<code>rwx</code>) are simply represented as booleans:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-keyword">data</span> <span class="org-type">Perms</span> = Perms <span class="org-rainbow-delimiters-depth-1">{</span>
+        read :: <span class="org-type">Bool</span>,
+        write :: <span class="org-type">Bool</span>,
+        executable :: <span class="org-type">Bool</span>,
+        access :: <span class="org-type">Access</span>
+    <span class="org-rainbow-delimiters-depth-1">}</span>
+    <span class="org-keyword">deriving</span> <span class="org-type">Show</span>
+</pre>
+</div>
+
+<p>
+The device is straightforward as well:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-keyword">data</span> <span class="org-type">Device</span> = Device <span class="org-rainbow-delimiters-depth-1">{</span> major :: <span class="org-type">Integer</span>, minor :: <span class="org-type">Integer</span> <span class="org-rainbow-delimiters-depth-1">}</span>
+    <span class="org-keyword">deriving</span> <span class="org-type">Show</span>
+</pre>
+</div>
+
+<p>
+At last I tie it all together in a final datatype that represents a memory region:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-keyword">data</span> <span class="org-type">MemRegion</span> = MemRegion <span class="org-rainbow-delimiters-depth-1">{</span>
+        address :: <span class="org-type">Address</span>,
+        perms :: <span class="org-type">Perms</span>,
+        offset :: <span class="org-type">Integer</span>,
+        device :: <span class="org-type">Device</span>,
+        inode :: <span class="org-type">Integer</span>,
+        pathname :: <span class="org-type">String</span>
+    <span class="org-rainbow-delimiters-depth-1">}</span>
+    <span class="org-keyword">deriving</span> <span class="org-type">Show</span>
+</pre>
+</div>
+
+<p>
+All types derive <code>Show</code> (and receive default implementations of <code>show</code>, at least
+when using GHC) so that they are easy to print.
+</p>
+
+<p>
+Now, on to the actual "parsec-ing". Faced with the option of writing it top-down
+or bottom-up I chose the latter. However, since the format of a single line in
+the <code>maps</code> file is so simple it's easy to imagine what the final function will
+look like. I settled on bottom-up since the datatypes provide me with such an
+obvious splitting of the line. First off, parsing the address range:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">parseAddress = <span class="org-keyword">let</span>
+        hexStr2Int = <span class="org-warning">Prelude</span>.read <span class="org-operator">.</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-string">"0x"</span> <span class="org-operator">++</span><span class="org-rainbow-delimiters-depth-1">)</span>
+    <span class="org-keyword">in</span> <span class="org-keyword">do</span>
+        start &lt;- many1 hexDigit
+        char <span class="org-string">'-'</span>
+        end &lt;- many1 hexDigit
+        return <span class="org-operator">$</span> Address <span class="org-rainbow-delimiters-depth-1">(</span>hexStr2Int start<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-rainbow-delimiters-depth-1">(</span>hexStr2Int end<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+Since the addresses themselves are in hexadecimal and always are of at least
+length 1 I use <code>many1 hexDigit</code> to read them. I think it would be safe to assume
+the addresses always are 8 characters (at least on a 32-bit machine) so it would
+be possible to use <code>count 8 hexDigit</code> but I haven't tried it. I've found two
+ways of converting a string representation of a hexadecimal number into an
+<code>Integer</code>. Above I use the fact that <code>Prelude.read</code> interprets a string
+beginning with <code>0x</code> as a hexadecimal number. The other way I've found is the
+slightly less readable <code>fst . (!! 0) . readHex</code>. According to the man-page the
+addresses are separated by a single dash so I've hardcoded that in there.
+</p>
+
+<p>
+Testing the function is fairly simple. Using <code>gchi</code>, first load the source file
+then use <code>parse</code>:
+</p>
+
+<pre class="example" id="org6268880">
+*Main&gt; parse parseAddress "" "0-1"
+Right (Address {start = 0, end = 1})
+*Main&gt; parse parseAddress "hhh" "01234567-89abcdef"
+Right (Address {start = 19088743, end = 2309737967})
+</pre>
+
+<p>
+Seems to work well enough. :-)
+</p>
+
+<p>
+Next up, parsing the permissions. This is so very straightforward that I don't
+think I need to comment on it:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">parsePerms = <span class="org-keyword">let</span>
+        cA a = <span class="org-keyword">case</span> a <span class="org-keyword">of</span>
+            <span class="org-string">'p'</span> -&gt; Private
+            <span class="org-string">'s'</span> -&gt; Shared
+    <span class="org-keyword">in</span> <span class="org-keyword">do</span>
+        r &lt;- anyChar
+        w &lt;- anyChar
+        x &lt;- anyChar
+        a &lt;- anyChar
+        return <span class="org-operator">$</span> Perms <span class="org-rainbow-delimiters-depth-1">(</span>r <span class="org-operator">==</span> <span class="org-string">'r'</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-rainbow-delimiters-depth-1">(</span>w <span class="org-operator">==</span> <span class="org-string">'w'</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-rainbow-delimiters-depth-1">(</span>x <span class="org-operator">==</span> <span class="org-string">'x'</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-rainbow-delimiters-depth-1">(</span>cA a<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+For parsing the device information I use the same strategy as for the address
+range above, this time however the separating charachter is a colon:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">parseDevice = <span class="org-keyword">let</span>
+        hexStr2Int = <span class="org-warning">Prelude</span>.read <span class="org-operator">.</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-string">"0x"</span> <span class="org-operator">++</span><span class="org-rainbow-delimiters-depth-1">)</span>
+    <span class="org-keyword">in</span> <span class="org-keyword">do</span>
+        maj &lt;- many1 digit
+        char <span class="org-string">':'</span>
+        min &lt;- many1 digit
+        return <span class="org-operator">$</span> Device <span class="org-rainbow-delimiters-depth-1">(</span>hexStr2Int maj<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-rainbow-delimiters-depth-1">(</span>hexStr2Int min<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+Next is to tie it all together and create a MemRegion instance:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">parseRegion = <span class="org-keyword">let</span>
+        hexStr2Int = <span class="org-warning">Prelude</span>.read <span class="org-operator">.</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-string">"0x"</span> <span class="org-operator">++</span><span class="org-rainbow-delimiters-depth-1">)</span>
+        parsePath = <span class="org-rainbow-delimiters-depth-1">(</span>many1 <span class="org-operator">$</span> char <span class="org-string">' '</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">&gt;&gt;</span> <span class="org-rainbow-delimiters-depth-1">(</span>many1 <span class="org-operator">$</span> anyChar<span class="org-rainbow-delimiters-depth-1">)</span>
+    <span class="org-keyword">in</span> <span class="org-keyword">do</span>
+        addr &lt;- parseAddress
+        char <span class="org-string">' '</span>
+        perm &lt;- parsePerms
+        char <span class="org-string">' '</span>
+        offset &lt;- many1 hexDigit
+        char <span class="org-string">' '</span>
+        dev &lt;- parseDevice
+        char <span class="org-string">' '</span>
+        inode &lt;- many1 digit
+        char <span class="org-string">' '</span>
+        path &lt;- parsePath <span class="org-operator">&lt;|&gt;</span> string <span class="org-string">""</span>
+        return <span class="org-operator">$</span> MemRegion addr perm <span class="org-rainbow-delimiters-depth-1">(</span>hexStr2Int offset<span class="org-rainbow-delimiters-depth-1">)</span> dev <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-warning">Prelude</span>.read inode<span class="org-rainbow-delimiters-depth-1">)</span> path
+</pre>
+</div>
+
+<p>
+The only little trick here is that there are lines that lack the pathname.
+Here's an example from the man-page:
+</p>
+
+<pre class="example" id="org089070b">
+address           perms offset  dev   inode      pathname
+08058000-0805b000 rwxp 00000000 00:00 0
+</pre>
+
+<p>
+It should be noted that it seems there is a space after the inode entry so I
+keep a <code>char ' '</code> in the main function. Then I try to parse the line for a path,
+if there is none that attempt will fail immediately and instead I parse for an
+empty string, <code>parsePath &lt;|&gt; string ""</code>. The pathname seems to be prefixed with
+a fixed number of spaces, but I'm lazy and just consume one or more. I'm not
+sure exactly what characters are allowed in the pathname itself so I'm lazy once
+more and just gobble up whatever I find.
+</p>
+
+<p>
+To exercise what I had so far I decided to write a function that reads the
+<code>maps</code> file for a specific process, based on its <code>pid</code>, parses the contents and
+collects all the <code>MemRegion</code> instances in a list.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">getMemRegions pid = <span class="org-keyword">let</span>
+        fp = <span class="org-string">"/proc"</span> <span class="org-operator">&lt;/&gt;</span> show pid <span class="org-operator">&lt;/&gt;</span> <span class="org-string">"maps"</span>
+        doParseLine' = parse parseRegion <span class="org-string">"parseRegion"</span>
+        doParseLine l = <span class="org-keyword">case</span> <span class="org-rainbow-delimiters-depth-1">(</span>doParseLine' l<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-keyword">of</span>
+            Left _ -&gt; error <span class="org-string">"Failed to parse line"</span>
+            Right x -&gt; x
+    <span class="org-keyword">in</span> <span class="org-keyword">do</span>
+        mapContent &lt;- liftM lines <span class="org-operator">$</span> readFile fp
+        return <span class="org-operator">$</span> map doParseLine mapContent
+</pre>
+</div>
+
+<p>
+The only thing that really is going on here is that the lines are passed from
+inside an IO monad into the Parser monad and then back again. After this I can
+try it out by:
+</p>
+
+<pre class="example" id="orgd35bcdb">
+*Main&gt; getMemRegions 1
+</pre>
+
+<p>
+This produces a lot of output so while playing with it I limited the mapping to
+the four first lines by using <code>take</code>. The last line then becomes:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">return <span class="org-operator">$</span> map doParseLine <span class="org-rainbow-delimiters-depth-1">(</span>take <span class="org-number">4</span> mapContent<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+Now it's easy to add a <code>main</code> that uses the first command line argument as the
+<code>pid</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">main = <span class="org-keyword">do</span>
+    pid &lt;- liftM <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-warning">Prelude</span>.read <span class="org-operator">.</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-operator">!!</span> <span class="org-number">0</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span> getArgs
+    regs &lt;- getMemRegions pid
+    mapM_ <span class="org-rainbow-delimiters-depth-1">(</span>putStrLn <span class="org-operator">.</span> show<span class="org-rainbow-delimiters-depth-1">)</span> regs
+</pre>
+</div>
+
+<p>
+Well, that concludes my first adventure in parsing :-)
+</p>
+
+<p>
+<i>Edit (27-05-2007):</i> I received an email asking for it so here are the import
+statements I ended up with:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-keyword">import</span> Control.Monad
+<span class="org-keyword">import</span> System
+<span class="org-keyword">import</span> System.FilePath
+<span class="org-keyword">import</span> Text.ParserCombinators.Parsec
+</pre>
+</div>
+
+<p>
+<i>Comment by Conal Elliot:</i>
+</p>
+
+<p>
+Congrats on your parser!
+</p>
+
+<p>
+Here's an idea that for getting more functional/applicative formulations.
+Replace all of the explicitly sequential (<code>do</code>) parsec code with <code>liftM</code>,
+<code>liftM2</code>, &#x2026;. From a quick read-through, I think you can do it. For
+<code>parseRegion</code>, you could use an auxiliary function that discards a following
+space, e.g. <code>thenSpace (many1 digit)</code>.
+</p>
+
+<p>
+Also, play with factoring out some of the repeated patterns in <code>parseAddress</code>,
+<code>parsePerms</code> and <code>parseDevice</code>.
+</p>
+
+<p>
+The more I play with refactoring in my code, the more elegant it gets and the
+more insight I get. Have fun!
+</p>
+
+<p>
+<i>Response to Conal:</i>
+</p>
+
+<p>
+Good suggestion. At least if I understand what you mean :-)
+</p>
+
+<p>
+Something along the lines of
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">thenChar c f = f <span class="org-operator">&gt;&gt;=</span> <span class="org-rainbow-delimiters-depth-1">(</span>\ r -&gt; char c <span class="org-operator">&gt;&gt;</span> return r<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+with a specialised one for spaces maybe
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell">thenSpace = thenChar <span class="org-string">' '</span>
+</pre>
+</div>
+
+<p>
+I suppose <code>liftM</code> and friends can be employed to remove the function calling in
+the creation of <code>Address</code>, <code>Device</code> and <code>MemRegion</code>. I'll try to venture into
+<code>Parsec</code> territory once again soon and report on my findings. :-)
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-parsec.html">parsec</a> <a href="https://magnus.therning.org/tag-parsing.html">parsing</a> </div>
+<div id="archive">
+<a href="https://magnus.therning.org/archive.html">Other posts</a>
+</div>
+</div>
+<div id="postamble" class="status"><!-- org-static-blog-page-postamble --></div>
+</body>
+</html>

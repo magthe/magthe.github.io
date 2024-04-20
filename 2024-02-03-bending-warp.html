@@ -33,9 +33,9 @@ true just because Warp has a few default error responses.</li>
 <li>Signal handling is, IMHO, a very important part of writing a service that
 runs well in <a href="https://kubernetes.io/">k8s</a> as it uses signals to handle the lifetime of pods.</li>
 </ol>
-<div id="outline-container-org1d2487a" class="outline-2">
-<h2 id="org1d2487a">Looking through the Warp API</h2>
-<div class="outline-text-2" id="text-org1d2487a">
+<div id="outline-container-org8d5aed4" class="outline-2">
+<h2 id="org8d5aed4">Looking through the Warp API</h2>
+<div class="outline-text-2" id="text-org8d5aed4">
 <p>
 Browsing through the <a href="https://hackage.haskell.org/package/warp-3.4.0/docs/Network-Wai-Handler-Warp.html">API documentation for Warp</a> it wasn't too difficult to find
 the interesting pieces, and that Warp follows a fairly common pattern in Haskell
@@ -72,9 +72,9 @@ ongoing requests to finnish, the default is to wait indefinitely</dd>
 </ul>
 </div>
 </div>
-<div id="outline-container-org8be0074" class="outline-2">
-<h2 id="org8be0074">Some experimenting</h2>
-<div class="outline-text-2" id="text-org8be0074">
+<div id="outline-container-org7ef5684" class="outline-2">
+<h2 id="org7ef5684">Some experimenting</h2>
+<div class="outline-text-2" id="text-org7ef5684">
 <p>
 In order to experiment with these I put together a small API using <a href="https://hackage.haskell.org/package/servant">servant</a>,
 <code>app</code>, with a <code>main</code> function using <code>runSettings</code> and stringing together a bunch
@@ -141,9 +141,9 @@ myShutdownHandler logger = setInstallShutdownHandler shutdownHandler
 </div>
 </div>
 </div>
-<div id="outline-container-orga6ca7de" class="outline-2">
-<h2 id="orga6ca7de">Conclusion</h2>
-<div class="outline-text-2" id="text-orga6ca7de">
+<div id="outline-container-org9e6b344" class="outline-2">
+<h2 id="org9e6b344">Conclusion</h2>
+<div class="outline-text-2" id="text-org9e6b344">
 <p>
 I really ought to have looked into this sooner, especially as it turns out that
 Warp offers all the knobs and dials I could wish for to control these aspects of
