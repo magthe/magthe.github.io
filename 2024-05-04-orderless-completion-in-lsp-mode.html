@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="alternate"
+      type="application/rss+xml"
+      href="https://magnus.therning.org/feed.xml"
+      title="RSS feed for https://magnus.therning.org/">
+<title>Orderless completion in lsp-mode</title>
+<meta name="author" content="Magnus Therning"><meta name="referrer" content="no-referrer"><link href= "static/style.css" rel="stylesheet" type="text/css" /><link href= "static/htmlize.css" rel="stylesheet" type="text/css" /><link href= "static/extra_style.css" rel="stylesheet" type="text/css" /></head>
+<body>
+<div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
+<div id="content">
+<div class="post-date">04 May 2024</div><h1 class="post-title"><a href="https://magnus.therning.org/2024-05-04-orderless-completion-in-lsp-mode.html">Orderless completion in lsp-mode</a></h1>
+<p>
+If you, like me, are using <a href="https://github.com/minad/corfu"><i>corfu</i></a> to get in-buffer completion and extend it
+with <a href="https://github.com/oantolin/orderless"><i>orderless</i></a> to make it even more powerful, you might have noticed that you
+lose the orderless style as soon as you enter <a href="https://emacs-lsp.github.io/lsp-mode/"><i>lsp-mode</i></a>.
+</p>
+
+<p>
+My setup of <i>orderless</i> looks like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> <span class="org-constant">orderless</span>
+  <span class="org-builtin">:custom</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>orderless-matching-styles '<span class="org-rainbow-delimiters-depth-3">(</span>orderless-literal orderless-regexp orderless-flex<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>completion-styles '<span class="org-rainbow-delimiters-depth-3">(</span>orderless partial-completion basic<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>completion-category-defaults nil<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>completion-category-overrides '<span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>file <span class="org-rainbow-delimiters-depth-5">(</span>styles partial-completion<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+which basically turns on orderless style for all things except when completing
+filenames.
+</p>
+
+<p>
+It turns out that <i>lsp-mode</i> messes around with <code>completion-category-defaults</code>
+and when entering <code>lsp-mode</code> <a href="https://github.com/emacs-lsp/lsp-mode/blob/b27d9db1e75d40ea5e1362386e9a6e66fa3b1bae/lsp-completion.el#L790">this code here</a> adds a setting for <code>'lsp-capf</code>.
+Unfortunately there seems to be no way to prevent <i>lsp-mode</i> from doing this so
+the only option is to fix it up afterwards. Luckily there's a hook for running
+code after the completion for <i>lsp-mode</i> is set up, <code>lsp-completion-mode-hook</code>.
+Adding the following function to it makes sure I now get to enjoy <i>orderless</i>
+also when writing code.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">lambda</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">setq-local</span> completion-category-defaults
+              <span class="org-rainbow-delimiters-depth-3">(</span>assoc-delete-all 'lsp-capf completion-category-defaults<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-lsp.html">lsp</a> </div>
+<div id="comments">Comment <a href=mailto:magnus+blog.comment@therning.org?subject=Comment%20on%20INSERT%20POST%20URL%20HERE>here</a>.</div></div>
+<div id="postamble" class="status"><!-- org-static-blog-page-postamble --></div>
+</body>
+</html>

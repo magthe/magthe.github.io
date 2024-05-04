@@ -4,7 +4,59 @@
 <title><![CDATA[Magnus web site]]></title>
 <description><![CDATA[Magnus web site]]></description>
 <link>https://magnus.therning.org/</link>
-<lastBuildDate>Sat, 20 Apr 2024 11:20:02 +0200</lastBuildDate>
+<lastBuildDate>Sat, 04 May 2024 07:57:20 +0200</lastBuildDate>
+<item>
+  <title><![CDATA[Orderless completion in lsp-mode]]></title>
+  <description><![CDATA[
+<p>
+If you, like me, are using <a href="https://github.com/minad/corfu"><i>corfu</i></a> to get in-buffer completion and extend it
+with <a href="https://github.com/oantolin/orderless"><i>orderless</i></a> to make it even more powerful, you might have noticed that you
+lose the orderless style as soon as you enter <a href="https://emacs-lsp.github.io/lsp-mode/"><i>lsp-mode</i></a>.
+</p>
+
+<p>
+My setup of <i>orderless</i> looks like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> <span class="org-constant">orderless</span>
+  <span class="org-builtin">:custom</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>orderless-matching-styles '<span class="org-rainbow-delimiters-depth-3">(</span>orderless-literal orderless-regexp orderless-flex<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>completion-styles '<span class="org-rainbow-delimiters-depth-3">(</span>orderless partial-completion basic<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>completion-category-defaults nil<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>completion-category-overrides '<span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>file <span class="org-rainbow-delimiters-depth-5">(</span>styles partial-completion<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+which basically turns on orderless style for all things except when completing
+filenames.
+</p>
+
+<p>
+It turns out that <i>lsp-mode</i> messes around with <code>completion-category-defaults</code>
+and when entering <code>lsp-mode</code> <a href="https://github.com/emacs-lsp/lsp-mode/blob/b27d9db1e75d40ea5e1362386e9a6e66fa3b1bae/lsp-completion.el#L790">this code here</a> adds a setting for <code>'lsp-capf</code>.
+Unfortunately there seems to be no way to prevent <i>lsp-mode</i> from doing this so
+the only option is to fix it up afterwards. Luckily there's a hook for running
+code after the completion for <i>lsp-mode</i> is set up, <code>lsp-completion-mode-hook</code>.
+Adding the following function to it makes sure I now get to enjoy <i>orderless</i>
+also when writing code.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">lambda</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">setq-local</span> completion-category-defaults
+              <span class="org-rainbow-delimiters-depth-3">(</span>assoc-delete-all 'lsp-capf completion-category-defaults<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-lsp.html">lsp</a> </div>
+]]></description>
+  <category><![CDATA[emacs]]></category>
+  <category><![CDATA[lsp]]></category>
+  <link>https://magnus.therning.org/2024-05-04-orderless-completion-in-lsp-mode.html</link>
+  <guid>https://magnus.therning.org/2024-05-04-orderless-completion-in-lsp-mode.html</guid>
+  <pubDate>Sat, 04 May 2024 06:49:00 +0200</pubDate>
+</item>
 <item>
   <title><![CDATA[Update to Hackage revisions in Nix]]></title>
   <description><![CDATA[
@@ -875,70 +927,6 @@ properly.
   <link>https://magnus.therning.org/2023-09-24-defining-a-formatter-for-cabal-files.html</link>
   <guid>https://magnus.therning.org/2023-09-24-defining-a-formatter-for-cabal-files.html</guid>
   <pubDate>Sun, 24 Sep 2023 10:20:00 +0200</pubDate>
-</item>
-<item>
-  <title><![CDATA[Setting up emacs-openai/chatgpt]]></title>
-  <description><![CDATA[
-<p>
-Yesterday I decided to try to make more use of the ChatGPT account I have. What
-prompted it mostly was that I recalled that my employer has a paid subscription
-and that if we use it enough they'll get us access to ChatGPT4.
-</p>
-
-<p>
-After a bit of research<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup> I decided to start with <a href="https://github.com/emacs-openai/chatgpt">emacs-open/chatgpg</a>. However,
-as I found the instructions slightly lacking I'm sharing my setup.
-</p>
-
-<p>
-The instructions for <code>straight.el</code> fail to mention that one needs the <a href="https://github.com/emacs-openai/openai">openai</a>
-package too.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> <span class="org-constant">openai</span>
-  <span class="org-builtin">:straight</span> <span class="org-rainbow-delimiters-depth-2">(</span>openai <span class="org-builtin">:type</span> git <span class="org-builtin">:host</span> github <span class="org-builtin">:repo</span> <span class="org-string">"emacs-openai/openai"</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-The complete declaration for <code>use-package</code> ended up looking like this:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> <span class="org-constant">chatgpt</span>
-  <span class="org-builtin">:straight</span> <span class="org-rainbow-delimiters-depth-2">(</span>chatgpt <span class="org-builtin">:type</span> git <span class="org-builtin">:host</span> github <span class="org-builtin">:repo</span> <span class="org-string">"emacs-openai/chatgpt"</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-builtin">:requires</span> openai
-  <span class="org-builtin">:config</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">setq</span> openai-key #'openai-key-auth-source<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-Oh, and don't forget to put an entry into `~/.authinfo.gpg`. Something like this should do it
-</p>
-
-<pre class="example" id="org5080c7e">
-machine api.openai.com login &lt;anything&gt; password &lt;your key&gt;
-</pre>
-<div id="footnotes">
-<h2 class="footnotes">Footnotes: </h2>
-<div id="text-footnotes">
-
-<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
-I found <a href="https://notes.alexkehayias.com/using-chatgpt-with-emacs/">Alex Kehayias' note</a> to be a good starting point.
-</p></div></div>
-
-
-</div>
-</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-openai.html">openai</a> <a href="https://magnus.therning.org/tag-chatgpt.html">chatgpt</a> </div>
-]]></description>
-  <category><![CDATA[emacs]]></category>
-  <category><![CDATA[openai]]></category>
-  <category><![CDATA[chatgpt]]></category>
-  <link>https://magnus.therning.org/2023-09-16-setting-up-emacs-openai-chatgpt.html</link>
-  <guid>https://magnus.therning.org/2023-09-16-setting-up-emacs-openai-chatgpt.html</guid>
-  <pubDate>Sat, 16 Sep 2023 06:22:00 +0200</pubDate>
 </item>
 </channel>
 </rss>
