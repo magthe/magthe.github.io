@@ -12,6 +12,99 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <header class="site-header" role="banner"><h1 class="title">Magnus web site</h1><h2 class="subtitle">Random stuff</h2></header>
+<div class="post-date">19 May 2024</div><h1 class="post-title"><a href="https://magnus.therning.org/2024-05-19-nix,-cabal,-and-tests.html">Nix, cabal, and tests</a></h1>
+<p>
+At work I decided to attempt to change the setup of one of our projects from using
+</p>
+
+<ul class="org-ul">
+<li><a href="https://github.com/input-output-hk/haskell.nix">haskell.nix</a></li>
+<li><a href="https://docs.haskellstack.org/en/stable/">stack</a></li>
+<li><a href="https://hackage.haskell.org/package/hpack">hpack</a></li>
+</ul>
+
+<p>
+to the triplet I tend to prefer
+</p>
+
+<ul class="org-ul">
+<li><code>developPackage</code> from <a href="https://github.com/NixOS/nixpkgs/">nixpkgs</a></li>
+<li><a href="https://www.haskell.org/cabal/index.html">cabal</a> (the tool)</li>
+<li><a href="https://cabal.readthedocs.io/en/stable/">cabal</a> (the spec)</li>
+</ul>
+
+<p>
+During this I ran into two small issues relating to tests.
+</p>
+<div id="outline-container-org442482b" class="outline-2">
+<h2 id="org442482b"><code>hspec-discover</code> both is, and isn't, available in the shell</h2>
+<div class="outline-text-2" id="text-org442482b">
+<p>
+I found mentions of this mentioned in an open <a href="https://github.com/haskell/cabal/issues/8434">cabal ticket</a> and someone even made
+a <a href="https://github.com/kenranunderscore/hspec-discover-repro">git repo</a> to explore it. I posted <a href="https://discourse.nixos.org/t/hspec-discover-not-available-in-shell/45563">a question</a> on the Nix discorse.
+</p>
+
+<p>
+Basically, when running <code>cabal test</code> in a dev shell, started with <code>nix develop</code>,
+the tool <code>hspec-discover</code> wasn't found. At the same time the packages was
+installed
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell"><span class="org-rainbow-delimiters-depth-1">(</span>ins<span class="org-rainbow-delimiters-depth-1">)</span>$ ghc-pkg list | rg hspec
+    hspec-2.9.7
+    hspec-core-2.9.7
+    <span class="org-rainbow-delimiters-depth-1">(</span>hspec-discover-2.9.7<span class="org-rainbow-delimiters-depth-1">)</span>
+    hspec-expectations-0.8.2
+</pre>
+</div>
+
+<p>
+and it was on the <code>$PATH</code>
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell"><span class="org-rainbow-delimiters-depth-1">(</span>ins<span class="org-rainbow-delimiters-depth-1">)</span>$ whereis hspec-discover
+hspec-discover: /nix/store/vaq3gvak92whk5l169r06xrbkx6c0lqp-ghc-9.2.8-with-packages/bin/hspec-discover /nix/store/986bnyyhmi042kg4v6d918hli32lh9dw-hspec-discover-2.9.7/bin/hspec-discover
+</pre>
+</div>
+
+<p>
+The solution, as the user <a href="https://discourse.nixos.org/u/julm">julm</a> pointed out, is to simply do what <code>cabal</code> tells
+you and run <code>cabal update</code> first.
+</p>
+</div>
+</div>
+<div id="outline-container-org20e6fe8" class="outline-2">
+<h2 id="org20e6fe8">Dealing with tests that won't run during build</h2>
+<div class="outline-text-2" id="text-org20e6fe8">
+<p>
+The project's tests were set up in such a way that standalone tests and
+integration tests are mixed into the same test executable. As the integration
+tests need the just built service to be running they can't be run during <code>nix
+build</code>. However, the only way of preventing that, without making code changes,
+is to pass an argument to the test executable, <code>--skip=&lt;prefix&gt;</code>, and I believe
+that's not possible when using <code>developPackage</code>. It's not a big deal though,
+it's perfectly fine to run the tests separately using <code>nix develop . command
+...</code>. However, it turns out <code>developPackage</code> and the underlying machinery is
+smart enough to skip installing package required for testing when it's turned
+off (using <code>dontCheck</code>). This is the case also when <code>returnShellEnv</code> is <code>true</code>.
+</p>
+
+<p>
+Luckily it's not too difficult to deal with it. I already had a variable
+<code>isDevShell</code> so I could simply reuse it and add the following expression to
+<code>modifier</code>
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-nix-keyword">if</span> isDevShell <span class="org-nix-keyword">then</span> hl.doCheck <span class="org-nix-keyword">else</span> hl.dontCheck<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-cabal.html">cabal</a> <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-nix.html">nix</a> </div>
+
 <div class="post-date">04 May 2024</div><h1 class="post-title"><a href="https://magnus.therning.org/2024-05-04-orderless-completion-in-lsp-mode.html">Orderless completion in lsp-mode</a></h1>
 <p>
 If you, like me, are using <a href="https://github.com/minad/corfu"><i>corfu</i></a> to get in-buffer completion and extend it
@@ -302,65 +395,6 @@ services at <code>$DAYJOB</code>
 </div>
 </div>
 <div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-warp.html">warp</a> </div>
-
-<div class="post-date">09 Dec 2023</div><h1 class="post-title"><a href="https://magnus.therning.org/2023-12-09-getting-amazonka-s3-to-work-with-localstack.html">Getting Amazonka S3 to work with localstack</a></h1>
-<p>
-I'm writing this in case someone else is getting strange errors when trying to
-use <a href="https://hackage.haskell.org/package/amazonka-s3">amazonka-s3</a> with <a href="https://github.com/localstack/localstack">localstack</a>. It took me rather too long finding the answer
-and neither the errors I got from Amazonka nor from localstack were very
-helpful.
-</p>
-
-<p>
-The code I started with for setting up the connection looked like this
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell">main = <span class="org-keyword">do</span>
-  awsEnv &lt;- <span class="org-warning">AWS</span>.overrideService localEndpoint <span class="org-operator">&lt;$&gt;</span> <span class="org-warning">AWS</span>.newEnv <span class="org-warning">AWS</span>.discover
-  <span class="org-comment">-- do S3 stuff</span>
-  <span class="org-keyword">where</span>
-    localEndpoint = <span class="org-warning">AWS</span>.setEndpoint False <span class="org-string">"localhost"</span> <span class="org-number">4566</span>
-</pre>
-</div>
-
-<p>
-A few years ago, when I last wrote some Haskell to talk to S3 this was
-enough<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>, but now I got some strange errors.
-</p>
-
-<p>
-It turns out there are different ways to address buckets and the default, which
-is used by AWS itself, isn't used by localstack. The documentation of
-<a href="https://hackage.haskell.org/package/amazonka-2.0/docs/Amazonka.html#t:S3AddressingStyle"><code>S3AddressingStyle</code></a> has more details.
-</p>
-
-<p>
-So to get it to work I had to change the S3 addressing style as well and ended
-up with this code instead
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell">main = <span class="org-keyword">do</span>
-  awsEnv &lt;- <span class="org-warning">AWS</span>.overrideService <span class="org-rainbow-delimiters-depth-1">(</span>s3AddrStyle <span class="org-operator">.</span> localEndpoint<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">&lt;$&gt;</span> <span class="org-warning">AWS</span>.newEnv <span class="org-warning">AWS</span>.discover
-  <span class="org-comment">-- do S3 stuff</span>
-  <span class="org-keyword">where</span>
-    localEndpoint = <span class="org-warning">AWS</span>.setEndpoint False <span class="org-string">"localhost"</span> <span class="org-number">4566</span>
-    s3AddrStyle svc = svc <span class="org-rainbow-delimiters-depth-1">{</span><span class="org-warning">AWS</span>.s3AddressingStyle = AWS.S3AddressingStylePath<span class="org-rainbow-delimiters-depth-1">}</span>
-</pre>
-</div>
-<div id="footnotes">
-<h2 class="footnotes">Footnotes: </h2>
-<div id="text-footnotes">
-
-<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
-That was before version 2.0 of Amazonka, so it did look slightly different,
-but overriding the endpoint was all that was needed.
-</p></div></div>
-
-
-</div>
-</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-amazonka.html">amazonka</a> <a href="https://magnus.therning.org/tag-aws.html">aws</a> <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-localstack.html">localstack</a> </div>
 <div id="archive">
 <a href="https://magnus.therning.org/archive.html">Other posts</a>
 </div>
