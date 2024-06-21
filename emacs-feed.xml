@@ -1,0 +1,983 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<channel>
+<title><![CDATA[Magnus web site - emacs]]></title>
+<description><![CDATA[Magnus web site - emacs]]></description>
+<link>https://magnus.therning.org//tag-emacs.html</link>
+<lastBuildDate>Fri, 21 Jun 2024 07:20:13 +0200</lastBuildDate>
+<item>
+  <title><![CDATA[Orderless completion in lsp-mode]]></title>
+  <description><![CDATA[
+<p>
+If you, like me, are using <a href="https://github.com/minad/corfu"><i>corfu</i></a> to get in-buffer completion and extend it
+with <a href="https://github.com/oantolin/orderless"><i>orderless</i></a> to make it even more powerful, you might have noticed that you
+lose the orderless style as soon as you enter <a href="https://emacs-lsp.github.io/lsp-mode/"><i>lsp-mode</i></a>.
+</p>
+
+<p>
+My setup of <i>orderless</i> looks like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> <span class="org-constant">orderless</span>
+  <span class="org-builtin">:custom</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>orderless-matching-styles '<span class="org-rainbow-delimiters-depth-3">(</span>orderless-literal orderless-regexp orderless-flex<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>completion-styles '<span class="org-rainbow-delimiters-depth-3">(</span>orderless partial-completion basic<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>completion-category-defaults nil<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>completion-category-overrides '<span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>file <span class="org-rainbow-delimiters-depth-5">(</span>styles partial-completion<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+which basically turns on orderless style for all things except when completing
+filenames.
+</p>
+
+<p>
+It turns out that <i>lsp-mode</i> messes around with <code>completion-category-defaults</code>
+and when entering <code>lsp-mode</code> <a href="https://github.com/emacs-lsp/lsp-mode/blob/b27d9db1e75d40ea5e1362386e9a6e66fa3b1bae/lsp-completion.el#L790">this code here</a> adds a setting for <code>'lsp-capf</code>.
+Unfortunately there seems to be no way to prevent <i>lsp-mode</i> from doing this so
+the only option is to fix it up afterwards. Luckily there's a hook for running
+code after the completion for <i>lsp-mode</i> is set up, <code>lsp-completion-mode-hook</code>.
+Adding the following function to it makes sure I now get to enjoy <i>orderless</i>
+also when writing code.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">lambda</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">setq-local</span> completion-category-defaults
+              <span class="org-rainbow-delimiters-depth-3">(</span>assoc-delete-all 'lsp-capf completion-category-defaults<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-lsp.html">lsp</a> </div>
+]]></description>
+  <category><![CDATA[emacs]]></category>
+  <category><![CDATA[lsp]]></category>
+  <link>https://magnus.therning.org/2024-05-04-orderless-completion-in-lsp-mode.html</link>
+  <guid>https://magnus.therning.org/2024-05-04-orderless-completion-in-lsp-mode.html</guid>
+  <pubDate>Sat, 04 May 2024 06:49:00 +0200</pubDate>
+</item>
+<item>
+  <title><![CDATA[Making Emacs without terminal emulator a little more usable]]></title>
+  <description><![CDATA[
+<p>
+After reading Andrey Listopadov's <a href="https://andreyor.st/posts/2023-10-27-you-dont-need-a-terminal-emulator/">You don't need a terminal emulator</a> (mentioned
+at <a href="https://irreal.org/blog/?p=11746">Irreal</a> too) I decided to give up on using Emacs as a terminal for my shell.
+In <i>my experience</i> Emacs simply isn't a very good terminal to run a shell in
+anyway. I removed the almost completely unused <a href="https://github.com/kyagi/shell-pop-el">shell-pop</a> from my configuration
+and the keybinding with a binding to <code>async-shell-command</code>. I'm keeping
+<a href="https://github.com/davidshepherd7/terminal-here">terminal-here</a> in my config for the time being though.
+</p>
+
+<p>
+I realised <a href="https://github.com/bbatsov/projectile">projectile</a> didn't have a function for running it in the root of a
+project, so I wrote one heavily based on <code>project-async-shell-command</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">mep-projectile-async-shell-command</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-doc">"Run `</span><span class="org-doc"><span class="org-constant">async-shell-command</span></span><span class="org-doc">' in the current project's root directory."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">declare</span> <span class="org-rainbow-delimiters-depth-3">(</span>interactive-only async-shell-command<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">let</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>default-directory <span class="org-rainbow-delimiters-depth-5">(</span>projectile-project-root<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>call-interactively #'async-shell-command<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+I quickly found that the completion offered by Emacs for <code>shell-command</code> and
+<code>async-shell-command</code> is far from as sophisticated as what I'm used to from Z
+shell. After a bit of searching I found <a href="https://github.com/szermatt/emacs-bash-completion">emacs-bash-completion</a>. Bash isn't my
+shell of choice, partly because I've found the completion to not be as good as
+in Z shell, but it's an improvement over what stock Emacs offers. The
+instructions in the repo was good, but had to be adjusted slightly:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> <span class="org-constant">bash-completion</span>
+  <span class="org-builtin">:straight</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-builtin">:host</span> github
+             <span class="org-builtin">:repo</span> <span class="org-string">"szermatt/emacs-bash-completion"</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-builtin">:config</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>add-hook 'shell-dynamic-complete-functions 'bash-completion-dynamic-complete<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+I just wish I'll find a package offering completions reaching Z shell levels.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> </div>
+]]></description>
+  <category><![CDATA[emacs]]></category>
+  <link>https://magnus.therning.org/2023-11-19-making-emacs-without-terminal-emulator-a-little-more-usable.html</link>
+  <guid>https://magnus.therning.org/2023-11-19-making-emacs-without-terminal-emulator-a-little-more-usable.html</guid>
+  <pubDate>Sun, 19 Nov 2023 08:50:00 +0100</pubDate>
+</item>
+<item>
+  <title><![CDATA[Using the golang mode shipped with Emacs]]></title>
+  <description><![CDATA[
+<p>
+A few weeks ago I wanted to try out tree-sitter and switched a few of the modes
+I use for coding to their <code>-ts-mode</code> variants. Based on the excellent <a href="https://www.masteringemacs.org/article/how-to-get-started-tree-sitter">How to Get
+Started with Tree-Sitter</a> I added bits like this to the setup I have for coding
+modes:<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> <span class="org-constant">X-mode</span>
+  <span class="org-builtin">:init</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>add-to-list 'treesit-language-source-alist '<span class="org-rainbow-delimiters-depth-3">(</span>X <span class="org-string">"https://github.com/tree-sitter/tree-sitter-X"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-comment-delimiter">;; </span><span class="org-comment">(treesit-install-language-grammar 'X)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>add-to-list 'major-mode-remap-alist '<span class="org-rainbow-delimiters-depth-3">(</span>X-mode . X-ts-mode<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-comment-delimiter">;; </span><span class="org-comment">...</span>
+  <span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+I then manually evaluated the expression that's commented out to download and
+compile the tree-sitter grammar. It's a rather small change, it works, and I can
+switch over language by language. I swapped a couple of languages to the
+tree-sitter modes like this, including golang. The only mode that I noticed
+changes in was golang, in particular my adding of <code>gofmt-before-save</code> to
+<code>before-save-hook</code> had stopped having any effect.
+</p>
+
+<p>
+What I hadn't realised was that the <a href="https://github.com/dominikh/go-mode.el"><code>go-mode</code> I was using</a> didn't ship with Emacs
+and that when I switched to <code>go-ts-mode</code> I switched to one that was. It turns
+out that <code>gofmt-before-save</code> is hard-wired to work only in <code>go-mode</code>,
+something others have <a href="https://github.com/dominikh/go-mode.el/issues/396#issuecomment-1366716882">noticed</a>.
+</p>
+
+<p>
+I don't feel like waiting for <code>go-mode</code> to fix that though, especially not when
+there's a perfectly fine golang mode shipping with Emacs now, and not when
+<a href="https://github.com/purcell/emacs-reformatter">emacs-reformatter</a> make it so easy to define formatters (as I've <a href="https://magnus.therning.org/2023-09-24-defining-a-formatter-for-cabal-files.html">written about
+before</a>).
+</p>
+
+<p>
+My golang setup, sans keybindings, now looks like this:<sup><a id="fnr.2" class="footref" href="#fn.2" role="doc-backlink">2</a></sup>
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> <span class="org-constant">go-ts-mode</span>
+  <span class="org-builtin">:hook</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>go-ts-mode . lsp-deferred<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>go-ts-mode . go-format-on-save-mode<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-builtin">:init</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>add-to-list 'treesit-language-source-alist '<span class="org-rainbow-delimiters-depth-3">(</span>go <span class="org-string">"https://github.com/tree-sitter/tree-sitter-go"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>add-to-list 'treesit-language-source-alist '<span class="org-rainbow-delimiters-depth-3">(</span>gomod <span class="org-string">"https://github.com/camdencheek/tree-sitter-go-mod"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-comment-delimiter">;; </span><span class="org-comment">(dolist (lang '(go gomod)) (treesit-install-language-grammar lang))</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>add-to-list 'auto-mode-alist '<span class="org-rainbow-delimiters-depth-3">(</span><span class="org-string">"\\.go\\'"</span> . go-ts-mode<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>add-to-list 'auto-mode-alist '<span class="org-rainbow-delimiters-depth-3">(</span><span class="org-string">"/go\\.mod\\'"</span> . go-mod-ts-mode<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-builtin">:config</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">reformatter-define</span> go-format
+    <span class="org-builtin">:program</span> <span class="org-string">"goimports"</span>
+    <span class="org-builtin">:args</span> '<span class="org-rainbow-delimiters-depth-3">(</span><span class="org-string">"/dev/stdin"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-builtin">:general</span>
+  <span class="org-comment-delimiter">;; </span><span class="org-comment">...</span>
+  <span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+So far I'm happy with the built-in <code>go-ts-mode</code> and I've got to say that using a
+minor mode for the format-on-save functionality is more elegant than adding a
+function to <code>before-save-hook</code> (something that <code>go-mode</code> may get through this
+<a href="https://github.com/dominikh/go-mode.el/pull/426">PR</a>).
+</p>
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+
+<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+There were a few more things that I needed to modify. As the tree-sitter
+modes are completely separate from the non-tree-sitter modes things like hooks
+and keybindings in the modes' keymaps.
+</p></div></div>
+
+<div class="footdef"><sup><a id="fn.2" class="footnum" href="#fnr.2" role="doc-backlink">2</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+The full file is <a href="https://gitlab.com/magus/mes/-/blob/main/lisp/mes-dev-go.el">here</a>.
+</p></div></div>
+
+
+</div>
+</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-tree-sitter.html">tree-sitter</a> </div>
+]]></description>
+  <category><![CDATA[emacs]]></category>
+  <category><![CDATA[tree-sitter]]></category>
+  <link>https://magnus.therning.org/2023-11-16-using-the-golang-mode-shipped-with-emacs.html</link>
+  <guid>https://magnus.therning.org/2023-11-16-using-the-golang-mode-shipped-with-emacs.html</guid>
+  <pubDate>Thu, 16 Nov 2023 07:02:00 +0100</pubDate>
+</item>
+<item>
+  <title><![CDATA[How I use Emacs]]></title>
+  <description><![CDATA[
+<p>
+I've recently written <a href="https://magnus.therning.org/2023-09-10-using-emacs-for-the-scrollback-in-terminal-multiplexers.html">two</a> <a href="https://magnus.therning.org/2023-09-30-using-emacs-as-$editor.html">posts</a> about my attempts to use a slimmed down Emacs
+setup for some very specific use cases. I'be put both posts on Reddit, <a href="https://www.reddit.com/r/emacs/comments/16f7rbn/using_emacs_for_the_scrollback_in_terminal/">here</a> and
+<a href="https://www.reddit.com/r/emacs/comments/16w9bvh/using_emacs_as_editor/">here</a>, and in both cases the majority of comments have been telling me that I
+should use <code>emacsclient</code>. I know they have good intentions &#x2013; they want to share
+insight they've gained and benefit from on a daily basis. However, no matter how
+many Emacs devotees point out the benefits of <code>emacsclient</code> I'm not about to
+start using it. This post is an attempt to answer why that is.
+</p>
+
+<p>
+Up front I want to clarify a few things:
+</p>
+
+<ol class="org-ol">
+<li>Yes, I know how to use <code>emacsclient</code>, and</li>
+<li>yes, I know it is a good way to, in a way, improve Emacs startup time,<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup> and</li>
+<li>yes, I know how to turn on <code>server-mode</code> in Emacs, and finally</li>
+<li>yes, I know how to run Emacs using a user unit for SystemD.</li>
+</ol>
+
+<p>
+With that out of the way, here are the two ways I use Emacs
+</p>
+
+<ol class="org-ol">
+<li>As my starting point for work, i.e. writing code, keeping notes, tracking
+time, and writing my daily work journal.</li>
+<li>As my editor of ephemeral files.<sup><a id="fnr.2" class="footref" href="#fn.2" role="doc-backlink">2</a></sup></li>
+</ol>
+
+<p>
+The next two sections explain more about these two distinct ways I use Emacs
+</p>
+<div id="outline-container-org06ef619" class="outline-2">
+<h2 id="org06ef619">As my starting point for work</h2>
+<div class="outline-text-2" id="text-org06ef619">
+<table>
+
+
+<colgroup>
+<col  class="org-left">
+
+<col  class="org-left">
+</colgroup>
+<tbody>
+<tr>
+<td class="org-left">Number of packages</td>
+<td class="org-left">162</td>
+</tr>
+
+<tr>
+<td class="org-left">Init time (<code>emacs-init-time</code>)</td>
+<td class="org-left">1.883483s</td>
+</tr>
+
+<tr>
+<td class="org-left">Config size (by <code>du -bch</code>)</td>
+<td class="org-left">68K</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+Much of what I do on a daily basis starts in Emacs. I typically have one
+instance of Emacs open and I always keep it on the second virtual desktop. I
+always run it in the GUI. When I write code I start with opening a new tab, then
+I open a <code>dired</code> buffer in the project's folder (by using <code>consult-projectile</code>).
+When I need a terminal I open it from Emacs using on of
+<code>terminal-here-project-launch</code> or <code>terminal-here</code>. Occasionally I open a shell
+prompt inside Emacs using <code>shell-pop</code>.
+</p>
+
+<p>
+Back when I used Vim as my main editor I <i>always</i> started a terminal first and
+then opened files from there. Since switching to Emacs I've completely stopped
+doing that. Over the last 8 or so years of Emacs usage there's only been a
+handful of times when I've wanted to open a file from the terminal and I've run
+<code>M-x server-start</code> and used <code>emacsclient</code>. The last time was more than a year
+ago.
+</p>
+
+<p>
+As I typically keep exactly one Emacs open, and I start it soon after logging
+in, I'm not too concerned with startup time. I think under 2s is more than fast
+enough given the functionality I have in my setup.
+</p>
+
+<p>
+This setup I use for taking notes and writing my daily work journal, as well as
+reading email, and programming in a half-dozen languages. I have a large-ish set
+of keybindings that I've set up using <a href="https://github.com/noctuid/general.el">general.el</a>, inspired by Spacemacs at first
+but by now it's started to gain its own character.
+</p>
+</div>
+</div>
+<div id="outline-container-org9ecf44f" class="outline-2">
+<h2 id="org9ecf44f">As my editor of ephemeral files (<code>$EDITOR</code>)</h2>
+<div class="outline-text-2" id="text-org9ecf44f">
+<table>
+
+
+<colgroup>
+<col  class="org-left">
+
+<col  class="org-left">
+</colgroup>
+<tbody>
+<tr>
+<td class="org-left">Number of packages</td>
+<td class="org-left">22</td>
+</tr>
+
+<tr>
+<td class="org-left">Init time (<code>emacs-init-time</code>)</td>
+<td class="org-left">0.209298s</td>
+</tr>
+
+<tr>
+<td class="org-left">Config size (by <code>du -bch</code>)</td>
+<td class="org-left">6.7K</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+Ephemeral files are files I tend to edit for less than 30 seconds, maybe a
+minute at most. There are three main use cases for ephemeral files:
+</p>
+
+<ol class="org-ol">
+<li>Searching the scrollback buffer in <a href="https://zellij.dev/">zellij</a>, and copying bits to the clipboard
+for various uses.</li>
+<li>Editing files when running <code>git</code> from the command line. It's not something I
+do very often, but it happens.</li>
+<li>Editing shell commands. When they get a little too large to handle
+conveniently using ZSH directly I invoke <code>edit-command-line</code>.</li>
+</ol>
+
+<p>
+For a few reasons I decided to make a second, completely separate configuration
+just to handle ephemeral files.
+</p>
+
+<ul class="org-ul">
+<li>It will only be used in a terminal.</li>
+<li>I want to be able to have some special keybindings that suit a specific use,
+e.g. for the scrollback buffer I've bound `SPC Y` to copy the selected text to
+the clipboard and then exit Emacs. It's a thing that I use all the time with
+the scrollback buffer, but never otherwise.</li>
+<li>I have no need, nor any desire, to switch from editing a commit message, or
+searching a scrollback buffer, to reading email or editing an org-mode file.
+The complete separation is a feature.</li>
+</ul>
+
+<p>
+With a startup time of less than a quarter of a second it is well within the
+acceptable, and there is absolutely no need to use <code>emacsclient</code> just to speed
+things up. Given my desire for separation, I wouldn't want to use my main Emacs
+instance as a server and edit ephemeral files anyway.
+</p>
+</div>
+</div>
+<div id="outline-container-orgcadf982" class="outline-2">
+<h2 id="orgcadf982">Conclusion</h2>
+<div class="outline-text-2" id="text-orgcadf982">
+<p>
+I've found a setup that seems to work really well and tick all the requirements
+I have when it comes to separation between use cases and ability to have custom
+keybindings for them. Also, Emacs is starting up <i>very</i> fast with my slimmed
+down configuration. If starting Emacs with the slimmed configuration starts
+taking too long I'm more likely to go back to using Neovim than complicate
+things with <code>emacsclient</code>.
+</p>
+
+<p>
+So no, I am not going to start using <code>emacsclient</code> any time soon.
+</p>
+</div>
+</div>
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+
+<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+I write "in a way" as it actually does nothing for Emacs startup time, it
+just shifts it to a point in time so you don't have to sit and wait for it to
+start.
+</p></div></div>
+
+<div class="footdef"><sup><a id="fn.2" class="footnum" href="#fnr.2" role="doc-backlink">2</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+I used to use <a href="https://neovim.io/">Neovim</a>, without any config, for most of this until recently.
+</p></div></div>
+
+
+</div>
+</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> </div>
+]]></description>
+  <category><![CDATA[emacs]]></category>
+  <link>https://magnus.therning.org/2023-10-01-how-i-use-emacs.html</link>
+  <guid>https://magnus.therning.org/2023-10-01-how-i-use-emacs.html</guid>
+  <pubDate>Sun, 01 Oct 2023 07:13:00 +0200</pubDate>
+</item>
+<item>
+  <title><![CDATA[Using Emacs as $EDITOR]]></title>
+  <description><![CDATA[
+<p>
+Continuing on from my experiment with <a href="https://magnus.therning.org/2023-09-10-using-emacs-for-the-scrollback-in-terminal-multiplexers.html">using Emacs as for scrollback in my
+terminal multiplexer</a> I thought I'd try to use it as my <code>$EDITOR</code> as well.
+</p>
+
+<p>
+The two main cases where I use <code>$EDITOR</code> is
+</p>
+
+<ol class="org-ol">
+<li>The occasional use of <code>git</code> on the command line, rebasing or writing a commit
+message, and</li>
+<li>Use of ZSH's <code>edit-command-line</code> functionality.</li>
+</ol>
+
+<p>
+To make sure Emacs is starting up quickly enough I'm using the same small setup
+I created for the scrollback editing, so I'm now setting <code>EDITOR</code> like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell"><span class="org-builtin">export</span> <span class="org-variable-name">EDITOR</span>=<span class="org-string">"emacs -nw --init-directory ~/.se.d"</span>
+</pre>
+</div>
+
+<p>
+Now that I want to use the same setup for editing I can't really jump into
+<code>view-mode</code> every time Emacs starts so I have to be a bit more clever. The
+following bit won't do
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span>add-hook 'find-file-hook #'view-mode<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+I need to somehow find out what starts Emacs and then only modify the hook when
+needed. Unfortunately I haven't found anything that reveals that Emacs is
+started by <a href="https://zellij.dev/">zellij</a>. Creating a separate little script that <span class="underline">zellij</span> uses would be
+an option, of course, but for now I've opted to make it the default and instead
+refrain from adding the hook in the other two use cases.
+</p>
+
+<p>
+ZSH doesn't make it easy to find out that it's <code>edit-command-line</code> either, but
+as I've observed that the command line sometimes doesn't look right after
+leaving the editor I wanted to call <code>redisplay</code> to fix it up. That means I need
+to have a function anyway, so using an environment variable becomes an easy way
+to check if Emacs is being used to edit the command line.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell"><span class="org-keyword">function</span> <span class="org-function-name">se-edit-command-line</span><span class="org-rainbow-delimiters-depth-1">()</span> <span class="org-rainbow-delimiters-depth-1">{</span>
+    <span class="org-builtin">export</span> <span class="org-variable-name">SE_SKIP_VIEW</span>=y
+    zle edit-command-line
+    <span class="org-builtin">unset</span> SE_SKIP_VIEW
+    zle redisplay
+<span class="org-rainbow-delimiters-depth-1">}</span>
+zle -N se-edit-command-line
+
+<span class="org-builtin">bindkey</span> -M vicmd <span class="org-string">'^V'</span> se-edit-command-line
+<span class="org-builtin">bindkey</span> -M viins <span class="org-string">'^V'</span> se-edit-command-line
+</pre>
+</div>
+
+<p>
+Unfortunately is seems <code>zle edit-command-line</code> doesn't pass on non-exported
+environment variables, hence the explicit <code>export</code> and <code>unset</code>.
+</p>
+
+<p>
+When <span class="underline">git</span> starts an editor it sets a few environment variables so it was easy
+to just pick one that is set in both cases I care about. I picked
+<code>GIT_EXEC_PATH</code>.
+</p>
+
+<p>
+With these things in place I changed the slim setup to only add the hook when
+neither of the environment variables are present
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">unless</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">or</span> <span class="org-rainbow-delimiters-depth-3">(</span>getenv <span class="org-string">"SE_SKIP_VIEW"</span><span class="org-rainbow-delimiters-depth-3">)</span>
+            <span class="org-rainbow-delimiters-depth-3">(</span>getenv <span class="org-string">"GIT_EXEC_PATH"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>add-hook 'find-file-hook #'view-mode<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+Hopefully this works out well enough that I won't feel a need to go back to
+using <a href="https://neovim.io/">Neovim</a> as my <code>$EDITOR</code>.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-zsh.html">zsh</a> </div>
+]]></description>
+  <category><![CDATA[emacs]]></category>
+  <category><![CDATA[zsh]]></category>
+  <link>https://magnus.therning.org/2023-09-30-using-emacs-as-$editor.html</link>
+  <guid>https://magnus.therning.org/2023-09-30-using-emacs-as-$editor.html</guid>
+  <pubDate>Sat, 30 Sep 2023 15:24:00 +0200</pubDate>
+</item>
+<item>
+  <title><![CDATA[Defining a formatter for Cabal files]]></title>
+  <description><![CDATA[
+<p>
+For Haskell code I can use <code>lsp-format-buffer</code> and <code>lsp-format-region</code> to keep
+my file looking nice, but I've never found a function for doing the same for
+Cabal files. There's a nice command line tool, <code>cabal-fmt</code>, for doing it, but it
+means having to jump to a terminal. It would of course be nicer to satisfy my
+needs for aesthetics directly from Emacs. A few times I've thought of writing
+the function myself, I mean how hard can it be? But then I've forgotten about it
+until then next time I'm editing a Cabal file.
+</p>
+
+<p>
+A few days ago I noticed <a href="https://github.com/purcell/emacs-reformatter">emacs-reformatter</a> popping up in my feeds. That
+removed all reasons to procrastinate. It turned out to be very easy to set up.
+</p>
+
+<p>
+The package doesn't have a recipe for <a href="https://github.com/radian-software/straight.el">straight.el</a> so it needs a <code>:straight</code>
+section. Also, the naming of the file in the package doesn't fit the package
+name, hence the slightly different name in the <code>use-package</code> declaration:<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> <span class="org-constant">reformatter</span>
+  <span class="org-builtin">:straight</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-builtin">:host</span> github
+             <span class="org-builtin">:repo</span> <span class="org-string">"purcell/emacs-reformatter"</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+Now the formatter can be defined
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">reformatter-define</span> cabal-format
+  <span class="org-builtin">:program</span> <span class="org-string">"cabal-fmt"</span>
+  <span class="org-builtin">:args</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"/dev/stdin"</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+in order to create functions for formatting, <code>cabal-format-buffer</code> and
+<code>cabal-format-region</code>, as well as a minor mode for formatting on saving a Cabal
+file.
+</p>
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+
+<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+I'm sure it's possible to use <code>:files</code> to deal with this, but I'm not sure
+how and my naive guess failed. It's OK to be like this until I figure it out
+properly.
+</p></div></div>
+
+
+</div>
+</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> </div>
+]]></description>
+  <category><![CDATA[emacs]]></category>
+  <category><![CDATA[haskell]]></category>
+  <link>https://magnus.therning.org/2023-09-24-defining-a-formatter-for-cabal-files.html</link>
+  <guid>https://magnus.therning.org/2023-09-24-defining-a-formatter-for-cabal-files.html</guid>
+  <pubDate>Sun, 24 Sep 2023 10:20:00 +0200</pubDate>
+</item>
+<item>
+  <title><![CDATA[Setting up emacs-openai/chatgpt]]></title>
+  <description><![CDATA[
+<p>
+Yesterday I decided to try to make more use of the ChatGPT account I have. What
+prompted it mostly was that I recalled that my employer has a paid subscription
+and that if we use it enough they'll get us access to ChatGPT4.
+</p>
+
+<p>
+After a bit of research<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup> I decided to start with <a href="https://github.com/emacs-openai/chatgpt">emacs-open/chatgpg</a>. However,
+as I found the instructions slightly lacking I'm sharing my setup.
+</p>
+
+<p>
+The instructions for <code>straight.el</code> fail to mention that one needs the <a href="https://github.com/emacs-openai/openai">openai</a>
+package too.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> <span class="org-constant">openai</span>
+  <span class="org-builtin">:straight</span> <span class="org-rainbow-delimiters-depth-2">(</span>openai <span class="org-builtin">:type</span> git <span class="org-builtin">:host</span> github <span class="org-builtin">:repo</span> <span class="org-string">"emacs-openai/openai"</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+The complete declaration for <code>use-package</code> ended up looking like this:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> <span class="org-constant">chatgpt</span>
+  <span class="org-builtin">:straight</span> <span class="org-rainbow-delimiters-depth-2">(</span>chatgpt <span class="org-builtin">:type</span> git <span class="org-builtin">:host</span> github <span class="org-builtin">:repo</span> <span class="org-string">"emacs-openai/chatgpt"</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-builtin">:requires</span> openai
+  <span class="org-builtin">:config</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">setq</span> openai-key #'openai-key-auth-source<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+Oh, and don't forget to put an entry into `~/.authinfo.gpg`. Something like this should do it
+</p>
+
+<pre class="example" id="org5080c7e">
+machine api.openai.com login &lt;anything&gt; password &lt;your key&gt;
+</pre>
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+
+<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+I found <a href="https://notes.alexkehayias.com/using-chatgpt-with-emacs/">Alex Kehayias' note</a> to be a good starting point.
+</p></div></div>
+
+
+</div>
+</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-openai.html">openai</a> <a href="https://magnus.therning.org/tag-chatgpt.html">chatgpt</a> </div>
+]]></description>
+  <category><![CDATA[emacs]]></category>
+  <category><![CDATA[openai]]></category>
+  <category><![CDATA[chatgpt]]></category>
+  <link>https://magnus.therning.org/2023-09-16-setting-up-emacs-openai-chatgpt.html</link>
+  <guid>https://magnus.therning.org/2023-09-16-setting-up-emacs-openai-chatgpt.html</guid>
+  <pubDate>Sat, 16 Sep 2023 06:22:00 +0200</pubDate>
+</item>
+<item>
+  <title><![CDATA[Using emacs for the scrollback in terminal multiplexers]]></title>
+  <description><![CDATA[
+<p>
+I should start with saying that I still don't really know if this is a good idea
+or not, but it feels like it's worth trying out at least.
+</p>
+<div id="outline-container-org1ca78e4" class="outline-2">
+<h2 id="org1ca78e4">An irritating limitation in <a href="https://zellij.dev/">Zellij</a>, and a possible solution</h2>
+<div class="outline-text-2" id="text-org1ca78e4">
+<p>
+After seeing it mentioned in an online community I thought it might be worth
+trying out. I'm not really disappointed with <a href="https://github.com/tmux/tmux">tmux</a>, I've been using it for years
+but I actually only use a small part of what it can do. I create tabs, sometimes
+create panes, and I regularly use the scollback functionality to copy output of
+commands I've run earlier.
+</p>
+
+<p>
+Unfortunately, as is reported in a <a href="https://github.com/zellij-org/zellij/issues/947">ticket</a>, Zellij can't select and copy using
+the keyboard. From the discussion in that ticket it seems unlikely it ever will
+be able to. After finding that out I resigned to staying with Tmux &#x2013; I'm not
+ready to go back to using a pointing device to select and copy text in my
+terminal!
+</p>
+
+<p>
+When I was biking to the pool yesterday I realised a thing though: I'm already
+using a tool that is <i>very</i> good at manipulating text using the keyboard. Of
+course I'm talking about Emacs! So if I can just make Emacs start up quickly
+enough I ought to be able to use it for searching, selecting and copying from
+the scrollback buffer. I haven't found a way to do this in Tmu= yet, but
+Zellij has <a href="https://zellij.dev/documentation/keybindings-possible-actions#editscrollback">EditScrollBack</a> so I can at least try it out.
+</p>
+
+<p>
+A nice benefit is that I can cut back on the number of different shortcuts I use
+daily.
+</p>
+</div>
+</div>
+<div id="outline-container-org728fd4c" class="outline-2">
+<h2 id="org728fd4c">My slimmed down Emacs config</h2>
+<div class="outline-text-2" id="text-org728fd4c">
+<p>
+My current <a href="https://gitlab.com/magus/mes">Emacs config</a> starts up in less than 2s, which is good enough as I
+normally start Emacs at most a few times per day. However, if I have to wait 2s
+to open the scrollback buffer I suspect I'll tire very quickly and abandon the
+experiment. So I took my ordinary config and slimmed it down. Cutting away
+things that weren't related to navigation and searching.
+</p>
+
+<p>
+The list of packages is not very long:
+</p>
+
+<ul class="org-ul">
+<li><code>straight</code></li>
+<li><code>use-package</code></li>
+<li><code>evil</code></li>
+<li><code>general</code></li>
+<li><code>which-key</code></li>
+<li><code>vertico</code></li>
+<li><code>orderless</code></li>
+<li><code>marginalia</code></li>
+<li><code>consult</code></li>
+</ul>
+
+<p>
+The first 5 are for usability in general, and the last 4 are bring in the
+functions I use for searching through text.
+</p>
+
+<p>
+The resulting config starts in less than ¼s. That's more than acceptable, I find.
+</p>
+</div>
+</div>
+<div id="outline-container-org44d7ad0" class="outline-2">
+<h2 id="org44d7ad0">Copying to the Wayland clipboard</h2>
+<div class="outline-text-2" id="text-org44d7ad0">
+<p>
+It turns out that copying with `y` in <code>evil</code> does the right thing by default and
+the copied text ends up in the clipboard without any special configuration.
+</p>
+
+<p>
+From Tmux I'm used to being thrown out of copy-mode after copying something.
+While that's sometimes irritating, it's at other times exactly what I want.
+Given that <code>evil-yank</code> does the right thing it was easy to write a function for
+it:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">se/yank-n-kill</span> <span class="org-rainbow-delimiters-depth-2">(</span>beg end<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span> <span class="org-string">"r"</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>evil-yank beg end<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>kill-emacs<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org9e880a9" class="outline-2">
+<h2 id="org9e880a9">The config files</h2>
+<div class="outline-text-2" id="text-org9e880a9">
+<p>
+I'm keeping my dot-files in a private repo, but I put a snapshot of the Emacs
+and Zellij config in a <a href="https://gitlab.com/-/snippets/3595805">snippet</a>.
+</p>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-tmux.html">tmux</a> <a href="https://magnus.therning.org/tag-zellij.html">zellij</a> </div>
+]]></description>
+  <category><![CDATA[emacs]]></category>
+  <category><![CDATA[tmux]]></category>
+  <category><![CDATA[zellij]]></category>
+  <link>https://magnus.therning.org/2023-09-10-using-emacs-for-the-scrollback-in-terminal-multiplexers.html</link>
+  <guid>https://magnus.therning.org/2023-09-10-using-emacs-for-the-scrollback-in-terminal-multiplexers.html</guid>
+  <pubDate>Sun, 10 Sep 2023 13:17:00 +0200</pubDate>
+</item>
+<item>
+  <title><![CDATA[Making keymaps prettier with general.el]]></title>
+  <description><![CDATA[
+<p>
+After my previous post on <a href="https://magnus.therning.org/2023-07-09-general.el-and-two-ways-to-define-keybindings.html">defining keymaps using general.el</a> I revisited some of
+my setup in order to make some package keymaps prettier when displayed by
+<a href="https://github.com/justbur/emacs-which-key">which-key</a>. The keymaps defined by packages are typically don't contain any
+description of the bindings, so <code>which-key</code> ends up displaying the name of the
+function bound to the key. It's not always easy to remember what a function does
+based just on its name, and sometimes the names are so long that <code>which-key</code>
+cuts the name short and all you see is a bunch of keybindings for seemingly the
+same function.
+</p>
+
+<p>
+The only remedy I've found is to re-define the keybindings decorating them with
+descriptions that (hopefully) are easier to understand than the function name.
+(At least, this way I only have myself to blame if it's a bad description.)
+</p>
+
+<p>
+One such keymap that I use somewhat frequently, and where the function names
+often confuse me is <code>evil-mc-key-map</code> from <a href="https://github.com/gabesoft/evil-mc">evil-mc</a>. The keymap is bound at <code>g .</code>
+in evil's normal and visual modes, and it also contains a few bindings using
+control (<code>C-</code>) and meta (<code>M-</code>) which I think would be better placed under
+sub-keymaps.
+</p>
+
+<p>
+I decided to group the "make and go" functions under <code>g . m</code> and the "skip and
+go" function under <code>g . s</code>. The rest I'm just giving descriptions. <code>general.el</code>
+makes it easy both to overwrite already existing bindings, but adding
+descriptions, and to add new ones, all in one call to <code>general-def</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">general-def</span> evil-mc-key-map
+  <span class="org-builtin">:states</span> '<span class="org-rainbow-delimiters-depth-2">(</span>normal visual<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.A"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"make end sel"</span> . evil-mc-make-cursor-in-visual-selection-end<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.I"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"make beg sel"</span> . evil-mc-make-cursor-in-visual-selection-beg<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.a"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"make all"</span> . evil-mc-make-all-cursors<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.q"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"undo all"</span> . evil-mc-undo-all-cursors<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.u"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"undo last"</span> . evil-mc-undo-last-added-cursor<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g. RET"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"make here"</span> . evil-mc-make-cursor-here<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.p"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"pause"</span> . evil-mc-pause-cursors<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.r"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"resume"</span> . evil-mc-resume-cursors<span class="org-rainbow-delimiters-depth-2">)</span>
+
+  <span class="org-string">"g.m"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-builtin">:ignore</span> t <span class="org-builtin">:wk</span> <span class="org-string">"make &amp; go"</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.m$"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to last cur"</span> . evil-mc-make-and-goto-last-cursor<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.m0"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to first cur"</span> . evil-mc-make-and-goto-first-cursor<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.mC"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to prev cur"</span> . evil-mc-make-and-goto-prev-cursor<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.mc"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to next cur"</span> . evil-mc-make-and-goto-next-cursor<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.mh"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to prev match"</span> . evil-mc-make-and-goto-prev-match<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.mj"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to next line"</span> . evil-mc-make-cursor-move-next-line<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.mk"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to prev line"</span> . evil-mc-make-cursor-move-prev-line<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.ml"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to next match"</span> . evil-mc-make-and-goto-next-match<span class="org-rainbow-delimiters-depth-2">)</span>
+
+  <span class="org-string">"g.s"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-builtin">:ignore</span> t <span class="org-builtin">:wk</span> <span class="org-string">"skip &amp; go"</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.sC"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to prev cur"</span> . evil-mc-skip-and-goto-prev-cursor<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.sc"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to next cur"</span> . evil-mc-skip-and-goto-next-cursor<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.sh"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to prev match"</span> . evil-mc-skip-and-goto-prev-match<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"g.sl"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"to next match"</span> . evil-mc-skip-and-goto-next-match<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+Finally I want to remove the bindings that weren't overwritten. <code>general.el</code>
+makes that easy too with <code>general-undbind</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">general-unbind</span> '<span class="org-rainbow-delimiters-depth-2">(</span>normal visual<span class="org-rainbow-delimiters-depth-2">)</span> evil-mc-key-map
+  <span class="org-string">"g.$"</span> <span class="org-string">"g.0"</span>
+  <span class="org-string">"g. C-n"</span> <span class="org-string">"g. C-S-n"</span>
+  <span class="org-string">"g. C-u"</span> <span class="org-string">"g. C-S-u"</span>
+  <span class="org-string">"g. C-p"</span> <span class="org-string">"g. C-r"</span>
+  <span class="org-string">"g. M-N"</span> <span class="org-string">"g. M-n"</span>
+  <span class="org-string">"g.N"</span> <span class="org-string">"g.O"</span> <span class="org-string">"g.n"</span> <span class="org-string">"g.o"</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+Yes, this is a bit of work, and so far I've only done this for a few keymaps
+(those containing bindings I use frequently and/or find difficult to remember).
+So far I've found it worth the cost.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-general.el.html">general.el</a> </div>
+]]></description>
+  <category><![CDATA[emacs]]></category>
+  <category><![CDATA[general.el]]></category>
+  <link>https://magnus.therning.org/2023-07-26-making-keymaps-prettier-with-general.el.html</link>
+  <guid>https://magnus.therning.org/2023-07-26-making-keymaps-prettier-with-general.el.html</guid>
+  <pubDate>Wed, 26 Jul 2023 10:56:00 +0200</pubDate>
+</item>
+<item>
+  <title><![CDATA[general.el and two ways to define keybindings]]></title>
+  <description><![CDATA[
+<p>
+When I abandoned <a href="https://www.spacemacs.org/">spacemacs</a> I really wanted to duplicate its keybindings using
+<code>SPC</code> as leader key and per-mode bindings available by pressing <code>,</code>. I found a
+nice setup using <a href="https://github.com/noctuid/general.el">general.el</a> in <a href="https://github.com/tshu-w/.emacs.d/">Tianshu Wang's Emacs config</a>. I made only minor
+modification and ended up with the following setup.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> <span class="org-constant">general</span>
+  <span class="org-builtin">:after</span> <span class="org-rainbow-delimiters-depth-2">(</span>evil evil-easymotion<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-builtin">:config</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>general-evil-setup<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>general-auto-unbind-keys<span class="org-rainbow-delimiters-depth-2">)</span>
+
+  <span class="org-rainbow-delimiters-depth-2">(</span>general-define-key
+   <span class="org-builtin">:states</span> '<span class="org-rainbow-delimiters-depth-3">(</span>normal insert motion visual emacs<span class="org-rainbow-delimiters-depth-3">)</span>
+   <span class="org-builtin">:keymaps</span> 'override
+   <span class="org-builtin">:prefix-map</span> 'tyrant-map
+   <span class="org-builtin">:prefix</span> <span class="org-string">"SPC"</span>
+   <span class="org-builtin">:non-normal-prefix</span> <span class="org-string">"M-SPC"</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">general-create-definer</span> mes/tyrant-def <span class="org-builtin">:keymaps</span> 'tyrant-map<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">mes/tyrant-def</span> <span class="org-string">""</span> nil<span class="org-rainbow-delimiters-depth-2">)</span>
+
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">general-create-definer</span> mes/despot-def
+    <span class="org-builtin">:states</span> '<span class="org-rainbow-delimiters-depth-3">(</span>normal insert motion visual emacs<span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-builtin">:keymaps</span> 'override
+    <span class="org-builtin">:major-modes</span> t
+    <span class="org-builtin">:prefix</span> <span class="org-string">","</span>
+    <span class="org-builtin">:non-normal-prefix</span> <span class="org-string">"M-,"</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">mes/despot-def</span> <span class="org-string">""</span> nil<span class="org-rainbow-delimiters-depth-2">)</span>
+
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">general-def</span> universal-argument-map
+    <span class="org-string">"SPC u"</span> 'universal-argument-more<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+One slightly surprising thing I found out is that two different ways to define
+keybindings can be used, one seems to work on both top and mode level, the other
+only on mode level.
+</p>
+
+<div id="outline-container-orgca8de18" class="outline-2">
+<h2 id="orgca8de18">Top-level keybindings (<code>SPC</code>)</h2>
+<div class="outline-text-2" id="text-orgca8de18">
+<p>
+At the top-level, i.e. when using <code>mes/tyrant-def</code>, I need to use a <code>cons</code> based
+configuration. This is part of my top-level keybindings:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">mes/tyrant-def</span>
+  <span class="org-string">"SPC"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"M-x"</span> . execute-extended-command<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"TAB"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"latest buffer"</span> . mode-line-other-buffer<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"!"</span> 'shell-command
+  <span class="org-string">"/"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"search"</span> . consult-ripgrep<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"u"</span> 'universal-argument
+
+  <span class="org-string">"b"</span> <span class="org-rainbow-delimiters-depth-2">(</span>cons <span class="org-string">"bufs"</span> <span class="org-rainbow-delimiters-depth-3">(</span>make-sparse-keymap<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"bb"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"switch"</span> . consult-buffer<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"bc"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"close"</span> . kill-this-buffer<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"be"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"erase"</span> . erase-buffer<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"bs"</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"scratch"</span> . scratch-buffer<span class="org-rainbow-delimiters-depth-2">)</span>
+
+  <span class="org-comment-delimiter">;; </span><span class="org-comment">....</span>
+  <span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+When it's done this way <a href="https://github.com/justbur/emacs-which-key">which-key</a> picks up the descriptive strings.
+</p>
+
+<p>
+It did take me a while to figure out that this config style was necessary. Again
+<a href="https://github.com/tshu-w/.emacs.d/">Tianshu Wang's Emacs config</a> was what led me right.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org80efaa0" class="outline-2">
+<h2 id="org80efaa0">Mode-level keybindings (<code>,</code>)</h2>
+<div class="outline-text-2" id="text-org80efaa0">
+<p>
+At the mode-level, i.e. using <code>mes/despot-def</code>, I've found that I can, almost
+always, define keybindings following the documentation of <a href="https://github.com/noctuid/general.el">general.el</a>. Here's the
+keybindings I have for <code>nix-mode</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">mes/despot-def</span> nix-mode-map
+  <span class="org-string">"="</span> '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-builtin">:ignore</span> t <span class="org-builtin">:wk</span> <span class="org-string">"format"</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-string">"=b"</span> '<span class="org-rainbow-delimiters-depth-2">(</span>nix-format-buffer <span class="org-builtin">:wk</span> <span class="org-string">"buffer"</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+Just the other day I found that AUCTeX must be doing something with it's keymaps
+and I have to use the <code>cons</code>-based configuration style for its keymaps.
+</p>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-general.el.html">general.el</a> </div>
+]]></description>
+  <category><![CDATA[emacs]]></category>
+  <category><![CDATA[general.el]]></category>
+  <link>https://magnus.therning.org/2023-07-09-general.el-and-two-ways-to-define-keybindings.html</link>
+  <guid>https://magnus.therning.org/2023-07-09-general.el-and-two-ways-to-define-keybindings.html</guid>
+  <pubDate>Sun, 09 Jul 2023 09:34:00 +0200</pubDate>
+</item>
+</channel>
+</rss>
