@@ -12,6 +12,43 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <h1 class="title">Posts tagged "emacs":</h1>
+<div class="post-date">13 Jul 2024</div><h1 class="post-title"><a href="https://magnus.therning.org/2024-07-13-a-function-for-jumping-to-a-project-todo-file.html">A function for jumping to a project TODO file</a></h1>
+<p>
+I've had <a href="https://melpa.org/#/org-projectile">org-projectile</a> in my config since the beginning, and while it's worked
+nicely for me in my main config it gave me some grief when I played around with
+<a href="https://github.com/progfolio/elpaca">elpaca</a> the other week.<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>
+</p>
+
+<p>
+I tried to get the install instructions to work, but kept on getting errors when
+loading my config. Given that I only use it for one thing, to open the file
+<code>TODO.org</code> in the current project's root, I decided to just write a function for
+doing that instead.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">mep-projectile-open-todo</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-doc">"Open the project's todo file."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">if-let*</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>proj-dir <span class="org-rainbow-delimiters-depth-5">(</span>projectile-project-root<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+            <span class="org-rainbow-delimiters-depth-4">(</span>proj-todo-file <span class="org-rainbow-delimiters-depth-5">(</span>f-join proj-dir <span class="org-string">"</span><span class="org-string"><span class="org-hl-todo"><span class="custom">TODO</span></span></span><span class="org-string">.org"</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+      <span class="org-rainbow-delimiters-depth-3">(</span>org-open-file proj-todo-file<span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>message <span class="org-string">"Not in a project"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+
+<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+This was the second time I gave up on using it instead of <a href="https://github.com/radian-software/straight.el">straight</a>, but
+that's another story.
+</p></div></div>
+
+
+</div>
+</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> </div>
+
 <div class="post-date">04 May 2024</div><h1 class="post-title"><a href="https://magnus.therning.org/2024-05-04-orderless-completion-in-lsp-mode.html">Orderless completion in lsp-mode</a></h1>
 <p>
 If you, like me, are using <a href="https://github.com/minad/corfu"><i>corfu</i></a> to get in-buffer completion and extend it

@@ -12,6 +12,43 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <header class="site-header" role="banner"><h1 class="title">Magnus web site</h1><h2 class="subtitle">Random stuff</h2></header>
+<div class="post-date">13 Jul 2024</div><h1 class="post-title"><a href="https://magnus.therning.org/2024-07-13-a-function-for-jumping-to-a-project-todo-file.html">A function for jumping to a project TODO file</a></h1>
+<p>
+I've had <a href="https://melpa.org/#/org-projectile">org-projectile</a> in my config since the beginning, and while it's worked
+nicely for me in my main config it gave me some grief when I played around with
+<a href="https://github.com/progfolio/elpaca">elpaca</a> the other week.<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>
+</p>
+
+<p>
+I tried to get the install instructions to work, but kept on getting errors when
+loading my config. Given that I only use it for one thing, to open the file
+<code>TODO.org</code> in the current project's root, I decided to just write a function for
+doing that instead.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">mep-projectile-open-todo</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-doc">"Open the project's todo file."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">if-let*</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>proj-dir <span class="org-rainbow-delimiters-depth-5">(</span>projectile-project-root<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+            <span class="org-rainbow-delimiters-depth-4">(</span>proj-todo-file <span class="org-rainbow-delimiters-depth-5">(</span>f-join proj-dir <span class="org-string">"</span><span class="org-string"><span class="org-hl-todo"><span class="custom">TODO</span></span></span><span class="org-string">.org"</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+      <span class="org-rainbow-delimiters-depth-3">(</span>org-open-file proj-todo-file<span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>message <span class="org-string">"Not in a project"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+
+<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+This was the second time I gave up on using it instead of <a href="https://github.com/radian-software/straight.el">straight</a>, but
+that's another story.
+</p></div></div>
+
+
+</div>
+</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> </div>
+
 <div class="post-date">19 May 2024</div><h1 class="post-title"><a href="https://magnus.therning.org/2024-05-19-nix,-cabal,-and-tests.html">Nix, cabal, and tests</a></h1>
 <p>
 At work I decided to attempt to change the setup of one of our projects from using
@@ -252,149 +289,6 @@ It's not very ergonomic, and I think an extended version of <code>callHackageDir
 would make sense.
 </p>
 <div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-nix.html">nix</a> </div>
-
-<div class="post-date">03 Feb 2024</div><h1 class="post-title"><a href="https://magnus.therning.org/2024-02-03-bending-warp.html">Bending Warp</a></h1>
-<p>
-In the past I've noticed that <a href="https://hackage.haskell.org/package/warp">Warp</a> both writes to <code>stdout</code> at times and produces
-some default HTTP responses, but I've never bothered taking the time to look up
-what possibilities it offers to changes this behaviour. I've also always thought
-that I ought to find out how Warp handles signals.
-</p>
-
-<p>
-If you wonder <i>why</i> this would be interesting to know there are three main points:
-</p>
-
-<ol class="org-ol">
-<li>The environments where the services run are set up to handle structured
-logging. In our case it should be <a href="https://jsonlines.org/">JSONL</a> written to <code>stdout</code>, i.e. one JSON
-object per line.</li>
-<li>We've decided that the error responses we produce in our code should be JSON,
-so it's irritating to have to document some special cases where this isn't
-true just because Warp has a few default error responses.</li>
-<li>Signal handling is, IMHO, a very important part of writing a service that
-runs well in <a href="https://kubernetes.io/">k8s</a> as it uses signals to handle the lifetime of pods.</li>
-</ol>
-<div id="outline-container-org8d5aed4" class="outline-2">
-<h2 id="org8d5aed4">Looking through the Warp API</h2>
-<div class="outline-text-2" id="text-org8d5aed4">
-<p>
-Browsing through the <a href="https://hackage.haskell.org/package/warp-3.4.0/docs/Network-Wai-Handler-Warp.html">API documentation for Warp</a> it wasn't too difficult to find
-the interesting pieces, and that Warp follows a fairly common pattern in Haskell
-libraries
-</p>
-
-<ul class="org-ul">
-<li>There's a function called <code>runSettings</code> that takes an argument of type <code>Settings</code>.</li>
-<li>The default settings are available in a variable called <code>defaultSettings</code> (not very surprising).</li>
-<li><p>
-There are several functions for modifying the settings and they all have the same shape
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell">setX :: <span class="org-type">X</span> <span class="org-operator">-&gt;</span> <span class="org-type">Settings</span> <span class="org-operator">-&gt;</span> Settings.
-</pre>
-</div>
-
-<p>
-which makes it easy to chain them together.
-</p></li>
-<li>The functions I'm interested in now are
-
-<dl class="org-dl">
-<dt><code>setOnException</code></dt><dd>the default handler, <code>defaultOnException</code>, prints the
-exception to <code>stdout</code> using its <code>Show</code> instance</dd>
-<dt><code>setOnExceptionResponse</code></dt><dd>the default responses are produced by
-<code>defaultOnExceptionResponse</code> and contain plain text response bodies</dd>
-<dt><code>setInstallShutdownHandler</code></dt><dd>the default behaviour is to wait for all
-ongoing requests and then shut done</dd>
-<dt><code>setGracefulShutdownTimeout</code></dt><dd>sets the number of seconds to wait for
-ongoing requests to finnish, the default is to wait indefinitely</dd>
-</dl></li>
-</ul>
-</div>
-</div>
-<div id="outline-container-org7ef5684" class="outline-2">
-<h2 id="org7ef5684">Some experimenting</h2>
-<div class="outline-text-2" id="text-org7ef5684">
-<p>
-In order to experiment with these I put together a small API using <a href="https://hackage.haskell.org/package/servant">servant</a>,
-<code>app</code>, with a <code>main</code> function using <code>runSettings</code> and stringing together a bunch
-of modifications to <code>defaultSettings</code>.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell">main :: <span class="org-type">IO</span> <span class="org-rainbow-delimiters-depth-1">()</span>
-main = <span class="org-warning">Log</span>.withLogger <span class="org-operator">$</span> \logger -&gt; <span class="org-keyword">do</span>
-    <span class="org-warning">Log</span>.infoIO logger <span class="org-string">"starting the server"</span>
-    runSettings <span class="org-rainbow-delimiters-depth-1">(</span>mySettings logger defaultSettings<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-rainbow-delimiters-depth-1">(</span>app logger<span class="org-rainbow-delimiters-depth-1">)</span>
-    <span class="org-warning">Log</span>.infoIO logger <span class="org-string">"stopped the server"</span>
-  <span class="org-keyword">where</span>
-    mySettings logger = myShutdownHandler logger <span class="org-operator">.</span> myOnException logger <span class="org-operator">.</span> myOnExceptionResponse
-</pre>
-</div>
-
-<p>
-<code>myOnException</code> logs JSON objects (using the logging I've written about before,
-<a href="https://magnus.therning.org/2023-01-29-a-take-on-log-messages.html">here</a> and <a href="https://magnus.therning.org/2023-02-04-a-take-on-logging.html">here</a>). It decides wether to log or not using
-<code>defaultShouldDisplayException</code>, something I copied from <code>defaultOnException</code>.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell">myOnException :: Log.<span class="org-type">Logger</span> <span class="org-operator">-&gt;</span> <span class="org-type">Settings</span> <span class="org-operator">-&gt;</span> <span class="org-type">Settings</span>
-myOnException logger = setOnException handler
-  <span class="org-keyword">where</span>
-    handler mr e = when <span class="org-rainbow-delimiters-depth-1">(</span>defaultShouldDisplayException e<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">$</span> <span class="org-keyword">case</span> mr <span class="org-keyword">of</span>
-        Nothing -&gt; <span class="org-warning">Log</span>.warnIO logger <span class="org-operator">$</span> lm <span class="org-operator">$</span> <span class="org-string">"exception: "</span> <span class="org-operator">&lt;&gt;</span> <span class="org-warning">T</span>.pack <span class="org-rainbow-delimiters-depth-1">(</span>show e<span class="org-rainbow-delimiters-depth-1">)</span>
-        Just _ -&gt; <span class="org-keyword">do</span>
-            <span class="org-warning">Log</span>.warnIO logger <span class="org-operator">$</span> lm <span class="org-operator">$</span> <span class="org-string">"exception with request: "</span> <span class="org-operator">&lt;&gt;</span> <span class="org-warning">T</span>.pack <span class="org-rainbow-delimiters-depth-1">(</span>show e<span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-<code>myExceptionResponse</code> responds with JSON objects. It's simpler than
-<code>defaultOnExceptionResponse</code>, but it suffices for my learning.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell">myOnExceptionResponse :: <span class="org-type">Settings</span> <span class="org-operator">-&gt;</span> <span class="org-type">Settings</span>
-myOnExceptionResponse = setOnExceptionResponse handler
-  <span class="org-keyword">where</span>
-    handler _ =
-        responseLBS
-            <span class="org-warning">H</span>.internalServerError500
-            <span class="org-rainbow-delimiters-depth-1">[</span><span class="org-rainbow-delimiters-depth-2">(</span><span class="org-warning">H</span>.hContentType, <span class="org-string">"application/json; charset=utf-8"</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">]</span>
-            <span class="org-rainbow-delimiters-depth-1">(</span>encode <span class="org-operator">$</span> object <span class="org-rainbow-delimiters-depth-2">[</span><span class="org-string">"error"</span> <span class="org-operator">.=</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-string">"Something went wrong"</span> :: <span class="org-type">String</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">]</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-Finally, <code>myShutdownHandler</code> installs a handler for <code>SIGTERM</code> that logs and then
-shuts down.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell">myShutdownHandler :: Log.<span class="org-type">Logger</span> <span class="org-operator">-&gt;</span> <span class="org-type">Settings</span> <span class="org-operator">-&gt;</span> <span class="org-type">Settings</span>
-myShutdownHandler logger = setInstallShutdownHandler shutdownHandler
-  <span class="org-keyword">where</span>
-    shutdownAction = <span class="org-warning">Log</span>.infoIO logger <span class="org-string">"closing down"</span>
-    shutdownHandler closeSocket = void <span class="org-operator">$</span> installHandler sigTERM <span class="org-rainbow-delimiters-depth-1">(</span>Catch <span class="org-operator">$</span> shutdownAction <span class="org-operator">&gt;&gt;</span> closeSocket<span class="org-rainbow-delimiters-depth-1">)</span> Nothing
-</pre>
-</div>
-</div>
-</div>
-<div id="outline-container-org9e6b344" class="outline-2">
-<h2 id="org9e6b344">Conclusion</h2>
-<div class="outline-text-2" id="text-org9e6b344">
-<p>
-I really ought to have looked into this sooner, especially as it turns out that
-Warp offers all the knobs and dials I could wish for to control these aspects of
-its behaviour. The next step is to take this and put it to use in one of the
-services at <code>$DAYJOB</code>
-</p>
-</div>
-</div>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-warp.html">warp</a> </div>
 <div id="archive">
 <a href="https://magnus.therning.org/archive.html">Other posts</a>
 </div>
