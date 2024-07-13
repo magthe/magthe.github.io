@@ -12,6 +12,44 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <h1 class="title">Posts tagged "haskell":</h1>
+<div class="post-date">13 Jul 2024</div><h1 class="post-title"><a href="https://magnus.therning.org/2024-07-13-hoogle-setup-for-local-development.html">Hoogle setup for local development</a></h1>
+<p>
+About a week ago I asked a <a href="https://discourse.nixos.org/t/haskell-shell-setup-with-working-hoogle-developpackage/48507/2">question on the Nix Discourse</a> about how to create a
+setup for Hoogle that
+</p>
+
+<ul class="org-ul">
+<li>includes the locally installed packages, and</li>
+<li>the package I'm working on, and ideally also</li>
+<li>have all local links, i.e. no links to <a href="https://hackage.haskell.org/">Hackage</a>.</li>
+</ul>
+
+<p>
+I didn't get an answer there, but some people on the Nix Haskell channel on
+Matrix helped a bit, but it seems this particular use case requires a bit of
+manual work. The following commands gets me an almost fully working setup:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell">cabal haddock --haddock-internal --haddock-quickjump --haddock-hoogle --haddock-html
+
+<span class="org-variable-name">hoogle_dir</span>=$<span class="org-rainbow-delimiters-depth-1">(</span>dirname $<span class="org-rainbow-delimiters-depth-2">(</span>dirname $<span class="org-rainbow-delimiters-depth-3">(</span>readlink -f $<span class="org-rainbow-delimiters-depth-4">(</span><span class="org-builtin">which</span> hoogle<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+hoogle generate --database=local.hoo <span class="org-sh-escaped-newline">\</span>
+       $<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">for</span> d<span class="org-keyword"> in</span> $<span class="org-rainbow-delimiters-depth-2">(</span>fd -L .txt $<span class="org-rainbow-delimiters-depth-3">{</span><span class="org-variable-name">hoogle_dir</span><span class="org-rainbow-delimiters-depth-3">}</span><span class="org-rainbow-delimiters-depth-2">)</span>; <span class="org-keyword">do</span> printf <span class="org-string">"--local=%s "</span> $<span class="org-rainbow-delimiters-depth-2">(</span>dirname $<span class="org-variable-name">d</span><span class="org-rainbow-delimiters-depth-2">)</span>; <span class="org-keyword">done</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-sh-escaped-newline">\</span>
+       --local=./dist-newstyle/build/x86_64-linux/ghc-9.8.2/pkg-0.0.1/doc/html/pkg
+
+hoogle server --local --database=local.foo
+</pre>
+</div>
+
+<p>
+What's missing is working links between the documentation of locally installed
+packages. It looks like the links in the generated documention in Nix have a lot
+of relative references containing <code>${pkgroot}/../../../../</code> which is what I
+supect causes the broken links.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-nix.html">nix</a> </div>
+
 <div class="post-date">19 May 2024</div><h1 class="post-title"><a href="https://magnus.therning.org/2024-05-19-nix,-cabal,-and-tests.html">Nix, cabal, and tests</a></h1>
 <p>
 At work I decided to attempt to change the setup of one of our projects from using
