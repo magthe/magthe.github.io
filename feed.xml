@@ -4,7 +4,84 @@
 <title><![CDATA[Magnus web site]]></title>
 <description><![CDATA[Magnus web site]]></description>
 <link>https://magnus.therning.org/</link>
-<lastBuildDate>Sat, 13 Jul 2024 20:13:45 +0200</lastBuildDate>
+<lastBuildDate>Sun, 21 Jul 2024 01:34:03 +0200</lastBuildDate>
+<item>
+  <title><![CDATA[Emacs via Nix with mu4e]]></title>
+  <description><![CDATA[
+<p>
+I've been running development versions of Emacs ever since I switched to Wayland
+and needed the PGTK code. The various <code>X-git</code> packages on <a href="https://aur.archlinux.org/">AUR</a> makes that easy,
+as long as one doesn't mind building the packages locally, and regularly.
+Building a large package like Emacs does get a bit tiring after a while though
+so I started looking at the <a href="https://github.com/nix-community/emacs-overlay">emacs overlay</a> to see if I could keep up without
+building quite that much.
+</p>
+
+<p>
+The first attempt at this failed as I couldn't get my email setup working; emacs
+simply refused to find the locally installed <code>mu4e</code> package. I felt I didn't
+have time to solve it at the time, reverted back to doing the builds myself
+again. It kept irritating me though, and today I made another attempt. This time
+I invested a bit more time in reading up on how to install emacs via Nix with
+packages. Something that paid off.
+</p>
+
+<p>
+I'm managing my packages using <a href="https://nix.dev/manual/nix/2.23/command-ref/new-cli/nix3-profile.html">nix profile</a> and a <code>flake.nix</code>. To install emacs
+with a working <code>mu4e</code> I started with adding the emacs overlay to the inputs
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix"><span class="org-nix-attribute">inputs</span> = <span class="org-rainbow-delimiters-depth-1">{</span>
+  <span class="org-nix-attribute">nixpkgs.url</span> = <span class="org-string">"github:nixos/nixpkgs?ref=nixpkgs-unstable"</span>;
+  ...
+  <span class="org-nix-attribute">community-emacs.url</span> = <span class="org-string">"github:nix-community/emacs-overlay"</span>;
+<span class="org-rainbow-delimiters-depth-1">}</span>;
+</pre>
+</div>
+
+<p>
+and in my outputs I made sure to use the overlay on <code>nixpkgs</code>
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix"><span class="org-nix-attribute">outputs</span> = inputs@<span class="org-rainbow-delimiters-depth-1">{</span> nixpkgs, community-emacs, ... <span class="org-rainbow-delimiters-depth-1">}</span>:
+  <span class="org-nix-keyword">let</span>
+    <span class="org-nix-attribute">system</span> = <span class="org-string">"x86_64-linux"</span>;
+    <span class="org-nix-attribute">pkgs</span> = <span class="org-nix-builtin">import</span> nixpkgs <span class="org-rainbow-delimiters-depth-1">{</span>
+      <span class="org-nix-keyword">inherit</span> system;
+      <span class="org-nix-attribute">overlays</span> = <span class="org-rainbow-delimiters-depth-2">[</span> community-emacs.overlays.emacs <span class="org-rainbow-delimiters-depth-2">]</span>;
+    <span class="org-rainbow-delimiters-depth-1">}</span>;
+    ...
+</pre>
+</div>
+
+<p>
+and in the list of packages passed to <code>pkgs.buildEnv</code> I added
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix">...
+<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-rainbow-delimiters-depth-2">(</span>emacsPackagesFor emacs-pgtk<span class="org-rainbow-delimiters-depth-2">)</span>.emacsWithPackages
+  <span class="org-rainbow-delimiters-depth-2">(</span>epkgs: <span class="org-rainbow-delimiters-depth-3">[</span> epkgs.mu4e <span class="org-rainbow-delimiters-depth-3">]</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+mu
+...
+</pre>
+</div>
+
+<p>
+That's all there's to it. After running <code>nix profile update 0</code> I had a build of
+emacs with Wayland support that's less than a day old, all downloaded from the
+community cache. Perfect!
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-nix.html">nix</a> </div>
+]]></description>
+  <category><![CDATA[emacs]]></category>
+  <category><![CDATA[nix]]></category>
+  <link>https://magnus.therning.org/2024-07-21-emacs-via-nix-with-mu4e.html</link>
+  <guid>https://magnus.therning.org/2024-07-21-emacs-via-nix-with-mu4e.html</guid>
+  <pubDate>Sun, 21 Jul 2024 01:04:00 +0200</pubDate>
+</item>
 <item>
   <title><![CDATA[Hoogle setup for local development]]></title>
   <description><![CDATA[
@@ -22,7 +99,7 @@ setup for Hoogle that
 <p>
 I didn't get an answer there, but some people on the Nix Haskell channel on
 Matrix helped a bit, but it seems this particular use case requires a bit of
-manual work. The following commands gets me an almost fully working setup:
+manual work. The following commands get me an almost fully working setup:
 </p>
 
 <div class="org-src-container">
@@ -644,105 +721,6 @@ I just wish I'll find a package offering completions reaching Z shell levels.
   <link>https://magnus.therning.org/2023-11-19-making-emacs-without-terminal-emulator-a-little-more-usable.html</link>
   <guid>https://magnus.therning.org/2023-11-19-making-emacs-without-terminal-emulator-a-little-more-usable.html</guid>
   <pubDate>Sun, 19 Nov 2023 08:50:00 +0100</pubDate>
-</item>
-<item>
-  <title><![CDATA[Using the golang mode shipped with Emacs]]></title>
-  <description><![CDATA[
-<p>
-A few weeks ago I wanted to try out tree-sitter and switched a few of the modes
-I use for coding to their <code>-ts-mode</code> variants. Based on the excellent <a href="https://www.masteringemacs.org/article/how-to-get-started-tree-sitter">How to Get
-Started with Tree-Sitter</a> I added bits like this to the setup I have for coding
-modes:<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> <span class="org-constant">X-mode</span>
-  <span class="org-builtin">:init</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>add-to-list 'treesit-language-source-alist '<span class="org-rainbow-delimiters-depth-3">(</span>X <span class="org-string">"https://github.com/tree-sitter/tree-sitter-X"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-comment-delimiter">;; </span><span class="org-comment">(treesit-install-language-grammar 'X)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>add-to-list 'major-mode-remap-alist '<span class="org-rainbow-delimiters-depth-3">(</span>X-mode . X-ts-mode<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-comment-delimiter">;; </span><span class="org-comment">...</span>
-  <span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-I then manually evaluated the expression that's commented out to download and
-compile the tree-sitter grammar. It's a rather small change, it works, and I can
-switch over language by language. I swapped a couple of languages to the
-tree-sitter modes like this, including golang. The only mode that I noticed
-changes in was golang, in particular my adding of <code>gofmt-before-save</code> to
-<code>before-save-hook</code> had stopped having any effect.
-</p>
-
-<p>
-What I hadn't realised was that the <a href="https://github.com/dominikh/go-mode.el"><code>go-mode</code> I was using</a> didn't ship with Emacs
-and that when I switched to <code>go-ts-mode</code> I switched to one that was. It turns
-out that <code>gofmt-before-save</code> is hard-wired to work only in <code>go-mode</code>,
-something others have <a href="https://github.com/dominikh/go-mode.el/issues/396#issuecomment-1366716882">noticed</a>.
-</p>
-
-<p>
-I don't feel like waiting for <code>go-mode</code> to fix that though, especially not when
-there's a perfectly fine golang mode shipping with Emacs now, and not when
-<a href="https://github.com/purcell/emacs-reformatter">emacs-reformatter</a> make it so easy to define formatters (as I've <a href="https://magnus.therning.org/2023-09-24-defining-a-formatter-for-cabal-files.html">written about
-before</a>).
-</p>
-
-<p>
-My golang setup, sans keybindings, now looks like this:<sup><a id="fnr.2" class="footref" href="#fn.2" role="doc-backlink">2</a></sup>
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> <span class="org-constant">go-ts-mode</span>
-  <span class="org-builtin">:hook</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>go-ts-mode . lsp-deferred<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>go-ts-mode . go-format-on-save-mode<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-builtin">:init</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>add-to-list 'treesit-language-source-alist '<span class="org-rainbow-delimiters-depth-3">(</span>go <span class="org-string">"https://github.com/tree-sitter/tree-sitter-go"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>add-to-list 'treesit-language-source-alist '<span class="org-rainbow-delimiters-depth-3">(</span>gomod <span class="org-string">"https://github.com/camdencheek/tree-sitter-go-mod"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-comment-delimiter">;; </span><span class="org-comment">(dolist (lang '(go gomod)) (treesit-install-language-grammar lang))</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>add-to-list 'auto-mode-alist '<span class="org-rainbow-delimiters-depth-3">(</span><span class="org-string">"\\.go\\'"</span> . go-ts-mode<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>add-to-list 'auto-mode-alist '<span class="org-rainbow-delimiters-depth-3">(</span><span class="org-string">"/go\\.mod\\'"</span> . go-mod-ts-mode<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-builtin">:config</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">reformatter-define</span> go-format
-    <span class="org-builtin">:program</span> <span class="org-string">"goimports"</span>
-    <span class="org-builtin">:args</span> '<span class="org-rainbow-delimiters-depth-3">(</span><span class="org-string">"/dev/stdin"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-builtin">:general</span>
-  <span class="org-comment-delimiter">;; </span><span class="org-comment">...</span>
-  <span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-So far I'm happy with the built-in <code>go-ts-mode</code> and I've got to say that using a
-minor mode for the format-on-save functionality is more elegant than adding a
-function to <code>before-save-hook</code> (something that <code>go-mode</code> may get through this
-<a href="https://github.com/dominikh/go-mode.el/pull/426">PR</a>).
-</p>
-<div id="footnotes">
-<h2 class="footnotes">Footnotes: </h2>
-<div id="text-footnotes">
-
-<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
-There were a few more things that I needed to modify. As the tree-sitter
-modes are completely separate from the non-tree-sitter modes things like hooks
-and keybindings in the modes' keymaps.
-</p></div></div>
-
-<div class="footdef"><sup><a id="fn.2" class="footnum" href="#fnr.2" role="doc-backlink">2</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
-The full file is <a href="https://gitlab.com/magus/mes/-/blob/main/lisp/mes-dev-go.el">here</a>.
-</p></div></div>
-
-
-</div>
-</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-tree-sitter.html">tree-sitter</a> </div>
-]]></description>
-  <category><![CDATA[emacs]]></category>
-  <category><![CDATA[tree-sitter]]></category>
-  <link>https://magnus.therning.org/2023-11-16-using-the-golang-mode-shipped-with-emacs.html</link>
-  <guid>https://magnus.therning.org/2023-11-16-using-the-golang-mode-shipped-with-emacs.html</guid>
-  <pubDate>Thu, 16 Nov 2023 07:02:00 +0100</pubDate>
 </item>
 </channel>
 </rss>

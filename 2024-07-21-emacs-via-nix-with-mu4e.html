@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="alternate"
+      type="application/rss+xml"
+      href="https://magnus.therning.org/feed.xml"
+      title="RSS feed for https://magnus.therning.org/">
+<title>Emacs via Nix with mu4e</title>
+<meta name="author" content="Magnus Therning"><meta name="referrer" content="no-referrer"><link href= "static/style.css" rel="stylesheet" type="text/css" /><link href= "static/htmlize.css" rel="stylesheet" type="text/css" /><link href= "static/extra_style.css" rel="stylesheet" type="text/css" /></head>
+<body>
+<div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
+<div id="content">
+<div class="post-date">21 Jul 2024</div><h1 class="post-title"><a href="https://magnus.therning.org/2024-07-21-emacs-via-nix-with-mu4e.html">Emacs via Nix with mu4e</a></h1>
+<p>
+I've been running development versions of Emacs ever since I switched to Wayland
+and needed the PGTK code. The various <code>X-git</code> packages on <a href="https://aur.archlinux.org/">AUR</a> makes that easy,
+as long as one doesn't mind building the packages locally, and regularly.
+Building a large package like Emacs does get a bit tiring after a while though
+so I started looking at the <a href="https://github.com/nix-community/emacs-overlay">emacs overlay</a> to see if I could keep up without
+building quite that much.
+</p>
+
+<p>
+The first attempt at this failed as I couldn't get my email setup working; emacs
+simply refused to find the locally installed <code>mu4e</code> package. I felt I didn't
+have time to solve it at the time, reverted back to doing the builds myself
+again. It kept irritating me though, and today I made another attempt. This time
+I invested a bit more time in reading up on how to install emacs via Nix with
+packages. Something that paid off.
+</p>
+
+<p>
+I'm managing my packages using <a href="https://nix.dev/manual/nix/2.23/command-ref/new-cli/nix3-profile.html">nix profile</a> and a <code>flake.nix</code>. To install emacs
+with a working <code>mu4e</code> I started with adding the emacs overlay to the inputs
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix"><span class="org-nix-attribute">inputs</span> = <span class="org-rainbow-delimiters-depth-1">{</span>
+  <span class="org-nix-attribute">nixpkgs.url</span> = <span class="org-string">"github:nixos/nixpkgs?ref=nixpkgs-unstable"</span>;
+  ...
+  <span class="org-nix-attribute">community-emacs.url</span> = <span class="org-string">"github:nix-community/emacs-overlay"</span>;
+<span class="org-rainbow-delimiters-depth-1">}</span>;
+</pre>
+</div>
+
+<p>
+and in my outputs I made sure to use the overlay on <code>nixpkgs</code>
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix"><span class="org-nix-attribute">outputs</span> = inputs@<span class="org-rainbow-delimiters-depth-1">{</span> nixpkgs, community-emacs, ... <span class="org-rainbow-delimiters-depth-1">}</span>:
+  <span class="org-nix-keyword">let</span>
+    <span class="org-nix-attribute">system</span> = <span class="org-string">"x86_64-linux"</span>;
+    <span class="org-nix-attribute">pkgs</span> = <span class="org-nix-builtin">import</span> nixpkgs <span class="org-rainbow-delimiters-depth-1">{</span>
+      <span class="org-nix-keyword">inherit</span> system;
+      <span class="org-nix-attribute">overlays</span> = <span class="org-rainbow-delimiters-depth-2">[</span> community-emacs.overlays.emacs <span class="org-rainbow-delimiters-depth-2">]</span>;
+    <span class="org-rainbow-delimiters-depth-1">}</span>;
+    ...
+</pre>
+</div>
+
+<p>
+and in the list of packages passed to <code>pkgs.buildEnv</code> I added
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix">...
+<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-rainbow-delimiters-depth-2">(</span>emacsPackagesFor emacs-pgtk<span class="org-rainbow-delimiters-depth-2">)</span>.emacsWithPackages
+  <span class="org-rainbow-delimiters-depth-2">(</span>epkgs: <span class="org-rainbow-delimiters-depth-3">[</span> epkgs.mu4e <span class="org-rainbow-delimiters-depth-3">]</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+mu
+...
+</pre>
+</div>
+
+<p>
+That's all there's to it. After running <code>nix profile update 0</code> I had a build of
+emacs with Wayland support that's less than a day old, all downloaded from the
+community cache. Perfect!
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-nix.html">nix</a> </div>
+<div id="comments">Comment <a href=mailto:magnus+blog.comment@therning.org?subject=Comment%20on%20INSERT%20POST%20URL%20HERE>here</a>.</div></div>
+<div id="postamble" class="status"><!-- org-static-blog-page-postamble --></div>
+</body>
+</html>
