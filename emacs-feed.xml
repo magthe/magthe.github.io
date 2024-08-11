@@ -4,7 +4,44 @@
 <title><![CDATA[Magnus web site - emacs]]></title>
 <description><![CDATA[Magnus web site - emacs]]></description>
 <link>https://magnus.therning.org//tag-emacs.html</link>
-<lastBuildDate>Sun, 21 Jul 2024 01:34:08 +0200</lastBuildDate>
+<lastBuildDate>Sun, 11 Aug 2024 09:01:38 +0200</lastBuildDate>
+<item>
+  <title><![CDATA[Removing symlink question]]></title>
+  <description><![CDATA[
+<p>
+I'm not sure why, but all of a sudden I started getting this question every time
+emacs starts
+</p>
+
+<blockquote>
+<p>
+Symbolic link to Git-controlled source file; follow link?
+</p>
+</blockquote>
+
+<p>
+After some searching I found out that it's <a href="https://www.gnu.org/software/emacs/manual/html_node/emacs/Version-Control.html">VC</a> asking. I'm guessing this comes
+from <a href="https://github.com/radian-software/straight.el">straight</a>'s very liberal use of symlinks. Though I'm still a little
+surprised at VC kicking in when reading the config.
+</p>
+
+<p>
+Anyway, there are two variables to consider, <code>vc-follow-symlinks</code> and
+<code>vc-handled-backends</code>. I opted to modify the latter one, and since I don't use
+VC at all I'm turning it off completely.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">setopt</span> vc-handled-backends nil<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> </div>
+]]></description>
+  <category><![CDATA[emacs]]></category>
+  <link>https://magnus.therning.org/2024-08-11-removing-symlink-question.html</link>
+  <guid>https://magnus.therning.org/2024-08-11-removing-symlink-question.html</guid>
+  <pubDate>Sun, 11 Aug 2024 08:41:00 +0200</pubDate>
+</item>
 <item>
   <title><![CDATA[Emacs via Nix with mu4e]]></title>
   <description><![CDATA[
@@ -773,126 +810,6 @@ I found <a href="https://notes.alexkehayias.com/using-chatgpt-with-emacs/">Alex 
   <link>https://magnus.therning.org/2023-09-16-setting-up-emacs-openai-chatgpt.html</link>
   <guid>https://magnus.therning.org/2023-09-16-setting-up-emacs-openai-chatgpt.html</guid>
   <pubDate>Sat, 16 Sep 2023 06:22:00 +0200</pubDate>
-</item>
-<item>
-  <title><![CDATA[Using emacs for the scrollback in terminal multiplexers]]></title>
-  <description><![CDATA[
-<p>
-I should start with saying that I still don't really know if this is a good idea
-or not, but it feels like it's worth trying out at least.
-</p>
-<div id="outline-container-org1ca78e4" class="outline-2">
-<h2 id="org1ca78e4">An irritating limitation in <a href="https://zellij.dev/">Zellij</a>, and a possible solution</h2>
-<div class="outline-text-2" id="text-org1ca78e4">
-<p>
-After seeing it mentioned in an online community I thought it might be worth
-trying out. I'm not really disappointed with <a href="https://github.com/tmux/tmux">tmux</a>, I've been using it for years
-but I actually only use a small part of what it can do. I create tabs, sometimes
-create panes, and I regularly use the scollback functionality to copy output of
-commands I've run earlier.
-</p>
-
-<p>
-Unfortunately, as is reported in a <a href="https://github.com/zellij-org/zellij/issues/947">ticket</a>, Zellij can't select and copy using
-the keyboard. From the discussion in that ticket it seems unlikely it ever will
-be able to. After finding that out I resigned to staying with Tmux &#x2013; I'm not
-ready to go back to using a pointing device to select and copy text in my
-terminal!
-</p>
-
-<p>
-When I was biking to the pool yesterday I realised a thing though: I'm already
-using a tool that is <i>very</i> good at manipulating text using the keyboard. Of
-course I'm talking about Emacs! So if I can just make Emacs start up quickly
-enough I ought to be able to use it for searching, selecting and copying from
-the scrollback buffer. I haven't found a way to do this in Tmu= yet, but
-Zellij has <a href="https://zellij.dev/documentation/keybindings-possible-actions#editscrollback">EditScrollBack</a> so I can at least try it out.
-</p>
-
-<p>
-A nice benefit is that I can cut back on the number of different shortcuts I use
-daily.
-</p>
-</div>
-</div>
-<div id="outline-container-org728fd4c" class="outline-2">
-<h2 id="org728fd4c">My slimmed down Emacs config</h2>
-<div class="outline-text-2" id="text-org728fd4c">
-<p>
-My current <a href="https://gitlab.com/magus/mes">Emacs config</a> starts up in less than 2s, which is good enough as I
-normally start Emacs at most a few times per day. However, if I have to wait 2s
-to open the scrollback buffer I suspect I'll tire very quickly and abandon the
-experiment. So I took my ordinary config and slimmed it down. Cutting away
-things that weren't related to navigation and searching.
-</p>
-
-<p>
-The list of packages is not very long:
-</p>
-
-<ul class="org-ul">
-<li><code>straight</code></li>
-<li><code>use-package</code></li>
-<li><code>evil</code></li>
-<li><code>general</code></li>
-<li><code>which-key</code></li>
-<li><code>vertico</code></li>
-<li><code>orderless</code></li>
-<li><code>marginalia</code></li>
-<li><code>consult</code></li>
-</ul>
-
-<p>
-The first 5 are for usability in general, and the last 4 are bring in the
-functions I use for searching through text.
-</p>
-
-<p>
-The resulting config starts in less than ¼s. That's more than acceptable, I find.
-</p>
-</div>
-</div>
-<div id="outline-container-org44d7ad0" class="outline-2">
-<h2 id="org44d7ad0">Copying to the Wayland clipboard</h2>
-<div class="outline-text-2" id="text-org44d7ad0">
-<p>
-It turns out that copying with `y` in <code>evil</code> does the right thing by default and
-the copied text ends up in the clipboard without any special configuration.
-</p>
-
-<p>
-From Tmux I'm used to being thrown out of copy-mode after copying something.
-While that's sometimes irritating, it's at other times exactly what I want.
-Given that <code>evil-yank</code> does the right thing it was easy to write a function for
-it:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">se/yank-n-kill</span> <span class="org-rainbow-delimiters-depth-2">(</span>beg end<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span> <span class="org-string">"r"</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>evil-yank beg end<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>kill-emacs<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-</div>
-</div>
-<div id="outline-container-org9e880a9" class="outline-2">
-<h2 id="org9e880a9">The config files</h2>
-<div class="outline-text-2" id="text-org9e880a9">
-<p>
-I'm keeping my dot-files in a private repo, but I put a snapshot of the Emacs
-and Zellij config in a <a href="https://gitlab.com/-/snippets/3595805">snippet</a>.
-</p>
-</div>
-</div>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-tmux.html">tmux</a> <a href="https://magnus.therning.org/tag-zellij.html">zellij</a> </div>
-]]></description>
-  <category><![CDATA[emacs]]></category>
-  <category><![CDATA[tmux]]></category>
-  <category><![CDATA[zellij]]></category>
-  <link>https://magnus.therning.org/2023-09-10-using-emacs-for-the-scrollback-in-terminal-multiplexers.html</link>
-  <guid>https://magnus.therning.org/2023-09-10-using-emacs-for-the-scrollback-in-terminal-multiplexers.html</guid>
-  <pubDate>Sun, 10 Sep 2023 13:17:00 +0200</pubDate>
 </item>
 </channel>
 </rss>

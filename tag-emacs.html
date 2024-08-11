@@ -12,6 +12,36 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <h1 class="title">Posts tagged "emacs":</h1>
+<div class="post-date">11 Aug 2024</div><h1 class="post-title"><a href="https://magnus.therning.org/2024-08-11-removing-symlink-question.html">Removing symlink question</a></h1>
+<p>
+I'm not sure why, but all of a sudden I started getting this question every time
+emacs starts
+</p>
+
+<blockquote>
+<p>
+Symbolic link to Git-controlled source file; follow link?
+</p>
+</blockquote>
+
+<p>
+After some searching I found out that it's <a href="https://www.gnu.org/software/emacs/manual/html_node/emacs/Version-Control.html">VC</a> asking. I'm guessing this comes
+from <a href="https://github.com/radian-software/straight.el">straight</a>'s very liberal use of symlinks. Though I'm still a little
+surprised at VC kicking in when reading the config.
+</p>
+
+<p>
+Anyway, there are two variables to consider, <code>vc-follow-symlinks</code> and
+<code>vc-handled-backends</code>. I opted to modify the latter one, and since I don't use
+VC at all I'm turning it off completely.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">setopt</span> vc-handled-backends nil<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> </div>
+
 <div class="post-date">21 Jul 2024</div><h1 class="post-title"><a href="https://magnus.therning.org/2024-07-21-emacs-via-nix-with-mu4e.html">Emacs via Nix with mu4e</a></h1>
 <p>
 I've been running development versions of Emacs ever since I switched to Wayland

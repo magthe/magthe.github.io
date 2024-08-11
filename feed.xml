@@ -4,7 +4,44 @@
 <title><![CDATA[Magnus web site]]></title>
 <description><![CDATA[Magnus web site]]></description>
 <link>https://magnus.therning.org/</link>
-<lastBuildDate>Sun, 21 Jul 2024 01:34:03 +0200</lastBuildDate>
+<lastBuildDate>Sun, 11 Aug 2024 09:01:33 +0200</lastBuildDate>
+<item>
+  <title><![CDATA[Removing symlink question]]></title>
+  <description><![CDATA[
+<p>
+I'm not sure why, but all of a sudden I started getting this question every time
+emacs starts
+</p>
+
+<blockquote>
+<p>
+Symbolic link to Git-controlled source file; follow link?
+</p>
+</blockquote>
+
+<p>
+After some searching I found out that it's <a href="https://www.gnu.org/software/emacs/manual/html_node/emacs/Version-Control.html">VC</a> asking. I'm guessing this comes
+from <a href="https://github.com/radian-software/straight.el">straight</a>'s very liberal use of symlinks. Though I'm still a little
+surprised at VC kicking in when reading the config.
+</p>
+
+<p>
+Anyway, there are two variables to consider, <code>vc-follow-symlinks</code> and
+<code>vc-handled-backends</code>. I opted to modify the latter one, and since I don't use
+VC at all I'm turning it off completely.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">setopt</span> vc-handled-backends nil<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> </div>
+]]></description>
+  <category><![CDATA[emacs]]></category>
+  <link>https://magnus.therning.org/2024-08-11-removing-symlink-question.html</link>
+  <guid>https://magnus.therning.org/2024-08-11-removing-symlink-question.html</guid>
+  <pubDate>Sun, 11 Aug 2024 08:41:00 +0200</pubDate>
+</item>
 <item>
   <title><![CDATA[Emacs via Nix with mu4e]]></title>
   <description><![CDATA[
@@ -666,61 +703,6 @@ but overriding the endpoint was all that was needed.
   <link>https://magnus.therning.org/2023-12-09-getting-amazonka-s3-to-work-with-localstack.html</link>
   <guid>https://magnus.therning.org/2023-12-09-getting-amazonka-s3-to-work-with-localstack.html</guid>
   <pubDate>Sat, 09 Dec 2023 17:23:00 +0100</pubDate>
-</item>
-<item>
-  <title><![CDATA[Making Emacs without terminal emulator a little more usable]]></title>
-  <description><![CDATA[
-<p>
-After reading Andrey Listopadov's <a href="https://andreyor.st/posts/2023-10-27-you-dont-need-a-terminal-emulator/">You don't need a terminal emulator</a> (mentioned
-at <a href="https://irreal.org/blog/?p=11746">Irreal</a> too) I decided to give up on using Emacs as a terminal for my shell.
-In <i>my experience</i> Emacs simply isn't a very good terminal to run a shell in
-anyway. I removed the almost completely unused <a href="https://github.com/kyagi/shell-pop-el">shell-pop</a> from my configuration
-and the keybinding with a binding to <code>async-shell-command</code>. I'm keeping
-<a href="https://github.com/davidshepherd7/terminal-here">terminal-here</a> in my config for the time being though.
-</p>
-
-<p>
-I realised <a href="https://github.com/bbatsov/projectile">projectile</a> didn't have a function for running it in the root of a
-project, so I wrote one heavily based on <code>project-async-shell-command</code>.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">mep-projectile-async-shell-command</span> <span class="org-rainbow-delimiters-depth-2">()</span>
-  <span class="org-doc">"Run `</span><span class="org-doc"><span class="org-constant">async-shell-command</span></span><span class="org-doc">' in the current project's root directory."</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">declare</span> <span class="org-rainbow-delimiters-depth-3">(</span>interactive-only async-shell-command<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">let</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>default-directory <span class="org-rainbow-delimiters-depth-5">(</span>projectile-project-root<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
-    <span class="org-rainbow-delimiters-depth-3">(</span>call-interactively #'async-shell-command<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-I quickly found that the completion offered by Emacs for <code>shell-command</code> and
-<code>async-shell-command</code> is far from as sophisticated as what I'm used to from Z
-shell. After a bit of searching I found <a href="https://github.com/szermatt/emacs-bash-completion">emacs-bash-completion</a>. Bash isn't my
-shell of choice, partly because I've found the completion to not be as good as
-in Z shell, but it's an improvement over what stock Emacs offers. The
-instructions in the repo was good, but had to be adjusted slightly:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> <span class="org-constant">bash-completion</span>
-  <span class="org-builtin">:straight</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-builtin">:host</span> github
-             <span class="org-builtin">:repo</span> <span class="org-string">"szermatt/emacs-bash-completion"</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-builtin">:config</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>add-hook 'shell-dynamic-complete-functions 'bash-completion-dynamic-complete<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-I just wish I'll find a package offering completions reaching Z shell levels.
-</p>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> </div>
-]]></description>
-  <category><![CDATA[emacs]]></category>
-  <link>https://magnus.therning.org/2023-11-19-making-emacs-without-terminal-emulator-a-little-more-usable.html</link>
-  <guid>https://magnus.therning.org/2023-11-19-making-emacs-without-terminal-emulator-a-little-more-usable.html</guid>
-  <pubDate>Sun, 19 Nov 2023 08:50:00 +0100</pubDate>
 </item>
 </channel>
 </rss>
