@@ -4,7 +4,80 @@
 <title><![CDATA[Magnus web site - emacs]]></title>
 <description><![CDATA[Magnus web site - emacs]]></description>
 <link>https://magnus.therning.org//tag-emacs.html</link>
-<lastBuildDate>Sun, 11 Aug 2024 09:01:38 +0200</lastBuildDate>
+<lastBuildDate>Sun, 01 Sep 2024 18:17:44 +0200</lastBuildDate>
+<item>
+  <title><![CDATA[Improving how I handle secrets in my work notes]]></title>
+  <description><![CDATA[
+<p>
+At work I use org-mode to keep notes about useful ways to query our systems,
+mostly that involves using the built-in SQL support to access DBs and <a href="https://github.com/ag91/ob-http">ob-http</a> to
+send HTTP requests. In both cases I often need to provide credentials for the
+systems. I'm embarrassed to admit it, but for a long time I've taken the easy
+path and kept all credentials in clear text. Every time I've used one of those
+code blocks I've thought I really ought to find a better way of handling these
+secrets one of these days. Yesterday was that day.
+</p>
+
+<p>
+I ended up with two functions that uses <a href="https://www.gnu.org/software/emacs/manual/html_mono/auth.html">auth-source</a> and its <code>~/.authinfo.gpg</code>
+file.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">mes/auth-get-pwd</span> <span class="org-rainbow-delimiters-depth-2">(</span>host<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-doc">"Get the password for a host (authinfo.gpg)"</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">-&gt;</span> <span class="org-rainbow-delimiters-depth-3">(</span>auth-source-search <span class="org-builtin">:host</span> host<span class="org-rainbow-delimiters-depth-3">)</span>
+      car
+      <span class="org-rainbow-delimiters-depth-3">(</span>plist-get <span class="org-builtin">:secret</span><span class="org-rainbow-delimiters-depth-3">)</span>
+      funcall<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">mes/auth-get-key</span> <span class="org-rainbow-delimiters-depth-2">(</span>host key<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-doc">"Get a key's value for a host (authinfo.gpg)</span>
+
+<span class="org-doc">Not usable for getting the password (:secret), use '</span><span class="org-doc"><span class="org-constant">mes/auth-get-pwd</span></span><span class="org-doc">'</span>
+<span class="org-doc">for that."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">-&gt;</span> <span class="org-rainbow-delimiters-depth-3">(</span>auth-source-search <span class="org-builtin">:host</span> host<span class="org-rainbow-delimiters-depth-3">)</span>
+      car
+      <span class="org-rainbow-delimiters-depth-3">(</span>plist-get key<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+It turns out that the library can handle more keys than the documentation
+suggests so for DB entries I'm using a <code>machine</code> (<code>:host</code>) that's a bit shorter
+and easier to remember than the full AWS hostname. Then I keep the DB host and
+name in <code>dbhost</code> (<code>:dbhost</code>) and <code>dbname</code> (<code>:dbname</code>) respectively. That makes
+an entry look like this:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-authinfo"><span class="org-variable-name">machine</span> <span class="org-builtin">db.svc</span> <span class="org-comment-delimiter">login</span> <span class="org-keyword">user</span> <span class="org-comment-delimiter">port</span> <span class="org-type">port</span> <span class="org-comment-delimiter">password</span> <span class="org-doc">pwd</span> <span class="org-constant">dbname</span> dbname <span class="org-constant">dbhost</span> dbhost
+</pre>
+</div>
+
+<p>
+If I use it in a property drawer it looks like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-org"><span class="org-org-drawer">:PROPERTIES:</span>
+<span class="org-org-special-keyword">:header-args:sql:</span> <span class="org-org-property-value">:engine postgresql</span>
+<span class="org-org-special-keyword">:header-args:sql+:</span> <span class="org-org-property-value">:dbhost (mes/auth-get-key "db.svc" :dbhost)</span>
+<span class="org-org-special-keyword">:header-args:sql+:</span> <span class="org-org-property-value">:dbport (string-to-number (mes/auth-get-key "db.svc" :port))</span>
+<span class="org-org-special-keyword">:header-args:sql+:</span> <span class="org-org-property-value">:dbuser (mes/auth-get-key "db.svc" :user)</span>
+<span class="org-org-special-keyword">:header-args:sql+:</span> <span class="org-org-property-value">:dbpassword (mes/auth-get-pwd "db.svc")</span>
+<span class="org-org-special-keyword">:header-args:sql+:</span> <span class="org-org-property-value">:database (mes/auth-get-key "db.svc" :dbname)</span>
+<span class="org-org-drawer">:END:</span>
+</pre>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> </div>
+]]></description>
+  <category><![CDATA[emacs]]></category>
+  <category><![CDATA[org-mode]]></category>
+  <link>https://magnus.therning.org/2024-09-01-improving-how-i-handle-secrets-in-my-work-notes.html</link>
+  <guid>https://magnus.therning.org/2024-09-01-improving-how-i-handle-secrets-in-my-work-notes.html</guid>
+  <pubDate>Sun, 01 Sep 2024 15:03:00 +0200</pubDate>
+</item>
 <item>
   <title><![CDATA[Removing symlink question]]></title>
   <description><![CDATA[
@@ -746,70 +819,6 @@ properly.
   <link>https://magnus.therning.org/2023-09-24-defining-a-formatter-for-cabal-files.html</link>
   <guid>https://magnus.therning.org/2023-09-24-defining-a-formatter-for-cabal-files.html</guid>
   <pubDate>Sun, 24 Sep 2023 10:20:00 +0200</pubDate>
-</item>
-<item>
-  <title><![CDATA[Setting up emacs-openai/chatgpt]]></title>
-  <description><![CDATA[
-<p>
-Yesterday I decided to try to make more use of the ChatGPT account I have. What
-prompted it mostly was that I recalled that my employer has a paid subscription
-and that if we use it enough they'll get us access to ChatGPT4.
-</p>
-
-<p>
-After a bit of research<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup> I decided to start with <a href="https://github.com/emacs-openai/chatgpt">emacs-open/chatgpg</a>. However,
-as I found the instructions slightly lacking I'm sharing my setup.
-</p>
-
-<p>
-The instructions for <code>straight.el</code> fail to mention that one needs the <a href="https://github.com/emacs-openai/openai">openai</a>
-package too.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> <span class="org-constant">openai</span>
-  <span class="org-builtin">:straight</span> <span class="org-rainbow-delimiters-depth-2">(</span>openai <span class="org-builtin">:type</span> git <span class="org-builtin">:host</span> github <span class="org-builtin">:repo</span> <span class="org-string">"emacs-openai/openai"</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-The complete declaration for <code>use-package</code> ended up looking like this:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> <span class="org-constant">chatgpt</span>
-  <span class="org-builtin">:straight</span> <span class="org-rainbow-delimiters-depth-2">(</span>chatgpt <span class="org-builtin">:type</span> git <span class="org-builtin">:host</span> github <span class="org-builtin">:repo</span> <span class="org-string">"emacs-openai/chatgpt"</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-builtin">:requires</span> openai
-  <span class="org-builtin">:config</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">setq</span> openai-key #'openai-key-auth-source<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-Oh, and don't forget to put an entry into `~/.authinfo.gpg`. Something like this should do it
-</p>
-
-<pre class="example" id="org5080c7e">
-machine api.openai.com login &lt;anything&gt; password &lt;your key&gt;
-</pre>
-<div id="footnotes">
-<h2 class="footnotes">Footnotes: </h2>
-<div id="text-footnotes">
-
-<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
-I found <a href="https://notes.alexkehayias.com/using-chatgpt-with-emacs/">Alex Kehayias' note</a> to be a good starting point.
-</p></div></div>
-
-
-</div>
-</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-openai.html">openai</a> <a href="https://magnus.therning.org/tag-chatgpt.html">chatgpt</a> </div>
-]]></description>
-  <category><![CDATA[emacs]]></category>
-  <category><![CDATA[openai]]></category>
-  <category><![CDATA[chatgpt]]></category>
-  <link>https://magnus.therning.org/2023-09-16-setting-up-emacs-openai-chatgpt.html</link>
-  <guid>https://magnus.therning.org/2023-09-16-setting-up-emacs-openai-chatgpt.html</guid>
-  <pubDate>Sat, 16 Sep 2023 06:22:00 +0200</pubDate>
 </item>
 </channel>
 </rss>

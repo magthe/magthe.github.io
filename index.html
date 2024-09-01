@@ -12,6 +12,71 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <header class="site-header" role="banner"><h1 class="title">Magnus web site</h1><h2 class="subtitle">Random stuff</h2></header>
+<div class="post-date">01 Sep 2024</div><h1 class="post-title"><a href="https://magnus.therning.org/2024-09-01-improving-how-i-handle-secrets-in-my-work-notes.html">Improving how I handle secrets in my work notes</a></h1>
+<p>
+At work I use org-mode to keep notes about useful ways to query our systems,
+mostly that involves using the built-in SQL support to access DBs and <a href="https://github.com/ag91/ob-http">ob-http</a> to
+send HTTP requests. In both cases I often need to provide credentials for the
+systems. I'm embarrassed to admit it, but for a long time I've taken the easy
+path and kept all credentials in clear text. Every time I've used one of those
+code blocks I've thought I really ought to find a better way of handling these
+secrets one of these days. Yesterday was that day.
+</p>
+
+<p>
+I ended up with two functions that uses <a href="https://www.gnu.org/software/emacs/manual/html_mono/auth.html">auth-source</a> and its <code>~/.authinfo.gpg</code>
+file.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">mes/auth-get-pwd</span> <span class="org-rainbow-delimiters-depth-2">(</span>host<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-doc">"Get the password for a host (authinfo.gpg)"</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">-&gt;</span> <span class="org-rainbow-delimiters-depth-3">(</span>auth-source-search <span class="org-builtin">:host</span> host<span class="org-rainbow-delimiters-depth-3">)</span>
+      car
+      <span class="org-rainbow-delimiters-depth-3">(</span>plist-get <span class="org-builtin">:secret</span><span class="org-rainbow-delimiters-depth-3">)</span>
+      funcall<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">mes/auth-get-key</span> <span class="org-rainbow-delimiters-depth-2">(</span>host key<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-doc">"Get a key's value for a host (authinfo.gpg)</span>
+
+<span class="org-doc">Not usable for getting the password (:secret), use '</span><span class="org-doc"><span class="org-constant">mes/auth-get-pwd</span></span><span class="org-doc">'</span>
+<span class="org-doc">for that."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">-&gt;</span> <span class="org-rainbow-delimiters-depth-3">(</span>auth-source-search <span class="org-builtin">:host</span> host<span class="org-rainbow-delimiters-depth-3">)</span>
+      car
+      <span class="org-rainbow-delimiters-depth-3">(</span>plist-get key<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+It turns out that the library can handle more keys than the documentation
+suggests so for DB entries I'm using a <code>machine</code> (<code>:host</code>) that's a bit shorter
+and easier to remember than the full AWS hostname. Then I keep the DB host and
+name in <code>dbhost</code> (<code>:dbhost</code>) and <code>dbname</code> (<code>:dbname</code>) respectively. That makes
+an entry look like this:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-authinfo"><span class="org-variable-name">machine</span> <span class="org-builtin">db.svc</span> <span class="org-comment-delimiter">login</span> <span class="org-keyword">user</span> <span class="org-comment-delimiter">port</span> <span class="org-type">port</span> <span class="org-comment-delimiter">password</span> <span class="org-doc">pwd</span> <span class="org-constant">dbname</span> dbname <span class="org-constant">dbhost</span> dbhost
+</pre>
+</div>
+
+<p>
+If I use it in a property drawer it looks like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-org"><span class="org-org-drawer">:PROPERTIES:</span>
+<span class="org-org-special-keyword">:header-args:sql:</span> <span class="org-org-property-value">:engine postgresql</span>
+<span class="org-org-special-keyword">:header-args:sql+:</span> <span class="org-org-property-value">:dbhost (mes/auth-get-key "db.svc" :dbhost)</span>
+<span class="org-org-special-keyword">:header-args:sql+:</span> <span class="org-org-property-value">:dbport (string-to-number (mes/auth-get-key "db.svc" :port))</span>
+<span class="org-org-special-keyword">:header-args:sql+:</span> <span class="org-org-property-value">:dbuser (mes/auth-get-key "db.svc" :user)</span>
+<span class="org-org-special-keyword">:header-args:sql+:</span> <span class="org-org-property-value">:dbpassword (mes/auth-get-pwd "db.svc")</span>
+<span class="org-org-special-keyword">:header-args:sql+:</span> <span class="org-org-property-value">:database (mes/auth-get-key "db.svc" :dbname)</span>
+<span class="org-org-drawer">:END:</span>
+</pre>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> </div>
+
 <div class="post-date">11 Aug 2024</div><h1 class="post-title"><a href="https://magnus.therning.org/2024-08-11-removing-symlink-question.html">Removing symlink question</a></h1>
 <p>
 I'm not sure why, but all of a sudden I started getting this question every time
@@ -185,99 +250,6 @@ that's another story.
 
 </div>
 </div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> </div>
-
-<div class="post-date">19 May 2024</div><h1 class="post-title"><a href="https://magnus.therning.org/2024-05-19-nix,-cabal,-and-tests.html">Nix, cabal, and tests</a></h1>
-<p>
-At work I decided to attempt to change the setup of one of our projects from using
-</p>
-
-<ul class="org-ul">
-<li><a href="https://github.com/input-output-hk/haskell.nix">haskell.nix</a></li>
-<li><a href="https://docs.haskellstack.org/en/stable/">stack</a></li>
-<li><a href="https://hackage.haskell.org/package/hpack">hpack</a></li>
-</ul>
-
-<p>
-to the triplet I tend to prefer
-</p>
-
-<ul class="org-ul">
-<li><code>developPackage</code> from <a href="https://github.com/NixOS/nixpkgs/">nixpkgs</a></li>
-<li><a href="https://www.haskell.org/cabal/index.html">cabal</a> (the tool)</li>
-<li><a href="https://cabal.readthedocs.io/en/stable/">cabal</a> (the spec)</li>
-</ul>
-
-<p>
-During this I ran into two small issues relating to tests.
-</p>
-<div id="outline-container-org442482b" class="outline-2">
-<h2 id="org442482b"><code>hspec-discover</code> both is, and isn't, available in the shell</h2>
-<div class="outline-text-2" id="text-org442482b">
-<p>
-I found mentions of this mentioned in an open <a href="https://github.com/haskell/cabal/issues/8434">cabal ticket</a> and someone even made
-a <a href="https://github.com/kenranunderscore/hspec-discover-repro">git repo</a> to explore it. I posted <a href="https://discourse.nixos.org/t/hspec-discover-not-available-in-shell/45563">a question</a> on the Nix discorse.
-</p>
-
-<p>
-Basically, when running <code>cabal test</code> in a dev shell, started with <code>nix develop</code>,
-the tool <code>hspec-discover</code> wasn't found. At the same time the packages was
-installed
-</p>
-
-<div class="org-src-container">
-<pre class="src src-shell"><span class="org-rainbow-delimiters-depth-1">(</span>ins<span class="org-rainbow-delimiters-depth-1">)</span>$ ghc-pkg list | rg hspec
-    hspec-2.9.7
-    hspec-core-2.9.7
-    <span class="org-rainbow-delimiters-depth-1">(</span>hspec-discover-2.9.7<span class="org-rainbow-delimiters-depth-1">)</span>
-    hspec-expectations-0.8.2
-</pre>
-</div>
-
-<p>
-and it was on the <code>$PATH</code>
-</p>
-
-<div class="org-src-container">
-<pre class="src src-shell"><span class="org-rainbow-delimiters-depth-1">(</span>ins<span class="org-rainbow-delimiters-depth-1">)</span>$ whereis hspec-discover
-hspec-discover: /nix/store/vaq3gvak92whk5l169r06xrbkx6c0lqp-ghc-9.2.8-with-packages/bin/hspec-discover /nix/store/986bnyyhmi042kg4v6d918hli32lh9dw-hspec-discover-2.9.7/bin/hspec-discover
-</pre>
-</div>
-
-<p>
-The solution, as the user <a href="https://discourse.nixos.org/u/julm">julm</a> pointed out, is to simply do what <code>cabal</code> tells
-you and run <code>cabal update</code> first.
-</p>
-</div>
-</div>
-<div id="outline-container-org20e6fe8" class="outline-2">
-<h2 id="org20e6fe8">Dealing with tests that won't run during build</h2>
-<div class="outline-text-2" id="text-org20e6fe8">
-<p>
-The project's tests were set up in such a way that standalone tests and
-integration tests are mixed into the same test executable. As the integration
-tests need the just built service to be running they can't be run during <code>nix
-build</code>. However, the only way of preventing that, without making code changes,
-is to pass an argument to the test executable, <code>--skip=&lt;prefix&gt;</code>, and I believe
-that's not possible when using <code>developPackage</code>. It's not a big deal though,
-it's perfectly fine to run the tests separately using <code>nix develop . command
-...</code>. However, it turns out <code>developPackage</code> and the underlying machinery is
-smart enough to skip installing package required for testing when it's turned
-off (using <code>dontCheck</code>). This is the case also when <code>returnShellEnv</code> is <code>true</code>.
-</p>
-
-<p>
-Luckily it's not too difficult to deal with it. I already had a variable
-<code>isDevShell</code> so I could simply reuse it and add the following expression to
-<code>modifier</code>
-</p>
-
-<div class="org-src-container">
-<pre class="src src-nix"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-nix-keyword">if</span> isDevShell <span class="org-nix-keyword">then</span> hl.doCheck <span class="org-nix-keyword">else</span> hl.dontCheck<span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-</div>
-</div>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-cabal.html">cabal</a> <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-nix.html">nix</a> </div>
 <div id="archive">
 <a href="https://magnus.therning.org/archive.html">Other posts</a>
 </div>

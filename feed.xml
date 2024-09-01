@@ -4,7 +4,80 @@
 <title><![CDATA[Magnus web site]]></title>
 <description><![CDATA[Magnus web site]]></description>
 <link>https://magnus.therning.org/</link>
-<lastBuildDate>Sun, 11 Aug 2024 09:01:33 +0200</lastBuildDate>
+<lastBuildDate>Sun, 01 Sep 2024 18:17:40 +0200</lastBuildDate>
+<item>
+  <title><![CDATA[Improving how I handle secrets in my work notes]]></title>
+  <description><![CDATA[
+<p>
+At work I use org-mode to keep notes about useful ways to query our systems,
+mostly that involves using the built-in SQL support to access DBs and <a href="https://github.com/ag91/ob-http">ob-http</a> to
+send HTTP requests. In both cases I often need to provide credentials for the
+systems. I'm embarrassed to admit it, but for a long time I've taken the easy
+path and kept all credentials in clear text. Every time I've used one of those
+code blocks I've thought I really ought to find a better way of handling these
+secrets one of these days. Yesterday was that day.
+</p>
+
+<p>
+I ended up with two functions that uses <a href="https://www.gnu.org/software/emacs/manual/html_mono/auth.html">auth-source</a> and its <code>~/.authinfo.gpg</code>
+file.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">mes/auth-get-pwd</span> <span class="org-rainbow-delimiters-depth-2">(</span>host<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-doc">"Get the password for a host (authinfo.gpg)"</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">-&gt;</span> <span class="org-rainbow-delimiters-depth-3">(</span>auth-source-search <span class="org-builtin">:host</span> host<span class="org-rainbow-delimiters-depth-3">)</span>
+      car
+      <span class="org-rainbow-delimiters-depth-3">(</span>plist-get <span class="org-builtin">:secret</span><span class="org-rainbow-delimiters-depth-3">)</span>
+      funcall<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">mes/auth-get-key</span> <span class="org-rainbow-delimiters-depth-2">(</span>host key<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-doc">"Get a key's value for a host (authinfo.gpg)</span>
+
+<span class="org-doc">Not usable for getting the password (:secret), use '</span><span class="org-doc"><span class="org-constant">mes/auth-get-pwd</span></span><span class="org-doc">'</span>
+<span class="org-doc">for that."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">-&gt;</span> <span class="org-rainbow-delimiters-depth-3">(</span>auth-source-search <span class="org-builtin">:host</span> host<span class="org-rainbow-delimiters-depth-3">)</span>
+      car
+      <span class="org-rainbow-delimiters-depth-3">(</span>plist-get key<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+It turns out that the library can handle more keys than the documentation
+suggests so for DB entries I'm using a <code>machine</code> (<code>:host</code>) that's a bit shorter
+and easier to remember than the full AWS hostname. Then I keep the DB host and
+name in <code>dbhost</code> (<code>:dbhost</code>) and <code>dbname</code> (<code>:dbname</code>) respectively. That makes
+an entry look like this:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-authinfo"><span class="org-variable-name">machine</span> <span class="org-builtin">db.svc</span> <span class="org-comment-delimiter">login</span> <span class="org-keyword">user</span> <span class="org-comment-delimiter">port</span> <span class="org-type">port</span> <span class="org-comment-delimiter">password</span> <span class="org-doc">pwd</span> <span class="org-constant">dbname</span> dbname <span class="org-constant">dbhost</span> dbhost
+</pre>
+</div>
+
+<p>
+If I use it in a property drawer it looks like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-org"><span class="org-org-drawer">:PROPERTIES:</span>
+<span class="org-org-special-keyword">:header-args:sql:</span> <span class="org-org-property-value">:engine postgresql</span>
+<span class="org-org-special-keyword">:header-args:sql+:</span> <span class="org-org-property-value">:dbhost (mes/auth-get-key "db.svc" :dbhost)</span>
+<span class="org-org-special-keyword">:header-args:sql+:</span> <span class="org-org-property-value">:dbport (string-to-number (mes/auth-get-key "db.svc" :port))</span>
+<span class="org-org-special-keyword">:header-args:sql+:</span> <span class="org-org-property-value">:dbuser (mes/auth-get-key "db.svc" :user)</span>
+<span class="org-org-special-keyword">:header-args:sql+:</span> <span class="org-org-property-value">:dbpassword (mes/auth-get-pwd "db.svc")</span>
+<span class="org-org-special-keyword">:header-args:sql+:</span> <span class="org-org-property-value">:database (mes/auth-get-key "db.svc" :dbname)</span>
+<span class="org-org-drawer">:END:</span>
+</pre>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> </div>
+]]></description>
+  <category><![CDATA[emacs]]></category>
+  <category><![CDATA[org-mode]]></category>
+  <link>https://magnus.therning.org/2024-09-01-improving-how-i-handle-secrets-in-my-work-notes.html</link>
+  <guid>https://magnus.therning.org/2024-09-01-improving-how-i-handle-secrets-in-my-work-notes.html</guid>
+  <pubDate>Sun, 01 Sep 2024 15:03:00 +0200</pubDate>
+</item>
 <item>
   <title><![CDATA[Removing symlink question]]></title>
   <description><![CDATA[
@@ -634,75 +707,6 @@ services at <code>$DAYJOB</code>
   <link>https://magnus.therning.org/2024-02-03-bending-warp.html</link>
   <guid>https://magnus.therning.org/2024-02-03-bending-warp.html</guid>
   <pubDate>Sat, 03 Feb 2024 22:16:00 +0100</pubDate>
-</item>
-<item>
-  <title><![CDATA[Getting Amazonka S3 to work with localstack]]></title>
-  <description><![CDATA[
-<p>
-I'm writing this in case someone else is getting strange errors when trying to
-use <a href="https://hackage.haskell.org/package/amazonka-s3">amazonka-s3</a> with <a href="https://github.com/localstack/localstack">localstack</a>. It took me rather too long finding the answer
-and neither the errors I got from Amazonka nor from localstack were very
-helpful.
-</p>
-
-<p>
-The code I started with for setting up the connection looked like this
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell">main = <span class="org-keyword">do</span>
-  awsEnv &lt;- <span class="org-warning">AWS</span>.overrideService localEndpoint <span class="org-operator">&lt;$&gt;</span> <span class="org-warning">AWS</span>.newEnv <span class="org-warning">AWS</span>.discover
-  <span class="org-comment">-- do S3 stuff</span>
-  <span class="org-keyword">where</span>
-    localEndpoint = <span class="org-warning">AWS</span>.setEndpoint False <span class="org-string">"localhost"</span> <span class="org-number">4566</span>
-</pre>
-</div>
-
-<p>
-A few years ago, when I last wrote some Haskell to talk to S3 this was
-enough<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>, but now I got some strange errors.
-</p>
-
-<p>
-It turns out there are different ways to address buckets and the default, which
-is used by AWS itself, isn't used by localstack. The documentation of
-<a href="https://hackage.haskell.org/package/amazonka-2.0/docs/Amazonka.html#t:S3AddressingStyle"><code>S3AddressingStyle</code></a> has more details.
-</p>
-
-<p>
-So to get it to work I had to change the S3 addressing style as well and ended
-up with this code instead
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell">main = <span class="org-keyword">do</span>
-  awsEnv &lt;- <span class="org-warning">AWS</span>.overrideService <span class="org-rainbow-delimiters-depth-1">(</span>s3AddrStyle <span class="org-operator">.</span> localEndpoint<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">&lt;$&gt;</span> <span class="org-warning">AWS</span>.newEnv <span class="org-warning">AWS</span>.discover
-  <span class="org-comment">-- do S3 stuff</span>
-  <span class="org-keyword">where</span>
-    localEndpoint = <span class="org-warning">AWS</span>.setEndpoint False <span class="org-string">"localhost"</span> <span class="org-number">4566</span>
-    s3AddrStyle svc = svc <span class="org-rainbow-delimiters-depth-1">{</span><span class="org-warning">AWS</span>.s3AddressingStyle = AWS.S3AddressingStylePath<span class="org-rainbow-delimiters-depth-1">}</span>
-</pre>
-</div>
-<div id="footnotes">
-<h2 class="footnotes">Footnotes: </h2>
-<div id="text-footnotes">
-
-<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
-That was before version 2.0 of Amazonka, so it did look slightly different,
-but overriding the endpoint was all that was needed.
-</p></div></div>
-
-
-</div>
-</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-amazonka.html">amazonka</a> <a href="https://magnus.therning.org/tag-aws.html">aws</a> <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-localstack.html">localstack</a> </div>
-]]></description>
-  <category><![CDATA[amazonka]]></category>
-  <category><![CDATA[aws]]></category>
-  <category><![CDATA[haskell]]></category>
-  <category><![CDATA[localstack]]></category>
-  <link>https://magnus.therning.org/2023-12-09-getting-amazonka-s3-to-work-with-localstack.html</link>
-  <guid>https://magnus.therning.org/2023-12-09-getting-amazonka-s3-to-work-with-localstack.html</guid>
-  <pubDate>Sat, 09 Dec 2023 17:23:00 +0100</pubDate>
 </item>
 </channel>
 </rss>
