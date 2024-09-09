@@ -12,6 +12,41 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <header class="site-header" role="banner"><h1 class="title">Magnus web site</h1><h2 class="subtitle">Random stuff</h2></header>
+<div class="post-date">09 Sep 2024</div><h1 class="post-title"><a href="https://magnus.therning.org/2024-09-09-followup-on-secrets-in-my-work-notes.html">Followup on secrets in my work notes</a></h1>
+<p>
+I got the following question on my post on how I handle secrets in my work notes:
+</p>
+
+<blockquote>
+<p>
+Sounds like a nice approach for other secrets but how about <code>:dbconnection</code> for
+Orgmode and <code>sql-connection-alist</code>?
+</p>
+</blockquote>
+
+<p>
+I have to admit I'd never come across the variable <code>sql-connection-alist</code>
+before. I've never really used <code>sql-mode</code> for more than editing SQL queries and
+setting up code blocks for running them was one of the first things I used
+<a href="https://github.com/joaotavora/yasnippet">yasnippet</a> for.
+</p>
+
+<p>
+I did a little reading and unfortunately it looks like <code>sql-connection-alist</code>
+can only handle string values. However, there is a variable
+<code>sql-password-search-wallet-function</code>, with the default value of
+<code>sql-auth-source-search-wallet</code>, so using <a href="https://www.gnu.org/software/emacs/manual/html_mono/auth.html">auth-source</a> is already supported for
+the password itself.
+</p>
+
+<p>
+There seems to be a lack of good tutorials for setting up <code>sql-mode</code> in a secure
+way &#x2013; all articles I found place the password in clear-text in the config &#x2013;
+filling that gap would be a nice way to contribute to the Emacs community. I'm
+sure it'd prompt me to re-evaluate incorporating <code>sql-mode</code> in my workflow.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> </div>
+
 <div class="post-date">01 Sep 2024</div><h1 class="post-title"><a href="https://magnus.therning.org/2024-09-01-improving-how-i-handle-secrets-in-my-work-notes.html">Improving how I handle secrets in my work notes</a></h1>
 <p>
 At work I use org-mode to keep notes about useful ways to query our systems,
@@ -213,43 +248,6 @@ of relative references containing <code>${pkgroot}/../../../../</code> which is 
 supect causes the broken links.
 </p>
 <div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-nix.html">nix</a> </div>
-
-<div class="post-date">13 Jul 2024</div><h1 class="post-title"><a href="https://magnus.therning.org/2024-07-13-a-function-for-jumping-to-a-project-todo-file.html">A function for jumping to a project TODO file</a></h1>
-<p>
-I've had <a href="https://melpa.org/#/org-projectile">org-projectile</a> in my config since the beginning, and while it's worked
-nicely for me in my main config it gave me some grief when I played around with
-<a href="https://github.com/progfolio/elpaca">elpaca</a> the other week.<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>
-</p>
-
-<p>
-I tried to get the install instructions to work, but kept on getting errors when
-loading my config. Given that I only use it for one thing, to open the file
-<code>TODO.org</code> in the current project's root, I decided to just write a function for
-doing that instead.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">mep-projectile-open-todo</span> <span class="org-rainbow-delimiters-depth-2">()</span>
-  <span class="org-doc">"Open the project's todo file."</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">if-let*</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>proj-dir <span class="org-rainbow-delimiters-depth-5">(</span>projectile-project-root<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
-            <span class="org-rainbow-delimiters-depth-4">(</span>proj-todo-file <span class="org-rainbow-delimiters-depth-5">(</span>f-join proj-dir <span class="org-string">"</span><span class="org-string"><span class="org-hl-todo"><span class="custom">TODO</span></span></span><span class="org-string">.org"</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
-      <span class="org-rainbow-delimiters-depth-3">(</span>org-open-file proj-todo-file<span class="org-rainbow-delimiters-depth-3">)</span>
-    <span class="org-rainbow-delimiters-depth-3">(</span>message <span class="org-string">"Not in a project"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-<div id="footnotes">
-<h2 class="footnotes">Footnotes: </h2>
-<div id="text-footnotes">
-
-<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
-This was the second time I gave up on using it instead of <a href="https://github.com/radian-software/straight.el">straight</a>, but
-that's another story.
-</p></div></div>
-
-
-</div>
-</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> </div>
 <div id="archive">
 <a href="https://magnus.therning.org/archive.html">Other posts</a>
 </div>

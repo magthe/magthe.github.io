@@ -12,6 +12,41 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <h1 class="title">Posts tagged "emacs":</h1>
+<div class="post-date">09 Sep 2024</div><h1 class="post-title"><a href="https://magnus.therning.org/2024-09-09-followup-on-secrets-in-my-work-notes.html">Followup on secrets in my work notes</a></h1>
+<p>
+I got the following question on my post on how I handle secrets in my work notes:
+</p>
+
+<blockquote>
+<p>
+Sounds like a nice approach for other secrets but how about <code>:dbconnection</code> for
+Orgmode and <code>sql-connection-alist</code>?
+</p>
+</blockquote>
+
+<p>
+I have to admit I'd never come across the variable <code>sql-connection-alist</code>
+before. I've never really used <code>sql-mode</code> for more than editing SQL queries and
+setting up code blocks for running them was one of the first things I used
+<a href="https://github.com/joaotavora/yasnippet">yasnippet</a> for.
+</p>
+
+<p>
+I did a little reading and unfortunately it looks like <code>sql-connection-alist</code>
+can only handle string values. However, there is a variable
+<code>sql-password-search-wallet-function</code>, with the default value of
+<code>sql-auth-source-search-wallet</code>, so using <a href="https://www.gnu.org/software/emacs/manual/html_mono/auth.html">auth-source</a> is already supported for
+the password itself.
+</p>
+
+<p>
+There seems to be a lack of good tutorials for setting up <code>sql-mode</code> in a secure
+way &#x2013; all articles I found place the password in clear-text in the config &#x2013;
+filling that gap would be a nice way to contribute to the Emacs community. I'm
+sure it'd prompt me to re-evaluate incorporating <code>sql-mode</code> in my workflow.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> </div>
+
 <div class="post-date">01 Sep 2024</div><h1 class="post-title"><a href="https://magnus.therning.org/2024-09-01-improving-how-i-handle-secrets-in-my-work-notes.html">Improving how I handle secrets in my work notes</a></h1>
 <p>
 At work I use org-mode to keep notes about useful ways to query our systems,

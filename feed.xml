@@ -4,7 +4,50 @@
 <title><![CDATA[Magnus web site]]></title>
 <description><![CDATA[Magnus web site]]></description>
 <link>https://magnus.therning.org/</link>
-<lastBuildDate>Sun, 01 Sep 2024 18:17:40 +0200</lastBuildDate>
+<lastBuildDate>Mon, 09 Sep 2024 23:39:50 +0200</lastBuildDate>
+<item>
+  <title><![CDATA[Followup on secrets in my work notes]]></title>
+  <description><![CDATA[
+<p>
+I got the following question on my post on how I handle secrets in my work notes:
+</p>
+
+<blockquote>
+<p>
+Sounds like a nice approach for other secrets but how about <code>:dbconnection</code> for
+Orgmode and <code>sql-connection-alist</code>?
+</p>
+</blockquote>
+
+<p>
+I have to admit I'd never come across the variable <code>sql-connection-alist</code>
+before. I've never really used <code>sql-mode</code> for more than editing SQL queries and
+setting up code blocks for running them was one of the first things I used
+<a href="https://github.com/joaotavora/yasnippet">yasnippet</a> for.
+</p>
+
+<p>
+I did a little reading and unfortunately it looks like <code>sql-connection-alist</code>
+can only handle string values. However, there is a variable
+<code>sql-password-search-wallet-function</code>, with the default value of
+<code>sql-auth-source-search-wallet</code>, so using <a href="https://www.gnu.org/software/emacs/manual/html_mono/auth.html">auth-source</a> is already supported for
+the password itself.
+</p>
+
+<p>
+There seems to be a lack of good tutorials for setting up <code>sql-mode</code> in a secure
+way &#x2013; all articles I found place the password in clear-text in the config &#x2013;
+filling that gap would be a nice way to contribute to the Emacs community. I'm
+sure it'd prompt me to re-evaluate incorporating <code>sql-mode</code> in my workflow.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> </div>
+]]></description>
+  <category><![CDATA[emacs]]></category>
+  <category><![CDATA[org-mode]]></category>
+  <link>https://magnus.therning.org/2024-09-09-followup-on-secrets-in-my-work-notes.html</link>
+  <guid>https://magnus.therning.org/2024-09-09-followup-on-secrets-in-my-work-notes.html</guid>
+  <pubDate>Mon, 09 Sep 2024 22:36:00 +0200</pubDate>
+</item>
 <item>
   <title><![CDATA[Improving how I handle secrets in my work notes]]></title>
   <description><![CDATA[
@@ -556,157 +599,6 @@ would make sense.
   <link>https://magnus.therning.org/2024-03-14-hackage-revisions-in-nix.html</link>
   <guid>https://magnus.therning.org/2024-03-14-hackage-revisions-in-nix.html</guid>
   <pubDate>Thu, 14 Mar 2024 22:31:00 +0100</pubDate>
-</item>
-<item>
-  <title><![CDATA[Bending Warp]]></title>
-  <description><![CDATA[
-<p>
-In the past I've noticed that <a href="https://hackage.haskell.org/package/warp">Warp</a> both writes to <code>stdout</code> at times and produces
-some default HTTP responses, but I've never bothered taking the time to look up
-what possibilities it offers to changes this behaviour. I've also always thought
-that I ought to find out how Warp handles signals.
-</p>
-
-<p>
-If you wonder <i>why</i> this would be interesting to know there are three main points:
-</p>
-
-<ol class="org-ol">
-<li>The environments where the services run are set up to handle structured
-logging. In our case it should be <a href="https://jsonlines.org/">JSONL</a> written to <code>stdout</code>, i.e. one JSON
-object per line.</li>
-<li>We've decided that the error responses we produce in our code should be JSON,
-so it's irritating to have to document some special cases where this isn't
-true just because Warp has a few default error responses.</li>
-<li>Signal handling is, IMHO, a very important part of writing a service that
-runs well in <a href="https://kubernetes.io/">k8s</a> as it uses signals to handle the lifetime of pods.</li>
-</ol>
-<div id="outline-container-org8d5aed4" class="outline-2">
-<h2 id="org8d5aed4">Looking through the Warp API</h2>
-<div class="outline-text-2" id="text-org8d5aed4">
-<p>
-Browsing through the <a href="https://hackage.haskell.org/package/warp-3.4.0/docs/Network-Wai-Handler-Warp.html">API documentation for Warp</a> it wasn't too difficult to find
-the interesting pieces, and that Warp follows a fairly common pattern in Haskell
-libraries
-</p>
-
-<ul class="org-ul">
-<li>There's a function called <code>runSettings</code> that takes an argument of type <code>Settings</code>.</li>
-<li>The default settings are available in a variable called <code>defaultSettings</code> (not very surprising).</li>
-<li><p>
-There are several functions for modifying the settings and they all have the same shape
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell">setX :: <span class="org-type">X</span> <span class="org-operator">-&gt;</span> <span class="org-type">Settings</span> <span class="org-operator">-&gt;</span> Settings.
-</pre>
-</div>
-
-<p>
-which makes it easy to chain them together.
-</p></li>
-<li>The functions I'm interested in now are
-
-<dl class="org-dl">
-<dt><code>setOnException</code></dt><dd>the default handler, <code>defaultOnException</code>, prints the
-exception to <code>stdout</code> using its <code>Show</code> instance</dd>
-<dt><code>setOnExceptionResponse</code></dt><dd>the default responses are produced by
-<code>defaultOnExceptionResponse</code> and contain plain text response bodies</dd>
-<dt><code>setInstallShutdownHandler</code></dt><dd>the default behaviour is to wait for all
-ongoing requests and then shut done</dd>
-<dt><code>setGracefulShutdownTimeout</code></dt><dd>sets the number of seconds to wait for
-ongoing requests to finnish, the default is to wait indefinitely</dd>
-</dl></li>
-</ul>
-</div>
-</div>
-<div id="outline-container-org7ef5684" class="outline-2">
-<h2 id="org7ef5684">Some experimenting</h2>
-<div class="outline-text-2" id="text-org7ef5684">
-<p>
-In order to experiment with these I put together a small API using <a href="https://hackage.haskell.org/package/servant">servant</a>,
-<code>app</code>, with a <code>main</code> function using <code>runSettings</code> and stringing together a bunch
-of modifications to <code>defaultSettings</code>.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell">main :: <span class="org-type">IO</span> <span class="org-rainbow-delimiters-depth-1">()</span>
-main = <span class="org-warning">Log</span>.withLogger <span class="org-operator">$</span> \logger -&gt; <span class="org-keyword">do</span>
-    <span class="org-warning">Log</span>.infoIO logger <span class="org-string">"starting the server"</span>
-    runSettings <span class="org-rainbow-delimiters-depth-1">(</span>mySettings logger defaultSettings<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-rainbow-delimiters-depth-1">(</span>app logger<span class="org-rainbow-delimiters-depth-1">)</span>
-    <span class="org-warning">Log</span>.infoIO logger <span class="org-string">"stopped the server"</span>
-  <span class="org-keyword">where</span>
-    mySettings logger = myShutdownHandler logger <span class="org-operator">.</span> myOnException logger <span class="org-operator">.</span> myOnExceptionResponse
-</pre>
-</div>
-
-<p>
-<code>myOnException</code> logs JSON objects (using the logging I've written about before,
-<a href="https://magnus.therning.org/2023-01-29-a-take-on-log-messages.html">here</a> and <a href="https://magnus.therning.org/2023-02-04-a-take-on-logging.html">here</a>). It decides wether to log or not using
-<code>defaultShouldDisplayException</code>, something I copied from <code>defaultOnException</code>.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell">myOnException :: Log.<span class="org-type">Logger</span> <span class="org-operator">-&gt;</span> <span class="org-type">Settings</span> <span class="org-operator">-&gt;</span> <span class="org-type">Settings</span>
-myOnException logger = setOnException handler
-  <span class="org-keyword">where</span>
-    handler mr e = when <span class="org-rainbow-delimiters-depth-1">(</span>defaultShouldDisplayException e<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">$</span> <span class="org-keyword">case</span> mr <span class="org-keyword">of</span>
-        Nothing -&gt; <span class="org-warning">Log</span>.warnIO logger <span class="org-operator">$</span> lm <span class="org-operator">$</span> <span class="org-string">"exception: "</span> <span class="org-operator">&lt;&gt;</span> <span class="org-warning">T</span>.pack <span class="org-rainbow-delimiters-depth-1">(</span>show e<span class="org-rainbow-delimiters-depth-1">)</span>
-        Just _ -&gt; <span class="org-keyword">do</span>
-            <span class="org-warning">Log</span>.warnIO logger <span class="org-operator">$</span> lm <span class="org-operator">$</span> <span class="org-string">"exception with request: "</span> <span class="org-operator">&lt;&gt;</span> <span class="org-warning">T</span>.pack <span class="org-rainbow-delimiters-depth-1">(</span>show e<span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-<code>myExceptionResponse</code> responds with JSON objects. It's simpler than
-<code>defaultOnExceptionResponse</code>, but it suffices for my learning.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell">myOnExceptionResponse :: <span class="org-type">Settings</span> <span class="org-operator">-&gt;</span> <span class="org-type">Settings</span>
-myOnExceptionResponse = setOnExceptionResponse handler
-  <span class="org-keyword">where</span>
-    handler _ =
-        responseLBS
-            <span class="org-warning">H</span>.internalServerError500
-            <span class="org-rainbow-delimiters-depth-1">[</span><span class="org-rainbow-delimiters-depth-2">(</span><span class="org-warning">H</span>.hContentType, <span class="org-string">"application/json; charset=utf-8"</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">]</span>
-            <span class="org-rainbow-delimiters-depth-1">(</span>encode <span class="org-operator">$</span> object <span class="org-rainbow-delimiters-depth-2">[</span><span class="org-string">"error"</span> <span class="org-operator">.=</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-string">"Something went wrong"</span> :: <span class="org-type">String</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">]</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-Finally, <code>myShutdownHandler</code> installs a handler for <code>SIGTERM</code> that logs and then
-shuts down.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell">myShutdownHandler :: Log.<span class="org-type">Logger</span> <span class="org-operator">-&gt;</span> <span class="org-type">Settings</span> <span class="org-operator">-&gt;</span> <span class="org-type">Settings</span>
-myShutdownHandler logger = setInstallShutdownHandler shutdownHandler
-  <span class="org-keyword">where</span>
-    shutdownAction = <span class="org-warning">Log</span>.infoIO logger <span class="org-string">"closing down"</span>
-    shutdownHandler closeSocket = void <span class="org-operator">$</span> installHandler sigTERM <span class="org-rainbow-delimiters-depth-1">(</span>Catch <span class="org-operator">$</span> shutdownAction <span class="org-operator">&gt;&gt;</span> closeSocket<span class="org-rainbow-delimiters-depth-1">)</span> Nothing
-</pre>
-</div>
-</div>
-</div>
-<div id="outline-container-org9e6b344" class="outline-2">
-<h2 id="org9e6b344">Conclusion</h2>
-<div class="outline-text-2" id="text-org9e6b344">
-<p>
-I really ought to have looked into this sooner, especially as it turns out that
-Warp offers all the knobs and dials I could wish for to control these aspects of
-its behaviour. The next step is to take this and put it to use in one of the
-services at <code>$DAYJOB</code>
-</p>
-</div>
-</div>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-warp.html">warp</a> </div>
-]]></description>
-  <category><![CDATA[haskell]]></category>
-  <category><![CDATA[warp]]></category>
-  <link>https://magnus.therning.org/2024-02-03-bending-warp.html</link>
-  <guid>https://magnus.therning.org/2024-02-03-bending-warp.html</guid>
-  <pubDate>Sat, 03 Feb 2024 22:16:00 +0100</pubDate>
 </item>
 </channel>
 </rss>
