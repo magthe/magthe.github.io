@@ -12,6 +12,34 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <h1 class="title">Posts tagged "servant":</h1>
+<div class="post-date">01 Dec 2024</div><h1 class="post-title"><a href="https://magnus.therning.org/2024-12-01-servant-and-a-weirdness-in-keycloak.html">Servant and a weirdness in Keycloak</a></h1>
+<p>
+When writing a small tool to interface with Keycloak I found an endpoint that
+require the content type to be <code>application/json</code> while the body should be plain
+text. (The details are in the <a href="https://github.com/keycloak/keycloak/issues/34401">issue</a>.) Since <a href="https://hackage.haskell.org/package/servant">servant</a> assumes that the content
+type and the content match (I know, I'd always thought that was a safe
+assumption to make too) it doesn't work with <code>ReqBody '[JSON] Text</code>. Instead I
+had to create a custom type that's a combination of <a href="https://hackage.haskell.org/package/servant-0.20.2/docs/Servant-API-ContentTypes.html#t:JSON"><code>JSON</code></a> and <a href="https://hackage.haskell.org/package/servant-0.20.2/docs/Servant-API-ContentTypes.html#t:PlainText"><code>PlainText</code></a>,
+something that turned out to required surprisingly little code:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-keyword">data</span> KeycloakJSON <span class="org-keyword">deriving</span> <span class="org-rainbow-delimiters-depth-1">(</span>Typeable<span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-keyword">instance</span> Accept <span class="org-type">KeycloakJSON</span> <span class="org-keyword">where</span>
+    <span class="org-function-name">contentType</span> _ = <span class="org-string">"application"</span> <span class="org-operator">//</span> <span class="org-string">"json"</span>
+
+<span class="org-keyword">instance</span> MimeRender <span class="org-type">KeycloakJSON</span> <span class="org-type">Text</span> <span class="org-keyword">where</span>
+    <span class="org-function-name">mimeRender</span> _ = fromStrict <span class="org-operator">.</span> encodeUtf8
+</pre>
+</div>
+
+<p>
+The bug has already been fixed in Keycloak, but I'm sure there are other APIs
+with similar weirdness so maybe this will be useful to someone else.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-servant.html">servant</a> </div>
+
 <div class="post-date">03 Jul 2021</div><h1 class="post-title"><a href="https://magnus.therning.org/2021-07-03-the-timeout-manager-exception.html">The timeout manager exception</a></h1>
 <p>
 The other day I bumped the dependencies of a Haskell project at work and noticed

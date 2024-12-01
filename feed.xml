@@ -4,7 +4,43 @@
 <title><![CDATA[Magnus web site]]></title>
 <description><![CDATA[Magnus web site]]></description>
 <link>https://magnus.therning.org/</link>
-<lastBuildDate>Mon, 09 Sep 2024 23:39:50 +0200</lastBuildDate>
+<lastBuildDate>Sun, 01 Dec 2024 23:38:45 +0100</lastBuildDate>
+<item>
+  <title><![CDATA[Servant and a weirdness in Keycloak]]></title>
+  <description><![CDATA[
+<p>
+When writing a small tool to interface with Keycloak I found an endpoint that
+require the content type to be <code>application/json</code> while the body should be plain
+text. (The details are in the <a href="https://github.com/keycloak/keycloak/issues/34401">issue</a>.) Since <a href="https://hackage.haskell.org/package/servant">servant</a> assumes that the content
+type and the content match (I know, I'd always thought that was a safe
+assumption to make too) it doesn't work with <code>ReqBody '[JSON] Text</code>. Instead I
+had to create a custom type that's a combination of <a href="https://hackage.haskell.org/package/servant-0.20.2/docs/Servant-API-ContentTypes.html#t:JSON"><code>JSON</code></a> and <a href="https://hackage.haskell.org/package/servant-0.20.2/docs/Servant-API-ContentTypes.html#t:PlainText"><code>PlainText</code></a>,
+something that turned out to required surprisingly little code:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-keyword">data</span> KeycloakJSON <span class="org-keyword">deriving</span> <span class="org-rainbow-delimiters-depth-1">(</span>Typeable<span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-keyword">instance</span> Accept <span class="org-type">KeycloakJSON</span> <span class="org-keyword">where</span>
+    <span class="org-function-name">contentType</span> _ = <span class="org-string">"application"</span> <span class="org-operator">//</span> <span class="org-string">"json"</span>
+
+<span class="org-keyword">instance</span> MimeRender <span class="org-type">KeycloakJSON</span> <span class="org-type">Text</span> <span class="org-keyword">where</span>
+    <span class="org-function-name">mimeRender</span> _ = fromStrict <span class="org-operator">.</span> encodeUtf8
+</pre>
+</div>
+
+<p>
+The bug has already been fixed in Keycloak, but I'm sure there are other APIs
+with similar weirdness so maybe this will be useful to someone else.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-servant.html">servant</a> </div>
+]]></description>
+  <category><![CDATA[haskell]]></category>
+  <category><![CDATA[servant]]></category>
+  <link>https://magnus.therning.org/2024-12-01-servant-and-a-weirdness-in-keycloak.html</link>
+  <guid>https://magnus.therning.org/2024-12-01-servant-and-a-weirdness-in-keycloak.html</guid>
+  <pubDate>Sun, 01 Dec 2024 23:00:00 +0100</pubDate>
+</item>
 <item>
   <title><![CDATA[Followup on secrets in my work notes]]></title>
   <description><![CDATA[
@@ -517,88 +553,6 @@ That's a lot better than using <code>overrideCabal</code>!
   <link>https://magnus.therning.org/2024-04-20-update-to-hackage-revisions-in-nix.html</link>
   <guid>https://magnus.therning.org/2024-04-20-update-to-hackage-revisions-in-nix.html</guid>
   <pubDate>Sat, 20 Apr 2024 11:04:00 +0200</pubDate>
-</item>
-<item>
-  <title><![CDATA[Hackage revisions in Nix]]></title>
-  <description><![CDATA[
-<p>
-Today I got very confused when using <code>callHackageDirect</code> to add the <code>openapi3</code>
-package gave me errors like this
-</p>
-
-<pre class="example" id="org957ddd8">
-&gt; Using Parsec parser
-&gt; Configuring openapi3-3.2.3...
-&gt; CallStack (from HasCallStack):
-&gt;   withMetadata, called at libraries/Cabal/Cabal/src/Distribution/Simple/Ut...
-&gt; Error: Setup: Encountered missing or private dependencies:
-&gt; base &gt;=4.11.1.0 &amp;&amp; &lt;4.18,
-&gt; base-compat-batteries &gt;=0.11.1 &amp;&amp; &lt;0.13,
-&gt; template-haskell &gt;=2.13.0.0 &amp;&amp; &lt;2.20
-</pre>
-
-<p>
-When looking at its <a href="https://hackage.haskell.org/package/openapi3-3.2.3">entry on Hackage</a> those weren't the version ranges for the
-dependencies. Also, running <code>ghc-pkg list</code> told me that I already had all
-required packages at versions matching what Hackage said. So, what's actually
-happening here?
-</p>
-
-<p>
-It took me a while before remembering about <a href="https://hackage.haskell.org/package/openapi3-3.2.3/revisions/">revisions</a> but once I did it was
-clear that <code>callHackageDirect</code> always fetches the initial revision of a package
-(i.e. it fetches the original tar-ball uploaded by the author). After realising
-this it makes perfect sense &#x2013; it's the only revision that's guaranteed to be
-there and won't change. However, it would be very useful to be able to pick a
-revision that actually builds.
-</p>
-
-<p>
-I'm not the first one to find this, of course. It's been noted and written about
-on the <a href="https://discourse.nixos.org/t/watch-out-hackage-revisions/14588">discource</a> several years ago. What I didn't find though was a way to
-influence what revision that's picked. It took a bit of rummaging around in the
-<code>nixpkgs</code> code but finally I found two variables that's used in the Hackage
-derivation to control this
-</p>
-
-<ul class="org-ul">
-<li><code>revision</code> - a string with the number of the revision, and</li>
-<li><code>editedCabalFile</code> - the SHA256 of the modified Cabal file.</li>
-</ul>
-
-<p>
-Setting them is done using the <code>overrideCabal</code> function. This is a piece of my
-setup for a modified set of Haskell packages:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-nix"><span class="org-nix-attribute">hl</span> = nixpkgs.haskell.lib.compose;
-
-<span class="org-nix-attribute">hsPkgs</span> = nixpkgs.haskell.packages.ghc963.override <span class="org-rainbow-delimiters-depth-1">{</span>
-  <span class="org-nix-attribute">overrides</span> = newpkgs: oldpkgs: <span class="org-rainbow-delimiters-depth-2">{</span>
-    <span class="org-nix-attribute">openapi3</span> = hl.overrideCabal <span class="org-rainbow-delimiters-depth-3">(</span>drv: <span class="org-rainbow-delimiters-depth-4">{</span>
-      <span class="org-nix-attribute">revision</span> = <span class="org-string">"4"</span>;
-      <span class="org-nix-attribute">editedCabalFile</span> =
-        <span class="org-string">"sha256-a5C58iYrL7eAEHCzinICiJpbNTGwiOFFAYik28et7fI="</span>;
-    <span class="org-rainbow-delimiters-depth-4">}</span><span class="org-rainbow-delimiters-depth-3">)</span> <span class="org-rainbow-delimiters-depth-3">(</span>oldpkgs.callHackageDirect <span class="org-rainbow-delimiters-depth-4">{</span>
-      <span class="org-nix-attribute">pkg</span> = <span class="org-string">"openapi3"</span>;
-      <span class="org-nix-attribute">ver</span> = <span class="org-string">"3.2.3"</span>;
-      <span class="org-nix-attribute">sha256</span> = <span class="org-string">"sha256-0F16o3oqOB5ri6KBdPFEFHB4dv1z+Pw6E5f1rwkqwi8="</span>;
-    <span class="org-rainbow-delimiters-depth-4">}</span> <span class="org-rainbow-delimiters-depth-4">{</span> <span class="org-rainbow-delimiters-depth-4">}</span><span class="org-rainbow-delimiters-depth-3">)</span>;
-</pre>
-</div>
-
-<p>
-It's not very ergonomic, and I think an extended version of <code>callHackageDirect</code>
-would make sense.
-</p>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-nix.html">nix</a> </div>
-]]></description>
-  <category><![CDATA[haskell]]></category>
-  <category><![CDATA[nix]]></category>
-  <link>https://magnus.therning.org/2024-03-14-hackage-revisions-in-nix.html</link>
-  <guid>https://magnus.therning.org/2024-03-14-hackage-revisions-in-nix.html</guid>
-  <pubDate>Thu, 14 Mar 2024 22:31:00 +0100</pubDate>
 </item>
 </channel>
 </rss>

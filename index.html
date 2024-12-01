@@ -12,6 +12,34 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <header class="site-header" role="banner"><h1 class="title">Magnus web site</h1><h2 class="subtitle">Random stuff</h2></header>
+<div class="post-date">01 Dec 2024</div><h1 class="post-title"><a href="https://magnus.therning.org/2024-12-01-servant-and-a-weirdness-in-keycloak.html">Servant and a weirdness in Keycloak</a></h1>
+<p>
+When writing a small tool to interface with Keycloak I found an endpoint that
+require the content type to be <code>application/json</code> while the body should be plain
+text. (The details are in the <a href="https://github.com/keycloak/keycloak/issues/34401">issue</a>.) Since <a href="https://hackage.haskell.org/package/servant">servant</a> assumes that the content
+type and the content match (I know, I'd always thought that was a safe
+assumption to make too) it doesn't work with <code>ReqBody '[JSON] Text</code>. Instead I
+had to create a custom type that's a combination of <a href="https://hackage.haskell.org/package/servant-0.20.2/docs/Servant-API-ContentTypes.html#t:JSON"><code>JSON</code></a> and <a href="https://hackage.haskell.org/package/servant-0.20.2/docs/Servant-API-ContentTypes.html#t:PlainText"><code>PlainText</code></a>,
+something that turned out to required surprisingly little code:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-keyword">data</span> KeycloakJSON <span class="org-keyword">deriving</span> <span class="org-rainbow-delimiters-depth-1">(</span>Typeable<span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-keyword">instance</span> Accept <span class="org-type">KeycloakJSON</span> <span class="org-keyword">where</span>
+    <span class="org-function-name">contentType</span> _ = <span class="org-string">"application"</span> <span class="org-operator">//</span> <span class="org-string">"json"</span>
+
+<span class="org-keyword">instance</span> MimeRender <span class="org-type">KeycloakJSON</span> <span class="org-type">Text</span> <span class="org-keyword">where</span>
+    <span class="org-function-name">mimeRender</span> _ = fromStrict <span class="org-operator">.</span> encodeUtf8
+</pre>
+</div>
+
+<p>
+The bug has already been fixed in Keycloak, but I'm sure there are other APIs
+with similar weirdness so maybe this will be useful to someone else.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-servant.html">servant</a> </div>
+
 <div class="post-date">09 Sep 2024</div><h1 class="post-title"><a href="https://magnus.therning.org/2024-09-09-followup-on-secrets-in-my-work-notes.html">Followup on secrets in my work notes</a></h1>
 <p>
 I got the following question on my post on how I handle secrets in my work notes:
@@ -210,44 +238,6 @@ emacs with Wayland support that's less than a day old, all downloaded from the
 community cache. Perfect!
 </p>
 <div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-nix.html">nix</a> </div>
-
-<div class="post-date">13 Jul 2024</div><h1 class="post-title"><a href="https://magnus.therning.org/2024-07-13-hoogle-setup-for-local-development.html">Hoogle setup for local development</a></h1>
-<p>
-About a week ago I asked a <a href="https://discourse.nixos.org/t/haskell-shell-setup-with-working-hoogle-developpackage/48507/2">question on the Nix Discourse</a> about how to create a
-setup for Hoogle that
-</p>
-
-<ul class="org-ul">
-<li>includes the locally installed packages, and</li>
-<li>the package I'm working on, and ideally also</li>
-<li>have all local links, i.e. no links to <a href="https://hackage.haskell.org/">Hackage</a>.</li>
-</ul>
-
-<p>
-I didn't get an answer there, but some people on the Nix Haskell channel on
-Matrix helped a bit, but it seems this particular use case requires a bit of
-manual work. The following commands get me an almost fully working setup:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-shell">cabal haddock --haddock-internal --haddock-quickjump --haddock-hoogle --haddock-html
-
-<span class="org-variable-name">hoogle_dir</span>=$<span class="org-rainbow-delimiters-depth-1">(</span>dirname $<span class="org-rainbow-delimiters-depth-2">(</span>dirname $<span class="org-rainbow-delimiters-depth-3">(</span>readlink -f $<span class="org-rainbow-delimiters-depth-4">(</span><span class="org-builtin">which</span> hoogle<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-hoogle generate --database=local.hoo <span class="org-sh-escaped-newline">\</span>
-       $<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">for</span> d<span class="org-keyword"> in</span> $<span class="org-rainbow-delimiters-depth-2">(</span>fd -L .txt $<span class="org-rainbow-delimiters-depth-3">{</span><span class="org-variable-name">hoogle_dir</span><span class="org-rainbow-delimiters-depth-3">}</span><span class="org-rainbow-delimiters-depth-2">)</span>; <span class="org-keyword">do</span> printf <span class="org-string">"--local=%s "</span> $<span class="org-rainbow-delimiters-depth-2">(</span>dirname $<span class="org-variable-name">d</span><span class="org-rainbow-delimiters-depth-2">)</span>; <span class="org-keyword">done</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-sh-escaped-newline">\</span>
-       --local=./dist-newstyle/build/x86_64-linux/ghc-9.8.2/pkg-0.0.1/doc/html/pkg
-
-hoogle server --local --database=local.foo
-</pre>
-</div>
-
-<p>
-What's missing is working links between the documentation of locally installed
-packages. It looks like the links in the generated documention in Nix have a lot
-of relative references containing <code>${pkgroot}/../../../../</code> which is what I
-supect causes the broken links.
-</p>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-nix.html">nix</a> </div>
 <div id="archive">
 <a href="https://magnus.therning.org/archive.html">Other posts</a>
 </div>
