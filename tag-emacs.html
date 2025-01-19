@@ -12,6 +12,87 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <h1 class="title">Posts tagged "emacs":</h1>
+<div class="post-date">19 Jan 2025</div><h1 class="post-title"><a href="https://magnus.therning.org/2025-01-19-reviewing-github-prs-in-emacs.html">Reviewing GitHub PRs in Emacs</a></h1>
+<p>
+My Emacs config's todo-list has long had an item about finding some way to
+review GitHub PRs without having to leave Emacs and when the <a href="https://github.com/magit/forge/issues/75">forge issue</a> that I
+subscribe to came alive again I thought it was time to see if I can improve my
+config.
+</p>
+
+<p>
+I found three packages for doing reviews
+</p>
+
+<ul class="org-ul">
+<li><a href="https://github.com/wandersoncferreira/code-review">code-review</a></li>
+<li><a href="https://github.com/charignon/github-review">github-review</a></li>
+<li><a href="https://github.com/blahgeek/emacs-pr-review">emacs-pr-review</a></li>
+</ul>
+
+<p>
+I've tried the first one before but at the time it didn't seem to work at all.
+Apparently that's improved somewhat, though there's a PR with a change that's
+necessary to make it work.<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup> The first two don't support comments on multiple
+lines of a PR, there are issues/discussions for both
+</p>
+
+<ul class="org-ul">
+<li><code>code-review</code>: <a href="https://github.com/wandersoncferreira/code-review/discussions/259">Code suggestion on multiple lines</a></li>
+<li><code>github-review</code>: <a href="https://github.com/charignon/github-review/issues/46">Multi-line code comments</a></li>
+</ul>
+
+<p>
+The last one, <code>emacs-pr-review</code> does support commenting on multiple lines, but
+it lacks a nice way of opening a review from <code>magit</code>. What I can do is
+</p>
+
+<ol class="org-ol">
+<li>position the cursor on a PR in the <code>magit</code> status view, then</li>
+<li>copy the the PR's URL using <code>forge-copy-url-at-point-as-kill</code>, and</li>
+<li>open the PR by calling <code>pr-review</code> and pasting the PR's URL.</li>
+</ol>
+
+<p>
+Which I did for a few days until I got tired of it and wrote a function to cut
+out they copy/paste part.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">mes/pr-review-via-forge</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">if-let*</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>target <span class="org-rainbow-delimiters-depth-5">(</span>forge--browse-target<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+            <span class="org-rainbow-delimiters-depth-4">(</span>url <span class="org-rainbow-delimiters-depth-5">(</span><span class="org-keyword">if</span> <span class="org-rainbow-delimiters-depth-6">(</span>stringp target<span class="org-rainbow-delimiters-depth-6">)</span> target <span class="org-rainbow-delimiters-depth-6">(</span>forge-get-url target<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+            <span class="org-rainbow-delimiters-depth-4">(</span>rev-url <span class="org-rainbow-delimiters-depth-5">(</span>pr-review-url-parse url<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+      <span class="org-rainbow-delimiters-depth-3">(</span>pr-review url<span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-warning">user-error</span> <span class="org-string">"No PR to review at point"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+I've bound it to a key in <code>magit-mode-map</code> to make it easier.
+</p>
+
+<p>
+I have to say I'm not completely happy with <code>emacs-pr-review</code>, so if either of
+the other two sort out commenting on multiple lines I'll check them out again.
+</p>
+
+<p>
+My full setup for <code>pr-review</code> is <a href="https://gitlab.com/magus/mes/-/blob/8615353ec007bd66209ee1ae3badddd26d3a3dc9/lisp/mes-dev-basics.el#L76">here</a>.
+</p>
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+
+<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+The details can be found among the comments of the <a href="https://github.com/magit/forge/issues/75">forge issue</a>.
+</p></div></div>
+
+
+</div>
+</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> </div>
+
 <div class="post-date">09 Sep 2024</div><h1 class="post-title"><a href="https://magnus.therning.org/2024-09-09-followup-on-secrets-in-my-work-notes.html">Followup on secrets in my work notes</a></h1>
 <p>
 I got the following question on my post on how I handle secrets in my work notes:
