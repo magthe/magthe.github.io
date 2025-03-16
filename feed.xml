@@ -4,7 +4,81 @@
 <title><![CDATA[Magnus web site]]></title>
 <description><![CDATA[Magnus web site]]></description>
 <link>https://magnus.therning.org/</link>
-<lastBuildDate>Sun, 19 Jan 2025 12:10:39 +0100</lastBuildDate>
+<lastBuildDate>Sun, 16 Mar 2025 10:31:25 +0100</lastBuildDate>
+<item>
+  <title><![CDATA[Using lens-aeson to implement FromJSON]]></title>
+  <description><![CDATA[
+<p>
+At work I sometimes need to deal with large and deep JSON objects where I'm only
+interested in a few of the values. If all the interesting values are on the top
+level, then <a href="https://hackage.haskell.org/package/aeson">aeson</a> have functions that make it easy to implement <code>FromJSON</code>'s
+<code>parseJSON</code> (<a href="https://hackage.haskell.org/package/aeson-2.2.3.0/docs/Data-Aeson.html#g:26">Constructors and accessors</a>), but if the values are spread out then
+the functions in aeson come up a bit short. That's when I reach for <a href="https://hackage.haskell.org/package/lens-aeson">lens-aeson</a>,
+as lenses make it very easy to work with large structures. However, I've found
+that using its lenses to implement <code>parseJSON</code> become a lot easier with a few
+helper functions.
+</p>
+
+<p>
+Many of the lenses produces results wrapped in <code>Maybe</code>, so the first function is
+one that transforms a <code>Maybe a</code> to a <code>Parser a</code>. Here I make use of <code>Parser</code>
+implementing <code>MonadFail</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-keyword">infixl</span> <span class="org-number">8</span> <span class="org-operator">&lt;!&gt;</span>
+<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-operator">&lt;!&gt;</span><span class="org-rainbow-delimiters-depth-1">)</span> :: <span class="org-rainbow-delimiters-depth-1">(</span>MonadFail <span class="org-type">m</span><span class="org-rainbow-delimiters-depth-1">)</span> =&gt; <span class="org-type">Maybe a</span> <span class="org-operator">-&gt;</span> <span class="org-type">String</span> <span class="org-operator">-&gt;</span> <span class="org-type">m a</span>
+<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-operator">&lt;!&gt;</span><span class="org-rainbow-delimiters-depth-1">)</span> mv err = maybe <span class="org-rainbow-delimiters-depth-1">(</span>fail err<span class="org-rainbow-delimiters-depth-1">)</span> pure mv
+</pre>
+</div>
+
+<p>
+In some code I wrote this week I used it to extract the user name out of a JWT
+produced by Keycloak:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-keyword">instance</span> FromJSON <span class="org-type">OurClaimsSet</span> <span class="org-keyword">where</span>
+    parseJSON = ... $ \o <span class="org-operator">-&gt;</span> <span class="org-keyword">do</span>
+        cs &lt;- parseJSON o
+        n &lt;- o <span class="org-operator">^?</span> key <span class="org-string">"preferred_username"</span> <span class="org-operator">.</span> _String <span class="org-operator">&lt;!&gt;</span> <span class="org-string">"preferre username missing"</span>
+        ...
+        pure <span class="org-operator">$</span> OurClaimsSet cs n <span class="org-operator">...</span>
+</pre>
+</div>
+
+<p>
+Also, all the lenses start with a <code>Value</code> and that makes the <code>withX</code> functions
+in aeson to not be a perfect fit. So I define variations of the <code>withX</code>
+functions, e.g.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-function-name">withObjectV</span> :: <span class="org-type">String</span> <span class="org-operator">-&gt;</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-type">Value</span> <span class="org-operator">-&gt;</span> <span class="org-type">Parser a</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">-&gt;</span> <span class="org-type">Value</span> <span class="org-operator">-&gt;</span> <span class="org-type">Parser a</span>
+<span class="org-function-name">withObjectV</span> s f = withObject s <span class="org-rainbow-delimiters-depth-1">(</span>f <span class="org-operator">.</span> Object<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+That makes the full <code>FromJSON</code> instance for <code>OurClaimsSet</code> looks like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-keyword">instance</span> FromJSON <span class="org-type">OurClaimsSet</span> <span class="org-keyword">where</span>
+    <span class="org-function-name">parseJSON</span> = withObjectV <span class="org-string">"OurClaimsSet"</span> <span class="org-operator">$</span> \o <span class="org-operator">-&gt;</span> <span class="org-keyword">do</span>
+        cs &lt;- parseJSON o
+        n &lt;- o <span class="org-operator">^?</span> key <span class="org-string">"preferred_username"</span> <span class="org-operator">.</span> _String <span class="org-operator">&lt;!&gt;</span> <span class="org-string">"name"</span>
+        <span class="org-keyword">let</span> <span class="org-function-name">rs</span> = o <span class="org-operator">^..</span> key <span class="org-string">"resource_access"</span> <span class="org-operator">.</span> members <span class="org-operator">.</span> key <span class="org-string">"roles"</span> <span class="org-operator">.</span> _Array <span class="org-operator">.</span> traverse <span class="org-operator">.</span> _String
+        pure <span class="org-operator">$</span> OurClaimsSet cs n rs
+</pre>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> </div>
+]]></description>
+  <category><![CDATA[haskell]]></category>
+  <link>https://magnus.therning.org/2025-03-16-using-lens-aeson-to-implement-fromjson.html</link>
+  <guid>https://magnus.therning.org/2025-03-16-using-lens-aeson-to-implement-fromjson.html</guid>
+  <pubDate>Sun, 16 Mar 2025 09:26:00 +0100</pubDate>
+</item>
 <item>
   <title><![CDATA[Reviewing GitHub PRs in Emacs]]></title>
   <description><![CDATA[
@@ -551,58 +625,6 @@ Luckily it's not too difficult to deal with it. I already had a variable
   <link>https://magnus.therning.org/2024-05-19-nix,-cabal,-and-tests.html</link>
   <guid>https://magnus.therning.org/2024-05-19-nix,-cabal,-and-tests.html</guid>
   <pubDate>Sun, 19 May 2024 17:21:00 +0200</pubDate>
-</item>
-<item>
-  <title><![CDATA[Orderless completion in lsp-mode]]></title>
-  <description><![CDATA[
-<p>
-If you, like me, are using <a href="https://github.com/minad/corfu"><i>corfu</i></a> to get in-buffer completion and extend it
-with <a href="https://github.com/oantolin/orderless"><i>orderless</i></a> to make it even more powerful, you might have noticed that you
-lose the orderless style as soon as you enter <a href="https://emacs-lsp.github.io/lsp-mode/"><i>lsp-mode</i></a>.
-</p>
-
-<p>
-My setup of <i>orderless</i> looks like this
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> <span class="org-constant">orderless</span>
-  <span class="org-builtin">:custom</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>orderless-matching-styles '<span class="org-rainbow-delimiters-depth-3">(</span>orderless-literal orderless-regexp orderless-flex<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>completion-styles '<span class="org-rainbow-delimiters-depth-3">(</span>orderless partial-completion basic<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>completion-category-defaults nil<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>completion-category-overrides '<span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>file <span class="org-rainbow-delimiters-depth-5">(</span>styles partial-completion<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-which basically turns on orderless style for all things except when completing
-filenames.
-</p>
-
-<p>
-It turns out that <i>lsp-mode</i> messes around with <code>completion-category-defaults</code>
-and when entering <code>lsp-mode</code> <a href="https://github.com/emacs-lsp/lsp-mode/blob/b27d9db1e75d40ea5e1362386e9a6e66fa3b1bae/lsp-completion.el#L790">this code here</a> adds a setting for <code>'lsp-capf</code>.
-Unfortunately there seems to be no way to prevent <i>lsp-mode</i> from doing this so
-the only option is to fix it up afterwards. Luckily there's a hook for running
-code after the completion for <i>lsp-mode</i> is set up, <code>lsp-completion-mode-hook</code>.
-Adding the following function to it makes sure I now get to enjoy <i>orderless</i>
-also when writing code.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">lambda</span> <span class="org-rainbow-delimiters-depth-2">()</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">setq-local</span> completion-category-defaults
-              <span class="org-rainbow-delimiters-depth-3">(</span>assoc-delete-all 'lsp-capf completion-category-defaults<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-lsp.html">lsp</a> </div>
-]]></description>
-  <category><![CDATA[emacs]]></category>
-  <category><![CDATA[lsp]]></category>
-  <link>https://magnus.therning.org/2024-05-04-orderless-completion-in-lsp-mode.html</link>
-  <guid>https://magnus.therning.org/2024-05-04-orderless-completion-in-lsp-mode.html</guid>
-  <pubDate>Sat, 04 May 2024 06:49:00 +0200</pubDate>
 </item>
 </channel>
 </rss>

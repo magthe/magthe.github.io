@@ -12,6 +12,73 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <header class="site-header" role="banner"><h1 class="title">Magnus web site</h1><h2 class="subtitle">Random stuff</h2></header>
+<div class="post-date">16 Mar 2025</div><h1 class="post-title"><a href="https://magnus.therning.org/2025-03-16-using-lens-aeson-to-implement-fromjson.html">Using lens-aeson to implement FromJSON</a></h1>
+<p>
+At work I sometimes need to deal with large and deep JSON objects where I'm only
+interested in a few of the values. If all the interesting values are on the top
+level, then <a href="https://hackage.haskell.org/package/aeson">aeson</a> have functions that make it easy to implement <code>FromJSON</code>'s
+<code>parseJSON</code> (<a href="https://hackage.haskell.org/package/aeson-2.2.3.0/docs/Data-Aeson.html#g:26">Constructors and accessors</a>), but if the values are spread out then
+the functions in aeson come up a bit short. That's when I reach for <a href="https://hackage.haskell.org/package/lens-aeson">lens-aeson</a>,
+as lenses make it very easy to work with large structures. However, I've found
+that using its lenses to implement <code>parseJSON</code> become a lot easier with a few
+helper functions.
+</p>
+
+<p>
+Many of the lenses produces results wrapped in <code>Maybe</code>, so the first function is
+one that transforms a <code>Maybe a</code> to a <code>Parser a</code>. Here I make use of <code>Parser</code>
+implementing <code>MonadFail</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-keyword">infixl</span> <span class="org-number">8</span> <span class="org-operator">&lt;!&gt;</span>
+<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-operator">&lt;!&gt;</span><span class="org-rainbow-delimiters-depth-1">)</span> :: <span class="org-rainbow-delimiters-depth-1">(</span>MonadFail <span class="org-type">m</span><span class="org-rainbow-delimiters-depth-1">)</span> =&gt; <span class="org-type">Maybe a</span> <span class="org-operator">-&gt;</span> <span class="org-type">String</span> <span class="org-operator">-&gt;</span> <span class="org-type">m a</span>
+<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-operator">&lt;!&gt;</span><span class="org-rainbow-delimiters-depth-1">)</span> mv err = maybe <span class="org-rainbow-delimiters-depth-1">(</span>fail err<span class="org-rainbow-delimiters-depth-1">)</span> pure mv
+</pre>
+</div>
+
+<p>
+In some code I wrote this week I used it to extract the user name out of a JWT
+produced by Keycloak:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-keyword">instance</span> FromJSON <span class="org-type">OurClaimsSet</span> <span class="org-keyword">where</span>
+    parseJSON = ... $ \o <span class="org-operator">-&gt;</span> <span class="org-keyword">do</span>
+        cs &lt;- parseJSON o
+        n &lt;- o <span class="org-operator">^?</span> key <span class="org-string">"preferred_username"</span> <span class="org-operator">.</span> _String <span class="org-operator">&lt;!&gt;</span> <span class="org-string">"preferre username missing"</span>
+        ...
+        pure <span class="org-operator">$</span> OurClaimsSet cs n <span class="org-operator">...</span>
+</pre>
+</div>
+
+<p>
+Also, all the lenses start with a <code>Value</code> and that makes the <code>withX</code> functions
+in aeson to not be a perfect fit. So I define variations of the <code>withX</code>
+functions, e.g.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-function-name">withObjectV</span> :: <span class="org-type">String</span> <span class="org-operator">-&gt;</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-type">Value</span> <span class="org-operator">-&gt;</span> <span class="org-type">Parser a</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">-&gt;</span> <span class="org-type">Value</span> <span class="org-operator">-&gt;</span> <span class="org-type">Parser a</span>
+<span class="org-function-name">withObjectV</span> s f = withObject s <span class="org-rainbow-delimiters-depth-1">(</span>f <span class="org-operator">.</span> Object<span class="org-rainbow-delimiters-depth-1">)</span>
+</pre>
+</div>
+
+<p>
+That makes the full <code>FromJSON</code> instance for <code>OurClaimsSet</code> looks like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><span class="org-keyword">instance</span> FromJSON <span class="org-type">OurClaimsSet</span> <span class="org-keyword">where</span>
+    <span class="org-function-name">parseJSON</span> = withObjectV <span class="org-string">"OurClaimsSet"</span> <span class="org-operator">$</span> \o <span class="org-operator">-&gt;</span> <span class="org-keyword">do</span>
+        cs &lt;- parseJSON o
+        n &lt;- o <span class="org-operator">^?</span> key <span class="org-string">"preferred_username"</span> <span class="org-operator">.</span> _String <span class="org-operator">&lt;!&gt;</span> <span class="org-string">"name"</span>
+        <span class="org-keyword">let</span> <span class="org-function-name">rs</span> = o <span class="org-operator">^..</span> key <span class="org-string">"resource_access"</span> <span class="org-operator">.</span> members <span class="org-operator">.</span> key <span class="org-string">"roles"</span> <span class="org-operator">.</span> _Array <span class="org-operator">.</span> traverse <span class="org-operator">.</span> _String
+        pure <span class="org-operator">$</span> OurClaimsSet cs n rs
+</pre>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> </div>
+
 <div class="post-date">19 Jan 2025</div><h1 class="post-title"><a href="https://magnus.therning.org/2025-01-19-reviewing-github-prs-in-emacs.html">Reviewing GitHub PRs in Emacs</a></h1>
 <p>
 My Emacs config's todo-list has long had an item about finding some way to
@@ -220,36 +287,6 @@ If I use it in a property drawer it looks like this
 </pre>
 </div>
 <div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> </div>
-
-<div class="post-date">11 Aug 2024</div><h1 class="post-title"><a href="https://magnus.therning.org/2024-08-11-removing-symlink-question.html">Removing symlink question</a></h1>
-<p>
-I'm not sure why, but all of a sudden I started getting this question every time
-emacs starts
-</p>
-
-<blockquote>
-<p>
-Symbolic link to Git-controlled source file; follow link?
-</p>
-</blockquote>
-
-<p>
-After some searching I found out that it's <a href="https://www.gnu.org/software/emacs/manual/html_node/emacs/Version-Control.html">VC</a> asking. I'm guessing this comes
-from <a href="https://github.com/radian-software/straight.el">straight</a>'s very liberal use of symlinks. Though I'm still a little
-surprised at VC kicking in when reading the config.
-</p>
-
-<p>
-Anyway, there are two variables to consider, <code>vc-follow-symlinks</code> and
-<code>vc-handled-backends</code>. I opted to modify the latter one, and since I don't use
-VC at all I'm turning it off completely.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">setopt</span> vc-handled-backends nil<span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> </div>
 <div id="archive">
 <a href="https://magnus.therning.org/archive.html">Other posts</a>
 </div>
