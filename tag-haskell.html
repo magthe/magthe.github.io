@@ -12,6 +12,88 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <h1 class="title">Posts tagged "haskell":</h1>
+<div class="post-date">17 Jun 2025</div><h1 class="post-title"><a href="https://magnus.therning.org/2025-06-17-why-i'm-writing-a-redis-client-package.html">Why I'm writing a Redis client package</a></h1>
+<p>
+A couple of weeks ago I needed a small, hopefully temporary, service at work. It
+bridges a gap in functionality provided by a legacy system and the functionality
+desired by a new system. The legacy system is cumbersome to work with, so we
+tend to prefer building anti-corruption layers rather than changing it directly,
+and sometimes we implement it as separate services.
+</p>
+
+<p>
+This time it was good enough to run the service as a cronjob, but it did need to
+keep track of when it ran the last time. It felt silly to spin up a separate DB
+just to keep a timestamp, and using another service's DB is something I <i>really</i>
+dislike and avoid.<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup> So, I ended up using the Redis instance that's used as a
+cache by a OSS service we host.
+</p>
+
+<p>
+The last time I had a look at the options for writing a Redis client in Haskell
+I found two candidates, <a href="https://hackage.haskell.org/package/hedis">hedis</a> and <a href="https://hackage.haskell.org/package/redis-io">redis-io</a>. At the time I wrote a <a href="https://magnus.therning.org/2021-05-07-working-with-hedis.html">short note</a>
+about them. This time around I found nothing much has changed, they are still
+the only two contenders and they still suffer from the same issues
+</p>
+
+<ul class="org-ul">
+<li><i>hedis</i> has still has the same API and I still find it as awkward.</li>
+<li><i>redis-io</i> still requires a logger.</li>
+</ul>
+
+<p>
+I once again decided to use <i>hedis</i> and wrote the service for work in a couple
+of days, but this time I thought I'd see what it would take to remove the
+requirement on <a href="https://hackage.haskell.org/package/tinylog">tinylog</a> from <i>redis-io</i>. I spent a few evenings on it, though I
+spent most time on "modernising" the dev setup, using Nix to build, re-format
+using <i>fourmolu</i>, etc. I did the same for <a href="https://hackage.haskell.org/package/redis-resp">redis-resp</a>, the main dependency of
+<i>redis-io</i>. The result of that can be fount on my gitlab account:
+</p>
+
+<ul class="org-ul">
+<li><a href="https://gitlab.com/magus/redis-resp">https://gitlab.com/magus/redis-resp</a></li>
+<li><a href="https://gitlab.com/magus/redis-io">https://gitlab.com/magus/redis-io</a></li>
+</ul>
+
+<p>
+At the moment I won't take that particular experiment any further and given that
+the most recent change to <i>redis-io</i> was in 2020 (according to its <a href="https://gitlab.com/twittner/redis-io/">git repo</a>)
+I don't think there's much interest upstream either.
+</p>
+
+<p>
+Making the changes to <i>redis-io</i> and <i>redis-resp</i> made me a little curious about
+the <a href="https://redis.io/docs/latest/develop/reference/protocol-spec/">Redis protocol</a> so I started reading about it. It made me start thinking
+about implementing a client lib myself. How hard could it be?
+</p>
+
+<p>
+I'd also asked a question about Redis client libs on <a href="https://www.reddit.com/r/haskell/comments/1kk4a5v/redis_lib_for_haskell/">r/haskell</a> and a response
+led me to <a href="https://hackage.haskell.org/package/redis-schema">redis-schema</a>. It has a very good README, and its section on
+transactions with its observation that Redis transactions are a perfect match
+for <code>Applicative</code>. This pushed me even closer to start writing a client lib.
+What pushed me over the edge was the realisation that <a href="https://redis.io/docs/latest/develop/use/pipelining/">pipelining</a> also is a
+perfect match for <code>Applicative</code>.
+</p>
+
+<p>
+For the last few weeks I've spent some of my free time reading and experimenting
+and I'm enjoying it very much. We'll see where it leads, but hopefully I'll at
+least have bit more to write about it.
+</p>
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+
+<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+One definition of a microservice I find very useful is "a service that owns
+its own DB schema."
+</p></div></div>
+
+
+</div>
+</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-redis.html">redis</a> </div>
+
 <div class="post-date">16 Mar 2025</div><h1 class="post-title"><a href="https://magnus.therning.org/2025-03-16-using-lens-aeson-to-implement-fromjson.html">Using lens-aeson to implement FromJSON</a></h1>
 <p>
 At work I sometimes need to deal with large and deep JSON objects where I'm only
