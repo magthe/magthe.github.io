@@ -47,7 +47,7 @@ of days, but this time I thought I'd see what it would take to remove the
 requirement on <a href="https://hackage.haskell.org/package/tinylog">tinylog</a> from <i>redis-io</i>. I spent a few evenings on it, though I
 spent most time on "modernising" the dev setup, using Nix to build, re-format
 using <i>fourmolu</i>, etc. I did the same for <a href="https://hackage.haskell.org/package/redis-resp">redis-resp</a>, the main dependency of
-<i>redis-io</i>. The result of that can be fount on my gitlab account:
+<i>redis-io</i>. The result of that can be found on my gitlab account:
 </p>
 
 <ul class="org-ul">
@@ -128,7 +128,7 @@ produced by Keycloak:
 <pre class="src src-haskell"><span class="org-keyword">instance</span> FromJSON <span class="org-type">OurClaimsSet</span> <span class="org-keyword">where</span>
     parseJSON = ... $ \o <span class="org-operator">-&gt;</span> <span class="org-keyword">do</span>
         cs &lt;- parseJSON o
-        n &lt;- o <span class="org-operator">^?</span> key <span class="org-string">"preferred_username"</span> <span class="org-operator">.</span> _String <span class="org-operator">&lt;!&gt;</span> <span class="org-string">"preferre username missing"</span>
+        n &lt;- o <span class="org-operator">^?</span> key <span class="org-string">"preferred_username"</span> <span class="org-operator">.</span> _String <span class="org-operator">&lt;!&gt;</span> <span class="org-string">"preferred username missing"</span>
         ...
         pure <span class="org-operator">$</span> OurClaimsSet cs n <span class="org-operator">...</span>
 </pre>
@@ -147,7 +147,7 @@ functions, e.g.
 </div>
 
 <p>
-That makes the full <code>FromJSON</code> instance for <code>OurClaimsSet</code> looks like this
+That makes the full <code>FromJSON</code> instance for <code>OurClaimsSet</code> look like this
 </p>
 
 <div class="org-src-container">

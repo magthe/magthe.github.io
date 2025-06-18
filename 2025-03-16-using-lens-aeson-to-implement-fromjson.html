@@ -46,7 +46,7 @@ produced by Keycloak:
 <pre class="src src-haskell"><span class="org-keyword">instance</span> FromJSON <span class="org-type">OurClaimsSet</span> <span class="org-keyword">where</span>
     parseJSON = ... $ \o <span class="org-operator">-&gt;</span> <span class="org-keyword">do</span>
         cs &lt;- parseJSON o
-        n &lt;- o <span class="org-operator">^?</span> key <span class="org-string">"preferred_username"</span> <span class="org-operator">.</span> _String <span class="org-operator">&lt;!&gt;</span> <span class="org-string">"preferre username missing"</span>
+        n &lt;- o <span class="org-operator">^?</span> key <span class="org-string">"preferred_username"</span> <span class="org-operator">.</span> _String <span class="org-operator">&lt;!&gt;</span> <span class="org-string">"preferred username missing"</span>
         ...
         pure <span class="org-operator">$</span> OurClaimsSet cs n <span class="org-operator">...</span>
 </pre>
@@ -65,7 +65,7 @@ functions, e.g.
 </div>
 
 <p>
-That makes the full <code>FromJSON</code> instance for <code>OurClaimsSet</code> looks like this
+That makes the full <code>FromJSON</code> instance for <code>OurClaimsSet</code> look like this
 </p>
 
 <div class="org-src-container">
