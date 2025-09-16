@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="How I solved a problem with ~tab-new~ bringing the current buffer to the new tab.">
+<link rel="alternate"
+      type="application/rss+xml"
+      href="https://magnus.therning.org/feed.xml"
+      title="RSS feed for https://magnus.therning.org/">
+<title>Listing buffers by tab using consult and bufferlo</title>
+<meta name="author" content="Magnus Therning"><meta name="referrer" content="no-referrer"><link href= "static/style.css" rel="stylesheet" type="text/css" /><link href= "static/htmlize.css" rel="stylesheet" type="text/css" /><link href= "static/extra_style.css" rel="stylesheet" type="text/css" /></head>
+<body>
+<div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
+<div id="content">
+<div class="post-date">16 Sep 2025</div><h1 class="post-title"><a href="https://magnus.therning.org/2025-09-16-listing-buffers-by-tab-using-consult-and-bufferlo.html">Listing buffers by tab using consult and bufferlo</a></h1>
+<p>
+I've gotten into the habit of using tabs, via <code>tab-bar</code>, to organise my buffers
+when I have multiple projects open at once. Each project has its own tab.
+There's nothing fancy here (yet), I simply open a new tab manually before
+opening a new project.
+</p>
+
+<p>
+A while ago I added <a href="https://github.com/florommel/bufferlo">bufferlo</a> to my config to help with getting <code>consult-buffer</code>
+to organise buffers (somewhat) by tab. I copied the configuration from <a href="https://github.com/florommel/bufferlo?tab=readme-ov-file#consult">the
+bufferlo README</a> and started using it. It took me a little while to notice that
+the behaviour wasn't quite what I wanted. It seemed like one buffer "leaked"
+from another tab.
+</p>
+
+
+<figure id="org1786323">
+<img src="static/2025-09-16-buffer-leakage.png" alt="2025-09-16-buffer-leakage.png">
+
+<figcaption><span class="figure-number">Figure 1: </span>Example of buffer leakage</figcaption>
+</figure>
+
+<p>
+In the image above all files in <code>~/.emacs.d</code> should be listed under <i>Other
+Buffers</i>, but one has been brought over into the tab for the Sider project.
+</p>
+
+<p>
+After a bit of experimenting I realised that
+</p>
+
+<ol class="org-ol">
+<li>the buffer that leaks is the one I'm in when creating the new tab, and</li>
+<li>my function for creating a new tab doesn't work the way I thought.</li>
+</ol>
+
+<p>
+My function for creating a new tab looked like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">lambda</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>tab-new<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>dashboard-open<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+and it turns out that <code>tab-new</code> shows the current buffer in the new tab which in
+turn caused bufferlo to associate it to the wrong tab. From what I can see
+there's no way to tell <code>tab-new</code> to open a specific buffer in the newly created
+tab. I tried the following
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">lambda</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">with-current-buffer</span> dashboard-buffer-name
+    <span class="org-rainbow-delimiters-depth-3">(</span>tab-new<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+hoping that the dashboard would open in the new tab. It didn't, it was still the
+active buffer that popped up in the new tab.
+</p>
+
+<p>
+In the end I resorted to use <code>bufferlo-remove</code> to simply remove the current
+buffer from the new tab.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">lambda</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>tab-new<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>bufferlo-remove <span class="org-rainbow-delimiters-depth-3">(</span>current-buffer<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>dashboard-open<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+No more leakage and <code>consult-buffer</code> works like I wanted it to.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> </div>
+<div id="comments">Comment <a href=mailto:magnus+blog.comment@therning.org?subject=Comment%20on%20INSERT%20POST%20URL%20HERE>here</a>.</div></div>
+<div id="postamble" class="status"><!-- org-static-blog-page-postamble --></div>
+</body>
+</html>

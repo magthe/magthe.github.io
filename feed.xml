@@ -4,7 +4,102 @@
 <title><![CDATA[Magnus web site]]></title>
 <description><![CDATA[Magnus web site]]></description>
 <link>https://magnus.therning.org/</link>
-<lastBuildDate>Sat, 28 Jun 2025 12:46:24 +0200</lastBuildDate>
+<lastBuildDate>Tue, 16 Sep 2025 10:04:21 +0200</lastBuildDate>
+<item>
+  <title><![CDATA[Listing buffers by tab using consult and bufferlo]]></title>
+  <description><![CDATA[
+<p>
+I've gotten into the habit of using tabs, via <code>tab-bar</code>, to organise my buffers
+when I have multiple projects open at once. Each project has its own tab.
+There's nothing fancy here (yet), I simply open a new tab manually before
+opening a new project.
+</p>
+
+<p>
+A while ago I added <a href="https://github.com/florommel/bufferlo">bufferlo</a> to my config to help with getting <code>consult-buffer</code>
+to organise buffers (somewhat) by tab. I copied the configuration from <a href="https://github.com/florommel/bufferlo?tab=readme-ov-file#consult">the
+bufferlo README</a> and started using it. It took me a little while to notice that
+the behaviour wasn't quite what I wanted. It seemed like one buffer "leaked"
+from another tab.
+</p>
+
+
+<figure id="org1786323">
+<img src="static/2025-09-16-buffer-leakage.png" alt="2025-09-16-buffer-leakage.png">
+
+<figcaption><span class="figure-number">Figure 1: </span>Example of buffer leakage</figcaption>
+</figure>
+
+<p>
+In the image above all files in <code>~/.emacs.d</code> should be listed under <i>Other
+Buffers</i>, but one has been brought over into the tab for the Sider project.
+</p>
+
+<p>
+After a bit of experimenting I realised that
+</p>
+
+<ol class="org-ol">
+<li>the buffer that leaks is the one I'm in when creating the new tab, and</li>
+<li>my function for creating a new tab doesn't work the way I thought.</li>
+</ol>
+
+<p>
+My function for creating a new tab looked like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">lambda</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>tab-new<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>dashboard-open<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+and it turns out that <code>tab-new</code> shows the current buffer in the new tab which in
+turn caused bufferlo to associate it to the wrong tab. From what I can see
+there's no way to tell <code>tab-new</code> to open a specific buffer in the newly created
+tab. I tried the following
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">lambda</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">with-current-buffer</span> dashboard-buffer-name
+    <span class="org-rainbow-delimiters-depth-3">(</span>tab-new<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+hoping that the dashboard would open in the new tab. It didn't, it was still the
+active buffer that popped up in the new tab.
+</p>
+
+<p>
+In the end I resorted to use <code>bufferlo-remove</code> to simply remove the current
+buffer from the new tab.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">lambda</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>tab-new<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>bufferlo-remove <span class="org-rainbow-delimiters-depth-3">(</span>current-buffer<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>dashboard-open<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+No more leakage and <code>consult-buffer</code> works like I wanted it to.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> </div>
+]]></description>
+  <category><![CDATA[emacs]]></category>
+  <link>https://magnus.therning.org/2025-09-16-listing-buffers-by-tab-using-consult-and-bufferlo.html</link>
+  <guid>https://magnus.therning.org/2025-09-16-listing-buffers-by-tab-using-consult-and-bufferlo.html</guid>
+  <pubDate>Tue, 16 Sep 2025 08:29:00 +0200</pubDate>
+</item>
 <item>
   <title><![CDATA[Reading Redis responses]]></title>
   <description><![CDATA[
@@ -1169,83 +1264,6 @@ VC at all I'm turning it off completely.
   <link>https://magnus.therning.org/2024-08-11-removing-symlink-question.html</link>
   <guid>https://magnus.therning.org/2024-08-11-removing-symlink-question.html</guid>
   <pubDate>Sun, 11 Aug 2024 08:41:00 +0200</pubDate>
-</item>
-<item>
-  <title><![CDATA[Emacs via Nix with mu4e]]></title>
-  <description><![CDATA[
-<p>
-I've been running development versions of Emacs ever since I switched to Wayland
-and needed the PGTK code. The various <code>X-git</code> packages on <a href="https://aur.archlinux.org/">AUR</a> makes that easy,
-as long as one doesn't mind building the packages locally, and regularly.
-Building a large package like Emacs does get a bit tiring after a while though
-so I started looking at the <a href="https://github.com/nix-community/emacs-overlay">emacs overlay</a> to see if I could keep up without
-building quite that much.
-</p>
-
-<p>
-The first attempt at this failed as I couldn't get my email setup working; emacs
-simply refused to find the locally installed <code>mu4e</code> package. I felt I didn't
-have time to solve it at the time, reverted back to doing the builds myself
-again. It kept irritating me though, and today I made another attempt. This time
-I invested a bit more time in reading up on how to install emacs via Nix with
-packages. Something that paid off.
-</p>
-
-<p>
-I'm managing my packages using <a href="https://nix.dev/manual/nix/2.23/command-ref/new-cli/nix3-profile.html">nix profile</a> and a <code>flake.nix</code>. To install emacs
-with a working <code>mu4e</code> I started with adding the emacs overlay to the inputs
-</p>
-
-<div class="org-src-container">
-<pre class="src src-nix"><span class="org-nix-attribute">inputs</span> = <span class="org-rainbow-delimiters-depth-1">{</span>
-  <span class="org-nix-attribute">nixpkgs.url</span> = <span class="org-string">"github:nixos/nixpkgs?ref=nixpkgs-unstable"</span>;
-  ...
-  <span class="org-nix-attribute">community-emacs.url</span> = <span class="org-string">"github:nix-community/emacs-overlay"</span>;
-<span class="org-rainbow-delimiters-depth-1">}</span>;
-</pre>
-</div>
-
-<p>
-and in my outputs I made sure to use the overlay on <code>nixpkgs</code>
-</p>
-
-<div class="org-src-container">
-<pre class="src src-nix"><span class="org-nix-attribute">outputs</span> = inputs@<span class="org-rainbow-delimiters-depth-1">{</span> nixpkgs, community-emacs, ... <span class="org-rainbow-delimiters-depth-1">}</span>:
-  <span class="org-nix-keyword">let</span>
-    <span class="org-nix-attribute">system</span> = <span class="org-string">"x86_64-linux"</span>;
-    <span class="org-nix-attribute">pkgs</span> = <span class="org-nix-builtin">import</span> nixpkgs <span class="org-rainbow-delimiters-depth-1">{</span>
-      <span class="org-nix-keyword">inherit</span> system;
-      <span class="org-nix-attribute">overlays</span> = <span class="org-rainbow-delimiters-depth-2">[</span> community-emacs.overlays.emacs <span class="org-rainbow-delimiters-depth-2">]</span>;
-    <span class="org-rainbow-delimiters-depth-1">}</span>;
-    ...
-</pre>
-</div>
-
-<p>
-and in the list of packages passed to <code>pkgs.buildEnv</code> I added
-</p>
-
-<div class="org-src-container">
-<pre class="src src-nix">...
-<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-rainbow-delimiters-depth-2">(</span>emacsPackagesFor emacs-pgtk<span class="org-rainbow-delimiters-depth-2">)</span>.emacsWithPackages
-  <span class="org-rainbow-delimiters-depth-2">(</span>epkgs: <span class="org-rainbow-delimiters-depth-3">[</span> epkgs.mu4e <span class="org-rainbow-delimiters-depth-3">]</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-mu
-...
-</pre>
-</div>
-
-<p>
-That's all there's to it. After running <code>nix profile update 0</code> I had a build of
-emacs with Wayland support that's less than a day old, all downloaded from the
-community cache. Perfect!
-</p>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-nix.html">nix</a> </div>
-]]></description>
-  <category><![CDATA[emacs]]></category>
-  <category><![CDATA[nix]]></category>
-  <link>https://magnus.therning.org/2024-07-21-emacs-via-nix-with-mu4e.html</link>
-  <guid>https://magnus.therning.org/2024-07-21-emacs-via-nix-with-mu4e.html</guid>
-  <pubDate>Sun, 21 Jul 2024 01:04:00 +0200</pubDate>
 </item>
 </channel>
 </rss>

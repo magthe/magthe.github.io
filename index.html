@@ -12,6 +12,94 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <header class="site-header" role="banner"><h1 class="title">Magnus web site</h1><h2 class="subtitle">Random stuff</h2></header>
+<div class="post-date">16 Sep 2025</div><h1 class="post-title"><a href="https://magnus.therning.org/2025-09-16-listing-buffers-by-tab-using-consult-and-bufferlo.html">Listing buffers by tab using consult and bufferlo</a></h1>
+<p>
+I've gotten into the habit of using tabs, via <code>tab-bar</code>, to organise my buffers
+when I have multiple projects open at once. Each project has its own tab.
+There's nothing fancy here (yet), I simply open a new tab manually before
+opening a new project.
+</p>
+
+<p>
+A while ago I added <a href="https://github.com/florommel/bufferlo">bufferlo</a> to my config to help with getting <code>consult-buffer</code>
+to organise buffers (somewhat) by tab. I copied the configuration from <a href="https://github.com/florommel/bufferlo?tab=readme-ov-file#consult">the
+bufferlo README</a> and started using it. It took me a little while to notice that
+the behaviour wasn't quite what I wanted. It seemed like one buffer "leaked"
+from another tab.
+</p>
+
+
+<figure id="org1786323">
+<img src="static/2025-09-16-buffer-leakage.png" alt="2025-09-16-buffer-leakage.png">
+
+<figcaption><span class="figure-number">Figure 1: </span>Example of buffer leakage</figcaption>
+</figure>
+
+<p>
+In the image above all files in <code>~/.emacs.d</code> should be listed under <i>Other
+Buffers</i>, but one has been brought over into the tab for the Sider project.
+</p>
+
+<p>
+After a bit of experimenting I realised that
+</p>
+
+<ol class="org-ol">
+<li>the buffer that leaks is the one I'm in when creating the new tab, and</li>
+<li>my function for creating a new tab doesn't work the way I thought.</li>
+</ol>
+
+<p>
+My function for creating a new tab looked like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">lambda</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>tab-new<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>dashboard-open<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+and it turns out that <code>tab-new</code> shows the current buffer in the new tab which in
+turn caused bufferlo to associate it to the wrong tab. From what I can see
+there's no way to tell <code>tab-new</code> to open a specific buffer in the newly created
+tab. I tried the following
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">lambda</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">with-current-buffer</span> dashboard-buffer-name
+    <span class="org-rainbow-delimiters-depth-3">(</span>tab-new<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+hoping that the dashboard would open in the new tab. It didn't, it was still the
+active buffer that popped up in the new tab.
+</p>
+
+<p>
+In the end I resorted to use <code>bufferlo-remove</code> to simply remove the current
+buffer from the new tab.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">lambda</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>tab-new<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>bufferlo-remove <span class="org-rainbow-delimiters-depth-3">(</span>current-buffer<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>dashboard-open<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+No more leakage and <code>consult-buffer</code> works like I wanted it to.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> </div>
+
 <div class="post-date">28 Jun 2025</div><h1 class="post-title"><a href="https://magnus.therning.org/2025-06-28-reading-redis-responses.html">Reading Redis responses</a></h1>
 <p>
 When I began experimenting with writing a new Redis client package I decided to
@@ -868,87 +956,6 @@ That makes the full <code>FromJSON</code> instance for <code>OurClaimsSet</code>
 </pre>
 </div>
 <div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> </div>
-
-<div class="post-date">19 Jan 2025</div><h1 class="post-title"><a href="https://magnus.therning.org/2025-01-19-reviewing-github-prs-in-emacs.html">Reviewing GitHub PRs in Emacs</a></h1>
-<p>
-My Emacs config's todo-list has long had an item about finding some way to
-review GitHub PRs without having to leave Emacs and when the <a href="https://github.com/magit/forge/issues/75">forge issue</a> that I
-subscribe to came alive again I thought it was time to see if I can improve my
-config.
-</p>
-
-<p>
-I found three packages for doing reviews
-</p>
-
-<ul class="org-ul">
-<li><a href="https://github.com/wandersoncferreira/code-review">code-review</a></li>
-<li><a href="https://github.com/charignon/github-review">github-review</a></li>
-<li><a href="https://github.com/blahgeek/emacs-pr-review">emacs-pr-review</a></li>
-</ul>
-
-<p>
-I've tried the first one before but at the time it didn't seem to work at all.
-Apparently that's improved somewhat, though there's a PR with a change that's
-necessary to make it work.<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup> The first two don't support comments on multiple
-lines of a PR, there are issues/discussions for both
-</p>
-
-<ul class="org-ul">
-<li><code>code-review</code>: <a href="https://github.com/wandersoncferreira/code-review/discussions/259">Code suggestion on multiple lines</a></li>
-<li><code>github-review</code>: <a href="https://github.com/charignon/github-review/issues/46">Multi-line code comments</a></li>
-</ul>
-
-<p>
-The last one, <code>emacs-pr-review</code> does support commenting on multiple lines, but
-it lacks a nice way of opening a review from <code>magit</code>. What I can do is
-</p>
-
-<ol class="org-ol">
-<li>position the cursor on a PR in the <code>magit</code> status view, then</li>
-<li>copy the the PR's URL using <code>forge-copy-url-at-point-as-kill</code>, and</li>
-<li>open the PR by calling <code>pr-review</code> and pasting the PR's URL.</li>
-</ol>
-
-<p>
-Which I did for a few days until I got tired of it and wrote a function to cut
-out they copy/paste part.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">mes/pr-review-via-forge</span> <span class="org-rainbow-delimiters-depth-2">()</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">if-let*</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>target <span class="org-rainbow-delimiters-depth-5">(</span>forge--browse-target<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
-            <span class="org-rainbow-delimiters-depth-4">(</span>url <span class="org-rainbow-delimiters-depth-5">(</span><span class="org-keyword">if</span> <span class="org-rainbow-delimiters-depth-6">(</span>stringp target<span class="org-rainbow-delimiters-depth-6">)</span> target <span class="org-rainbow-delimiters-depth-6">(</span>forge-get-url target<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
-            <span class="org-rainbow-delimiters-depth-4">(</span>rev-url <span class="org-rainbow-delimiters-depth-5">(</span>pr-review-url-parse url<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
-      <span class="org-rainbow-delimiters-depth-3">(</span>pr-review url<span class="org-rainbow-delimiters-depth-3">)</span>
-    <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-warning">user-error</span> <span class="org-string">"No PR to review at point"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-I've bound it to a key in <code>magit-mode-map</code> to make it easier.
-</p>
-
-<p>
-I have to say I'm not completely happy with <code>emacs-pr-review</code>, so if either of
-the other two sort out commenting on multiple lines I'll check them out again.
-</p>
-
-<p>
-My full setup for <code>pr-review</code> is <a href="https://gitlab.com/magus/mes/-/blob/8615353ec007bd66209ee1ae3badddd26d3a3dc9/lisp/mes-dev-basics.el#L76">here</a>.
-</p>
-<div id="footnotes">
-<h2 class="footnotes">Footnotes: </h2>
-<div id="text-footnotes">
-
-<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
-The details can be found among the comments of the <a href="https://github.com/magit/forge/issues/75">forge issue</a>.
-</p></div></div>
-
-
-</div>
-</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> </div>
 <div id="archive">
 <a href="https://magnus.therning.org/archive.html">Other posts</a>
 </div>
