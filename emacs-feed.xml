@@ -4,7 +4,129 @@
 <title><![CDATA[Magnus web site - emacs]]></title>
 <description><![CDATA[Magnus web site - emacs]]></description>
 <link>https://magnus.therning.org//tag-emacs.html</link>
-<lastBuildDate>Tue, 16 Sep 2025 10:04:26 +0200</lastBuildDate>
+<lastBuildDate>Sat, 08 Nov 2025 11:06:41 +0100</lastBuildDate>
+<item>
+  <title><![CDATA[Making a theme based on modus]]></title>
+  <description><![CDATA[
+<p>
+In <code>modus-theme</code> 5.0.0 Prot introduced a structured way to build a theme based
+on modus. Just a few days ago he released version 5.1.0 with some improvements
+in this area.
+</p>
+
+<p>
+The official documentation of how to <a href="https://protesilaos.com/emacs/modus-themes#h:86eb375b-9be4-43ce-879a-0686a524a63b">build on top of the Modus themes</a> is very
+good. It's focused on how to make sure your theme fits in with the rest of the
+"modus universe". However, after reading it I still didn't have a good idea of
+how to get started with my own theme. In case others feel the same way I thought
+I'd write down how I ended up getting started.
+</p>
+
+<p>
+The resulting theme, <code>modus-catppuccin</code>, can be found <a href="https://gitlab.com/magus/modus-catppuccin">here</a>.
+</p>
+<div id="outline-container-org4839f2f" class="outline-2">
+<h2 id="org4839f2f">A little background</h2>
+<div class="outline-text-2" id="text-org4839f2f">
+<p>
+I read about how to <a href="https://www.rahuljuliato.com/posts/modus-catppuccin">create a catppuccin-mocha theme using modus-vivendi</a> through
+modus' mechanism of overrides. On Reddit someone pointed out that Prot had been
+working on basing themes on modus and when I checked the state of it he'd just
+released version 5.0.0. Since I'm using catppuccin themes for pretty much all
+software with a GUI I thought it could be interesting to see if I could make a
+modus-based catppuccin theme to replace my use of <a href="https://github.com/catppuccin/emacs"><code>catppuccin-theme</code></a>.
+</p>
+
+<p>
+I'm writing the rest as if it was a straight and easy journey. It wasn't! I made
+a few false starts, each time realising something new about the structure and
+starting over with a better idea.
+</p>
+</div>
+</div>
+<div id="outline-container-org61bc0bd" class="outline-2">
+<h2 id="org61bc0bd">Finding a starting point</h2>
+<div class="outline-text-2" id="text-org61bc0bd">
+<p>
+When reading what Prot had written about <code>modus-themes</code> in general, and about
+how to create themes based on it, in particular, I found that he's ported both
+<a href="https://github.com/protesilaos/standard-themes"><code>standard-themes</code></a> and <a href="https://github.com/protesilaos/ef-themes"><code>ef-themes</code></a> so they now are based on modus. Instead of
+just using them for inspiration I decided that since <code>standard-themes</code> is so
+small I might as well use it as my starting point.
+</p>
+</div>
+</div>
+<div id="outline-container-org8f0c803" class="outline-2">
+<h2 id="org8f0c803">Starting</h2>
+<div class="outline-text-2" id="text-org8f0c803">
+<p>
+I copied all files of <code>standard-themes</code> to an empty git repository, then I
+</p>
+
+<ul class="org-ul">
+<li>deleted all but one of the theme file</li>
+<li>copied the remaining theme file so I had four in total (one for each of the
+<a href="https://catppuccin.com/palette/">catppuccin flavours</a>)</li>
+<li>renamed constants, variables, and functions so they would match the
+theme and its flavours</li>
+<li>put the colours into each <code>catppuccin-&lt;flavour&gt;-palette</code></li>
+<li>emptied the common palette, <code>modus-catppuccin-common-palette-mappings</code></li>
+<li>made sure that my use of <code>modus-themes-theme</code> was reasonable, in particular
+the base palette (I based the light flavour on <code>modus-operandi</code> and the three
+dark flavours on <code>modus-vivendi</code>)</li>
+</ul>
+
+<p>
+The result can be seen <a href="https://gitlab.com/magus/modus-catppuccin/-/tree/c86e17d29e0fc8f0d4a6a2e94a475f32037d2851">here</a>.
+</p>
+
+<p>
+At this point the three theme flavours contained no relevant mappings of their
+own, so what I had was in practice <code>modus-operandi</code> under a new name and
+<code>modus-vivendi</code> under three new names.
+</p>
+</div>
+</div>
+<div id="outline-container-org28309d9" class="outline-2">
+<h2 id="org28309d9">Adding mappings for catppuccin</h2>
+<div class="outline-text-2" id="text-org28309d9">
+<p>
+By organising the theme flavours the way outlined above I only need to add
+mappings to <code>modus-catppuccin-common-palette-mappings</code> because
+</p>
+
+<ol class="org-ol">
+<li>each flavour-specific mapping adds its colour palette using the same name
+(that's how catppuccin organises its colors too, <a href="https://catppuccin.com/palette/">as seen here</a>)</li>
+<li>each flavour-specific mapping is combined with the common one</li>
+<li>any missing mapping is picked up by the underlying theme, <code>modus-operandi</code> or
+<code>modus-vivendi</code>, so there will be (somewhat) nice colours for everything</li>
+</ol>
+
+<p>
+I started out with the mappings in the <a href="https://github.com/protesilaos/standard-themes/blob/main/standard-dark-theme.el">dark standard theme</a> but then I realised
+that's not the complete list of available mappings and I started looking at the
+themes in <code>modus-themes</code> itself.
+</p>
+</div>
+</div>
+<div id="outline-container-orgeb19297" class="outline-2">
+<h2 id="orgeb19297">Current state of <code>modus-catppuccin</code></h2>
+<div class="outline-text-2" id="text-orgeb19297">
+<p>
+I've so far defined enough mappings to make it look enough like catppuccin for
+my use. There are a lot of possible mappings so my plan is to add them over time
+and use <a href="https://github.com/catppuccin/emacs"><code>catppuccin-theme</code></a> for inspiration.
+</p>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> </div>
+]]></description>
+  <category><![CDATA[emacs]]></category>
+  <link>https://magnus.therning.org/2025-11-08-making-a-theme-based-on-modus.html</link>
+  <guid>https://magnus.therning.org/2025-11-08-making-a-theme-based-on-modus.html</guid>
+  <pubDate>Sat, 08 Nov 2025 09:45:00 +0100</pubDate>
+</item>
 <item>
   <title><![CDATA[Listing buffers by tab using consult and bufferlo]]></title>
   <description><![CDATA[
@@ -569,105 +691,6 @@ I just wish I'll find a package offering completions reaching Z shell levels.
   <link>https://magnus.therning.org/2023-11-19-making-emacs-without-terminal-emulator-a-little-more-usable.html</link>
   <guid>https://magnus.therning.org/2023-11-19-making-emacs-without-terminal-emulator-a-little-more-usable.html</guid>
   <pubDate>Sun, 19 Nov 2023 08:50:00 +0100</pubDate>
-</item>
-<item>
-  <title><![CDATA[Using the golang mode shipped with Emacs]]></title>
-  <description><![CDATA[
-<p>
-A few weeks ago I wanted to try out tree-sitter and switched a few of the modes
-I use for coding to their <code>-ts-mode</code> variants. Based on the excellent <a href="https://www.masteringemacs.org/article/how-to-get-started-tree-sitter">How to Get
-Started with Tree-Sitter</a> I added bits like this to the setup I have for coding
-modes:<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> <span class="org-constant">X-mode</span>
-  <span class="org-builtin">:init</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>add-to-list 'treesit-language-source-alist '<span class="org-rainbow-delimiters-depth-3">(</span>X <span class="org-string">"https://github.com/tree-sitter/tree-sitter-X"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-comment-delimiter">;; </span><span class="org-comment">(treesit-install-language-grammar 'X)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>add-to-list 'major-mode-remap-alist '<span class="org-rainbow-delimiters-depth-3">(</span>X-mode . X-ts-mode<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-comment-delimiter">;; </span><span class="org-comment">...</span>
-  <span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-I then manually evaluated the expression that's commented out to download and
-compile the tree-sitter grammar. It's a rather small change, it works, and I can
-switch over language by language. I swapped a couple of languages to the
-tree-sitter modes like this, including golang. The only mode that I noticed
-changes in was golang, in particular my adding of <code>gofmt-before-save</code> to
-<code>before-save-hook</code> had stopped having any effect.
-</p>
-
-<p>
-What I hadn't realised was that the <a href="https://github.com/dominikh/go-mode.el"><code>go-mode</code> I was using</a> didn't ship with Emacs
-and that when I switched to <code>go-ts-mode</code> I switched to one that was. It turns
-out that <code>gofmt-before-save</code> is hard-wired to work only in <code>go-mode</code>,
-something others have <a href="https://github.com/dominikh/go-mode.el/issues/396#issuecomment-1366716882">noticed</a>.
-</p>
-
-<p>
-I don't feel like waiting for <code>go-mode</code> to fix that though, especially not when
-there's a perfectly fine golang mode shipping with Emacs now, and not when
-<a href="https://github.com/purcell/emacs-reformatter">emacs-reformatter</a> make it so easy to define formatters (as I've <a href="https://magnus.therning.org/2023-09-24-defining-a-formatter-for-cabal-files.html">written about
-before</a>).
-</p>
-
-<p>
-My golang setup, sans keybindings, now looks like this:<sup><a id="fnr.2" class="footref" href="#fn.2" role="doc-backlink">2</a></sup>
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> <span class="org-constant">go-ts-mode</span>
-  <span class="org-builtin">:hook</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>go-ts-mode . lsp-deferred<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>go-ts-mode . go-format-on-save-mode<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-builtin">:init</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>add-to-list 'treesit-language-source-alist '<span class="org-rainbow-delimiters-depth-3">(</span>go <span class="org-string">"https://github.com/tree-sitter/tree-sitter-go"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>add-to-list 'treesit-language-source-alist '<span class="org-rainbow-delimiters-depth-3">(</span>gomod <span class="org-string">"https://github.com/camdencheek/tree-sitter-go-mod"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-comment-delimiter">;; </span><span class="org-comment">(dolist (lang '(go gomod)) (treesit-install-language-grammar lang))</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>add-to-list 'auto-mode-alist '<span class="org-rainbow-delimiters-depth-3">(</span><span class="org-string">"\\.go\\'"</span> . go-ts-mode<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>add-to-list 'auto-mode-alist '<span class="org-rainbow-delimiters-depth-3">(</span><span class="org-string">"/go\\.mod\\'"</span> . go-mod-ts-mode<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-builtin">:config</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">reformatter-define</span> go-format
-    <span class="org-builtin">:program</span> <span class="org-string">"goimports"</span>
-    <span class="org-builtin">:args</span> '<span class="org-rainbow-delimiters-depth-3">(</span><span class="org-string">"/dev/stdin"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-builtin">:general</span>
-  <span class="org-comment-delimiter">;; </span><span class="org-comment">...</span>
-  <span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-So far I'm happy with the built-in <code>go-ts-mode</code> and I've got to say that using a
-minor mode for the format-on-save functionality is more elegant than adding a
-function to <code>before-save-hook</code> (something that <code>go-mode</code> may get through this
-<a href="https://github.com/dominikh/go-mode.el/pull/426">PR</a>).
-</p>
-<div id="footnotes">
-<h2 class="footnotes">Footnotes: </h2>
-<div id="text-footnotes">
-
-<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
-There were a few more things that I needed to modify. As the tree-sitter
-modes are completely separate from the non-tree-sitter modes things like hooks
-and keybindings in the modes' keymaps.
-</p></div></div>
-
-<div class="footdef"><sup><a id="fn.2" class="footnum" href="#fnr.2" role="doc-backlink">2</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
-The full file is <a href="https://gitlab.com/magus/mes/-/blob/main/lisp/mes-dev-go.el">here</a>.
-</p></div></div>
-
-
-</div>
-</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-tree-sitter.html">tree-sitter</a> </div>
-]]></description>
-  <category><![CDATA[emacs]]></category>
-  <category><![CDATA[tree-sitter]]></category>
-  <link>https://magnus.therning.org/2023-11-16-using-the-golang-mode-shipped-with-emacs.html</link>
-  <guid>https://magnus.therning.org/2023-11-16-using-the-golang-mode-shipped-with-emacs.html</guid>
-  <pubDate>Thu, 16 Nov 2023 07:02:00 +0100</pubDate>
 </item>
 </channel>
 </rss>

@@ -12,6 +12,121 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <h1 class="title">Posts tagged "emacs":</h1>
+<div class="post-date">08 Nov 2025</div><h1 class="post-title"><a href="https://magnus.therning.org/2025-11-08-making-a-theme-based-on-modus.html">Making a theme based on modus</a></h1>
+<p>
+In <code>modus-theme</code> 5.0.0 Prot introduced a structured way to build a theme based
+on modus. Just a few days ago he released version 5.1.0 with some improvements
+in this area.
+</p>
+
+<p>
+The official documentation of how to <a href="https://protesilaos.com/emacs/modus-themes#h:86eb375b-9be4-43ce-879a-0686a524a63b">build on top of the Modus themes</a> is very
+good. It's focused on how to make sure your theme fits in with the rest of the
+"modus universe". However, after reading it I still didn't have a good idea of
+how to get started with my own theme. In case others feel the same way I thought
+I'd write down how I ended up getting started.
+</p>
+
+<p>
+The resulting theme, <code>modus-catppuccin</code>, can be found <a href="https://gitlab.com/magus/modus-catppuccin">here</a>.
+</p>
+<div id="outline-container-org4839f2f" class="outline-2">
+<h2 id="org4839f2f">A little background</h2>
+<div class="outline-text-2" id="text-org4839f2f">
+<p>
+I read about how to <a href="https://www.rahuljuliato.com/posts/modus-catppuccin">create a catppuccin-mocha theme using modus-vivendi</a> through
+modus' mechanism of overrides. On Reddit someone pointed out that Prot had been
+working on basing themes on modus and when I checked the state of it he'd just
+released version 5.0.0. Since I'm using catppuccin themes for pretty much all
+software with a GUI I thought it could be interesting to see if I could make a
+modus-based catppuccin theme to replace my use of <a href="https://github.com/catppuccin/emacs"><code>catppuccin-theme</code></a>.
+</p>
+
+<p>
+I'm writing the rest as if it was a straight and easy journey. It wasn't! I made
+a few false starts, each time realising something new about the structure and
+starting over with a better idea.
+</p>
+</div>
+</div>
+<div id="outline-container-org61bc0bd" class="outline-2">
+<h2 id="org61bc0bd">Finding a starting point</h2>
+<div class="outline-text-2" id="text-org61bc0bd">
+<p>
+When reading what Prot had written about <code>modus-themes</code> in general, and about
+how to create themes based on it, in particular, I found that he's ported both
+<a href="https://github.com/protesilaos/standard-themes"><code>standard-themes</code></a> and <a href="https://github.com/protesilaos/ef-themes"><code>ef-themes</code></a> so they now are based on modus. Instead of
+just using them for inspiration I decided that since <code>standard-themes</code> is so
+small I might as well use it as my starting point.
+</p>
+</div>
+</div>
+<div id="outline-container-org8f0c803" class="outline-2">
+<h2 id="org8f0c803">Starting</h2>
+<div class="outline-text-2" id="text-org8f0c803">
+<p>
+I copied all files of <code>standard-themes</code> to an empty git repository, then I
+</p>
+
+<ul class="org-ul">
+<li>deleted all but one of the theme file</li>
+<li>copied the remaining theme file so I had four in total (one for each of the
+<a href="https://catppuccin.com/palette/">catppuccin flavours</a>)</li>
+<li>renamed constants, variables, and functions so they would match the
+theme and its flavours</li>
+<li>put the colours into each <code>catppuccin-&lt;flavour&gt;-palette</code></li>
+<li>emptied the common palette, <code>modus-catppuccin-common-palette-mappings</code></li>
+<li>made sure that my use of <code>modus-themes-theme</code> was reasonable, in particular
+the base palette (I based the light flavour on <code>modus-operandi</code> and the three
+dark flavours on <code>modus-vivendi</code>)</li>
+</ul>
+
+<p>
+The result can be seen <a href="https://gitlab.com/magus/modus-catppuccin/-/tree/c86e17d29e0fc8f0d4a6a2e94a475f32037d2851">here</a>.
+</p>
+
+<p>
+At this point the three theme flavours contained no relevant mappings of their
+own, so what I had was in practice <code>modus-operandi</code> under a new name and
+<code>modus-vivendi</code> under three new names.
+</p>
+</div>
+</div>
+<div id="outline-container-org28309d9" class="outline-2">
+<h2 id="org28309d9">Adding mappings for catppuccin</h2>
+<div class="outline-text-2" id="text-org28309d9">
+<p>
+By organising the theme flavours the way outlined above I only need to add
+mappings to <code>modus-catppuccin-common-palette-mappings</code> because
+</p>
+
+<ol class="org-ol">
+<li>each flavour-specific mapping adds its colour palette using the same name
+(that's how catppuccin organises its colors too, <a href="https://catppuccin.com/palette/">as seen here</a>)</li>
+<li>each flavour-specific mapping is combined with the common one</li>
+<li>any missing mapping is picked up by the underlying theme, <code>modus-operandi</code> or
+<code>modus-vivendi</code>, so there will be (somewhat) nice colours for everything</li>
+</ol>
+
+<p>
+I started out with the mappings in the <a href="https://github.com/protesilaos/standard-themes/blob/main/standard-dark-theme.el">dark standard theme</a> but then I realised
+that's not the complete list of available mappings and I started looking at the
+themes in <code>modus-themes</code> itself.
+</p>
+</div>
+</div>
+<div id="outline-container-orgeb19297" class="outline-2">
+<h2 id="orgeb19297">Current state of <code>modus-catppuccin</code></h2>
+<div class="outline-text-2" id="text-orgeb19297">
+<p>
+I've so far defined enough mappings to make it look enough like catppuccin for
+my use. There are a lot of possible mappings so my plan is to add them over time
+and use <a href="https://github.com/catppuccin/emacs"><code>catppuccin-theme</code></a> for inspiration.
+</p>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> </div>
+
 <div class="post-date">16 Sep 2025</div><h1 class="post-title"><a href="https://magnus.therning.org/2025-09-16-listing-buffers-by-tab-using-consult-and-bufferlo.html">Listing buffers by tab using consult and bufferlo</a></h1>
 <p>
 I've gotten into the habit of using tabs, via <code>tab-bar</code>, to organise my buffers
