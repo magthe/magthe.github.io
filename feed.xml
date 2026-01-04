@@ -4,7 +4,117 @@
 <title><![CDATA[Magnus web site]]></title>
 <description><![CDATA[Magnus web site]]></description>
 <link>https://magnus.therning.org/</link>
-<lastBuildDate>Sat, 08 Nov 2025 11:06:37 +0100</lastBuildDate>
+<lastBuildDate>Sun, 04 Jan 2026 11:07:12 +0100</lastBuildDate>
+<item>
+  <title><![CDATA[Validation of data in a servant server]]></title>
+  <description><![CDATA[
+<p>
+I've been playing around with adding more validation of data received by an HTTP
+endpoint in a <a href="https://hackage.haskell.org/package/servant">servant</a> server. Defining a type with a <code>FromJSON</code> instance is very
+easy, just derive a <code>Generic</code> instance and it just works. Here's a simple
+example
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><code><span class="org-keyword">data</span> Person = Person
+    { name :: <span class="org-type">Text</span>
+    , age :: <span class="org-type">Int</span>
+    , occupation :: <span class="org-type">Occupation</span>
+    }
+    <span class="org-keyword">deriving</span> (Generic, Show)
+    <span class="org-keyword">deriving</span> (FromJSON, ToJSON) via <span class="org-type">(Generically Person)</span>
+
+<span class="org-keyword">data</span> Occupation = UnderAge | Student | Unemployed | SelfEmployed | Retired | Occupation <span class="org-type">Text</span>
+    <span class="org-keyword">deriving</span> (Eq, Generic, Ord, Show)
+    <span class="org-keyword">deriving</span> (FromJSON, ToJSON) via <span class="org-type">(Generically Occupation)</span>
+</code></pre>
+</div>
+
+<p>
+However, the validation is rather limited, basically it's just checking that
+each field is present and of the correct type. For the type above I'd like to
+enforce some constraints for the combination of <code>age</code> and <code>occupation</code>.
+</p>
+
+<p>
+The steps I thought of are
+</p>
+
+<ol class="org-ol">
+<li>Hide the default constructor and define a <a href="https://wiki.haskell.org/Smart_constructors">smart</a> one. (This is the standard
+suggestion for placing extra constraints values.)</li>
+<li>Manually define the <code>FromJSON</code> instance using the <code>Generic</code> instance to limit
+the amount of code and the smart constructor.</li>
+</ol>
+<div id="outline-container-org0245825" class="outline-2">
+<h2 id="org0245825">The smart constructor</h2>
+<div class="outline-text-2" id="text-org0245825">
+<p>
+I give the constructor the result type <code>Either String Person</code> to make sure it
+can both be usable in code and when defining <code>parseJSON</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><code><span class="org-function-name">mkPerson</span> :: <span class="org-type">Text</span> <span class="org-operator">-&gt;</span> <span class="org-type">Int</span> <span class="org-operator">-&gt;</span> <span class="org-type">Occupation</span> <span class="org-operator">-&gt;</span> <span class="org-type">Either String Person</span>
+<span class="org-function-name">mkPerson</span> name age occupation = <span class="org-keyword">do</span>
+    guardE mustBeUnderAge
+    guardE notUnderAge
+    guardE tooOldToBeStudent
+    guardE mustBeRetired
+    pure <span class="org-operator">$</span> Person name age occupation
+  <span class="org-keyword">where</span>
+    <span class="org-function-name">guardE</span> (pred, err) = when pred <span class="org-operator">$</span> Left err
+    <span class="org-function-name">mustBeUnderAge</span> = (age <span class="org-operator">&lt;</span> <span class="org-number">8</span> <span class="org-operator">&amp;&amp;</span> occupation <span class="org-operator">&gt;</span> UnderAge, <span class="org-string">"too young for occupation"</span>)
+    <span class="org-function-name">notUnderAge</span> = (age <span class="org-operator">&gt;</span> <span class="org-number">15</span> <span class="org-operator">&amp;&amp;</span> occupation <span class="org-operator">==</span> UnderAge, <span class="org-string">"too old to be under age"</span>)
+    <span class="org-function-name">tooOldToBeStudent</span> = (age <span class="org-operator">&gt;</span> <span class="org-number">45</span> <span class="org-operator">&amp;&amp;</span> occupation <span class="org-operator">==</span> Student, <span class="org-string">"too old to be a student"</span>)
+    <span class="org-function-name">mustBeRetired</span> = (age <span class="org-operator">&gt;</span> <span class="org-number">65</span> <span class="org-operator">&amp;&amp;</span> occupation <span class="org-operator">/=</span> Retired, <span class="org-string">"too old to not be retired"</span>)
+</code></pre>
+</div>
+
+<p>
+Here I'm making use of <code>Either e</code> being a <code>Monad</code> and use <code>when</code> to apply the
+constraints and ensure the reason for failure is given to the caller.
+</p>
+</div>
+</div>
+<div id="outline-container-org9e3cd39" class="outline-2">
+<h2 id="org9e3cd39">The <code>FromJSON</code> instance</h2>
+<div class="outline-text-2" id="text-org9e3cd39">
+<p>
+When defining the instance I take advantage of the <code>Generic</code> instance to make
+the implementation short and simple.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><code><span class="org-keyword">instance</span> FromJSON <span class="org-type">Person</span> <span class="org-keyword">where</span>
+    <span class="org-function-name">parseJSON</span> v = <span class="org-keyword">do</span>
+        Person{name, age, occupation} &lt;- genericParseJSON defaultOptions v
+        either fail pure <span class="org-operator">$</span> mkPerson name age occupation
+</code></pre>
+</div>
+
+<p>
+If there are many more fields in the type I'd consider using <a href="https://downloads.haskell.org/ghc/latest/docs/users_guide/exts/record_wildcards.html"><code>RecordWildCards</code></a>.
+</p>
+</div>
+</div>
+<div id="outline-container-orgd2a5ae0" class="outline-2">
+<h2 id="orgd2a5ae0">Conclusion</h2>
+<div class="outline-text-2" id="text-orgd2a5ae0">
+<p>
+No, it's nothing ground-breaking but I think it's a fairly nice example of how
+things can fit together in Haskell.
+</p>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-servant.html">servant</a> </div>
+]]></description>
+  <category><![CDATA[haskell]]></category>
+  <category><![CDATA[servant]]></category>
+  <link>https://magnus.therning.org/2026-01-04-validation-of-data-in-a-servant-server.html</link>
+  <guid>https://magnus.therning.org/2026-01-04-validation-of-data-in-a-servant-server.html</guid>
+  <pubDate>Sun, 04 Jan 2026 10:58:00 +0100</pubDate>
+</item>
 <item>
   <title><![CDATA[Making a theme based on modus]]></title>
   <description><![CDATA[
@@ -1276,79 +1386,6 @@ sure it'd prompt me to re-evaluate incorporating <code>sql-mode</code> in my wor
   <link>https://magnus.therning.org/2024-09-09-followup-on-secrets-in-my-work-notes.html</link>
   <guid>https://magnus.therning.org/2024-09-09-followup-on-secrets-in-my-work-notes.html</guid>
   <pubDate>Mon, 09 Sep 2024 22:36:00 +0200</pubDate>
-</item>
-<item>
-  <title><![CDATA[Improving how I handle secrets in my work notes]]></title>
-  <description><![CDATA[
-<p>
-At work I use org-mode to keep notes about useful ways to query our systems,
-mostly that involves using the built-in SQL support to access DBs and <a href="https://github.com/ag91/ob-http">ob-http</a> to
-send HTTP requests. In both cases I often need to provide credentials for the
-systems. I'm embarrassed to admit it, but for a long time I've taken the easy
-path and kept all credentials in clear text. Every time I've used one of those
-code blocks I've thought I really ought to find a better way of handling these
-secrets one of these days. Yesterday was that day.
-</p>
-
-<p>
-I ended up with two functions that uses <a href="https://www.gnu.org/software/emacs/manual/html_mono/auth.html">auth-source</a> and its <code>~/.authinfo.gpg</code>
-file.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">mes/auth-get-pwd</span> <span class="org-rainbow-delimiters-depth-2">(</span>host<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-doc">"Get the password for a host (authinfo.gpg)"</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">-&gt;</span> <span class="org-rainbow-delimiters-depth-3">(</span>auth-source-search <span class="org-builtin">:host</span> host<span class="org-rainbow-delimiters-depth-3">)</span>
-      car
-      <span class="org-rainbow-delimiters-depth-3">(</span>plist-get <span class="org-builtin">:secret</span><span class="org-rainbow-delimiters-depth-3">)</span>
-      funcall<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-
-<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">mes/auth-get-key</span> <span class="org-rainbow-delimiters-depth-2">(</span>host key<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-doc">"Get a key's value for a host (authinfo.gpg)</span>
-
-<span class="org-doc">Not usable for getting the password (:secret), use '</span><span class="org-doc"><span class="org-constant">mes/auth-get-pwd</span></span><span class="org-doc">'</span>
-<span class="org-doc">for that."</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">-&gt;</span> <span class="org-rainbow-delimiters-depth-3">(</span>auth-source-search <span class="org-builtin">:host</span> host<span class="org-rainbow-delimiters-depth-3">)</span>
-      car
-      <span class="org-rainbow-delimiters-depth-3">(</span>plist-get key<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-It turns out that the library can handle more keys than the documentation
-suggests so for DB entries I'm using a <code>machine</code> (<code>:host</code>) that's a bit shorter
-and easier to remember than the full AWS hostname. Then I keep the DB host and
-name in <code>dbhost</code> (<code>:dbhost</code>) and <code>dbname</code> (<code>:dbname</code>) respectively. That makes
-an entry look like this:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-authinfo"><span class="org-variable-name">machine</span> <span class="org-builtin">db.svc</span> <span class="org-comment-delimiter">login</span> <span class="org-keyword">user</span> <span class="org-comment-delimiter">port</span> <span class="org-type">port</span> <span class="org-comment-delimiter">password</span> <span class="org-doc">pwd</span> <span class="org-constant">dbname</span> dbname <span class="org-constant">dbhost</span> dbhost
-</pre>
-</div>
-
-<p>
-If I use it in a property drawer it looks like this
-</p>
-
-<div class="org-src-container">
-<pre class="src src-org"><span class="org-org-drawer">:PROPERTIES:</span>
-<span class="org-org-special-keyword">:header-args:sql:</span> <span class="org-org-property-value">:engine postgresql</span>
-<span class="org-org-special-keyword">:header-args:sql+:</span> <span class="org-org-property-value">:dbhost (mes/auth-get-key "db.svc" :dbhost)</span>
-<span class="org-org-special-keyword">:header-args:sql+:</span> <span class="org-org-property-value">:dbport (string-to-number (mes/auth-get-key "db.svc" :port))</span>
-<span class="org-org-special-keyword">:header-args:sql+:</span> <span class="org-org-property-value">:dbuser (mes/auth-get-key "db.svc" :user)</span>
-<span class="org-org-special-keyword">:header-args:sql+:</span> <span class="org-org-property-value">:dbpassword (mes/auth-get-pwd "db.svc")</span>
-<span class="org-org-special-keyword">:header-args:sql+:</span> <span class="org-org-property-value">:database (mes/auth-get-key "db.svc" :dbname)</span>
-<span class="org-org-drawer">:END:</span>
-</pre>
-</div>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> </div>
-]]></description>
-  <category><![CDATA[emacs]]></category>
-  <category><![CDATA[org-mode]]></category>
-  <link>https://magnus.therning.org/2024-09-01-improving-how-i-handle-secrets-in-my-work-notes.html</link>
-  <guid>https://magnus.therning.org/2024-09-01-improving-how-i-handle-secrets-in-my-work-notes.html</guid>
-  <pubDate>Sun, 01 Sep 2024 15:03:00 +0200</pubDate>
 </item>
 </channel>
 </rss>

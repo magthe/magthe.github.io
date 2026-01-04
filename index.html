@@ -12,6 +12,108 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <header class="site-header" role="banner"><h1 class="title">Magnus web site</h1><h2 class="subtitle">Random stuff</h2></header>
+<div class="post-date">04 Jan 2026</div><h1 class="post-title"><a href="https://magnus.therning.org/2026-01-04-validation-of-data-in-a-servant-server.html">Validation of data in a servant server</a></h1>
+<p>
+I've been playing around with adding more validation of data received by an HTTP
+endpoint in a <a href="https://hackage.haskell.org/package/servant">servant</a> server. Defining a type with a <code>FromJSON</code> instance is very
+easy, just derive a <code>Generic</code> instance and it just works. Here's a simple
+example
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><code><span class="org-keyword">data</span> Person = Person
+    { name :: <span class="org-type">Text</span>
+    , age :: <span class="org-type">Int</span>
+    , occupation :: <span class="org-type">Occupation</span>
+    }
+    <span class="org-keyword">deriving</span> (Generic, Show)
+    <span class="org-keyword">deriving</span> (FromJSON, ToJSON) via <span class="org-type">(Generically Person)</span>
+
+<span class="org-keyword">data</span> Occupation = UnderAge | Student | Unemployed | SelfEmployed | Retired | Occupation <span class="org-type">Text</span>
+    <span class="org-keyword">deriving</span> (Eq, Generic, Ord, Show)
+    <span class="org-keyword">deriving</span> (FromJSON, ToJSON) via <span class="org-type">(Generically Occupation)</span>
+</code></pre>
+</div>
+
+<p>
+However, the validation is rather limited, basically it's just checking that
+each field is present and of the correct type. For the type above I'd like to
+enforce some constraints for the combination of <code>age</code> and <code>occupation</code>.
+</p>
+
+<p>
+The steps I thought of are
+</p>
+
+<ol class="org-ol">
+<li>Hide the default constructor and define a <a href="https://wiki.haskell.org/Smart_constructors">smart</a> one. (This is the standard
+suggestion for placing extra constraints values.)</li>
+<li>Manually define the <code>FromJSON</code> instance using the <code>Generic</code> instance to limit
+the amount of code and the smart constructor.</li>
+</ol>
+<div id="outline-container-org0245825" class="outline-2">
+<h2 id="org0245825">The smart constructor</h2>
+<div class="outline-text-2" id="text-org0245825">
+<p>
+I give the constructor the result type <code>Either String Person</code> to make sure it
+can both be usable in code and when defining <code>parseJSON</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><code><span class="org-function-name">mkPerson</span> :: <span class="org-type">Text</span> <span class="org-operator">-&gt;</span> <span class="org-type">Int</span> <span class="org-operator">-&gt;</span> <span class="org-type">Occupation</span> <span class="org-operator">-&gt;</span> <span class="org-type">Either String Person</span>
+<span class="org-function-name">mkPerson</span> name age occupation = <span class="org-keyword">do</span>
+    guardE mustBeUnderAge
+    guardE notUnderAge
+    guardE tooOldToBeStudent
+    guardE mustBeRetired
+    pure <span class="org-operator">$</span> Person name age occupation
+  <span class="org-keyword">where</span>
+    <span class="org-function-name">guardE</span> (pred, err) = when pred <span class="org-operator">$</span> Left err
+    <span class="org-function-name">mustBeUnderAge</span> = (age <span class="org-operator">&lt;</span> <span class="org-number">8</span> <span class="org-operator">&amp;&amp;</span> occupation <span class="org-operator">&gt;</span> UnderAge, <span class="org-string">"too young for occupation"</span>)
+    <span class="org-function-name">notUnderAge</span> = (age <span class="org-operator">&gt;</span> <span class="org-number">15</span> <span class="org-operator">&amp;&amp;</span> occupation <span class="org-operator">==</span> UnderAge, <span class="org-string">"too old to be under age"</span>)
+    <span class="org-function-name">tooOldToBeStudent</span> = (age <span class="org-operator">&gt;</span> <span class="org-number">45</span> <span class="org-operator">&amp;&amp;</span> occupation <span class="org-operator">==</span> Student, <span class="org-string">"too old to be a student"</span>)
+    <span class="org-function-name">mustBeRetired</span> = (age <span class="org-operator">&gt;</span> <span class="org-number">65</span> <span class="org-operator">&amp;&amp;</span> occupation <span class="org-operator">/=</span> Retired, <span class="org-string">"too old to not be retired"</span>)
+</code></pre>
+</div>
+
+<p>
+Here I'm making use of <code>Either e</code> being a <code>Monad</code> and use <code>when</code> to apply the
+constraints and ensure the reason for failure is given to the caller.
+</p>
+</div>
+</div>
+<div id="outline-container-org9e3cd39" class="outline-2">
+<h2 id="org9e3cd39">The <code>FromJSON</code> instance</h2>
+<div class="outline-text-2" id="text-org9e3cd39">
+<p>
+When defining the instance I take advantage of the <code>Generic</code> instance to make
+the implementation short and simple.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><code><span class="org-keyword">instance</span> FromJSON <span class="org-type">Person</span> <span class="org-keyword">where</span>
+    <span class="org-function-name">parseJSON</span> v = <span class="org-keyword">do</span>
+        Person{name, age, occupation} &lt;- genericParseJSON defaultOptions v
+        either fail pure <span class="org-operator">$</span> mkPerson name age occupation
+</code></pre>
+</div>
+
+<p>
+If there are many more fields in the type I'd consider using <a href="https://downloads.haskell.org/ghc/latest/docs/users_guide/exts/record_wildcards.html"><code>RecordWildCards</code></a>.
+</p>
+</div>
+</div>
+<div id="outline-container-orgd2a5ae0" class="outline-2">
+<h2 id="orgd2a5ae0">Conclusion</h2>
+<div class="outline-text-2" id="text-orgd2a5ae0">
+<p>
+No, it's nothing ground-breaking but I think it's a fairly nice example of how
+things can fit together in Haskell.
+</p>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-servant.html">servant</a> </div>
+
 <div class="post-date">08 Nov 2025</div><h1 class="post-title"><a href="https://magnus.therning.org/2025-11-08-making-a-theme-based-on-modus.html">Making a theme based on modus</a></h1>
 <p>
 In <code>modus-theme</code> 5.0.0 Prot introduced a structured way to build a theme based
@@ -917,88 +1019,6 @@ I also have <i>a lot</i> of commands to add.
 Of course one could use RESP3 as the serialisation format for storing values
 in Redis. Personally I think I'd prefer using something more widely used, and
 easier to read, such as JSON or BSON.
-</p></div></div>
-
-
-</div>
-</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-redis.html">redis</a> </div>
-
-<div class="post-date">17 Jun 2025</div><h1 class="post-title"><a href="https://magnus.therning.org/2025-06-17-why-i'm-writing-a-redis-client-package.html">Why I'm writing a Redis client package</a></h1>
-<p>
-A couple of weeks ago I needed a small, hopefully temporary, service at work. It
-bridges a gap in functionality provided by a legacy system and the functionality
-desired by a new system. The legacy system is cumbersome to work with, so we
-tend to prefer building anti-corruption layers rather than changing it directly,
-and sometimes we implement it as separate services.
-</p>
-
-<p>
-This time it was good enough to run the service as a cronjob, but it did need to
-keep track of when it ran the last time. It felt silly to spin up a separate DB
-just to keep a timestamp, and using another service's DB is something I <i>really</i>
-dislike and avoid.<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup> So, I ended up using the Redis instance that's used as a
-cache by a OSS service we host.
-</p>
-
-<p>
-The last time I had a look at the options for writing a Redis client in Haskell
-I found two candidates, <a href="https://hackage.haskell.org/package/hedis">hedis</a> and <a href="https://hackage.haskell.org/package/redis-io">redis-io</a>. At the time I wrote a <a href="https://magnus.therning.org/2021-05-07-working-with-hedis.html">short note</a>
-about them. This time around I found nothing much has changed, they are still
-the only two contenders and they still suffer from the same issues
-</p>
-
-<ul class="org-ul">
-<li><i>hedis</i> has still has the same API and I still find it as awkward.</li>
-<li><i>redis-io</i> still requires a logger.</li>
-</ul>
-
-<p>
-I once again decided to use <i>hedis</i> and wrote the service for work in a couple
-of days, but this time I thought I'd see what it would take to remove the
-requirement on <a href="https://hackage.haskell.org/package/tinylog">tinylog</a> from <i>redis-io</i>. I spent a few evenings on it, though I
-spent most time on "modernising" the dev setup, using Nix to build, re-format
-using <i>fourmolu</i>, etc. I did the same for <a href="https://hackage.haskell.org/package/redis-resp">redis-resp</a>, the main dependency of
-<i>redis-io</i>. The result of that can be found on my gitlab account:
-</p>
-
-<ul class="org-ul">
-<li><a href="https://gitlab.com/magus/redis-resp">https://gitlab.com/magus/redis-resp</a></li>
-<li><a href="https://gitlab.com/magus/redis-io">https://gitlab.com/magus/redis-io</a></li>
-</ul>
-
-<p>
-At the moment I won't take that particular experiment any further and given that
-the most recent change to <i>redis-io</i> was in 2020 (according to its <a href="https://gitlab.com/twittner/redis-io/">git repo</a>)
-I don't think there's much interest upstream either.
-</p>
-
-<p>
-Making the changes to <i>redis-io</i> and <i>redis-resp</i> made me a little curious about
-the <a href="https://redis.io/docs/latest/develop/reference/protocol-spec/">Redis protocol</a> so I started reading about it. It made me start thinking
-about implementing a client lib myself. How hard could it be?
-</p>
-
-<p>
-I'd also asked a question about Redis client libs on <a href="https://www.reddit.com/r/haskell/comments/1kk4a5v/redis_lib_for_haskell/">r/haskell</a> and a response
-led me to <a href="https://hackage.haskell.org/package/redis-schema">redis-schema</a>. It has a very good README, and its section on
-transactions with its observation that Redis transactions are a perfect match
-for <code>Applicative</code>. This pushed me even closer to start writing a client lib.
-What pushed me over the edge was the realisation that <a href="https://redis.io/docs/latest/develop/use/pipelining/">pipelining</a> also is a
-perfect match for <code>Applicative</code>.
-</p>
-
-<p>
-For the last few weeks I've spent some of my free time reading and experimenting
-and I'm enjoying it very much. We'll see where it leads, but hopefully I'll at
-least have bit more to write about it.
-</p>
-<div id="footnotes">
-<h2 class="footnotes">Footnotes: </h2>
-<div id="text-footnotes">
-
-<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
-One definition of a microservice I find very useful is "a service that owns
-its own DB schema."
 </p></div></div>
 
 

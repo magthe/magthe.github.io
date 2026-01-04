@@ -12,6 +12,108 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <h1 class="title">Posts tagged "servant":</h1>
+<div class="post-date">04 Jan 2026</div><h1 class="post-title"><a href="https://magnus.therning.org/2026-01-04-validation-of-data-in-a-servant-server.html">Validation of data in a servant server</a></h1>
+<p>
+I've been playing around with adding more validation of data received by an HTTP
+endpoint in a <a href="https://hackage.haskell.org/package/servant">servant</a> server. Defining a type with a <code>FromJSON</code> instance is very
+easy, just derive a <code>Generic</code> instance and it just works. Here's a simple
+example
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><code><span class="org-keyword">data</span> Person = Person
+    { name :: <span class="org-type">Text</span>
+    , age :: <span class="org-type">Int</span>
+    , occupation :: <span class="org-type">Occupation</span>
+    }
+    <span class="org-keyword">deriving</span> (Generic, Show)
+    <span class="org-keyword">deriving</span> (FromJSON, ToJSON) via <span class="org-type">(Generically Person)</span>
+
+<span class="org-keyword">data</span> Occupation = UnderAge | Student | Unemployed | SelfEmployed | Retired | Occupation <span class="org-type">Text</span>
+    <span class="org-keyword">deriving</span> (Eq, Generic, Ord, Show)
+    <span class="org-keyword">deriving</span> (FromJSON, ToJSON) via <span class="org-type">(Generically Occupation)</span>
+</code></pre>
+</div>
+
+<p>
+However, the validation is rather limited, basically it's just checking that
+each field is present and of the correct type. For the type above I'd like to
+enforce some constraints for the combination of <code>age</code> and <code>occupation</code>.
+</p>
+
+<p>
+The steps I thought of are
+</p>
+
+<ol class="org-ol">
+<li>Hide the default constructor and define a <a href="https://wiki.haskell.org/Smart_constructors">smart</a> one. (This is the standard
+suggestion for placing extra constraints values.)</li>
+<li>Manually define the <code>FromJSON</code> instance using the <code>Generic</code> instance to limit
+the amount of code and the smart constructor.</li>
+</ol>
+<div id="outline-container-org0245825" class="outline-2">
+<h2 id="org0245825">The smart constructor</h2>
+<div class="outline-text-2" id="text-org0245825">
+<p>
+I give the constructor the result type <code>Either String Person</code> to make sure it
+can both be usable in code and when defining <code>parseJSON</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><code><span class="org-function-name">mkPerson</span> :: <span class="org-type">Text</span> <span class="org-operator">-&gt;</span> <span class="org-type">Int</span> <span class="org-operator">-&gt;</span> <span class="org-type">Occupation</span> <span class="org-operator">-&gt;</span> <span class="org-type">Either String Person</span>
+<span class="org-function-name">mkPerson</span> name age occupation = <span class="org-keyword">do</span>
+    guardE mustBeUnderAge
+    guardE notUnderAge
+    guardE tooOldToBeStudent
+    guardE mustBeRetired
+    pure <span class="org-operator">$</span> Person name age occupation
+  <span class="org-keyword">where</span>
+    <span class="org-function-name">guardE</span> (pred, err) = when pred <span class="org-operator">$</span> Left err
+    <span class="org-function-name">mustBeUnderAge</span> = (age <span class="org-operator">&lt;</span> <span class="org-number">8</span> <span class="org-operator">&amp;&amp;</span> occupation <span class="org-operator">&gt;</span> UnderAge, <span class="org-string">"too young for occupation"</span>)
+    <span class="org-function-name">notUnderAge</span> = (age <span class="org-operator">&gt;</span> <span class="org-number">15</span> <span class="org-operator">&amp;&amp;</span> occupation <span class="org-operator">==</span> UnderAge, <span class="org-string">"too old to be under age"</span>)
+    <span class="org-function-name">tooOldToBeStudent</span> = (age <span class="org-operator">&gt;</span> <span class="org-number">45</span> <span class="org-operator">&amp;&amp;</span> occupation <span class="org-operator">==</span> Student, <span class="org-string">"too old to be a student"</span>)
+    <span class="org-function-name">mustBeRetired</span> = (age <span class="org-operator">&gt;</span> <span class="org-number">65</span> <span class="org-operator">&amp;&amp;</span> occupation <span class="org-operator">/=</span> Retired, <span class="org-string">"too old to not be retired"</span>)
+</code></pre>
+</div>
+
+<p>
+Here I'm making use of <code>Either e</code> being a <code>Monad</code> and use <code>when</code> to apply the
+constraints and ensure the reason for failure is given to the caller.
+</p>
+</div>
+</div>
+<div id="outline-container-org9e3cd39" class="outline-2">
+<h2 id="org9e3cd39">The <code>FromJSON</code> instance</h2>
+<div class="outline-text-2" id="text-org9e3cd39">
+<p>
+When defining the instance I take advantage of the <code>Generic</code> instance to make
+the implementation short and simple.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><code><span class="org-keyword">instance</span> FromJSON <span class="org-type">Person</span> <span class="org-keyword">where</span>
+    <span class="org-function-name">parseJSON</span> v = <span class="org-keyword">do</span>
+        Person{name, age, occupation} &lt;- genericParseJSON defaultOptions v
+        either fail pure <span class="org-operator">$</span> mkPerson name age occupation
+</code></pre>
+</div>
+
+<p>
+If there are many more fields in the type I'd consider using <a href="https://downloads.haskell.org/ghc/latest/docs/users_guide/exts/record_wildcards.html"><code>RecordWildCards</code></a>.
+</p>
+</div>
+</div>
+<div id="outline-container-orgd2a5ae0" class="outline-2">
+<h2 id="orgd2a5ae0">Conclusion</h2>
+<div class="outline-text-2" id="text-orgd2a5ae0">
+<p>
+No, it's nothing ground-breaking but I think it's a fairly nice example of how
+things can fit together in Haskell.
+</p>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-servant.html">servant</a> </div>
+
 <div class="post-date">01 Dec 2024</div><h1 class="post-title"><a href="https://magnus.therning.org/2024-12-01-servant-and-a-weirdness-in-keycloak.html">Servant and a weirdness in Keycloak</a></h1>
 <p>
 When writing a small tool to interface with Keycloak I found an endpoint that
