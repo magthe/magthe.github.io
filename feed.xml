@@ -4,7 +4,217 @@
 <title><![CDATA[Magnus web site]]></title>
 <description><![CDATA[Magnus web site]]></description>
 <link>https://magnus.therning.org/</link>
-<lastBuildDate>Sun, 04 Jan 2026 11:07:12 +0100</lastBuildDate>
+<lastBuildDate>Mon, 19 Jan 2026 08:01:20 +0100</lastBuildDate>
+<item>
+  <title><![CDATA[Trying eglot, again]]></title>
+  <description><![CDATA[
+<p>
+I've been using <a href="https://emacs-lsp.github.io/lsp-mode/">lsp-mode</a> since I switched to Emacs several years ago. When <a href="https://github.com/joaotavora/eglot">eglot</a>
+made into Emacs core I used it very briefly but quickly switched back. Mainly I
+found eglot a bit too bare-bones; I liked some of the bells and whistles of
+<code>lsp-ui</code>. Fast-forward a few years and I've grown a bit tired of those bells and
+whistles. Specifically that it's difficult to make <code>lsp-ui-sideline</code> and
+<code>lsp-ui-doc</code> work well together. <code>lsp-ui-sidedline</code> is shown on the right side,
+which is good, but combining it with <code>lsp-ui-doc</code> leads to situations where the
+popup covers the sideline. What I've done so far is centre the line to bring the
+sideline text out. I was playing a little bit with making the setting of
+<code>lsp-ui-doc-position</code> change depending on the location of the current position.
+It didn't work that well though so I decided to try to find a simpler setup.
+Instead of simplifying the setup of <code>lsp-config</code> I thought I'd give <code>eglot</code>
+another shot.
+</p>
+<div id="outline-container-orgb1f7433" class="outline-2">
+<h2 id="orgb1f7433">Basic setup</h2>
+<div class="outline-text-2" id="text-orgb1f7433">
+<p>
+I removed the statements pulling in <code>lsp-mode</code>, <code>lsp-ui</code>, and all
+language-specific packages like <code>lsp-haskell</code>. Then I added this to configure
+<code>eglot</code>
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> eglot
+  <span class="org-builtin">:ensure</span> nil
+  <span class="org-builtin">:custom</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>eglot-autoshutdown t<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>eglot-confirm-server-edits '<span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>eglot-rename . nil<span class="org-rainbow-delimiters-depth-4">)</span>
+                                <span class="org-rainbow-delimiters-depth-4">(</span>t . diff<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+The rest was mainly just switching <code>lsp-mode</code> functions for <code>eglot</code> functions.
+</p>
+
+<table>
+
+
+<colgroup>
+<col  class="org-left">
+
+<col  class="org-left">
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">lsp-mode function</th>
+<th scope="col" class="org-left">eglot function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left"><code>lsp-deferred</code></td>
+<td class="org-left"><code>eglot-ensure</code></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>lsp-describe-thing-at-point</code></td>
+<td class="org-left"><code>eldoc</code></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>lsp-execute-code-action</code></td>
+<td class="org-left"><code>eglot-code-actions</code></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>lsp-find-type-definition</code></td>
+<td class="org-left"><code>eglot-find-typeDefinition</code></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>lsp-format-buffer</code></td>
+<td class="org-left"><code>eglot-format-buffer</code></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>lsp-format-region</code></td>
+<td class="org-left"><code>eglot-format</code></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>lsp-organize-imports</code></td>
+<td class="org-left"><code>eglot-code-action-organize-imports</code></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>lsp-rename</code></td>
+<td class="org-left"><code>eglot-rename</code></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>lsp-workspace-restart</code></td>
+<td class="org-left"><code>eglot-reconnect</code></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>lsp-workspace-shutdown</code></td>
+<td class="org-left"><code>eglot-shutdown</code></td>
+</tr>
+</tbody>
+</table>
+
+<p>
+I haven't verified that the list is fully correct yet, but it looks good so far.
+</p>
+
+<p>
+The one thing I might miss is lenses, and using <code>lsp-avy-lens</code>. However,
+everything that I use lenses for can be done using actions, and to be honest I
+don't think I'll miss the huge lens texts from missing type annotations in
+Haskell.
+</p>
+</div>
+</div>
+<div id="outline-container-orgd8ac829" class="outline-2">
+<h2 id="orgd8ac829">Configuration</h2>
+<div class="outline-text-2" id="text-orgd8ac829">
+<p>
+One good thing about <code>lsp-mode</code>'s use of language-specific packages is that
+configuration of the various servers is performed through functions. This makes
+it easy to discover what options are available, though it also means not all
+options may be available. In <code>eglot</code> configuration is less organised, I have to
+know about the options for each language server and put the options into
+<code>eglot-workspace-configuration</code> myself. It's not always easy to track down what
+options are available, and I've found no easy way to verify the settings. For
+instance, with <code>lsp-mode</code> I configures <a href="https://github.com/haskell/haskell-language-server">HLS</a> like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span>lsp-haskell-formatting-provider <span class="org-string">"fourmolu"</span><span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-rainbow-delimiters-depth-1">(</span>lsp-haskell-plugin-stan-global-on nil<span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+which translates to this for <code>eglot</code>
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">setq-default</span> eglot-workspace-configuration
+              <span class="org-rainbow-delimiters-depth-2">(</span>plist-put eglot-workspace-configuration
+                         <span class="org-builtin">:haskell</span>
+                         '<span class="org-rainbow-delimiters-depth-3">(</span><span class="org-builtin">:formattingProvider</span> <span class="org-string">"fourmolu"</span>
+                           <span class="org-builtin">:plugin</span> <span class="org-rainbow-delimiters-depth-4">(</span><span class="org-builtin">:stan</span> <span class="org-rainbow-delimiters-depth-5">(</span><span class="org-builtin">:global-on</span> <span class="org-builtin">:json-false</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+and I can verify that this configuration has taken effect because I know enough
+about the Haskell tools.
+</p>
+
+<p>
+I do some development in Python and I used to configure <a href="https://pypi.org/project/python-lsp-server/">pylsp</a> like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span>lsp-pylsp-plugins-mypy-enabled t<span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-rainbow-delimiters-depth-1">(</span>lsp-pylsp-plugins-ruff-enabled t<span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+which I <i>think</i> translates to this for <code>eglot</code>
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">setq-default</span> eglot-workspace-configuration
+              <span class="org-rainbow-delimiters-depth-2">(</span>plist-put eglot-workspace-configuration
+                         <span class="org-builtin">:pylsp</span>
+                         '<span class="org-rainbow-delimiters-depth-3">(</span><span class="org-builtin">:plugins</span> <span class="org-rainbow-delimiters-depth-4">(</span><span class="org-builtin">:ruff</span> <span class="org-rainbow-delimiters-depth-5">(</span><span class="org-builtin">:enabled</span> t<span class="org-rainbow-delimiters-depth-5">)</span>
+                                     <span class="org-builtin">:mypy</span> <span class="org-rainbow-delimiters-depth-5">(</span><span class="org-builtin">:enabled</span> t<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+but I don't know any convenient way of verifying these settings. I'm simply not
+familiar enough with the Python tools. I can check the value of
+<code>eglot-workspace-configuration</code> by inspecting it or calling
+<code>eglot-show-workspace-configuration</code> but is there really no way of asking the
+language server for its active configuration?
+</p>
+</div>
+</div>
+<div id="outline-container-org3d20108" class="outline-2">
+<h2 id="org3d20108">Closing remark</h2>
+<div class="outline-text-2" id="text-org3d20108">
+<p>
+The last time I gave up on <code>eglot</code> very quickly, probably too quickly to be
+honest. I made these changes to my configuration over the weekend, so the real
+test of <code>eglot</code> starts when I'm back in the office. I have a feeling I'll stick
+to it longer this time.
+</p>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-eglot.html">eglot</a> <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-lsp-mode.html">lsp-mode</a> </div>
+]]></description>
+  <category><![CDATA[eglot]]></category>
+  <category><![CDATA[emacs]]></category>
+  <category><![CDATA[lsp-mode]]></category>
+  <link>https://magnus.therning.org/2026-01-19-trying-eglot,-again.html</link>
+  <guid>https://magnus.therning.org/2026-01-19-trying-eglot,-again.html</guid>
+  <pubDate>Mon, 19 Jan 2026 08:00:00 +0100</pubDate>
+</item>
 <item>
   <title><![CDATA[Validation of data in a servant server]]></title>
   <description><![CDATA[
@@ -46,9 +256,9 @@ suggestion for placing extra constraints values.)</li>
 <li>Manually define the <code>FromJSON</code> instance using the <code>Generic</code> instance to limit
 the amount of code and the smart constructor.</li>
 </ol>
-<div id="outline-container-org0245825" class="outline-2">
-<h2 id="org0245825">The smart constructor</h2>
-<div class="outline-text-2" id="text-org0245825">
+<div id="outline-container-org8b6637c" class="outline-2">
+<h2 id="org8b6637c">The smart constructor</h2>
+<div class="outline-text-2" id="text-org8b6637c">
 <p>
 I give the constructor the result type <code>Either String Person</code> to make sure it
 can both be usable in code and when defining <code>parseJSON</code>.
@@ -77,9 +287,9 @@ constraints and ensure the reason for failure is given to the caller.
 </p>
 </div>
 </div>
-<div id="outline-container-org9e3cd39" class="outline-2">
-<h2 id="org9e3cd39">The <code>FromJSON</code> instance</h2>
-<div class="outline-text-2" id="text-org9e3cd39">
+<div id="outline-container-org323ebdf" class="outline-2">
+<h2 id="org323ebdf">The <code>FromJSON</code> instance</h2>
+<div class="outline-text-2" id="text-org323ebdf">
 <p>
 When defining the instance I take advantage of the <code>Generic</code> instance to make
 the implementation short and simple.
@@ -98,9 +308,9 @@ If there are many more fields in the type I'd consider using <a href="https://do
 </p>
 </div>
 </div>
-<div id="outline-container-orgd2a5ae0" class="outline-2">
-<h2 id="orgd2a5ae0">Conclusion</h2>
-<div class="outline-text-2" id="text-orgd2a5ae0">
+<div id="outline-container-orgb6bf602" class="outline-2">
+<h2 id="orgb6bf602">Conclusion</h2>
+<div class="outline-text-2" id="text-orgb6bf602">
 <p>
 No, it's nothing ground-breaking but I think it's a fairly nice example of how
 things can fit together in Haskell.
@@ -1343,49 +1553,6 @@ with similar weirdness so maybe this will be useful to someone else.
   <link>https://magnus.therning.org/2024-12-01-servant-and-a-weirdness-in-keycloak.html</link>
   <guid>https://magnus.therning.org/2024-12-01-servant-and-a-weirdness-in-keycloak.html</guid>
   <pubDate>Sun, 01 Dec 2024 23:00:00 +0100</pubDate>
-</item>
-<item>
-  <title><![CDATA[Followup on secrets in my work notes]]></title>
-  <description><![CDATA[
-<p>
-I got the following question on my post on how I handle secrets in my work notes:
-</p>
-
-<blockquote>
-<p>
-Sounds like a nice approach for other secrets but how about <code>:dbconnection</code> for
-Orgmode and <code>sql-connection-alist</code>?
-</p>
-</blockquote>
-
-<p>
-I have to admit I'd never come across the variable <code>sql-connection-alist</code>
-before. I've never really used <code>sql-mode</code> for more than editing SQL queries and
-setting up code blocks for running them was one of the first things I used
-<a href="https://github.com/joaotavora/yasnippet">yasnippet</a> for.
-</p>
-
-<p>
-I did a little reading and unfortunately it looks like <code>sql-connection-alist</code>
-can only handle string values. However, there is a variable
-<code>sql-password-search-wallet-function</code>, with the default value of
-<code>sql-auth-source-search-wallet</code>, so using <a href="https://www.gnu.org/software/emacs/manual/html_mono/auth.html">auth-source</a> is already supported for
-the password itself.
-</p>
-
-<p>
-There seems to be a lack of good tutorials for setting up <code>sql-mode</code> in a secure
-way &#x2013; all articles I found place the password in clear-text in the config &#x2013;
-filling that gap would be a nice way to contribute to the Emacs community. I'm
-sure it'd prompt me to re-evaluate incorporating <code>sql-mode</code> in my workflow.
-</p>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> </div>
-]]></description>
-  <category><![CDATA[emacs]]></category>
-  <category><![CDATA[org-mode]]></category>
-  <link>https://magnus.therning.org/2024-09-09-followup-on-secrets-in-my-work-notes.html</link>
-  <guid>https://magnus.therning.org/2024-09-09-followup-on-secrets-in-my-work-notes.html</guid>
-  <pubDate>Mon, 09 Sep 2024 22:36:00 +0200</pubDate>
 </item>
 </channel>
 </rss>

@@ -51,9 +51,9 @@ suggestion for placing extra constraints values.)</li>
 <li>Manually define the <code>FromJSON</code> instance using the <code>Generic</code> instance to limit
 the amount of code and the smart constructor.</li>
 </ol>
-<div id="outline-container-org0245825" class="outline-2">
-<h2 id="org0245825">The smart constructor</h2>
-<div class="outline-text-2" id="text-org0245825">
+<div id="outline-container-org8b6637c" class="outline-2">
+<h2 id="org8b6637c">The smart constructor</h2>
+<div class="outline-text-2" id="text-org8b6637c">
 <p>
 I give the constructor the result type <code>Either String Person</code> to make sure it
 can both be usable in code and when defining <code>parseJSON</code>.
@@ -82,9 +82,9 @@ constraints and ensure the reason for failure is given to the caller.
 </p>
 </div>
 </div>
-<div id="outline-container-org9e3cd39" class="outline-2">
-<h2 id="org9e3cd39">The <code>FromJSON</code> instance</h2>
-<div class="outline-text-2" id="text-org9e3cd39">
+<div id="outline-container-org323ebdf" class="outline-2">
+<h2 id="org323ebdf">The <code>FromJSON</code> instance</h2>
+<div class="outline-text-2" id="text-org323ebdf">
 <p>
 When defining the instance I take advantage of the <code>Generic</code> instance to make
 the implementation short and simple.
@@ -103,9 +103,9 @@ If there are many more fields in the type I'd consider using <a href="https://do
 </p>
 </div>
 </div>
-<div id="outline-container-orgd2a5ae0" class="outline-2">
-<h2 id="orgd2a5ae0">Conclusion</h2>
-<div class="outline-text-2" id="text-orgd2a5ae0">
+<div id="outline-container-orgb6bf602" class="outline-2">
+<h2 id="orgb6bf602">Conclusion</h2>
+<div class="outline-text-2" id="text-orgb6bf602">
 <p>
 No, it's nothing ground-breaking but I think it's a fairly nice example of how
 things can fit together in Haskell.
