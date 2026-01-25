@@ -4,7 +4,260 @@
 <title><![CDATA[Magnus web site]]></title>
 <description><![CDATA[Magnus web site]]></description>
 <link>https://magnus.therning.org/</link>
-<lastBuildDate>Mon, 19 Jan 2026 08:01:20 +0100</lastBuildDate>
+<lastBuildDate>Sun, 25 Jan 2026 14:19:04 +0100</lastBuildDate>
+<item>
+  <title><![CDATA[More on the switch to eglot]]></title>
+  <description><![CDATA[
+<p>
+Since the <a href="https://magnus.therning.org/2026-01-19-trying-eglot,-again.html">switching to eglot</a> I've ended up making a few related changes.
+</p>
+<div id="outline-container-org8cdfce1" class="outline-2">
+<h2 id="org8cdfce1">Replacing flycheck with flymake</h2>
+<div class="outline-text-2" id="text-org8cdfce1">
+<p>
+Since <code>eglot</code> it's written to work with other packages in core, which means it
+integrates with <a href="https://www.gnu.org/software/emacs/manual/html_mono/flymake.html"><code>flymake</code></a>. The switch comprised
+</p>
+
+<ul class="org-ul">
+<li>Use <code>:ensure nil</code> to make sure <code>elpaca</code> knows there's nothing to download.</li>
+<li>Add a call to <code>flymake-mode</code> to <code>prog-mode-hook</code>.</li>
+<li>Define two functions to toggle showing a list of diagnostics for the current
+buffer and the project.</li>
+<li></li>
+
+<li>Redefine the relevant keybindings.</li>
+</ul>
+
+<p>
+The two functions for toggling showing diagnostics look like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">mes/toggle-flymake-buffer-diagnostics</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">if-let*</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>window <span class="org-rainbow-delimiters-depth-5">(</span>get-buffer-window <span class="org-rainbow-delimiters-depth-6">(</span>flymake--diagnostics-buffer-name<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+      <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">save-selected-window</span> <span class="org-rainbow-delimiters-depth-4">(</span>quit-window nil window<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>flymake-show-buffer-diagnostics<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">mes/toggle-flymake-project-diagnostics</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">if-let*</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>window <span class="org-rainbow-delimiters-depth-5">(</span>get-buffer-window <span class="org-rainbow-delimiters-depth-6">(</span>flymake--project-diagnostics-buffer <span class="org-rainbow-delimiters-depth-7">(</span>projectile-project-root<span class="org-rainbow-delimiters-depth-7">)</span><span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+      <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">save-selected-window</span> <span class="org-rainbow-delimiters-depth-4">(</span>quit-window nil window<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>flymake-show-project-diagnostics<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+And the changed keybindings are
+</p>
+
+<table>
+
+
+<colgroup>
+<col  class="org-left">
+
+<col  class="org-left">
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">flycheck</th>
+<th scope="col" class="org-left">flymake</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">flycheck-next-error</td>
+<td class="org-left">flymake-goto-next-error</td>
+</tr>
+
+<tr>
+<td class="org-left">flycheck-previous-error</td>
+<td class="org-left">flymake-goto-prev-error</td>
+</tr>
+
+<tr>
+<td class="org-left">mes/toggle-flycheck-error-list</td>
+<td class="org-left">mes/toggle-flymake-buffer-diagnostics</td>
+</tr>
+
+<tr>
+<td class="org-left">mes/toggle-flycheck-projectile-error-list</td>
+<td class="org-left">mes/toggle-flymake-project-diagnostics</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-orgadc4f2e" class="outline-2">
+<h2 id="orgadc4f2e">Using <code>with-eval-after-load</code> instead of <code>:after eglot</code></h2>
+<div class="outline-text-2" id="text-orgadc4f2e">
+<p>
+When it comes to <code>use-package</code> I keep on being surprised, and after the switch
+to <code>elpaca</code> I've found some new surprises. One of them was that using <code>:after
+eglot</code> like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> haskell-ng-mode
+  <span class="org-builtin">:afer</span> eglot
+  <span class="org-builtin">:ensure</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-builtin">:type</span> git
+           <span class="org-builtin">:repo</span> <span class="org-string">"git@gitlab.com:magus/haskell-ng-mode.git"</span>
+           <span class="org-builtin">:branch</span> <span class="org-string">"main"</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-builtin">:init</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>add-to-list 'major-mode-remap-alist '<span class="org-rainbow-delimiters-depth-3">(</span>haskell-mode . haskell-ng-mode<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>add-to-list 'eglot-server-programs '<span class="org-rainbow-delimiters-depth-3">(</span>haskell-ng-mode <span class="org-string">"haskell-language-server-wrapper"</span> <span class="org-string">"--lsp"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">setq-default</span> eglot-workspace-configuration
+                <span class="org-rainbow-delimiters-depth-3">(</span>plist-put eglot-workspace-configuration
+                           <span class="org-builtin">:haskell</span>
+                           '<span class="org-rainbow-delimiters-depth-4">(</span><span class="org-builtin">:formattingProvider</span> <span class="org-string">"fourmolu"</span>
+                             <span class="org-builtin">:plugin</span> <span class="org-rainbow-delimiters-depth-5">(</span><span class="org-builtin">:stan</span> <span class="org-rainbow-delimiters-depth-6">(</span><span class="org-builtin">:global-on</span> <span class="org-builtin">:json-false</span><span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  ...
+  <span class="org-builtin">:hook</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>haskell-ng-mode . eglot-ensure<span class="org-rainbow-delimiters-depth-2">)</span>
+  ...<span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+would delay initialisation until after <code>eglot</code> had been loaded. However, it
+turned out that nothing in <code>:init ...</code> seemed to run and upon opening a haskell file
+no mode was loaded.
+</p>
+
+<p>
+After a bit of thinking and tinkering I got it working by removing <code>:after
+eglot</code> and using <code>with-eval-after-load</code>
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> haskell-ng-mode
+  <span class="org-builtin">:ensure</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-builtin">:type</span> git
+           <span class="org-builtin">:repo</span> <span class="org-string">"git@gitlab.com:magus/haskell-ng-mode.git"</span>
+           <span class="org-builtin">:branch</span> <span class="org-string">"main"</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-builtin">:init</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>add-to-list 'major-mode-remap-alist '<span class="org-rainbow-delimiters-depth-3">(</span>haskell-mode . haskell-ng-mode<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">with-eval-after-load</span> 'eglot
+    <span class="org-rainbow-delimiters-depth-3">(</span>add-to-list 'eglot-server-programs '<span class="org-rainbow-delimiters-depth-4">(</span>haskell-ng-mode <span class="org-string">"haskell-language-server-wrapper"</span> <span class="org-string">"--lsp"</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">setq-default</span> eglot-workspace-configuration
+                  <span class="org-rainbow-delimiters-depth-4">(</span>plist-put eglot-workspace-configuration
+                             <span class="org-builtin">:haskell</span>
+                             '<span class="org-rainbow-delimiters-depth-5">(</span><span class="org-builtin">:formattingProvider</span> <span class="org-string">"fourmolu"</span>
+                               <span class="org-builtin">:plugin</span> <span class="org-rainbow-delimiters-depth-6">(</span><span class="org-builtin">:stan</span> <span class="org-rainbow-delimiters-depth-7">(</span><span class="org-builtin">:global-on</span> <span class="org-builtin">:json-false</span><span class="org-rainbow-delimiters-depth-7">)</span><span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  ...
+  <span class="org-builtin">:hook</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>haskell-ng-mode . eglot-ensure<span class="org-rainbow-delimiters-depth-2">)</span>
+  ...<span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+That change worked for haskell, and it seemed to work for python too, but after
+a little while I realised that python needed a bit more attention.
+</p>
+</div>
+</div>
+<div id="outline-container-orgc610d55" class="outline-2">
+<h2 id="orgc610d55">Getting the configuration for Python to work properly</h2>
+<div class="outline-text-2" id="text-orgc610d55">
+<p>
+The python setup looked like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> python
+  <span class="org-builtin">:init</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>add-to-list 'major-mode-remap-alist '<span class="org-rainbow-delimiters-depth-3">(</span>python-mode . python-ts-mode<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">with-eval-after-load</span> 'eglot
+    <span class="org-rainbow-delimiters-depth-3">(</span>assoc-delete-all '<span class="org-rainbow-delimiters-depth-4">(</span>python-mode python-ts-mode<span class="org-rainbow-delimiters-depth-4">)</span> eglot-server-programs<span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>add-to-list 'eglot-server-programs
+                 `<span class="org-rainbow-delimiters-depth-4">(</span><span class="org-rainbow-delimiters-depth-5">(</span>python-mode python-ts-mode<span class="org-rainbow-delimiters-depth-5">)</span> . ,<span class="org-rainbow-delimiters-depth-5">(</span>eglot-alternatives
+                                                    '<span class="org-rainbow-delimiters-depth-6">(</span><span class="org-rainbow-delimiters-depth-7">(</span><span class="org-string">"rass"</span> <span class="org-string">"python"</span><span class="org-rainbow-delimiters-depth-7">)</span> <span class="org-string">"pylsp"</span><span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  ...
+  <span class="org-builtin">:hook</span> <span class="org-rainbow-delimiters-depth-2">(</span>python-ts-mode . eglot-ensure<span class="org-rainbow-delimiters-depth-2">)</span>
+  ...<span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+and it worked all right, but then I visited the package (using <code>elpaca-visit</code>)
+and realised that the downloaded package was all of emacs. That's a bit of
+overkill, I'd say.
+</p>
+
+<p>
+However, adding <code>:ensure nil</code> didn't have the expected effect of just using the
+version that's in core. Instead the whole configuration seemed to never take
+effect and again I was back to the situation where I had to jump to
+<code>python-ts-mode</code> manually.
+</p>
+
+<p>
+The documentation for <code>use-package</code> says that <code>:init</code> is for
+</p>
+
+<blockquote>
+<p>
+Code to run before PACKAGE-NAME has been loaded.
+</p>
+</blockquote>
+
+<p>
+but I'm guessing "before" isn't quite before enough. Then I noticed <code>:preface</code>
+with the description
+</p>
+
+<blockquote>
+<p>
+Code to be run before everything except <code>:disabled</code>; this can be used to define
+functions for use in <code>:if</code>, or that should be seen by the byte-compiler.
+</p>
+</blockquote>
+
+<p>
+and yes, "before everything" is early enough. The final python configuration
+looks like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> python
+  <span class="org-builtin">:ensure</span> nil
+  <span class="org-builtin">:preface</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>add-to-list 'major-mode-remap-alist '<span class="org-rainbow-delimiters-depth-3">(</span>python-mode . python-ts-mode<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-builtin">:init</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">with-eval-after-load</span> 'eglot
+    <span class="org-rainbow-delimiters-depth-3">(</span>assoc-delete-all '<span class="org-rainbow-delimiters-depth-4">(</span>python-mode python-ts-mode<span class="org-rainbow-delimiters-depth-4">)</span> eglot-server-programs<span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>add-to-list 'eglot-server-programs
+                 `<span class="org-rainbow-delimiters-depth-4">(</span><span class="org-rainbow-delimiters-depth-5">(</span>python-mode python-ts-mode<span class="org-rainbow-delimiters-depth-5">)</span> . ,<span class="org-rainbow-delimiters-depth-5">(</span>eglot-alternatives
+                                                    '<span class="org-rainbow-delimiters-depth-6">(</span><span class="org-rainbow-delimiters-depth-7">(</span><span class="org-string">"rass"</span> <span class="org-string">"python"</span><span class="org-rainbow-delimiters-depth-7">)</span> <span class="org-string">"pylsp"</span><span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  ...
+  <span class="org-builtin">:hook</span> <span class="org-rainbow-delimiters-depth-2">(</span>python-ts-mode . eglot-ensure<span class="org-rainbow-delimiters-depth-2">)</span>
+  ...<span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgc2d0d13" class="outline-2">
+<h2 id="orgc2d0d13">Closing remark</h2>
+<div class="outline-text-2" id="text-orgc2d0d13">
+<p>
+I'm still not sure I have the correct intuition about how to use <code>use-package</code>,
+but hopefully it's <i>more</i> correct now than before. I have a growing suspicion
+that <code>use-package</code> changes behaviour based on the package manager I use. Or
+maybe it's just that some package managers make <code>use-package</code> more forgiving of
+bad use.
+</p>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-eglot.html">eglot</a> <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> </div>
+]]></description>
+  <category><![CDATA[eglot]]></category>
+  <category><![CDATA[emacs]]></category>
+  <link>https://magnus.therning.org/2026-01-25-more-on-the-switch-to-eglot.html</link>
+  <guid>https://magnus.therning.org/2026-01-25-more-on-the-switch-to-eglot.html</guid>
+  <pubDate>Sun, 25 Jan 2026 14:18:00 +0100</pubDate>
+</item>
 <item>
   <title><![CDATA[Trying eglot, again]]></title>
   <description><![CDATA[
@@ -1517,42 +1770,6 @@ The details can be found among the comments of the <a href="https://github.com/m
   <link>https://magnus.therning.org/2025-01-19-reviewing-github-prs-in-emacs.html</link>
   <guid>https://magnus.therning.org/2025-01-19-reviewing-github-prs-in-emacs.html</guid>
   <pubDate>Sun, 19 Jan 2025 11:10:00 +0100</pubDate>
-</item>
-<item>
-  <title><![CDATA[Servant and a weirdness in Keycloak]]></title>
-  <description><![CDATA[
-<p>
-When writing a small tool to interface with Keycloak I found an endpoint that
-require the content type to be <code>application/json</code> while the body should be plain
-text. (The details are in the <a href="https://github.com/keycloak/keycloak/issues/34401">issue</a>.) Since <a href="https://hackage.haskell.org/package/servant">servant</a> assumes that the content
-type and the content match (I know, I'd always thought that was a safe
-assumption to make too) it doesn't work with <code>ReqBody '[JSON] Text</code>. Instead I
-had to create a custom type that's a combination of <a href="https://hackage.haskell.org/package/servant-0.20.2/docs/Servant-API-ContentTypes.html#t:JSON"><code>JSON</code></a> and <a href="https://hackage.haskell.org/package/servant-0.20.2/docs/Servant-API-ContentTypes.html#t:PlainText"><code>PlainText</code></a>,
-something that turned out to required surprisingly little code:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-keyword">data</span> KeycloakJSON <span class="org-keyword">deriving</span> <span class="org-rainbow-delimiters-depth-1">(</span>Typeable<span class="org-rainbow-delimiters-depth-1">)</span>
-
-<span class="org-keyword">instance</span> Accept <span class="org-type">KeycloakJSON</span> <span class="org-keyword">where</span>
-    <span class="org-function-name">contentType</span> _ = <span class="org-string">"application"</span> <span class="org-operator">//</span> <span class="org-string">"json"</span>
-
-<span class="org-keyword">instance</span> MimeRender <span class="org-type">KeycloakJSON</span> <span class="org-type">Text</span> <span class="org-keyword">where</span>
-    <span class="org-function-name">mimeRender</span> _ = fromStrict <span class="org-operator">.</span> encodeUtf8
-</pre>
-</div>
-
-<p>
-The bug has already been fixed in Keycloak, but I'm sure there are other APIs
-with similar weirdness so maybe this will be useful to someone else.
-</p>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-servant.html">servant</a> </div>
-]]></description>
-  <category><![CDATA[haskell]]></category>
-  <category><![CDATA[servant]]></category>
-  <link>https://magnus.therning.org/2024-12-01-servant-and-a-weirdness-in-keycloak.html</link>
-  <guid>https://magnus.therning.org/2024-12-01-servant-and-a-weirdness-in-keycloak.html</guid>
-  <pubDate>Sun, 01 Dec 2024 23:00:00 +0100</pubDate>
 </item>
 </channel>
 </rss>

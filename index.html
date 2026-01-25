@@ -12,6 +12,251 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <header class="site-header" role="banner"><h1 class="title">Magnus web site</h1><h2 class="subtitle">Random stuff</h2></header>
+<div class="post-date">25 Jan 2026</div><h1 class="post-title"><a href="https://magnus.therning.org/2026-01-25-more-on-the-switch-to-eglot.html">More on the switch to eglot</a></h1>
+<p>
+Since the <a href="https://magnus.therning.org/2026-01-19-trying-eglot,-again.html">switching to eglot</a> I've ended up making a few related changes.
+</p>
+<div id="outline-container-org8cdfce1" class="outline-2">
+<h2 id="org8cdfce1">Replacing flycheck with flymake</h2>
+<div class="outline-text-2" id="text-org8cdfce1">
+<p>
+Since <code>eglot</code> it's written to work with other packages in core, which means it
+integrates with <a href="https://www.gnu.org/software/emacs/manual/html_mono/flymake.html"><code>flymake</code></a>. The switch comprised
+</p>
+
+<ul class="org-ul">
+<li>Use <code>:ensure nil</code> to make sure <code>elpaca</code> knows there's nothing to download.</li>
+<li>Add a call to <code>flymake-mode</code> to <code>prog-mode-hook</code>.</li>
+<li>Define two functions to toggle showing a list of diagnostics for the current
+buffer and the project.</li>
+<li></li>
+
+<li>Redefine the relevant keybindings.</li>
+</ul>
+
+<p>
+The two functions for toggling showing diagnostics look like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">mes/toggle-flymake-buffer-diagnostics</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">if-let*</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>window <span class="org-rainbow-delimiters-depth-5">(</span>get-buffer-window <span class="org-rainbow-delimiters-depth-6">(</span>flymake--diagnostics-buffer-name<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+      <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">save-selected-window</span> <span class="org-rainbow-delimiters-depth-4">(</span>quit-window nil window<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>flymake-show-buffer-diagnostics<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">mes/toggle-flymake-project-diagnostics</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">if-let*</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>window <span class="org-rainbow-delimiters-depth-5">(</span>get-buffer-window <span class="org-rainbow-delimiters-depth-6">(</span>flymake--project-diagnostics-buffer <span class="org-rainbow-delimiters-depth-7">(</span>projectile-project-root<span class="org-rainbow-delimiters-depth-7">)</span><span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+      <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">save-selected-window</span> <span class="org-rainbow-delimiters-depth-4">(</span>quit-window nil window<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>flymake-show-project-diagnostics<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+And the changed keybindings are
+</p>
+
+<table>
+
+
+<colgroup>
+<col  class="org-left">
+
+<col  class="org-left">
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">flycheck</th>
+<th scope="col" class="org-left">flymake</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">flycheck-next-error</td>
+<td class="org-left">flymake-goto-next-error</td>
+</tr>
+
+<tr>
+<td class="org-left">flycheck-previous-error</td>
+<td class="org-left">flymake-goto-prev-error</td>
+</tr>
+
+<tr>
+<td class="org-left">mes/toggle-flycheck-error-list</td>
+<td class="org-left">mes/toggle-flymake-buffer-diagnostics</td>
+</tr>
+
+<tr>
+<td class="org-left">mes/toggle-flycheck-projectile-error-list</td>
+<td class="org-left">mes/toggle-flymake-project-diagnostics</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-orgadc4f2e" class="outline-2">
+<h2 id="orgadc4f2e">Using <code>with-eval-after-load</code> instead of <code>:after eglot</code></h2>
+<div class="outline-text-2" id="text-orgadc4f2e">
+<p>
+When it comes to <code>use-package</code> I keep on being surprised, and after the switch
+to <code>elpaca</code> I've found some new surprises. One of them was that using <code>:after
+eglot</code> like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> haskell-ng-mode
+  <span class="org-builtin">:afer</span> eglot
+  <span class="org-builtin">:ensure</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-builtin">:type</span> git
+           <span class="org-builtin">:repo</span> <span class="org-string">"git@gitlab.com:magus/haskell-ng-mode.git"</span>
+           <span class="org-builtin">:branch</span> <span class="org-string">"main"</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-builtin">:init</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>add-to-list 'major-mode-remap-alist '<span class="org-rainbow-delimiters-depth-3">(</span>haskell-mode . haskell-ng-mode<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>add-to-list 'eglot-server-programs '<span class="org-rainbow-delimiters-depth-3">(</span>haskell-ng-mode <span class="org-string">"haskell-language-server-wrapper"</span> <span class="org-string">"--lsp"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">setq-default</span> eglot-workspace-configuration
+                <span class="org-rainbow-delimiters-depth-3">(</span>plist-put eglot-workspace-configuration
+                           <span class="org-builtin">:haskell</span>
+                           '<span class="org-rainbow-delimiters-depth-4">(</span><span class="org-builtin">:formattingProvider</span> <span class="org-string">"fourmolu"</span>
+                             <span class="org-builtin">:plugin</span> <span class="org-rainbow-delimiters-depth-5">(</span><span class="org-builtin">:stan</span> <span class="org-rainbow-delimiters-depth-6">(</span><span class="org-builtin">:global-on</span> <span class="org-builtin">:json-false</span><span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  ...
+  <span class="org-builtin">:hook</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>haskell-ng-mode . eglot-ensure<span class="org-rainbow-delimiters-depth-2">)</span>
+  ...<span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+would delay initialisation until after <code>eglot</code> had been loaded. However, it
+turned out that nothing in <code>:init ...</code> seemed to run and upon opening a haskell file
+no mode was loaded.
+</p>
+
+<p>
+After a bit of thinking and tinkering I got it working by removing <code>:after
+eglot</code> and using <code>with-eval-after-load</code>
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> haskell-ng-mode
+  <span class="org-builtin">:ensure</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-builtin">:type</span> git
+           <span class="org-builtin">:repo</span> <span class="org-string">"git@gitlab.com:magus/haskell-ng-mode.git"</span>
+           <span class="org-builtin">:branch</span> <span class="org-string">"main"</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-builtin">:init</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>add-to-list 'major-mode-remap-alist '<span class="org-rainbow-delimiters-depth-3">(</span>haskell-mode . haskell-ng-mode<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">with-eval-after-load</span> 'eglot
+    <span class="org-rainbow-delimiters-depth-3">(</span>add-to-list 'eglot-server-programs '<span class="org-rainbow-delimiters-depth-4">(</span>haskell-ng-mode <span class="org-string">"haskell-language-server-wrapper"</span> <span class="org-string">"--lsp"</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">setq-default</span> eglot-workspace-configuration
+                  <span class="org-rainbow-delimiters-depth-4">(</span>plist-put eglot-workspace-configuration
+                             <span class="org-builtin">:haskell</span>
+                             '<span class="org-rainbow-delimiters-depth-5">(</span><span class="org-builtin">:formattingProvider</span> <span class="org-string">"fourmolu"</span>
+                               <span class="org-builtin">:plugin</span> <span class="org-rainbow-delimiters-depth-6">(</span><span class="org-builtin">:stan</span> <span class="org-rainbow-delimiters-depth-7">(</span><span class="org-builtin">:global-on</span> <span class="org-builtin">:json-false</span><span class="org-rainbow-delimiters-depth-7">)</span><span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  ...
+  <span class="org-builtin">:hook</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>haskell-ng-mode . eglot-ensure<span class="org-rainbow-delimiters-depth-2">)</span>
+  ...<span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+That change worked for haskell, and it seemed to work for python too, but after
+a little while I realised that python needed a bit more attention.
+</p>
+</div>
+</div>
+<div id="outline-container-orgc610d55" class="outline-2">
+<h2 id="orgc610d55">Getting the configuration for Python to work properly</h2>
+<div class="outline-text-2" id="text-orgc610d55">
+<p>
+The python setup looked like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> python
+  <span class="org-builtin">:init</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>add-to-list 'major-mode-remap-alist '<span class="org-rainbow-delimiters-depth-3">(</span>python-mode . python-ts-mode<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">with-eval-after-load</span> 'eglot
+    <span class="org-rainbow-delimiters-depth-3">(</span>assoc-delete-all '<span class="org-rainbow-delimiters-depth-4">(</span>python-mode python-ts-mode<span class="org-rainbow-delimiters-depth-4">)</span> eglot-server-programs<span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>add-to-list 'eglot-server-programs
+                 `<span class="org-rainbow-delimiters-depth-4">(</span><span class="org-rainbow-delimiters-depth-5">(</span>python-mode python-ts-mode<span class="org-rainbow-delimiters-depth-5">)</span> . ,<span class="org-rainbow-delimiters-depth-5">(</span>eglot-alternatives
+                                                    '<span class="org-rainbow-delimiters-depth-6">(</span><span class="org-rainbow-delimiters-depth-7">(</span><span class="org-string">"rass"</span> <span class="org-string">"python"</span><span class="org-rainbow-delimiters-depth-7">)</span> <span class="org-string">"pylsp"</span><span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  ...
+  <span class="org-builtin">:hook</span> <span class="org-rainbow-delimiters-depth-2">(</span>python-ts-mode . eglot-ensure<span class="org-rainbow-delimiters-depth-2">)</span>
+  ...<span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+and it worked all right, but then I visited the package (using <code>elpaca-visit</code>)
+and realised that the downloaded package was all of emacs. That's a bit of
+overkill, I'd say.
+</p>
+
+<p>
+However, adding <code>:ensure nil</code> didn't have the expected effect of just using the
+version that's in core. Instead the whole configuration seemed to never take
+effect and again I was back to the situation where I had to jump to
+<code>python-ts-mode</code> manually.
+</p>
+
+<p>
+The documentation for <code>use-package</code> says that <code>:init</code> is for
+</p>
+
+<blockquote>
+<p>
+Code to run before PACKAGE-NAME has been loaded.
+</p>
+</blockquote>
+
+<p>
+but I'm guessing "before" isn't quite before enough. Then I noticed <code>:preface</code>
+with the description
+</p>
+
+<blockquote>
+<p>
+Code to be run before everything except <code>:disabled</code>; this can be used to define
+functions for use in <code>:if</code>, or that should be seen by the byte-compiler.
+</p>
+</blockquote>
+
+<p>
+and yes, "before everything" is early enough. The final python configuration
+looks like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> python
+  <span class="org-builtin">:ensure</span> nil
+  <span class="org-builtin">:preface</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>add-to-list 'major-mode-remap-alist '<span class="org-rainbow-delimiters-depth-3">(</span>python-mode . python-ts-mode<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-builtin">:init</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">with-eval-after-load</span> 'eglot
+    <span class="org-rainbow-delimiters-depth-3">(</span>assoc-delete-all '<span class="org-rainbow-delimiters-depth-4">(</span>python-mode python-ts-mode<span class="org-rainbow-delimiters-depth-4">)</span> eglot-server-programs<span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>add-to-list 'eglot-server-programs
+                 `<span class="org-rainbow-delimiters-depth-4">(</span><span class="org-rainbow-delimiters-depth-5">(</span>python-mode python-ts-mode<span class="org-rainbow-delimiters-depth-5">)</span> . ,<span class="org-rainbow-delimiters-depth-5">(</span>eglot-alternatives
+                                                    '<span class="org-rainbow-delimiters-depth-6">(</span><span class="org-rainbow-delimiters-depth-7">(</span><span class="org-string">"rass"</span> <span class="org-string">"python"</span><span class="org-rainbow-delimiters-depth-7">)</span> <span class="org-string">"pylsp"</span><span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  ...
+  <span class="org-builtin">:hook</span> <span class="org-rainbow-delimiters-depth-2">(</span>python-ts-mode . eglot-ensure<span class="org-rainbow-delimiters-depth-2">)</span>
+  ...<span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgc2d0d13" class="outline-2">
+<h2 id="orgc2d0d13">Closing remark</h2>
+<div class="outline-text-2" id="text-orgc2d0d13">
+<p>
+I'm still not sure I have the correct intuition about how to use <code>use-package</code>,
+but hopefully it's <i>more</i> correct now than before. I have a growing suspicion
+that <code>use-package</code> changes behaviour based on the package manager I use. Or
+maybe it's just that some package managers make <code>use-package</code> more forgiving of
+bad use.
+</p>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-eglot.html">eglot</a> <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> </div>
+
 <div class="post-date">19 Jan 2026</div><h1 class="post-title"><a href="https://magnus.therning.org/2026-01-19-trying-eglot,-again.html">Trying eglot, again</a></h1>
 <p>
 I've been using <a href="https://emacs-lsp.github.io/lsp-mode/">lsp-mode</a> since I switched to Emacs several years ago. When <a href="https://github.com/joaotavora/eglot">eglot</a>
@@ -517,255 +762,6 @@ buffer from the new tab.
 No more leakage and <code>consult-buffer</code> works like I wanted it to.
 </p>
 <div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> </div>
-
-<div class="post-date">28 Jun 2025</div><h1 class="post-title"><a href="https://magnus.therning.org/2025-06-28-reading-redis-responses.html">Reading Redis responses</a></h1>
-<p>
-When I began experimenting with writing a new Redis client package I decided to
-use lazy bytestrings, because:
-</p>
-
-<ol class="org-ol">
-<li><a href="https://hackage.haskell.org/package/aeson">aeson</a> seems to prefer it &#x2013; the <a href="https://hackage.haskell.org/package/aeson-2.2.3.0/docs/Data-Aeson.html#g:10">main encoding and decoding functions</a> use lazy
-byte strings, though there are <a href="https://hackage.haskell.org/package/aeson-2.2.3.0/docs/Data-Aeson.html#g:11">strict variants</a> too.</li>
-<li>the <code>Builder</code> type in <a href="https://hackage-content.haskell.org/package/bytestring">bytestring</a> produce lazy bytestrings.</li>
-</ol>
-
-<p>
-At the time I was happy to see that <a href="https://hackage.haskell.org/package/attoparsec">attoparsec</a> seemed to support strict and lazy
-bytestrings equally well.
-</p>
-
-<p>
-To get on with things I also wrote the simplest function I could come up with
-for sending and receiving data over the network &#x2013; I used <code>send</code> and <code>recv</code> from
-<a href="https://hackage.haskell.org/package/network-3.2.7.0/docs/Network-Socket-ByteString-Lazy.html">Network.Socket.ByteString.Lazy</a> in <a href="https://hackage.haskell.org/package/network-3.2.7.0">network</a>. The function was really simple
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><code><span class="org-keyword">import</span> Network.Socket.ByteString.Lazy <span class="org-keyword">qualified</span> <span class="org-keyword">as</span> SB
-
-<span class="org-function-name">sendCmd</span> :: <span class="org-type">Conn</span> <span class="org-operator">-&gt;</span> <span class="org-type">Command r</span> <span class="org-operator">-&gt;</span> <span class="org-type">IO </span><span class="org-type"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-type">Result r</span><span class="org-type"><span class="org-rainbow-delimiters-depth-1">)</span></span>
-<span class="org-function-name">sendCmd</span> <span class="org-rainbow-delimiters-depth-1">(</span>Conn p<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-rainbow-delimiters-depth-1">(</span>Command k cmd<span class="org-rainbow-delimiters-depth-1">)</span> = withResource p <span class="org-operator">$</span> \sock <span class="org-operator">-&gt;</span> <span class="org-keyword">do</span>
-    _ &lt;- <span class="org-warning">SB.</span>send sock <span class="org-operator">$</span> toWireCmd cmd
-    resp &lt;- <span class="org-warning">SB.</span>recv sock <span class="org-number">4096</span>
-    <span class="org-keyword">case</span> decode resp <span class="org-keyword">of</span>
-        Left err <span class="org-operator">-&gt;</span> pure <span class="org-operator">$</span> Left <span class="org-operator">$</span> RespError <span class="org-string">"decode"</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-warning">TL.</span>pack err<span class="org-rainbow-delimiters-depth-1">)</span>
-        Right r <span class="org-operator">-&gt;</span> pure <span class="org-operator">$</span> k <span class="org-operator">&lt;$&gt;</span> fromWireResp cmd r
-</code></pre>
-</div>
-
-<p>
-with <code>decode</code> defined like this
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><code><span class="org-function-name">decode</span> :: <span class="org-type">ByteString</span> <span class="org-operator">-&gt;</span> <span class="org-type">Either String Resp</span>
-<span class="org-function-name">decode</span> = parseOnly resp
-</code></pre>
-</div>
-
-<p>
-I knew I'd have to revisit this function, it was naïve to believe that a call to
-<code>recv</code> would always result in as single complete response. It was however good
-enough to get going. When I got to improving <code>sendCmd</code> I was a little surprised
-to find that I'd also have to switch to using strict bytestrings in the parser.
-</p>
-<div id="outline-container-org94fd594" class="outline-2">
-<h2 id="org94fd594">Interlude on the Redis serialisation protocol (RESP3)</h2>
-<div class="outline-text-2" id="text-org94fd594">
-<p>
-The Redis protocol has some defining attributes
-</p>
-
-<ul class="org-ul">
-<li>It's somewhat of a binary protocol. If you stick to keys and values that fall
-within the set of ASCII strings, then the protocol is humanly readable and you
-can rather easily use <code>netcat</code> or <code>telnet</code> as a client. However, you aren't
-limited to storing only readable strings.</li>
-<li>It's somewhat of a <a href="https://redis.io/docs/latest/develop/reference/protocol-spec/#request-response-model">request-response protocol</a>. A notable exception is the
-<a href="https://redis.io/docs/latest/commands/?group=pubsub">publish-subscribe subset</a>, but it's rather small and I reckon most Redis users
-don't use it.</li>
-<li>It's somewhat of a type-length-value style protocol. Some of the data types
-include their length in bytes, e.g. <span class="underline">bulk strings</span> and <span class="underline">verbatim strings</span>.
-Other types include the number of elements, e.g. <span class="underline">arrays</span> and <span class="underline">maps</span>. A large
-number of them have no length at all, e.g. <span class="underline">simple strings</span>, <span class="underline">integers</span>, and
-<span class="underline">doubles</span>.</li>
-</ul>
-
-<p>
-I suspect there are good reasons, I gather a lot of it has to do with speed. It
-does however cause one issue when writing a client: <i>it's not possible to read a
-whole response without parsing it</i>.
-</p>
-</div>
-</div>
-<div id="outline-container-orge572c4f" class="outline-2">
-<h2 id="orge572c4f">Rewriting <code>sendCmd</code></h2>
-<div class="outline-text-2" id="text-orge572c4f">
-<p>
-With that extra information about the RESP3 protocol the naïve implementation
-above falls short in a few ways
-</p>
-
-<ul class="org-ul">
-<li>The read buffer may contain more than one full message and give the definition
-of <code>decode</code> above any remaining bytes are simply dropped.<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup></li>
-<li>The read buffer my contain less than one full message and then <code>decode</code> will
-return an error.<sup><a id="fnr.2" class="footref" href="#fn.2" role="doc-backlink">2</a></sup></li>
-</ul>
-
-<p>
-Surely this must be solvable, because in my mind running the parser results in
-one of three things:
-</p>
-
-<ol class="org-ol">
-<li>Parsing is done and the result is returned, together with any input that
-wasn't consumed.</li>
-<li>The parsing is not done due to lack of input, this is typically encoded as a
-continuation.</li>
-<li>The parsing failed so the error is returned, together with input that wasn't
-consumed.</li>
-</ol>
-
-<p>
-So, I started looking in the documentation for the module
-<a href="https://hackage.haskell.org/package/attoparsec-0.14.4/docs/Data-Attoparsec-ByteString-Lazy.html">Data.Attoparsec.ByteString.Lazy</a> in <a href="https://hackage.haskell.org/package/attoparsec">attoparsec</a>. I was a little surprised to find
-that the <code>Result</code> type lacked a way to feed more input to a parser &#x2013; it only
-has two constructors, <code>Done</code> and <code>Fail</code>:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><code><span class="org-keyword">data</span> Result r
-    = Fail <span class="org-type">ByteString</span> <span class="org-type"><span class="org-rainbow-delimiters-depth-1">[</span></span><span class="org-type">String</span><span class="org-type"><span class="org-rainbow-delimiters-depth-1">]</span></span> <span class="org-type">String</span>
-    | Done <span class="org-type">ByteString</span> <span class="org-type">r</span>
-</code></pre>
-</div>
-
-<p>
-I'm guessing the idea is that the function producing the lazy bytestring in the
-first place should be able to produce more chunks of data on demand. That's
-likely what the lazy variant of <code>recv</code> does, but at the same time it also
-requires choosing a maximum length and that doesn't rhyme with RESP3. The lazy
-<code>recv</code> isn't quite lazy in the way I needed it to be.
-</p>
-
-<p>
-When looking at the parser for strict bytestrings I calmed down. This parser
-follows what I've learned about parsers (it's not defined <i>exactly</i> like this;
-it's parameterised in its input but for the sake of simplicity I show it with
-<code>ByteString</code> as input):
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><code><span class="org-keyword">data</span> Result r
-    = Fail <span class="org-type">ByteString</span> <span class="org-type"><span class="org-rainbow-delimiters-depth-1">[</span></span><span class="org-type">String</span><span class="org-type"><span class="org-rainbow-delimiters-depth-1">]</span></span> <span class="org-type">String</span>
-    | Partial <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-type">ByteString</span> <span class="org-operator">-&gt;</span> <span class="org-type">Result r</span><span class="org-rainbow-delimiters-depth-1">)</span>
-    | Done <span class="org-type">ByteString</span> <span class="org-type">r</span>
-</code></pre>
-</div>
-
-<p>
-Then to my delight I found that there's already a function for handling exactly
-my problem
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><code><span class="org-function-name">parseWith</span> :: Monad <span class="org-type">m</span> =&gt; <span class="org-type"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-type">m ByteString</span><span class="org-type"><span class="org-rainbow-delimiters-depth-1">)</span></span> <span class="org-operator">-&gt;</span> <span class="org-type">Parser a</span> <span class="org-operator">-&gt;</span> <span class="org-type">ByteString</span> <span class="org-operator">-&gt;</span> <span class="org-type">m </span><span class="org-type"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-type">Result a</span><span class="org-type"><span class="org-rainbow-delimiters-depth-1">)</span></span>
-</code></pre>
-</div>
-
-<p>
-I only needed to rewrite the existing parser to work with strict bytestrings and
-work out how to write a function using <code>recv</code> (for strict bytestrings) that
-fulfils the requirements to be used as the first argument to <code>parseWith</code>. The
-first part wasn't very difficult due to the similarity between <i>attoparsec</i>'s
-APIs for lazy and strict bytestrings. The second only had one complication. It
-turns out <code>recv</code> is blocking, but of course that doesn't work well with
-<code>parseWith</code>. I wrapped it in <code>timeout</code> based on the idea that timing out means
-there's no more data and the parser should be given an empty string so it
-finishes. I also decided to pass the parser as an argument, so I could use the
-same function for receiving responses for individual commands as well as for
-pipelines. The full receiving function is
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><code><span class="org-keyword">import</span> Data.ByteString <span class="org-keyword">qualified</span> <span class="org-keyword">as</span> BS
-<span class="org-keyword">import</span> Data.Text <span class="org-keyword">qualified</span> <span class="org-keyword">as</span> T
-<span class="org-keyword">import</span> Network.Socket.ByteString <span class="org-keyword">qualified</span> <span class="org-keyword">as</span> SB
-
-<span class="org-function-name">recvParse</span> :: <span class="org-type">S.Socket</span> <span class="org-operator">-&gt;</span> <span class="org-type">Parser r</span> <span class="org-operator">-&gt;</span> <span class="org-type">IO </span><span class="org-type"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-type">Either Text </span><span class="org-type"><span class="org-rainbow-delimiters-depth-2">(</span></span><span class="org-type">BS.ByteString, r</span><span class="org-type"><span class="org-rainbow-delimiters-depth-2">)</span></span><span class="org-type"><span class="org-rainbow-delimiters-depth-1">)</span></span>
-<span class="org-function-name">recvParse</span> sock parser = <span class="org-keyword">do</span>
-    parseWith receive parser <span class="org-warning">BS.</span>empty <span class="org-operator">&gt;&gt;=</span> \<span class="org-keyword">case</span>
-        Fail _ <span class="org-rainbow-delimiters-depth-1">[]</span> err <span class="org-operator">-&gt;</span> pure <span class="org-operator">$</span> Left <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-warning">T.</span>pack err<span class="org-rainbow-delimiters-depth-1">)</span>
-        Fail _ ctxs err <span class="org-operator">-&gt;</span> pure <span class="org-operator">$</span> Left <span class="org-operator">$</span> <span class="org-warning">T.</span>intercalate <span class="org-string">" &gt; "</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-warning">T.</span>pack <span class="org-operator">&lt;$&gt;</span> ctxs<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">&lt;&gt;</span> <span class="org-string">": "</span> <span class="org-operator">&lt;&gt;</span> <span class="org-warning">T.</span>pack err
-        Partial _ <span class="org-operator">-&gt;</span> pure <span class="org-operator">$</span> Left <span class="org-string">"impossible error"</span>
-        Done rem result <span class="org-operator">-&gt;</span> pure <span class="org-operator">$</span> Right <span class="org-rainbow-delimiters-depth-1">(</span>rem, result<span class="org-rainbow-delimiters-depth-1">)</span>
-  <span class="org-keyword">where</span>
-    <span class="org-function-name">receive</span> =
-        timeout <span class="org-number">100_000</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-warning">SB.</span>recv sock <span class="org-number">4096</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">&gt;&gt;=</span> \<span class="org-keyword">case</span>
-            Nothing <span class="org-operator">-&gt;</span> pure <span class="org-warning">BS.</span>empty
-            Just bs <span class="org-operator">-&gt;</span> pure bs
-</code></pre>
-</div>
-
-<p>
-Then I only needed to rewrite <code>sendCmd</code> and I wanted to do it in such a way that
-any remaining input data could be use in by the next call to <code>sendCmd</code>.<sup><a id="fnr.3" class="footref" href="#fn.3" role="doc-backlink">3</a></sup> I
-settled for modifying the <code>Conn</code> type to hold an <code>IORef ByteString</code> together
-with the socket and then the function ended up looking like this
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><code><span class="org-function-name">sendCmd</span> :: <span class="org-type">Conn</span> <span class="org-operator">-&gt;</span> <span class="org-type">Command r</span> <span class="org-operator">-&gt;</span> <span class="org-type">IO </span><span class="org-type"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-type">Result r</span><span class="org-type"><span class="org-rainbow-delimiters-depth-1">)</span></span>
-<span class="org-function-name">sendCmd</span> <span class="org-rainbow-delimiters-depth-1">(</span>Conn p<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-rainbow-delimiters-depth-1">(</span>Command k cmd<span class="org-rainbow-delimiters-depth-1">)</span> = withResource p <span class="org-operator">$</span> \(sock, remRef<span class="org-rainbow-delimiters-unmatched">)</span> <span class="org-operator">-&gt;</span> <span class="org-keyword">do</span>
-    _ &lt;- <span class="org-warning">SBL.</span>send sock <span class="org-operator">$</span> toWireCmd cmd
-    rem &lt;- readIORef remRef
-    recvParse sock rem resp <span class="org-operator">&gt;&gt;=</span> \<span class="org-keyword">case</span>
-        Left err <span class="org-operator">-&gt;</span> pure <span class="org-operator">$</span> Left <span class="org-operator">$</span> RespError <span class="org-string">"recv/parse"</span> err
-        Right <span class="org-rainbow-delimiters-unmatched">(</span>newRem, r<span class="org-rainbow-delimiters-unmatched">)</span> <span class="org-operator">-&gt;</span> <span class="org-keyword">do</span>
-            writeIORef remRef newRem
-            pure <span class="org-operator">$</span> k <span class="org-operator">&lt;$&gt;</span> fromWireResp cmd r
-</code></pre>
-</div>
-</div>
-</div>
-<div id="outline-container-org83c453b" class="outline-2">
-<h2 id="org83c453b">What's next?</h2>
-<div class="outline-text-2" id="text-org83c453b">
-<p>
-I've started looking into pub/sub, and basically all of the work described in
-this post is a prerequisite for that. It's not very difficult on the protocol
-level, but I think it's difficult to come up with a design that allows maximal
-flexibility. I'm not even sure it's worthwhile the complexity.
-</p>
-</div>
-</div>
-<div id="footnotes">
-<h2 class="footnotes">Footnotes: </h2>
-<div id="text-footnotes">
-
-<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
-This isn't that much of a problem when sticking to the request-response
-commands, I think. It most certainly becomes a problem with pub/sub though.
-</p></div></div>
-
-<div class="footdef"><sup><a id="fn.2" class="footnum" href="#fnr.2" role="doc-backlink">2</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
-I'm sure that whatever size of buffer I choose to use there'll be someone
-out there who's storing values that are larger. Then there's pipelining that
-makes it even more of an issue.
-</p></div></div>
-
-<div class="footdef"><sup><a id="fn.3" class="footnum" href="#fnr.3" role="doc-backlink">3</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
-To be honest I'm not totally convinced there'll ever be any remaining input.
-Unless a single <code>Conn</code> is used by several threads &#x2013; which would lead to much
-pain with the current implementation &#x2013; or pub/sub is used &#x2013; which isn't
-supported yet.
-</p></div></div>
-
-
-</div>
-</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-redis.html">redis</a> </div>
 <div id="archive">
 <a href="https://magnus.therning.org/archive.html">Other posts</a>
 </div>
