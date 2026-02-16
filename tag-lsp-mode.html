@@ -12,6 +12,38 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <h1 class="title">Posts tagged "lsp-mode":</h1>
+<div class="post-date">16 Feb 2026</div><h1 class="post-title"><a href="https://magnus.therning.org/2026-02-16-using-advice-to-limit-lsp-ui-doc-nuisance.html">Using advice to limit lsp-ui-doc nuisance</a></h1>
+<p>
+I've switched back to <a href="https://emacs-lsp.github.io/lsp-mode/">lsp-mode</a> temporarily until I've had time to fix a few
+things with my <code>eglot</code> setup. Returning prompted me to finally address an
+irritating behaviour with <a href="https://emacs-lsp.github.io/lsp-ui/#lsp-ui-doc">lsp-ui-doc</a>.
+</p>
+
+<p>
+No matter what I set <code>lsp-ui-doc-position</code> to it ends up covering information
+that I want to see. While waiting for a <a href="https://github.com/emacs-lsp/lsp-ui/issues/793">fix</a> I decided to work around it. It
+seems to me that this is exactly what <a href="https://www.gnu.org/software/emacs/manual/html_node/elisp/Advising-Functions.html">advice</a> is for.
+</p>
+
+<p>
+I came up with the following to make sure the frame appears on the half of the
+buffer where <code>point</code> isn't.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">my-lsp-ui-doc-wrapper</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-type">&amp;rest</span> _<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">let*</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>pos-line <span class="org-rainbow-delimiters-depth-5">(</span>- <span class="org-rainbow-delimiters-depth-6">(</span>line-number-at-pos <span class="org-rainbow-delimiters-depth-7">(</span>point<span class="org-rainbow-delimiters-depth-7">)</span><span class="org-rainbow-delimiters-depth-6">)</span>
+                      <span class="org-rainbow-delimiters-depth-6">(</span>line-number-at-pos <span class="org-rainbow-delimiters-depth-7">(</span>window-start<span class="org-rainbow-delimiters-depth-7">)</span><span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+         <span class="org-rainbow-delimiters-depth-4">(</span>pos <span class="org-rainbow-delimiters-depth-5">(</span><span class="org-keyword">if</span> <span class="org-rainbow-delimiters-depth-6">(</span>&lt;= pos-line <span class="org-rainbow-delimiters-depth-7">(</span>/ <span class="org-rainbow-delimiters-depth-8">(</span>window-body-height<span class="org-rainbow-delimiters-depth-8">)</span> 2<span class="org-rainbow-delimiters-depth-7">)</span><span class="org-rainbow-delimiters-depth-6">)</span>
+                  'bottom
+                'top<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">setopt</span> lsp-ui-doc-position pos<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-rainbow-delimiters-depth-1">(</span>advice-add 'lsp-ui-doc--move-frame <span class="org-builtin">:before</span> #'my-lsp-ui-doc-wrapper<span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-lsp-mode.html">lsp-mode</a> </div>
+
 <div class="post-date">19 Jan 2026</div><h1 class="post-title"><a href="https://magnus.therning.org/2026-01-19-trying-eglot,-again.html">Trying eglot, again</a></h1>
 <p>
 I've been using <a href="https://emacs-lsp.github.io/lsp-mode/">lsp-mode</a> since I switched to Emacs several years ago. When <a href="https://github.com/joaotavora/eglot">eglot</a>

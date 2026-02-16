@@ -4,7 +4,47 @@
 <title><![CDATA[Magnus web site - emacs]]></title>
 <description><![CDATA[Magnus web site - emacs]]></description>
 <link>https://magnus.therning.org//tag-emacs.html</link>
-<lastBuildDate>Sun, 25 Jan 2026 14:19:08 +0100</lastBuildDate>
+<lastBuildDate>Mon, 16 Feb 2026 20:11:35 +0100</lastBuildDate>
+<item>
+  <title><![CDATA[Using advice to limit lsp-ui-doc nuisance]]></title>
+  <description><![CDATA[
+<p>
+I've switched back to <a href="https://emacs-lsp.github.io/lsp-mode/">lsp-mode</a> temporarily until I've had time to fix a few
+things with my <code>eglot</code> setup. Returning prompted me to finally address an
+irritating behaviour with <a href="https://emacs-lsp.github.io/lsp-ui/#lsp-ui-doc">lsp-ui-doc</a>.
+</p>
+
+<p>
+No matter what I set <code>lsp-ui-doc-position</code> to it ends up covering information
+that I want to see. While waiting for a <a href="https://github.com/emacs-lsp/lsp-ui/issues/793">fix</a> I decided to work around it. It
+seems to me that this is exactly what <a href="https://www.gnu.org/software/emacs/manual/html_node/elisp/Advising-Functions.html">advice</a> is for.
+</p>
+
+<p>
+I came up with the following to make sure the frame appears on the half of the
+buffer where <code>point</code> isn't.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">my-lsp-ui-doc-wrapper</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-type">&amp;rest</span> _<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">let*</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>pos-line <span class="org-rainbow-delimiters-depth-5">(</span>- <span class="org-rainbow-delimiters-depth-6">(</span>line-number-at-pos <span class="org-rainbow-delimiters-depth-7">(</span>point<span class="org-rainbow-delimiters-depth-7">)</span><span class="org-rainbow-delimiters-depth-6">)</span>
+                      <span class="org-rainbow-delimiters-depth-6">(</span>line-number-at-pos <span class="org-rainbow-delimiters-depth-7">(</span>window-start<span class="org-rainbow-delimiters-depth-7">)</span><span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+         <span class="org-rainbow-delimiters-depth-4">(</span>pos <span class="org-rainbow-delimiters-depth-5">(</span><span class="org-keyword">if</span> <span class="org-rainbow-delimiters-depth-6">(</span>&lt;= pos-line <span class="org-rainbow-delimiters-depth-7">(</span>/ <span class="org-rainbow-delimiters-depth-8">(</span>window-body-height<span class="org-rainbow-delimiters-depth-8">)</span> 2<span class="org-rainbow-delimiters-depth-7">)</span><span class="org-rainbow-delimiters-depth-6">)</span>
+                  'bottom
+                'top<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">setopt</span> lsp-ui-doc-position pos<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-rainbow-delimiters-depth-1">(</span>advice-add 'lsp-ui-doc--move-frame <span class="org-builtin">:before</span> #'my-lsp-ui-doc-wrapper<span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-lsp-mode.html">lsp-mode</a> </div>
+]]></description>
+  <category><![CDATA[emacs]]></category>
+  <category><![CDATA[lsp-mode]]></category>
+  <link>https://magnus.therning.org/2026-02-16-using-advice-to-limit-lsp-ui-doc-nuisance.html</link>
+  <guid>https://magnus.therning.org/2026-02-16-using-advice-to-limit-lsp-ui-doc-nuisance.html</guid>
+  <pubDate>Mon, 16 Feb 2026 20:10:00 +0100</pubDate>
+</item>
 <item>
   <title><![CDATA[More on the switch to eglot]]></title>
   <description><![CDATA[
@@ -1002,51 +1042,6 @@ community cache. Perfect!
   <link>https://magnus.therning.org/2024-07-21-emacs-via-nix-with-mu4e.html</link>
   <guid>https://magnus.therning.org/2024-07-21-emacs-via-nix-with-mu4e.html</guid>
   <pubDate>Sun, 21 Jul 2024 01:04:00 +0200</pubDate>
-</item>
-<item>
-  <title><![CDATA[A function for jumping to a project TODO file]]></title>
-  <description><![CDATA[
-<p>
-I've had <a href="https://melpa.org/#/org-projectile">org-projectile</a> in my config since the beginning, and while it's worked
-nicely for me in my main config it gave me some grief when I played around with
-<a href="https://github.com/progfolio/elpaca">elpaca</a> the other week.<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>
-</p>
-
-<p>
-I tried to get the install instructions to work, but kept on getting errors when
-loading my config. Given that I only use it for one thing, to open the file
-<code>TODO.org</code> in the current project's root, I decided to just write a function for
-doing that instead.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">mep-projectile-open-todo</span> <span class="org-rainbow-delimiters-depth-2">()</span>
-  <span class="org-doc">"Open the project's todo file."</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">if-let*</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>proj-dir <span class="org-rainbow-delimiters-depth-5">(</span>projectile-project-root<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
-            <span class="org-rainbow-delimiters-depth-4">(</span>proj-todo-file <span class="org-rainbow-delimiters-depth-5">(</span>f-join proj-dir <span class="org-string">"</span><span class="org-string"><span class="org-hl-todo"><span class="custom">TODO</span></span></span><span class="org-string">.org"</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
-      <span class="org-rainbow-delimiters-depth-3">(</span>org-open-file proj-todo-file<span class="org-rainbow-delimiters-depth-3">)</span>
-    <span class="org-rainbow-delimiters-depth-3">(</span>message <span class="org-string">"Not in a project"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-<div id="footnotes">
-<h2 class="footnotes">Footnotes: </h2>
-<div id="text-footnotes">
-
-<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
-This was the second time I gave up on using it instead of <a href="https://github.com/radian-software/straight.el">straight</a>, but
-that's another story.
-</p></div></div>
-
-
-</div>
-</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> </div>
-]]></description>
-  <category><![CDATA[emacs]]></category>
-  <category><![CDATA[org-mode]]></category>
-  <link>https://magnus.therning.org/2024-07-13-a-function-for-jumping-to-a-project-todo-file.html</link>
-  <guid>https://magnus.therning.org/2024-07-13-a-function-for-jumping-to-a-project-todo-file.html</guid>
-  <pubDate>Sat, 13 Jul 2024 10:24:00 +0200</pubDate>
 </item>
 </channel>
 </rss>
