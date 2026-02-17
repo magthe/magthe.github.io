@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="alternate"
+      type="application/rss+xml"
+      href="https://magnus.therning.org/feed.xml"
+      title="RSS feed for https://magnus.therning.org/">
+<title>Magnus web site</title>
+<meta name="author" content="Magnus Therning"><meta name="referrer" content="no-referrer"><link href= "static/style.css" rel="stylesheet" type="text/css" /><link href= "static/htmlize.css" rel="stylesheet" type="text/css" /><link href= "static/extra_style.css" rel="stylesheet" type="text/css" /></head>
+<body>
+<div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
+<div id="content">
+<h1 class="title">Posts tagged "project-el":</h1>
+<div class="post-date">18 Feb 2026</div><h1 class="post-title"><a href="https://magnus.therning.org/2026-02-18-switching-to-project.el.html">Switching to project.el</a></h1>
+<p>
+I've used <a href="https://github.com/bbatsov/projectile">projectile</a> ever since I created my own Emacs config. I have a vague
+memory choosing it because some other package only supported it. (It might have
+been <a href="https://emacs-lsp.github.io/lsp-mode/">lsp-mode</a>, but I'm not sure.) Anyway, now that <a href="https://magnus.therning.org/2026-01-19-trying-eglot,-again.html">I'm trying out eglot</a>, <a href="https://magnus.therning.org/2026-01-25-more-on-the-switch-to-eglot.html">again</a>,
+I thought I might as well see if I can switch to <a href="https://www.gnu.org/software/emacs/manual/html_node/emacs/Projects.html">project.el</a>, which is included
+in Emacs nowadays.
+</p>
+<div id="outline-container-org80f0ee9" class="outline-2">
+<h2 id="org80f0ee9">A non-VC project marker</h2>
+<div class="outline-text-2" id="text-org80f0ee9">
+<p>
+Projectile allows using a file, <code>.projectile</code>, in the root of a project. This
+makes it possible to turn a folder into a project without having to use version
+control. It's possible to configure project.el to respect more VC markers than
+what's built-in. This can be used to define a non-VC marker.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">setopt</span> project-vc-extra-root-markers '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">".projectile"</span> <span class="org-string">".git"</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+Since I've set <code>vc-handled-backends</code> to <code>nil</code> (the default made VC interfere
+with magit, so I turned it off completely) I had to add <code>".git"</code> to make git
+repos be recognised as projects too.
+</p>
+</div>
+</div>
+<div id="outline-container-org511d0e2" class="outline-2">
+<h2 id="org511d0e2">Xref history</h2>
+<div class="outline-text-2" id="text-org511d0e2">
+<p>
+The first thing to solve was that the <a href="https://www.gnu.org/software/emacs/manual/html_node/emacs/Xref.html">xref</a> stack wasn't per project. Somewhat
+disappointingly there only seems to be two options for <code>xref-history-storage</code>
+shipped with Emacs
+</p>
+
+<dl class="org-dl">
+<dt><code>xref-global-history</code></dt><dd>a single global history (the default)</dd>
+<dt><code>xref-window-local-history</code></dt><dd>a history per window</dd>
+</dl>
+
+<p>
+I had the same issue with projectile, and ended up writing my own package for
+it. For project.el I settled on using <a href="https://codeberg.org/imarko/xref-project-history.git">xref-project-history</a>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> xref-project-history
+  <span class="org-builtin">:ensure</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-builtin">:type</span> git
+           <span class="org-builtin">:repo</span> <span class="org-string">"https://codeberg.org/imarko/xref-project-history.git"</span>
+           <span class="org-builtin">:branch</span> <span class="org-string">"master"</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-builtin">:custom</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>xref-history-storage #'xref-project-history<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgbaa0d4d" class="outline-2">
+<h2 id="orgbaa0d4d">Jumping between implementation and test</h2>
+<div class="outline-text-2" id="text-orgbaa0d4d">
+<p>
+Projectile has a function for jumping between implementation and test. Not too
+surprisingly it's called <code>projectile-toggle-between-implementation-and-test</code>. I
+found some old emails in an archive suggesting that project.el might have had
+something similar in the past, but if that's the case it's been removed by now.
+When searching for a package I came across <a href="https://lists.gnu.org/archive/html/emacs-devel/2022-09/msg00300.html">this email comparing tools for
+finding related files</a>. The author mentions two that are included with Emacs
+</p>
+
+<dl class="org-dl">
+<dt><code>ff-find-other-file</code></dt><dd>part of find-file.el, which a few other functions and
+a rather impressive set of settings to customise its behaviour.</dd>
+<dt><code>find-sibling-file</code></dt><dd>a newer command, I believe, that also can be
+customised.</dd>
+</dl>
+
+<p>
+So, there are options, but neither of them are made to work nicely with
+project.el out of the box. My most complicated use case seems to be in Haskell
+projects where modules for implementation and test live in separate (mirrored)
+folder hierarchies, e.g.
+</p>
+
+<pre class="example" id="org712aefd">
+src
+└── Sider
+    └── Data
+        ├── Command.hs
+        ├── Pipeline.hs
+        └── Resp.hs
+test
+└── Sider
+    └── Data
+        ├── CommandSpec.hs
+        ├── PipelineSpec.hs
+        └── RespSpec.hs
+
+</pre>
+
+<p>
+I'm not really sure how I'd configure <code>find-sibling-rules</code>, which are regular
+expressions, to deal with folder hierarchies like this. To be honest, I didn't
+really see a way of configuring <code>ff-find-other-file</code> at first either. Then I
+happened on a post about <a href="https://dev.to/fredericlepied/emacs-how-to-switch-from-modulepy-to-testmodulepy-67k">switching between a module and its tests in Python</a>.
+With its help I came up with the following
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">mes/setup-hs-ff</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">when-let*</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>proj-root <span class="org-rainbow-delimiters-depth-5">(</span>project-root <span class="org-rainbow-delimiters-depth-6">(</span>project-current<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+              <span class="org-rainbow-delimiters-depth-4">(</span>rel-proj-root <span class="org-rainbow-delimiters-depth-5">(</span><span class="org-keyword">-some--&gt;</span> <span class="org-rainbow-delimiters-depth-6">(</span>buffer-file-name<span class="org-rainbow-delimiters-depth-6">)</span>
+                               <span class="org-rainbow-delimiters-depth-6">(</span>file-name-directory it<span class="org-rainbow-delimiters-depth-6">)</span>
+                               <span class="org-rainbow-delimiters-depth-6">(</span>f-relative proj-root it<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+              <span class="org-rainbow-delimiters-depth-4">(</span>sub-tree <span class="org-rainbow-delimiters-depth-5">(</span>car <span class="org-rainbow-delimiters-depth-6">(</span>f-split <span class="org-rainbow-delimiters-depth-7">(</span>f-relative <span class="org-rainbow-delimiters-depth-8">(</span>buffer-file-name<span class="org-rainbow-delimiters-depth-8">)</span> proj-root<span class="org-rainbow-delimiters-depth-7">)</span><span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+              <span class="org-rainbow-delimiters-depth-4">(</span>search-dirs <span class="org-rainbow-delimiters-depth-5">(</span><span class="org-keyword">--&gt;</span> '<span class="org-rainbow-delimiters-depth-6">(</span><span class="org-string">"src"</span> <span class="org-string">"test"</span><span class="org-rainbow-delimiters-depth-6">)</span>
+                                <span class="org-rainbow-delimiters-depth-6">(</span>remove sub-tree it<span class="org-rainbow-delimiters-depth-6">)</span>
+                                <span class="org-rainbow-delimiters-depth-6">(</span>-map <span class="org-rainbow-delimiters-depth-7">(</span><span class="org-keyword">lambda</span> <span class="org-rainbow-delimiters-depth-8">(</span>p<span class="org-rainbow-delimiters-depth-8">)</span> <span class="org-rainbow-delimiters-depth-8">(</span>f-join proj-root p<span class="org-rainbow-delimiters-depth-8">)</span><span class="org-rainbow-delimiters-depth-7">)</span> it<span class="org-rainbow-delimiters-depth-6">)</span>
+                                <span class="org-rainbow-delimiters-depth-6">(</span>-select #'f-directory? it<span class="org-rainbow-delimiters-depth-6">)</span>
+                                <span class="org-rainbow-delimiters-depth-6">(</span>-mapcat <span class="org-rainbow-delimiters-depth-7">(</span><span class="org-keyword">lambda</span> <span class="org-rainbow-delimiters-depth-8">(</span>p<span class="org-rainbow-delimiters-depth-8">)</span> <span class="org-rainbow-delimiters-depth-8">(</span>f-directories p nil t<span class="org-rainbow-delimiters-depth-8">)</span><span class="org-rainbow-delimiters-depth-7">)</span> it<span class="org-rainbow-delimiters-depth-6">)</span>
+                                <span class="org-rainbow-delimiters-depth-6">(</span>-map <span class="org-rainbow-delimiters-depth-7">(</span><span class="org-keyword">lambda</span> <span class="org-rainbow-delimiters-depth-8">(</span>p<span class="org-rainbow-delimiters-depth-8">)</span> <span class="org-rainbow-delimiters-depth-8">(</span>f-relative p proj-root<span class="org-rainbow-delimiters-depth-8">)</span><span class="org-rainbow-delimiters-depth-7">)</span> it<span class="org-rainbow-delimiters-depth-6">)</span>
+                                <span class="org-rainbow-delimiters-depth-6">(</span>-map <span class="org-rainbow-delimiters-depth-7">(</span><span class="org-keyword">lambda</span> <span class="org-rainbow-delimiters-depth-8">(</span>p<span class="org-rainbow-delimiters-depth-8">)</span> <span class="org-rainbow-delimiters-depth-8">(</span>f-join rel-proj-root p<span class="org-rainbow-delimiters-depth-8">)</span><span class="org-rainbow-delimiters-depth-7">)</span> it<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">setq-local</span> ff-search-directories search-dirs
+                ff-other-file-alist '<span class="org-rainbow-delimiters-depth-4">(</span><span class="org-rainbow-delimiters-depth-5">(</span><span class="org-string">"Spec\\.hs$"</span> <span class="org-rainbow-delimiters-depth-6">(</span><span class="org-string">".hs"</span><span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span>
+                                      <span class="org-rainbow-delimiters-depth-5">(</span><span class="org-string">"\\.hs$"</span> <span class="org-rainbow-delimiters-depth-6">(</span><span class="org-string">"Spec.hs"</span><span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+A few things to note
+</p>
+
+<ol class="org-ol">
+<li>The order of rules in <code>ff-other-file-alist</code> is important, the first match is
+chosen.</li>
+<li><code>(buffer-file-name)</code> can, and really does, return <code>nil</code> at times, and
+<code>file-name-directory</code> doesn't deal with anything but strings.</li>
+<li>The entries in <code>ff-search-directories</code> have to be relative to the file in the
+current buffer, hence the rather involved <code>varlist</code> in the <code>when-let*</code>
+expression.</li>
+</ol>
+
+<p>
+With this in place I get the following values for <code>ff-search-directories</code>
+</p>
+
+<dl class="org-dl">
+<dt><code>src/Sider/Data/Command.hs</code></dt><dd><code>("../../../test/Sider" "../../../test/Sider/Data")</code></dd>
+<dt><code>test/Sider/Data/CommandSpec.hs</code></dt><dd><code>("../../../src/Sider" "../../../src/Sider/Data")</code></dd>
+</dl>
+
+<p>
+And <code>ff-find-other-file</code> works beautifully.
+</p>
+</div>
+</div>
+<div id="outline-container-orgb8cf766" class="outline-2">
+<h2 id="orgb8cf766">Conclusion</h2>
+<div class="outline-text-2" id="text-orgb8cf766">
+<p>
+My setup with project.el now covers everything I used from projectile so I'm
+fairly confident I'll be happy keeping it.
+</p>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-project-el.html">project-el</a> </div>
+<div id="archive">
+<a href="https://magnus.therning.org/archive.html">Other posts</a>
+</div>
+</div>
+<div id="postamble" class="status"><!-- org-static-blog-page-postamble --></div>
+</body>
+</html>
