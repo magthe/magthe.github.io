@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="A comment on my post on moving to eglot">
+<link rel="alternate"
+      type="application/rss+xml"
+      href="https://magnus.therning.org/feed.xml"
+      title="RSS feed for https://magnus.therning.org/">
+<title>Follow-up on switching to eglot</title>
+<meta name="author" content="Magnus Therning"><meta name="referrer" content="no-referrer"><link href= "static/style.css" rel="stylesheet" type="text/css" /><link href= "static/htmlize.css" rel="stylesheet" type="text/css" /><link href= "static/extra_style.css" rel="stylesheet" type="text/css" /></head>
+<body>
+<div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
+<div id="content">
+<div class="post-date">02 May 2026</div><h1 class="post-title"><a href="https://magnus.therning.org/2026-05-02-follow-up-on-switching-to-eglot.html">Follow-up on switching to eglot</a></h1>
+<p>
+Jan G sent me a two-part comment.
+</p>
+<div id="outline-container-org3a78e0b" class="outline-2">
+<h2 id="org3a78e0b">Part one</h2>
+<div class="outline-text-2" id="text-org3a78e0b">
+<blockquote>
+<p>
+I was under the impression that when using elpaca you needed to disable
+use-package, and that when using elpaca-use-package, you were redefining the
+macro. I’m not 100% sure about this, but the documentation has an example of
+use-package and how it actually expands to an elpaca command.
+</p>
+</blockquote>
+
+<p>
+I wouldn't know. All I can say is that it would be nice if package managers that
+hook into, or completely redefines <code>use-package</code>, would document if they deviate
+from the behaviour of "vanilla <code>use-package</code>" in some way.
+</p>
+</div>
+</div>
+<div id="outline-container-orgac4cab1" class="outline-2">
+<h2 id="orgac4cab1">Part two</h2>
+<div class="outline-text-2" id="text-orgac4cab1">
+<blockquote>
+<p>
+Given that, use-package’s documentation is always going to be a little off,
+since elpaca is doing everything async. The only way I’ve found to reliably
+manage some dependencies is to use the elpaca-after-init hook, so they don’t
+even try to run until elpaca is finished loading everything.
+</p>
+</blockquote>
+
+<p>
+I'd say it sometimes seems like the documentation for <code>use-package</code> is a little
+off for <code>use-package</code> itself 🙂
+</p>
+
+<p>
+The README for Elpaca says that
+</p>
+
+<blockquote>
+<p>
+Add configuration which relies on after-init-hook, emacs-startup-hook, etc to
+elpaca-after-init-hook so it runs after Elpaca has activated all queued
+packages.
+</p>
+</blockquote>
+
+<p>
+but that seems like a very big hammer and as I understand it I'd have to move
+the whole <code>:init</code> block for <code>python-mode</code> into the hook in that case. Playing
+around with the various blocks for <code>use-package</code> isn't too time consuming and I
+think it's a good first thing to try.
+</p>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> </div>
+<div id="comments">Comment <a href=mailto:magnus+blog.comment@therning.org?subject=Comment%20on%20INSERT%20POST%20URL%20HERE>here</a>.</div></div>
+<div id="postamble" class="status"><!-- org-static-blog-page-postamble --></div>
+</body>
+</html>

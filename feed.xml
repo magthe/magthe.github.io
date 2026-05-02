@@ -4,7 +4,172 @@
 <title><![CDATA[Magnus web site]]></title>
 <description><![CDATA[Magnus web site]]></description>
 <link>https://magnus.therning.org/</link>
-<lastBuildDate>Wed, 18 Feb 2026 00:09:47 +0100</lastBuildDate>
+<lastBuildDate>Sat, 02 May 2026 13:20:51 +0200</lastBuildDate>
+<item>
+  <title><![CDATA[Follow-up on switching to eglot]]></title>
+  <description><![CDATA[
+<p>
+Jan G sent me a two-part comment.
+</p>
+<div id="outline-container-org3a78e0b" class="outline-2">
+<h2 id="org3a78e0b">Part one</h2>
+<div class="outline-text-2" id="text-org3a78e0b">
+<blockquote>
+<p>
+I was under the impression that when using elpaca you needed to disable
+use-package, and that when using elpaca-use-package, you were redefining the
+macro. I’m not 100% sure about this, but the documentation has an example of
+use-package and how it actually expands to an elpaca command.
+</p>
+</blockquote>
+
+<p>
+I wouldn't know. All I can say is that it would be nice if package managers that
+hook into, or completely redefines <code>use-package</code>, would document if they deviate
+from the behaviour of "vanilla <code>use-package</code>" in some way.
+</p>
+</div>
+</div>
+<div id="outline-container-orgac4cab1" class="outline-2">
+<h2 id="orgac4cab1">Part two</h2>
+<div class="outline-text-2" id="text-orgac4cab1">
+<blockquote>
+<p>
+Given that, use-package’s documentation is always going to be a little off,
+since elpaca is doing everything async. The only way I’ve found to reliably
+manage some dependencies is to use the elpaca-after-init hook, so they don’t
+even try to run until elpaca is finished loading everything.
+</p>
+</blockquote>
+
+<p>
+I'd say it sometimes seems like the documentation for <code>use-package</code> is a little
+off for <code>use-package</code> itself 🙂
+</p>
+
+<p>
+The README for Elpaca says that
+</p>
+
+<blockquote>
+<p>
+Add configuration which relies on after-init-hook, emacs-startup-hook, etc to
+elpaca-after-init-hook so it runs after Elpaca has activated all queued
+packages.
+</p>
+</blockquote>
+
+<p>
+but that seems like a very big hammer and as I understand it I'd have to move
+the whole <code>:init</code> block for <code>python-mode</code> into the hook in that case. Playing
+around with the various blocks for <code>use-package</code> isn't too time consuming and I
+think it's a good first thing to try.
+</p>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> </div>
+]]></description>
+  <category><![CDATA[emacs]]></category>
+  <link>https://magnus.therning.org/2026-05-02-follow-up-on-switching-to-eglot.html</link>
+  <guid>https://magnus.therning.org/2026-05-02-follow-up-on-switching-to-eglot.html</guid>
+  <pubDate>Sat, 02 May 2026 13:20:00 +0200</pubDate>
+</item>
+<item>
+  <title><![CDATA[Secrets when connecting to DBs]]></title>
+  <description><![CDATA[
+<p>
+I should have dealt with comments I got to my posts on how I deal with secrets
+in my work notes, <a href="https://magnus.therning.org/2024-09-01-improving-how-i-handle-secrets-in-my-work-notes.html">here</a>, and <a href="https://magnus.therning.org/2024-09-09-followup-on-secrets-in-my-work-notes.html">here</a>. Better late than never though, I hope.
+</p>
+<div id="outline-container-orgad48ff7" class="outline-2">
+<h2 id="orgad48ff7">Comment from Stefano R</h2>
+<div class="outline-text-2" id="text-orgad48ff7">
+<p>
+The first one is a link to post titled <a href="https://stefanorodighiero.net/blog/how-i-use-dbconnection-in-org.html">How I use :dbconnection in org files</a>. It
+describes a nice way of setting <code>sql-connection-alist</code> based on the contents of
+a file, in his case <code>~/.pgppass</code>.
+</p>
+</div>
+</div>
+<div id="outline-container-org4a61064" class="outline-2">
+<h2 id="org4a61064">Comment from Harald J</h2>
+<div class="outline-text-2" id="text-org4a61064">
+<p>
+The other starts with a function for searching <code>~/.authinfo.gpg</code> for entries of
+the form
+</p>
+
+<div class="org-src-container">
+<pre class="src src-authinfo"><code><span class="org-variable-name">machine</span> <span class="org-builtin">&lt;host&gt;/&lt;dbname&gt;</span> <span class="org-comment-delimiter">login</span> <span class="org-keyword">&lt;username&gt;</span> <span class="org-comment-delimiter">password</span> <span class="org-doc">&lt;password&gt;</span> <span class="org-comment-delimiter">port</span> <span class="org-type">&lt;port&gt;</span>
+</code></pre>
+</div>
+
+<p>
+and then setting <code>sql-password-search-wallet-function</code> and <code>sql-password-wallet</code>
+to tell <code>sql-mode</code> to use it
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">my/sql-auth-source-search-wallet</span> <span class="org-rainbow-delimiters-depth-2">(</span>wallet product user server database port<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-doc">"Read auth source WALLET to locate the USER secret.
+Sets `</span><span class="org-doc"><span class="org-constant">auth-sources</span></span><span class="org-doc">' to WALLET and uses `</span><span class="org-doc"><span class="org-constant">auth-source-search</span></span><span class="org-doc">' to locate the entry.
+The DATABASE and SERVER are concatenated with a slash between them as the
+host key."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">when-let</span> <span class="org-rainbow-delimiters-depth-3">(</span>results <span class="org-rainbow-delimiters-depth-4">(</span>auth-source-search <span class="org-builtin">:host</span> <span class="org-rainbow-delimiters-depth-5">(</span>concat server <span class="org-string">"/"</span> database<span class="org-rainbow-delimiters-depth-5">)</span>
+                                         <span class="org-builtin">:user</span> user
+                                         <span class="org-builtin">:port</span> <span class="org-rainbow-delimiters-depth-5">(</span>number-to-string port<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">when</span> <span class="org-rainbow-delimiters-depth-4">(</span><span class="org-keyword">and</span> <span class="org-rainbow-delimiters-depth-5">(</span>= <span class="org-rainbow-delimiters-depth-6">(</span>length results<span class="org-rainbow-delimiters-depth-6">)</span> 1<span class="org-rainbow-delimiters-depth-5">)</span>
+               <span class="org-rainbow-delimiters-depth-5">(</span>plist-member <span class="org-rainbow-delimiters-depth-6">(</span>car results<span class="org-rainbow-delimiters-depth-6">)</span> <span class="org-builtin">:secret</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+      <span class="org-rainbow-delimiters-depth-4">(</span>plist-get <span class="org-rainbow-delimiters-depth-5">(</span>car results<span class="org-rainbow-delimiters-depth-5">)</span> <span class="org-builtin">:secret</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">setq</span> sql-password-search-wallet-function #'my/sql-auth-source-search-wallet<span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">setq</span> sql-password-wallet <span class="org-string">"~/.authinfo.gpg"</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+The value for <code>sql-connection-alist</code> is then as normal
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">setq</span> sql-connection-alist
+  '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-rainbow-delimiters-depth-3">(</span>some-dbname <span class="org-rainbow-delimiters-depth-4">(</span>sql-product 'oracle<span class="org-rainbow-delimiters-depth-4">)</span>
+                 <span class="org-rainbow-delimiters-depth-4">(</span>sql-port 1521<span class="org-rainbow-delimiters-depth-4">)</span>
+                 <span class="org-rainbow-delimiters-depth-4">(</span>sql-server ...<span class="org-rainbow-delimiters-depth-4">)</span>
+                 ...<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+</code></pre>
+</div>
+
+<p>
+and the blocks in orgmode looks like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-org"><code><span class="org-org-modern-block-name"><span class="org-org-block-begin-line">SRC</span></span><span class="org-org-block-begin-line"> sql-mode :product oracle :dbconnection i3v1e-ro :results raw
+</span><span class="org-org-block">SELECT to_char(sysdate, 'YYYY-MM-DD HH24:ii:ss') AS today,
+       to_char(sysdate + 1, 'YYYY-MM-DD HH24:ii:ss') AS tomorrow
+FROM dual;
+</span><span class="org-org-modern-block-name"><span class="org-org-block-end-line">SRC</span></span>
+</code></pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org6448d06" class="outline-2">
+<h2 id="org6448d06">Thoughts</h2>
+<div class="outline-text-2" id="text-org6448d06">
+<p>
+Both of these feel closer to the intent of <code>sql-mode</code> in a way. I'll have to try
+using <code>sql-connection-alist</code> at some point.
+</p>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> </div>
+]]></description>
+  <category><![CDATA[emacs]]></category>
+  <link>https://magnus.therning.org/2026-05-02-secrets-when-connecting-to-dbs.html</link>
+  <guid>https://magnus.therning.org/2026-05-02-secrets-when-connecting-to-dbs.html</guid>
+  <pubDate>Sat, 02 May 2026 12:41:00 +0200</pubDate>
+</item>
 <item>
   <title><![CDATA[Switching to project.el]]></title>
   <description><![CDATA[
@@ -15,9 +180,9 @@ been <a href="https://emacs-lsp.github.io/lsp-mode/">lsp-mode</a>, but I'm not s
 I thought I might as well see if I can switch to <a href="https://www.gnu.org/software/emacs/manual/html_node/emacs/Projects.html">project.el</a>, which is included
 in Emacs nowadays.
 </p>
-<div id="outline-container-org80f0ee9" class="outline-2">
-<h2 id="org80f0ee9">A non-VC project marker</h2>
-<div class="outline-text-2" id="text-org80f0ee9">
+<div id="outline-container-org86928ff" class="outline-2">
+<h2 id="org86928ff">A non-VC project marker</h2>
+<div class="outline-text-2" id="text-org86928ff">
 <p>
 Projectile allows using a file, <code>.projectile</code>, in the root of a project. This
 makes it possible to turn a folder into a project without having to use version
@@ -37,9 +202,9 @@ repos be recognised as projects too.
 </p>
 </div>
 </div>
-<div id="outline-container-org511d0e2" class="outline-2">
-<h2 id="org511d0e2">Xref history</h2>
-<div class="outline-text-2" id="text-org511d0e2">
+<div id="outline-container-orgd0c3904" class="outline-2">
+<h2 id="orgd0c3904">Xref history</h2>
+<div class="outline-text-2" id="text-orgd0c3904">
 <p>
 The first thing to solve was that the <a href="https://www.gnu.org/software/emacs/manual/html_node/emacs/Xref.html">xref</a> stack wasn't per project. Somewhat
 disappointingly there only seems to be two options for <code>xref-history-storage</code>
@@ -67,9 +232,9 @@ it. For project.el I settled on using <a href="https://codeberg.org/imarko/xref-
 </div>
 </div>
 </div>
-<div id="outline-container-orgbaa0d4d" class="outline-2">
-<h2 id="orgbaa0d4d">Jumping between implementation and test</h2>
-<div class="outline-text-2" id="text-orgbaa0d4d">
+<div id="outline-container-org7744253" class="outline-2">
+<h2 id="org7744253">Jumping between implementation and test</h2>
+<div class="outline-text-2" id="text-org7744253">
 <p>
 Projectile has a function for jumping between implementation and test. Not too
 surprisingly it's called <code>projectile-toggle-between-implementation-and-test</code>. I
@@ -93,7 +258,7 @@ projects where modules for implementation and test live in separate (mirrored)
 folder hierarchies, e.g.
 </p>
 
-<pre class="example" id="org712aefd">
+<pre class="example" id="org1559d8d">
 src
 └── Sider
     └── Data
@@ -165,9 +330,9 @@ And <code>ff-find-other-file</code> works beautifully.
 </p>
 </div>
 </div>
-<div id="outline-container-orgb8cf766" class="outline-2">
-<h2 id="orgb8cf766">Conclusion</h2>
-<div class="outline-text-2" id="text-orgb8cf766">
+<div id="outline-container-org4cc6636" class="outline-2">
+<h2 id="org4cc6636">Conclusion</h2>
+<div class="outline-text-2" id="text-org4cc6636">
 <p>
 My setup with project.el now covers everything I used from projectile so I'm
 fairly confident I'll be happy keeping it.
@@ -1268,563 +1433,6 @@ supported yet.
   <link>https://magnus.therning.org/2025-06-28-reading-redis-responses.html</link>
   <guid>https://magnus.therning.org/2025-06-28-reading-redis-responses.html</guid>
   <pubDate>Sat, 28 Jun 2025 12:41:00 +0200</pubDate>
-</item>
-<item>
-  <title><![CDATA[Finding a type for Redis commands]]></title>
-  <description><![CDATA[
-<p>
-Arriving at a type for Redis commands required a bit of exploration. I had some
-ideas early on that I for various reasons ended up dropping on the way. This is
-a post about my travels, hopefully someone finds it worthwhile reading.
-</p>
-<div id="outline-container-org9e7139e" class="outline-2">
-<h2 id="org9e7139e">The protocol</h2>
-<div class="outline-text-2" id="text-org9e7139e">
-<p>
-The <a href="https://redis.io/docs/latest/develop/reference/protocol-spec/">Redis Serialization Protocol</a> (RESP) initially reminded me of JSON and I
-thought that following the pattern of <a href="https://hackage.haskell.org/package/aeson">aeson</a> might be a good idea. I decided
-up-front that I'd only support the latest version of RESP, i.e. version 3. So, I
-thought of a data type, <code>Resp</code> with a constructor for each RESP3 data type, and
-a pair of type classes, <code>FromResp</code> and <code>ToResp</code> for converting between Haskell
-types and RESP3. Then after some more reflection I realised that converting to
-RESP is largely pointless. The main reason to convert anything <i>to</i> RESP3 is to
-assemble a command, with its arguments, to send to Redis, but all commands are
-<a href="https://redis.io/docs/latest/develop/reference/protocol-spec/#arrays">arrays</a> of <a href="https://redis.io/docs/latest/develop/reference/protocol-spec/#bulk-strings">bulk strings</a> so it's unlikely that anyone will actually use
-<code>ToResp</code>.<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup> So I scrapped the idea of <code>ToResp</code>. <code>FromResp</code> looked like this
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-keyword">class</span> FromResp a <span class="org-keyword">where</span>
-    <span class="org-function-name">fromResp</span> :: <span class="org-type">Value</span> <span class="org-operator">-&gt;</span> <span class="org-type">Either FromRespError a</span>
-</pre>
-</div>
-
-<p>
-When I started defining commands I didn't like the number of <code>ByteString</code>
-arguments that resulted in, so I defined a data type, <code>Arg</code>, and an accompanying
-type class for arguments, <code>ToArg</code>:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-keyword">newtype</span> Arg = Arg <span class="org-rainbow-delimiters-depth-1">{</span>unArg :: <span class="org-type"><span class="org-rainbow-delimiters-depth-2">[</span></span><span class="org-type">ByteString</span><span class="org-type"><span class="org-rainbow-delimiters-depth-2">]</span></span><span class="org-rainbow-delimiters-depth-1">}</span>
-    <span class="org-keyword">deriving</span> <span class="org-rainbow-delimiters-depth-1">(</span>Show, Semigroup, Monoid<span class="org-rainbow-delimiters-depth-1">)</span>
-
-<span class="org-keyword">class</span> ToArg a <span class="org-keyword">where</span>
-    <span class="org-function-name">toArg</span> :: <span class="org-type">a</span> <span class="org-operator">-&gt;</span> <span class="org-type">Arg</span>
-</pre>
-</div>
-
-<p>
-Later on I saw that it might also be nice to have a type class specifically for
-keys, <code>ToKey</code>, though that's a wrapper for a single <code>ByteString</code>.
-</p>
-
-<p>
-Implementing the functions to encode/decode the protocol were straight-forward
-applications of <a href="https://hackage.haskell.org/package/attoparsec">attoparsec</a> and <a href="https://hackage.haskell.org/package/bytestring">bytestring</a> (using its <code>Builder</code>).
-</p>
-</div>
-</div>
-<div id="outline-container-org597492d" class="outline-2">
-<h2 id="org597492d">A command is a function in need of a sender</h2>
-<div class="outline-text-2" id="text-org597492d">
-<p>
-Even though supporting <a href="https://redis.io/docs/latest/develop/use/pipelining/">pipelining</a> was one of the goals I felt a need to make
-sure I'd understood the protocol so I started off with single commands. The
-protocol is a simple request/response protocol at the core so I settled on this
-type for commands
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-keyword">type</span> Cmd a = forall m. <span class="org-rainbow-delimiters-depth-1">(</span>Monad <span class="org-type">m</span><span class="org-rainbow-delimiters-depth-1">)</span> =&gt; <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-type">ByteString</span> <span class="org-operator">-&gt;</span> <span class="org-type">m ByteString</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">-&gt;</span> <span class="org-type">m </span><span class="org-type"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-type">Either FromRespError a</span><span class="org-type"><span class="org-rainbow-delimiters-depth-1">)</span></span>
-</pre>
-</div>
-
-<p>
-that is, a command is a function accepting a <i>sender</i> and returning an <i>a</i>.
-</p>
-
-<p>
-I wrote a helper function for defining commands, <code>sendCmd</code>
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-function-name">sendCmd</span> :: <span class="org-rainbow-delimiters-depth-1">(</span>Monad <span class="org-type">m</span>, FromResp <span class="org-type">a</span><span class="org-rainbow-delimiters-depth-1">)</span> =&gt; <span class="org-type"><span class="org-rainbow-delimiters-depth-1">[</span></span><span class="org-type">ByteString</span><span class="org-type"><span class="org-rainbow-delimiters-depth-1">]</span></span> <span class="org-operator">-&gt;</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-type">ByteString</span> <span class="org-operator">-&gt;</span> <span class="org-type">m ByteString</span><span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">-&gt;</span> <span class="org-type">m </span><span class="org-type"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-type">Either FromRespError a</span><span class="org-type"><span class="org-rainbow-delimiters-depth-1">)</span></span>
-<span class="org-function-name">sendCmd</span> cmdArgs send = <span class="org-keyword">do</span>
-    <span class="org-keyword">let</span> <span class="org-function-name">cmd</span> = encode <span class="org-operator">$</span> Array <span class="org-operator">$</span> map BulkString cmdArgs
-    send cmd <span class="org-operator">&lt;&amp;&gt;</span> decode <span class="org-operator">&gt;&gt;=</span> \<span class="org-keyword">case</span>
-        Left desc <span class="org-operator">-&gt;</span> pure <span class="org-operator">$</span> Left <span class="org-operator">$</span> FromRespError <span class="org-string">"Decode"</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-warning">Text.</span>pack desc<span class="org-rainbow-delimiters-depth-1">)</span>
-        Right v <span class="org-operator">-&gt;</span> pure <span class="org-operator">$</span> fromValue v
-</pre>
-</div>
-
-<p>
-which made it easy to define commands. Here are two examples, <a href="https://redis.io/docs/latest/commands/append/">append</a> and <a href="https://redis.io/docs/latest/commands/mget/">mget</a>:
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-function-name">append</span> :: <span class="org-rainbow-delimiters-depth-1">(</span>ToArg <span class="org-type">a</span>, ToArg <span class="org-type">b</span><span class="org-rainbow-delimiters-depth-1">)</span> =&gt; <span class="org-type">a</span> <span class="org-operator">-&gt;</span> <span class="org-type">b</span> <span class="org-operator">-&gt;</span> <span class="org-type">Cmd Int</span>
-<span class="org-function-name">append</span> key val = sendCmd <span class="org-operator">$</span> <span class="org-rainbow-delimiters-depth-1">[</span><span class="org-string">"APPEND"</span><span class="org-rainbow-delimiters-depth-1">]</span> <span class="org-operator">&lt;&gt;</span> unArg <span class="org-rainbow-delimiters-depth-1">(</span>toArg key <span class="org-operator">&lt;&gt;</span> toArg val<span class="org-rainbow-delimiters-depth-1">)</span>
-
-<span class="org-doc">-- | https://redis.io/docs/latest/commands/mget/</span>
-<span class="org-function-name">mget</span> :: <span class="org-rainbow-delimiters-depth-1">(</span>ToArg <span class="org-type">a</span>, FromResp <span class="org-type">b</span><span class="org-rainbow-delimiters-depth-1">)</span> =&gt; <span class="org-type">NE.NonEmpty a</span> <span class="org-operator">-&gt;</span> <span class="org-type">Cmd </span><span class="org-type"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-type">NE.NonEmpty b</span><span class="org-type"><span class="org-rainbow-delimiters-depth-1">)</span></span>
-<span class="org-function-name">mget</span> ks = sendCmd <span class="org-operator">$</span> <span class="org-rainbow-delimiters-depth-1">[</span><span class="org-string">"MGET"</span><span class="org-rainbow-delimiters-depth-1">]</span> <span class="org-operator">&lt;&gt;</span> unArg <span class="org-rainbow-delimiters-depth-1">(</span>foldMap1 toArg ks<span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-The function to send off a command and receive its response, <code>sendAndRecieve</code>,
-was just a call to <code>send</code> followed by a call to <code>recv</code> in <a href="https://hackage.haskell.org/package/network">network</a> (the variants
-for lazy bytestrings).
-</p>
-
-<p>
-I sort of liked this representation &#x2013; there's always something pleasant with
-finding a way to represent something as a function. There's a very big problem
-with it though: it's difficult to implement pipelining!
-</p>
-
-<p>
-Yes, <code>Cmd</code> is a functor since <code>(-&gt;) r</code> is a functor, and thus it's possible to
-make it an <code>Applicative</code>, e.g. using <a href="https://hackage.haskell.org/package/free">free</a>. However, to implement pipelining it's
-necessary to
-</p>
-
-<ol class="org-ol">
-<li>encode all commands, then</li>
-<li>concatenate them all into a single bytestring and send it</li>
-<li>read the response, which is a concatenation of the individual commands'
-responses, and</li>
-<li>convert each separate response from RESP3.</li>
-</ol>
-
-<p>
-That isn't easy when each command contains its own encoding and decoding. The
-sender function would have to relinquish control after encoding the command, and
-resume with the resume again later to decode it. I suspect it's doable using
-continuations, or <a href="https://hackage.haskell.org/package/monad-coroutine">monad-coroutine</a>, but it felt complicated and rather than
-travelling down that road I asked for ideas on the <a href="https://discourse.haskell.org/t/applicative-that-would-require-two-passes-to-run/12179">Haskell Discourse</a>. The
-replies lead me to a paper, <a href="https://www.cs.ox.ac.uk/jeremy.gibbons/publications/delivery.pdf">Free delivery</a>, and a bit later a package,
-<a href="https://hackage.haskell.org/package/monad-batcher">monad-batcher</a>. When I got the pointer to the package I'd already read the paper
-and started implementing the ideas in it, so I decided to save exploring
-<i>monad-batcher</i> for later.
-</p>
-</div>
-</div>
-<div id="outline-container-org02d7470" class="outline-2">
-<h2 id="org02d7470">A command for free delivery</h2>
-<div class="outline-text-2" id="text-org02d7470">
-<p>
-The paper Free delivery is a perfect match for pipelining in Redis, and my
-understanding is that it proposes a solution where
-</p>
-
-<ol class="org-ol">
-<li>Commands are defined as a GADT, <code>Command a</code>.</li>
-<li>Two functions are defined to serialise and deserialise a <code>Command a</code>. In the
-paper they use <code>String</code> as the serialisation, so <code>show</code> and <code>read</code> is used.</li>
-<li>A type, <code>ActionA a</code>, is defined that combines a command with a modification
-of its <code>a</code> result. It implements <code>Functor</code>.</li>
-<li>A free type, <code>FreeA f a</code> is defined, and made into an <code>Applicative</code> with the
-constraint that <code>f</code> is a <code>Functor</code>.</li>
-<li>A function, <code>serializeA</code>, is defined that traverses a <code>FreeA ActionA a</code>
-serialising each command.</li>
-<li>A function, <code>deserializeA</code>, is defined that traverses a <code>FreeA ActionA a</code>
-deserialising the response for each command.</li>
-</ol>
-
-<p>
-I defined a command type, <code>Command a</code>, with only three commands in it, <code>echo</code>,
-<code>hello</code>, and <code>ping</code>. I then followed the recipe above to verify that I could get
-it working at all. The Haskell used in the paper is showing its age, and there
-seems to be a <code>Functor</code> instance missing, but it was still straight forward and
-I could verify that it worked against a locally running Redis.
-</p>
-
-<p>
-Then I made a few changes&#x2026;
-</p>
-
-<p>
-I renamed the command type to <code>Cmd</code> so I could use <code>Command</code> for what the
-paper calls <code>ActionA</code>.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-keyword">data</span> Cmd r <span class="org-keyword">where</span>
-    Echo :: <span class="org-type">Text</span> <span class="org-operator">-&gt;</span> <span class="org-type">Cmd Text</span>
-    Hello :: <span class="org-type">Maybe Int</span> <span class="org-operator">-&gt;</span> <span class="org-type">Cmd </span><span class="org-type"><span class="org-rainbow-delimiters-depth-1">()</span></span>
-    Ping :: <span class="org-type">Maybe Text</span> <span class="org-operator">-&gt;</span> <span class="org-type">Cmd Text</span>
-
-<span class="org-keyword">data</span> Command a = forall r. Command !<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-type">r</span> <span class="org-operator">-&gt;</span> <span class="org-type">a</span><span class="org-rainbow-delimiters-depth-1">)</span> !<span class="org-type"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-type">Cmd r</span><span class="org-type"><span class="org-rainbow-delimiters-depth-1">)</span></span>
-
-<span class="org-keyword">instance</span> Functor <span class="org-type">Command</span> <span class="org-keyword">where</span>
-    <span class="org-function-name">fmap</span> f <span class="org-rainbow-delimiters-depth-1">(</span>Command k c<span class="org-rainbow-delimiters-depth-1">)</span> = Command <span class="org-rainbow-delimiters-depth-1">(</span>f <span class="org-operator">.</span> k<span class="org-rainbow-delimiters-depth-1">)</span> c
-
-<span class="org-function-name">toWireCmd</span> :: <span class="org-type">Cmd r</span> <span class="org-operator">-&gt;</span> <span class="org-type">ByteString</span>
-<span class="org-function-name">toWireCmd</span> <span class="org-rainbow-delimiters-depth-1">(</span>Echo msg<span class="org-rainbow-delimiters-depth-1">)</span> = _
-<span class="org-function-name">toWireCmd</span> <span class="org-rainbow-delimiters-depth-1">(</span>Hello ver<span class="org-rainbow-delimiters-depth-1">)</span> = _
-<span class="org-function-name">toWireCmd</span> <span class="org-rainbow-delimiters-depth-1">(</span>Ping msg<span class="org-rainbow-delimiters-depth-1">)</span> = _
-
-<span class="org-function-name">fromWireResp</span> :: <span class="org-type">Cmd r</span> <span class="org-operator">-&gt;</span> <span class="org-type">Resp</span> <span class="org-operator">-&gt;</span> <span class="org-type">Either RespError r</span>
-<span class="org-function-name">fromWireResp</span> <span class="org-rainbow-delimiters-depth-1">(</span>Echo _<span class="org-rainbow-delimiters-depth-1">)</span> = fromResp
-<span class="org-function-name">fromWireResp</span> <span class="org-rainbow-delimiters-depth-1">(</span>Hello _<span class="org-rainbow-delimiters-depth-1">)</span> = fromResp
-<span class="org-function-name">fromWireResp</span> <span class="org-rainbow-delimiters-depth-1">(</span>Ping _<span class="org-rainbow-delimiters-depth-1">)</span> = fromResp
-</pre>
-</div>
-
-<p>
-(At this point I was still using <code>FromResp</code>.)
-</p>
-
-<p>
-I also replaced the free applicative defined in the paper and started using
-<a href="https://hackage.haskell.org/package/free">free</a>. A couple of type aliases make it a little easier to write nice signatures
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-keyword">type</span> Pipeline a = <span class="org-type">Ap Command a</span>
-
-<span class="org-keyword">type</span> PipelineResult a = <span class="org-type">Validation </span><span class="org-type"><span class="org-rainbow-delimiters-depth-1">[</span></span><span class="org-type">RespError</span><span class="org-type"><span class="org-rainbow-delimiters-depth-1">]</span></span><span class="org-type"> a</span>
-</pre>
-</div>
-
-<p>
-and defining individual pipeline commands turned into something rather
-mechanical. (I also swapped the order of the arguments to build a <code>Command</code> so I
-can use point-free style here.)
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-function-name">liftPipe</span> :: <span class="org-rainbow-delimiters-depth-1">(</span>FromResp <span class="org-type">r</span><span class="org-rainbow-delimiters-depth-1">)</span> =&gt; <span class="org-type">Cmd r</span> <span class="org-operator">-&gt;</span> <span class="org-type">Pipeline r</span>
-<span class="org-function-name">liftPipe</span> = liftAp <span class="org-operator">.</span> Command id
-
-<span class="org-function-name">echo</span> :: <span class="org-type">Text</span> <span class="org-operator">-&gt;</span> <span class="org-type">Pipeline Text</span>
-<span class="org-function-name">echo</span> = liftPipe <span class="org-operator">.</span> Echo
-
-<span class="org-function-name">hello</span> :: <span class="org-type">Maybe Int</span> <span class="org-operator">-&gt;</span> <span class="org-type">Pipeline </span><span class="org-type"><span class="org-rainbow-delimiters-depth-1">()</span></span>
-<span class="org-function-name">hello</span> = liftPipe <span class="org-operator">.</span> Hello
-
-<span class="org-function-name">ping</span> :: <span class="org-type">Maybe Text</span> <span class="org-operator">-&gt;</span> <span class="org-type">Pipeline Text</span>
-<span class="org-function-name">ping</span> = liftPipe <span class="org-operator">.</span> Ping
-</pre>
-</div>
-
-<p>
-One nice thing with switching to <i>free</i> was that serialisation became very simple
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-function-name">toWirePipeline</span> :: <span class="org-type">Pipeline a</span> <span class="org-operator">-&gt;</span> <span class="org-type">ByteString</span>
-<span class="org-function-name">toWirePipeline</span> = runAp_ <span class="org-operator">$</span> \(Command _ c<span class="org-rainbow-delimiters-unmatched">)</span> <span class="org-operator">-&gt;</span> toWireCmd c
-</pre>
-</div>
-
-<p>
-On the other hand deserialisation became a little more involved, but it's not
-too bad
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-function-name">fromWirePipelineResp</span> :: <span class="org-type">Pipeline a</span> <span class="org-operator">-&gt;</span> <span class="org-type"><span class="org-rainbow-delimiters-depth-1">[</span></span><span class="org-type">Resp</span><span class="org-type"><span class="org-rainbow-delimiters-depth-1">]</span></span> <span class="org-operator">-&gt;</span> <span class="org-type">PipelineResult a</span>
-<span class="org-function-name">fromWirePipelineResp</span> <span class="org-rainbow-delimiters-depth-1">(</span>Pure a<span class="org-rainbow-delimiters-depth-1">)</span> _ = pure a
-<span class="org-function-name">fromWirePipelineResp</span> <span class="org-rainbow-delimiters-depth-1">(</span>Ap <span class="org-rainbow-delimiters-depth-2">(</span>Command k c<span class="org-rainbow-delimiters-depth-2">)</span> p<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-rainbow-delimiters-depth-1">(</span>r : rs<span class="org-rainbow-delimiters-depth-1">)</span> = fromWirePipelineResp p rs <span class="org-operator">&lt;*&gt;</span> <span class="org-rainbow-delimiters-depth-1">(</span>k <span class="org-operator">&lt;$&gt;</span> liftError singleton <span class="org-rainbow-delimiters-depth-2">(</span>fromWireResp c r<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-<span class="org-function-name">fromWirePipelineResp</span> _ _ = Failure <span class="org-rainbow-delimiters-depth-1">[</span>RespError <span class="org-string">"fromWirePipelineResp"</span> <span class="org-string">"Unexpected wire result"</span><span class="org-rainbow-delimiters-depth-1">]</span>
-</pre>
-</div>
-
-<p>
-Everything was working nicely and I started adding support for more commands. I
-used the small service from work to guide my choice of what commands to add.
-First out was <a href="https://redis.io/docs/latest/commands/del/">del</a>, then <a href="https://redis.io/docs/latest/commands/get/">get</a> and <a href="https://redis.io/docs/latest/commands/set/">set</a>. After adding <a href="https://redis.io/docs/latest/commands/lpush/">lpush</a> I was pretty much ready
-to try to replace <i>hedis</i> in the service from work.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-keyword">data</span> Cmd r <span class="org-keyword">where</span>
-    <span class="org-comment">-- echo, hello, ping</span>
-    Del :: <span class="org-rainbow-delimiters-depth-1">(</span>ToKey <span class="org-type">k</span><span class="org-rainbow-delimiters-depth-1">)</span> =&gt; <span class="org-type">NonEmpty k</span> <span class="org-operator">-&gt;</span> <span class="org-type">Cmd Int</span>
-    Get :: <span class="org-rainbow-delimiters-depth-1">(</span>ToKey <span class="org-type">k</span>, FromResp <span class="org-type">r</span><span class="org-rainbow-delimiters-depth-1">)</span> =&gt; <span class="org-type">k</span> <span class="org-operator">-&gt;</span> <span class="org-type">Cmd r</span>
-    Set :: <span class="org-rainbow-delimiters-depth-1">(</span>ToKey <span class="org-type">k</span>, ToArg <span class="org-type">v</span><span class="org-rainbow-delimiters-depth-1">)</span> =&gt; <span class="org-type">k</span> <span class="org-operator">-&gt;</span> <span class="org-type">v</span> <span class="org-operator">-&gt;</span> <span class="org-type">Cmd Bool</span>
-    Lpush :: <span class="org-rainbow-delimiters-depth-1">(</span>ToKey <span class="org-type">k</span>, ToArg <span class="org-type">v</span><span class="org-rainbow-delimiters-depth-1">)</span> =&gt; <span class="org-type">k</span> <span class="org-operator">-&gt;</span> <span class="org-type">NonEmpty v</span> <span class="org-operator">-&gt;</span> <span class="org-type">Cmd Int</span>
-</pre>
-</div>
-
-<p>
-However, when looking at the above definition started I thinking.
-</p>
-
-<ul class="org-ul">
-<li>Was it really a good idea to litter <code>Cmd</code> with constraints like that?</li>
-<li>Would it make sense to keep the <code>Cmd</code> type a bit closer to the actual Redis
-commands?</li>
-<li>Also, maybe <code>FromResp</code> wasn't such a good idea after all, what if I remove it?</li>
-</ul>
-
-<p>
-That brought me to the third version of the type for Redis commands.
-</p>
-</div>
-</div>
-<div id="outline-container-orgb20caeb" class="outline-2">
-<h2 id="orgb20caeb">Converging and simplifying</h2>
-<div class="outline-text-2" id="text-orgb20caeb">
-<p>
-While adding new commands and writing instances of <code>FromResp</code> I slowly realised
-that my initial thinking of RESP3 as somewhat similar to JSON didn't really pan
-out. I had quickly dropped <code>ToResp</code> and now the instances of <code>FromResp</code> didn't
-sit right with me. They obviously had to "follow the commands", so to speak, but
-at the same time allow users to bring their own types. For instance, <code>LSPUSH</code>
-returns the number of pushed messages, but at the same time <code>GET</code> should be able
-to return an <code>Int</code> too. This led to <code>Int</code>'s <code>FromResp</code> looking like this
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-keyword">instance</span> FromResp <span class="org-type">Int</span> <span class="org-keyword">where</span>
-    <span class="org-function-name">fromResp</span> <span class="org-rainbow-delimiters-depth-1">(</span>BulkString bs<span class="org-rainbow-delimiters-depth-1">)</span> =
-        <span class="org-keyword">case</span> parseOnly <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-warning">AC8.</span>signed <span class="org-warning">AC8.</span>decimal<span class="org-rainbow-delimiters-depth-1">)</span> bs <span class="org-keyword">of</span>
-            Left s <span class="org-operator">-&gt;</span> Left <span class="org-operator">$</span> RespError <span class="org-string">"FromResp"</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-warning">TL.</span>pack s<span class="org-rainbow-delimiters-depth-1">)</span>
-            Right n <span class="org-operator">-&gt;</span> Right n
-    <span class="org-function-name">fromResp</span> <span class="org-rainbow-delimiters-depth-1">(</span>Number n<span class="org-rainbow-delimiters-depth-1">)</span> = Right <span class="org-operator">$</span> fromEnum n
-    <span class="org-function-name">fromResp</span> _ = Left <span class="org-operator">$</span> RespError <span class="org-string">"FromResp"</span> <span class="org-string">"Unexpected value"</span>
-</pre>
-</div>
-
-<p>
-I could see this becoming worse, take the instance for <code>Bool</code>, I'd have to
-consider that
-</p>
-
-<ul class="org-ul">
-<li>for <code>MOVE</code> <code>Integer 1</code> means <code>True</code> and <code>Integer 0</code> means <code>False</code></li>
-<li>for <code>SET</code> <code>SimpleString "OK"</code> means <code>True</code></li>
-<li>users would justifiably expect a bunch of bytestrings to be <code>True</code>, e.g.
-<code>BulkString "true"</code>, <code>BulkString "TRUE"</code>, <code>BulkString "1"</code>, etc</li>
-</ul>
-
-<p>
-However, it's impossible to cover <i>all</i> ways users can encode a <code>Bool</code> in a
-<code>ByteString</code> so no matter what I do users will end up having to wrap <i>their</i>
-<code>Bool</code> with <code>newtype</code> and implement a fitting <code>FromResp</code>. On top of that, even
-thought I haven't found any example of it yet, I fully expect there to be,
-somewhere in the large set of Redis commands, at least two commands each wanting
-an instance of a basic type that simply can't be combined into a single
-instance, meaning that the client library would need to do some <code>newtype</code>
-wrapping too.
-</p>
-
-<p>
-No, I really didn't like it! So, could I get rid of <code>FromResp</code> and still offer
-users an API where they can user their own types as the result of commands?
-</p>
-
-<p>
-To be concrete I wanted this
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-keyword">data</span> Cmd r <span class="org-keyword">where</span>
-    <span class="org-comment">-- other commands</span>
-    Get :: <span class="org-rainbow-delimiters-depth-1">(</span>ToKey <span class="org-type">k</span><span class="org-rainbow-delimiters-depth-1">)</span> =&gt; <span class="org-type">k</span> <span class="org-operator">-&gt;</span> <span class="org-type">Cmd </span><span class="org-type"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-type">Maybe ByteString</span><span class="org-type"><span class="org-rainbow-delimiters-depth-1">)</span></span>
-</pre>
-</div>
-
-<p>
-and I wanted the user to be able to conveniently turn a <code>Cmd r</code> into a <code>Cmd s</code>.
-In other words, I wanted a <code>Functor</code> instance. Making <code>Cmd</code> itself a functor
-isn't necessary and I just happened to already have a functor type that wraps
-<code>Cmd</code>, the <code>Command</code> type I used for pipelining. If I were to use that I'd need
-to write wrapper functions for each command though, but if I did that then I
-could also remove the <code>ToKey~/~ToArg</code> constraints from the constructors of <code>Cmd
-r</code> and put them on the wrapper instead. I'd get
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-keyword">data</span> Cmd r <span class="org-keyword">where</span>
-    <span class="org-comment">-- other commands</span>
-    Get :: <span class="org-type">Key</span> <span class="org-operator">-&gt;</span> <span class="org-type">Cmd </span><span class="org-type"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-type">Maybe ByteString</span><span class="org-type"><span class="org-rainbow-delimiters-depth-1">)</span></span>
-
-<span class="org-function-name">get</span> :: <span class="org-rainbow-delimiters-depth-1">(</span>ToKey <span class="org-type">k</span><span class="org-rainbow-delimiters-depth-1">)</span> =&gt; <span class="org-type">k</span> <span class="org-operator">-&gt;</span> <span class="org-type">Command </span><span class="org-type"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-type">Maybe ByteString</span><span class="org-type"><span class="org-rainbow-delimiters-depth-1">)</span></span>
-<span class="org-function-name">get</span> = Command id <span class="org-operator">.</span> Get <span class="org-operator">.</span> toKey
-</pre>
-</div>
-
-<p>
-I'd also have to rewrite <code>fromWireResp</code> so it's more specific for each command.
-Instead of
-</p>
-
-<div class="org-src-container">
-<pre class="src src-hskell">fromWireResp :: Cmd r -&gt; Resp -&gt; Either RespError r
-fromWireResp (Get _) = fromResp
-...
-</pre>
-</div>
-
-<p>
-I had to match up exactly on the possible replies to <code>GET</code>
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-function-name">fromWireResp</span> :: <span class="org-type">Cmd r</span> <span class="org-operator">-&gt;</span> <span class="org-type">Resp</span> <span class="org-operator">-&gt;</span> <span class="org-type">Either RespError r</span>
-<span class="org-function-name">fromWireResp</span> _ <span class="org-rainbow-delimiters-depth-1">(</span>SimpleError err desc<span class="org-rainbow-delimiters-depth-1">)</span> = Left <span class="org-operator">$</span> RespError <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-warning">T.</span>decodeUtf8 err<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-rainbow-delimiters-depth-1">(</span><span class="org-warning">T.</span>decodeUtf8 desc<span class="org-rainbow-delimiters-depth-1">)</span>
-<span class="org-function-name">fromWireResp</span> <span class="org-rainbow-delimiters-depth-1">(</span>Get _<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-rainbow-delimiters-depth-1">(</span>BulkString bs<span class="org-rainbow-delimiters-depth-1">)</span> = Right <span class="org-operator">$</span> Just bs
-<span class="org-function-name">fromWireResp</span> <span class="org-rainbow-delimiters-depth-1">(</span>Get _<span class="org-rainbow-delimiters-depth-1">)</span> Null = Right Nothing
-...
-<span class="org-function-name">fromWireResp</span> _ _ = Left <span class="org-operator">$</span> RespError <span class="org-string">"fromWireResp"</span> <span class="org-string">"Unexpected value"</span>
-</pre>
-</div>
-
-<p>
-Even though it was more code I liked it better than before, and I think it's
-slightly simpler code. I also hope it makes the use of the API is a bit simpler
-and clear.
-</p>
-
-<p>
-Here's an example from the code for the service I wrote for work. It reads a UTC
-timestamp stored in <code>timeKey</code>, the timestamp is a JSON string so it needs to be
-decoded.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><span class="org-function-name">readUTCTime</span> :: <span class="org-type">Connection</span> <span class="org-operator">-&gt;</span> <span class="org-type">IO </span><span class="org-type"><span class="org-rainbow-delimiters-depth-1">(</span></span><span class="org-type">Maybe UTCTime</span><span class="org-type"><span class="org-rainbow-delimiters-depth-1">)</span></span>
-<span class="org-function-name">readUTCTime</span> conn =
-    sendCmd conn <span class="org-rainbow-delimiters-depth-1">(</span>maybe Nothing decode <span class="org-operator">&lt;$&gt;</span> get timeKey<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-operator">&gt;&gt;=</span> \<span class="org-keyword">case</span>
-        Left _ <span class="org-operator">-&gt;</span> pure Nothing
-        Right datum <span class="org-operator">-&gt;</span> pure datum
-</pre>
-</div>
-</div>
-</div>
-<div id="outline-container-org0a0824d" class="outline-2">
-<h2 id="org0a0824d">What's next?</h2>
-<div class="outline-text-2" id="text-org0a0824d">
-<p>
-I'm pretty happy with the command type for now, though I have a feeling I'll
-have to revisit <code>Arg</code> and <code>ToArg</code> at some point.
-</p>
-
-<p>
-I've just turned the <code>Connection</code> type into a pool using <a href="https://hackage.haskell.org/package/resource-pool">resource-pool</a>, and I
-started looking at pub/sub. The latter thing, pub/sub, will require some thought
-and experimentation I think. Quite possibly it'll end up in a post here too.
-</p>
-
-<p>
-I also have <i>a lot</i> of commands to add.
-</p>
-</div>
-</div>
-<div id="footnotes">
-<h2 class="footnotes">Footnotes: </h2>
-<div id="text-footnotes">
-
-<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
-Of course one could use RESP3 as the serialisation format for storing values
-in Redis. Personally I think I'd prefer using something more widely used, and
-easier to read, such as JSON or BSON.
-</p></div></div>
-
-
-</div>
-</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-redis.html">redis</a> </div>
-]]></description>
-  <category><![CDATA[haskell]]></category>
-  <category><![CDATA[redis]]></category>
-  <link>https://magnus.therning.org/2025-06-20-finding-a-type-for-redis-commands.html</link>
-  <guid>https://magnus.therning.org/2025-06-20-finding-a-type-for-redis-commands.html</guid>
-  <pubDate>Fri, 20 Jun 2025 23:40:00 +0200</pubDate>
-</item>
-<item>
-  <title><![CDATA[Why I'm writing a Redis client package]]></title>
-  <description><![CDATA[
-<p>
-A couple of weeks ago I needed a small, hopefully temporary, service at work. It
-bridges a gap in functionality provided by a legacy system and the functionality
-desired by a new system. The legacy system is cumbersome to work with, so we
-tend to prefer building anti-corruption layers rather than changing it directly,
-and sometimes we implement it as separate services.
-</p>
-
-<p>
-This time it was good enough to run the service as a cronjob, but it did need to
-keep track of when it ran the last time. It felt silly to spin up a separate DB
-just to keep a timestamp, and using another service's DB is something I <i>really</i>
-dislike and avoid.<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup> So, I ended up using the Redis instance that's used as a
-cache by a OSS service we host.
-</p>
-
-<p>
-The last time I had a look at the options for writing a Redis client in Haskell
-I found two candidates, <a href="https://hackage.haskell.org/package/hedis">hedis</a> and <a href="https://hackage.haskell.org/package/redis-io">redis-io</a>. At the time I wrote a <a href="https://magnus.therning.org/2021-05-07-working-with-hedis.html">short note</a>
-about them. This time around I found nothing much has changed, they are still
-the only two contenders and they still suffer from the same issues
-</p>
-
-<ul class="org-ul">
-<li><i>hedis</i> has still has the same API and I still find it as awkward.</li>
-<li><i>redis-io</i> still requires a logger.</li>
-</ul>
-
-<p>
-I once again decided to use <i>hedis</i> and wrote the service for work in a couple
-of days, but this time I thought I'd see what it would take to remove the
-requirement on <a href="https://hackage.haskell.org/package/tinylog">tinylog</a> from <i>redis-io</i>. I spent a few evenings on it, though I
-spent most time on "modernising" the dev setup, using Nix to build, re-format
-using <i>fourmolu</i>, etc. I did the same for <a href="https://hackage.haskell.org/package/redis-resp">redis-resp</a>, the main dependency of
-<i>redis-io</i>. The result of that can be found on my gitlab account:
-</p>
-
-<ul class="org-ul">
-<li><a href="https://gitlab.com/magus/redis-resp">https://gitlab.com/magus/redis-resp</a></li>
-<li><a href="https://gitlab.com/magus/redis-io">https://gitlab.com/magus/redis-io</a></li>
-</ul>
-
-<p>
-At the moment I won't take that particular experiment any further and given that
-the most recent change to <i>redis-io</i> was in 2020 (according to its <a href="https://gitlab.com/twittner/redis-io/">git repo</a>)
-I don't think there's much interest upstream either.
-</p>
-
-<p>
-Making the changes to <i>redis-io</i> and <i>redis-resp</i> made me a little curious about
-the <a href="https://redis.io/docs/latest/develop/reference/protocol-spec/">Redis protocol</a> so I started reading about it. It made me start thinking
-about implementing a client lib myself. How hard could it be?
-</p>
-
-<p>
-I'd also asked a question about Redis client libs on <a href="https://www.reddit.com/r/haskell/comments/1kk4a5v/redis_lib_for_haskell/">r/haskell</a> and a response
-led me to <a href="https://hackage.haskell.org/package/redis-schema">redis-schema</a>. It has a very good README, and its section on
-transactions with its observation that Redis transactions are a perfect match
-for <code>Applicative</code>. This pushed me even closer to start writing a client lib.
-What pushed me over the edge was the realisation that <a href="https://redis.io/docs/latest/develop/use/pipelining/">pipelining</a> also is a
-perfect match for <code>Applicative</code>.
-</p>
-
-<p>
-For the last few weeks I've spent some of my free time reading and experimenting
-and I'm enjoying it very much. We'll see where it leads, but hopefully I'll at
-least have bit more to write about it.
-</p>
-<div id="footnotes">
-<h2 class="footnotes">Footnotes: </h2>
-<div id="text-footnotes">
-
-<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
-One definition of a microservice I find very useful is "a service that owns
-its own DB schema."
-</p></div></div>
-
-
-</div>
-</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-redis.html">redis</a> </div>
-]]></description>
-  <category><![CDATA[haskell]]></category>
-  <category><![CDATA[redis]]></category>
-  <link>https://magnus.therning.org/2025-06-17-why-i'm-writing-a-redis-client-package.html</link>
-  <guid>https://magnus.therning.org/2025-06-17-why-i'm-writing-a-redis-client-package.html</guid>
-  <pubDate>Tue, 17 Jun 2025 22:43:00 +0200</pubDate>
 </item>
 </channel>
 </rss>

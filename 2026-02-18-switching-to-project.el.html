@@ -19,9 +19,9 @@ been <a href="https://emacs-lsp.github.io/lsp-mode/">lsp-mode</a>, but I'm not s
 I thought I might as well see if I can switch to <a href="https://www.gnu.org/software/emacs/manual/html_node/emacs/Projects.html">project.el</a>, which is included
 in Emacs nowadays.
 </p>
-<div id="outline-container-org80f0ee9" class="outline-2">
-<h2 id="org80f0ee9">A non-VC project marker</h2>
-<div class="outline-text-2" id="text-org80f0ee9">
+<div id="outline-container-org86928ff" class="outline-2">
+<h2 id="org86928ff">A non-VC project marker</h2>
+<div class="outline-text-2" id="text-org86928ff">
 <p>
 Projectile allows using a file, <code>.projectile</code>, in the root of a project. This
 makes it possible to turn a folder into a project without having to use version
@@ -41,9 +41,9 @@ repos be recognised as projects too.
 </p>
 </div>
 </div>
-<div id="outline-container-org511d0e2" class="outline-2">
-<h2 id="org511d0e2">Xref history</h2>
-<div class="outline-text-2" id="text-org511d0e2">
+<div id="outline-container-orgd0c3904" class="outline-2">
+<h2 id="orgd0c3904">Xref history</h2>
+<div class="outline-text-2" id="text-orgd0c3904">
 <p>
 The first thing to solve was that the <a href="https://www.gnu.org/software/emacs/manual/html_node/emacs/Xref.html">xref</a> stack wasn't per project. Somewhat
 disappointingly there only seems to be two options for <code>xref-history-storage</code>
@@ -71,9 +71,9 @@ it. For project.el I settled on using <a href="https://codeberg.org/imarko/xref-
 </div>
 </div>
 </div>
-<div id="outline-container-orgbaa0d4d" class="outline-2">
-<h2 id="orgbaa0d4d">Jumping between implementation and test</h2>
-<div class="outline-text-2" id="text-orgbaa0d4d">
+<div id="outline-container-org7744253" class="outline-2">
+<h2 id="org7744253">Jumping between implementation and test</h2>
+<div class="outline-text-2" id="text-org7744253">
 <p>
 Projectile has a function for jumping between implementation and test. Not too
 surprisingly it's called <code>projectile-toggle-between-implementation-and-test</code>. I
@@ -97,7 +97,7 @@ projects where modules for implementation and test live in separate (mirrored)
 folder hierarchies, e.g.
 </p>
 
-<pre class="example" id="org712aefd">
+<pre class="example" id="org1559d8d">
 src
 └── Sider
     └── Data
@@ -169,9 +169,9 @@ And <code>ff-find-other-file</code> works beautifully.
 </p>
 </div>
 </div>
-<div id="outline-container-orgb8cf766" class="outline-2">
-<h2 id="orgb8cf766">Conclusion</h2>
-<div class="outline-text-2" id="text-orgb8cf766">
+<div id="outline-container-org4cc6636" class="outline-2">
+<h2 id="org4cc6636">Conclusion</h2>
+<div class="outline-text-2" id="text-org4cc6636">
 <p>
 My setup with project.el now covers everything I used from projectile so I'm
 fairly confident I'll be happy keeping it.
