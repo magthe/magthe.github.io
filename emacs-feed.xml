@@ -4,7 +4,53 @@
 <title><![CDATA[Magnus web site - emacs]]></title>
 <description><![CDATA[Magnus web site - emacs]]></description>
 <link>https://magnus.therning.org//tag-emacs.html</link>
-<lastBuildDate>Sat, 02 May 2026 13:20:55 +0200</lastBuildDate>
+<atom:link href="https://magnus.therning.org/emacs-feed.xml" rel="self" type="application/rss+xml" />
+<lastBuildDate>Mon, 04 May 2026 08:17:56 +0200</lastBuildDate>
+<item>
+  <title><![CDATA[Jumping to errors in Evil]]></title>
+  <description><![CDATA[
+<p>
+Recently I realised that it'd be really nice if jumping to errors would store
+the previous location in the Evil jump list. These definitions do just that
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">evil-define-motion</span> <span class="org-function-name">mes/evil-goto-next-error</span> <span class="org-rainbow-delimiters-depth-2">(</span>count<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-builtin">:jump</span> t
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">unless</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">bound-and-true-p</span> flymake-mode<span class="org-rainbow-delimiters-depth-3">)</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-warning">signal</span> 'search-failed nil<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>flymake-goto-next-error count<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">evil-define-motion</span> <span class="org-function-name">mes/evil-goto-prev-error</span> <span class="org-rainbow-delimiters-depth-2">(</span>count<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-builtin">:jump</span> t
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">unless</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">bound-and-true-p</span> flymake-mode<span class="org-rainbow-delimiters-depth-3">)</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-warning">signal</span> 'search-failed nil<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>flymake-goto-prev-error count<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+and for now I've bound them to <code>C-j</code> and <code>C-k</code> (because that's what
+<a href="https://github.com/emacs-evil/evil-collection/blob/master/modes/flymake/evil-collection-flymake.el">evil-collection</a> does)
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">general-def</span> flymake-mode-map
+  <span class="org-builtin">:states</span> 'normal
+  <span class="org-string">"C-j"</span> 'mes/evil-goto-next-error
+  <span class="org-string">"C-k"</span> 'mes/evil-goto-prev-error<span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+This makes it easier to make a change, fix the errors caused by the change and
+then return to where I was.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html"><span class="tag-label">Tags</span></a><span class="tag-separator">: </span><span class="taglist__tags"><a href="https://magnus.therning.org/tag-emacs.html" class="tag" data-tag="emacs" data-index="0">emacs</a> <a href="https://magnus.therning.org/tag-evil.html" class="tag" data-tag="evil" data-index="1">evil</a> </span></div>
+]]></description>
+  <category><![CDATA[emacs]]></category>
+  <category><![CDATA[evil]]></category>
+  <link>https://magnus.therning.org/2026-05-04-jumping-to-errors-in-evil.html</link>
+  <guid>https://magnus.therning.org/2026-05-04-jumping-to-errors-in-evil.html</guid>
+  <pubDate>Mon, 04 May 2026 08:16:00 +0200</pubDate>
+</item>
 <item>
   <title><![CDATA[Follow-up on switching to eglot]]></title>
   <description><![CDATA[
@@ -1154,49 +1200,6 @@ The details can be found among the comments of the <a href="https://github.com/m
   <link>https://magnus.therning.org/2025-01-19-reviewing-github-prs-in-emacs.html</link>
   <guid>https://magnus.therning.org/2025-01-19-reviewing-github-prs-in-emacs.html</guid>
   <pubDate>Sun, 19 Jan 2025 11:10:00 +0100</pubDate>
-</item>
-<item>
-  <title><![CDATA[Followup on secrets in my work notes]]></title>
-  <description><![CDATA[
-<p>
-I got the following question on my post on how I handle secrets in my work notes:
-</p>
-
-<blockquote>
-<p>
-Sounds like a nice approach for other secrets but how about <code>:dbconnection</code> for
-Orgmode and <code>sql-connection-alist</code>?
-</p>
-</blockquote>
-
-<p>
-I have to admit I'd never come across the variable <code>sql-connection-alist</code>
-before. I've never really used <code>sql-mode</code> for more than editing SQL queries and
-setting up code blocks for running them was one of the first things I used
-<a href="https://github.com/joaotavora/yasnippet">yasnippet</a> for.
-</p>
-
-<p>
-I did a little reading and unfortunately it looks like <code>sql-connection-alist</code>
-can only handle string values. However, there is a variable
-<code>sql-password-search-wallet-function</code>, with the default value of
-<code>sql-auth-source-search-wallet</code>, so using <a href="https://www.gnu.org/software/emacs/manual/html_mono/auth.html">auth-source</a> is already supported for
-the password itself.
-</p>
-
-<p>
-There seems to be a lack of good tutorials for setting up <code>sql-mode</code> in a secure
-way &#x2013; all articles I found place the password in clear-text in the config &#x2013;
-filling that gap would be a nice way to contribute to the Emacs community. I'm
-sure it'd prompt me to re-evaluate incorporating <code>sql-mode</code> in my workflow.
-</p>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-org-mode.html">org-mode</a> </div>
-]]></description>
-  <category><![CDATA[emacs]]></category>
-  <category><![CDATA[org-mode]]></category>
-  <link>https://magnus.therning.org/2024-09-09-followup-on-secrets-in-my-work-notes.html</link>
-  <guid>https://magnus.therning.org/2024-09-09-followup-on-secrets-in-my-work-notes.html</guid>
-  <pubDate>Mon, 09 Sep 2024 22:36:00 +0200</pubDate>
 </item>
 </channel>
 </rss>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Making flymake use Evil's jump list.">
+<link rel="alternate"
+      type="application/rss+xml"
+      href="https://magnus.therning.org/feed.xml"
+      title="RSS feed for https://magnus.therning.org/">
+<title>Jumping to errors in Evil</title>
+<meta name="author" content="Magnus Therning"><meta name="referrer" content="no-referrer"><link href= "static/style.css" rel="stylesheet" type="text/css" /><link href= "static/htmlize.css" rel="stylesheet" type="text/css" /><link href= "static/extra_style.css" rel="stylesheet" type="text/css" /></head>
+<body>
+<div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
+<div id="content">
+<div class="post-date">04 May 2026</div><h1 class="post-title"><a href="https://magnus.therning.org/2026-05-04-jumping-to-errors-in-evil.html">Jumping to errors in Evil</a></h1>
+<p>
+Recently I realised that it'd be really nice if jumping to errors would store
+the previous location in the Evil jump list. These definitions do just that
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">evil-define-motion</span> <span class="org-function-name">mes/evil-goto-next-error</span> <span class="org-rainbow-delimiters-depth-2">(</span>count<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-builtin">:jump</span> t
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">unless</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">bound-and-true-p</span> flymake-mode<span class="org-rainbow-delimiters-depth-3">)</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-warning">signal</span> 'search-failed nil<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>flymake-goto-next-error count<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">evil-define-motion</span> <span class="org-function-name">mes/evil-goto-prev-error</span> <span class="org-rainbow-delimiters-depth-2">(</span>count<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-builtin">:jump</span> t
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">unless</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">bound-and-true-p</span> flymake-mode<span class="org-rainbow-delimiters-depth-3">)</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-warning">signal</span> 'search-failed nil<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span>flymake-goto-prev-error count<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+and for now I've bound them to <code>C-j</code> and <code>C-k</code> (because that's what
+<a href="https://github.com/emacs-evil/evil-collection/blob/master/modes/flymake/evil-collection-flymake.el">evil-collection</a> does)
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">general-def</span> flymake-mode-map
+  <span class="org-builtin">:states</span> 'normal
+  <span class="org-string">"C-j"</span> 'mes/evil-goto-next-error
+  <span class="org-string">"C-k"</span> 'mes/evil-goto-prev-error<span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+This makes it easier to make a change, fix the errors caused by the change and
+then return to where I was.
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html"><span class="tag-label">Tags</span></a><span class="tag-separator">: </span><span class="taglist__tags"><a href="https://magnus.therning.org/tag-emacs.html" class="tag" data-tag="emacs" data-index="0">emacs</a> <a href="https://magnus.therning.org/tag-evil.html" class="tag" data-tag="evil" data-index="1">evil</a> </span></div>
+<div id="comments">Comment <a href=mailto:magnus+blog.comment@therning.org?subject=Comment%20on%20INSERT%20POST%20URL%20HERE>here</a>.</div></div>
+<div id="postamble" class="status"><!-- org-static-blog-page-postamble --></div>
+</body>
+</html>
