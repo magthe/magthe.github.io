@@ -5,7 +5,111 @@
 <description><![CDATA[Magnus web site]]></description>
 <link>https://magnus.therning.org/</link>
 <atom:link href="https://magnus.therning.org/feed.xml" rel="self" type="application/rss+xml" />
-<lastBuildDate>Mon, 04 May 2026 08:17:54 +0200</lastBuildDate>
+<lastBuildDate>Thu, 13 Aug 2026 21:48:07 +0200</lastBuildDate>
+<item>
+  <title><![CDATA[Emacs salmagundi, 2026-08-13]]></title>
+  <description><![CDATA[
+<p>
+Here's a few minor tweaks I've made to my Emacs setup recently.
+</p>
+<div id="outline-container-orgcff92e2" class="outline-2">
+<h2 id="orgcff92e2">Limiting enabled tree-sitter modes</h2>
+<div class="outline-text-2" id="text-orgcff92e2">
+<p>
+After reading Rahul's post <a href="https://www.rahuljuliato.com/posts/emacs-31-around-the-corner">Emacs 31 Is Around the Corner: The Changes I'm
+Already Daily Driving</a> I simplified my setup and turned on all the tree-sitter
+modes
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span>treesit-enabled-modes t<span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+I regretted that as soon as I opened a YAML file though. It turns out the
+<code>yaml-ts-mode</code> is rather unusable.<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup> I switched back to <a href="https://github.com/yoshiki/yaml-mode"><code>yaml-mode</code></a> and
+adjusted the value of <code>treesit-enabled-modes</code> to include what I have use for
+(<a href="https://gitlab.com/magus/mes/-/commit/f31d0551ff7cd16ce5c498d1a24aab042f736ade">the change</a>):
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span>treesit-enabled-modes '<span class="org-rainbow-delimiters-depth-2">(</span>bash-ts-mode
+                         c++-ts-mode
+                         c-or-c++-ts-mode
+                         c-ts-mode
+                         dockerfile-ts-mode
+                         go-mod-ts-mode
+                         go-ts-mode
+                         go-work-ts-mode
+                         json-ts-mode
+                         python-ts-mode
+                         rust-ts-mode
+                         typescript-ts-mode<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+The customization of <code>treesit-enabled-modes</code> contains a list of all the
+supported modes.
+</p>
+
+<p>
+I hope someone will take pity on <code>yaml-ts-mode</code> and make it usable soon.
+</p>
+</div>
+</div>
+<div id="outline-container-org0283871" class="outline-2">
+<h2 id="org0283871">Tree-sitter grammar for Cabal files</h2>
+<div class="outline-text-2" id="text-org0283871">
+<p>
+When I began tinkering with my own <a href="https://gitlab.com/magus/haskell-ng-mode">treesitter-based mode for Haskell</a> I failed to
+find a tree-sitter grammar for <a href="https://cabal.readthedocs.io/en/stable/index.html">Cabal files</a> so I wrote a rather rough one myself.
+My hope was that it could serve as a base, or motivation, for someone else to
+write a proper one. It took more than 2 years, but now <a href="https://crtschin.com/posts/how-to-not-write-parsers">it's finally happened</a>!
+</p>
+
+<p>
+I've switched my mode to use Curtis's grammar and I'll be archiving mine. (<a href="https://gitlab.com/magus/haskell-ng-mode/-/commit/557b1db98128f14400603e77c1cf18486b4c9bb2">The
+change</a>.)
+</p>
+</div>
+</div>
+<div id="outline-container-org7fa14ad" class="outline-2">
+<h2 id="org7fa14ad">Hello editable <code>xref</code>, good bye <code>wgrep</code></h2>
+<div class="outline-text-2" id="text-org7fa14ad">
+<p>
+<a href="https://www.rahuljuliato.com/posts/emacs-31-around-the-corner">Rahul's post</a> also mentions that editable <code>xref</code> buffers. I had the same itch to
+have editable <code>xref</code> buffers, and I'd added a function to turn them into <code>grep</code>
+buffers to be able to edit them. I've now <a href="https://gitlab.com/magus/mes/-/commit/5c4dcd17c85f39fa768d302eeace635ff4c1da86">switched to using the built-in
+support</a>, and removed the function.
+</p>
+
+<p>
+At the same time I also decided to remove <code>wgrep</code> and instead <a href="https://gitlab.com/magus/mes/-/commit/6fb854b238b7a27f489da9d88a185ba4cd158052">use the builtin
+function for editing <code>grep</code> buffers</a>.
+</p>
+</div>
+</div>
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+
+<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+A mode for an indentation-sensitive language really ought to at least handle
+indentation!
+</p></div></div>
+
+
+</div>
+</div><div class="taglist"><a href="https://magnus.therning.org/tags.html"><span class="tag-label">Tags</span></a><span class="tag-separator">: </span><span class="taglist__tags"><a href="https://magnus.therning.org/tag-emacs.html" class="tag" data-tag="emacs" data-index="0">emacs</a> <a href="https://magnus.therning.org/tag-haskell.html" class="tag" data-tag="haskell" data-index="1">haskell</a> </span></div>
+]]></description>
+  <category><![CDATA[emacs]]></category>
+  <category><![CDATA[haskell]]></category>
+  <link>https://magnus.therning.org/2026-08-13-emacs-salmagundi,-2026-08-13.html</link>
+  <guid>https://magnus.therning.org/2026-08-13-emacs-salmagundi,-2026-08-13.html</guid>
+  <pubDate>Thu, 13 Aug 2026 21:44:00 +0200</pubDate>
+</item>
 <item>
   <title><![CDATA[Jumping to errors in Evil]]></title>
   <description><![CDATA[
@@ -1127,101 +1231,6 @@ and use <a href="https://github.com/catppuccin/emacs"><code>catppuccin-theme</co
   <link>https://magnus.therning.org/2025-11-08-making-a-theme-based-on-modus.html</link>
   <guid>https://magnus.therning.org/2025-11-08-making-a-theme-based-on-modus.html</guid>
   <pubDate>Sat, 08 Nov 2025 09:45:00 +0100</pubDate>
-</item>
-<item>
-  <title><![CDATA[Listing buffers by tab using consult and bufferlo]]></title>
-  <description><![CDATA[
-<p>
-I've gotten into the habit of using tabs, via <code>tab-bar</code>, to organise my buffers
-when I have multiple projects open at once. Each project has its own tab.
-There's nothing fancy here (yet), I simply open a new tab manually before
-opening a new project.
-</p>
-
-<p>
-A while ago I added <a href="https://github.com/florommel/bufferlo">bufferlo</a> to my config to help with getting <code>consult-buffer</code>
-to organise buffers (somewhat) by tab. I copied the configuration from <a href="https://github.com/florommel/bufferlo?tab=readme-ov-file#consult">the
-bufferlo README</a> and started using it. It took me a little while to notice that
-the behaviour wasn't quite what I wanted. It seemed like one buffer "leaked"
-from another tab.
-</p>
-
-
-<figure id="org1786323">
-<img src="static/2025-09-16-buffer-leakage.png" alt="2025-09-16-buffer-leakage.png">
-
-<figcaption><span class="figure-number">Figure 1: </span>Example of buffer leakage</figcaption>
-</figure>
-
-<p>
-In the image above all files in <code>~/.emacs.d</code> should be listed under <i>Other
-Buffers</i>, but one has been brought over into the tab for the Sider project.
-</p>
-
-<p>
-After a bit of experimenting I realised that
-</p>
-
-<ol class="org-ol">
-<li>the buffer that leaks is the one I'm in when creating the new tab, and</li>
-<li>my function for creating a new tab doesn't work the way I thought.</li>
-</ol>
-
-<p>
-My function for creating a new tab looked like this
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">lambda</span> <span class="org-rainbow-delimiters-depth-2">()</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>tab-new<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>dashboard-open<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</code></pre>
-</div>
-
-<p>
-and it turns out that <code>tab-new</code> shows the current buffer in the new tab which in
-turn caused bufferlo to associate it to the wrong tab. From what I can see
-there's no way to tell <code>tab-new</code> to open a specific buffer in the newly created
-tab. I tried the following
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">lambda</span> <span class="org-rainbow-delimiters-depth-2">()</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">with-current-buffer</span> dashboard-buffer-name
-    <span class="org-rainbow-delimiters-depth-3">(</span>tab-new<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</code></pre>
-</div>
-
-<p>
-hoping that the dashboard would open in the new tab. It didn't, it was still the
-active buffer that popped up in the new tab.
-</p>
-
-<p>
-In the end I resorted to use <code>bufferlo-remove</code> to simply remove the current
-buffer from the new tab.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">lambda</span> <span class="org-rainbow-delimiters-depth-2">()</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>tab-new<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>bufferlo-remove <span class="org-rainbow-delimiters-depth-3">(</span>current-buffer<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>dashboard-open<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</code></pre>
-</div>
-
-<p>
-No more leakage and <code>consult-buffer</code> works like I wanted it to.
-</p>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> </div>
-]]></description>
-  <category><![CDATA[emacs]]></category>
-  <link>https://magnus.therning.org/2025-09-16-listing-buffers-by-tab-using-consult-and-bufferlo.html</link>
-  <guid>https://magnus.therning.org/2025-09-16-listing-buffers-by-tab-using-consult-and-bufferlo.html</guid>
-  <pubDate>Tue, 16 Sep 2025 08:29:00 +0200</pubDate>
 </item>
 </channel>
 </rss>

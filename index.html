@@ -12,6 +12,102 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <header class="site-header" role="banner"><h1 class="title">Magnus web site</h1><h2 class="subtitle">Random stuff</h2></header>
+<div class="post-date">13 Aug 2026</div><h1 class="post-title"><a href="https://magnus.therning.org/2026-08-13-emacs-salmagundi,-2026-08-13.html">Emacs salmagundi, 2026-08-13</a></h1>
+<p>
+Here's a few minor tweaks I've made to my Emacs setup recently.
+</p>
+<div id="outline-container-orgcff92e2" class="outline-2">
+<h2 id="orgcff92e2">Limiting enabled tree-sitter modes</h2>
+<div class="outline-text-2" id="text-orgcff92e2">
+<p>
+After reading Rahul's post <a href="https://www.rahuljuliato.com/posts/emacs-31-around-the-corner">Emacs 31 Is Around the Corner: The Changes I'm
+Already Daily Driving</a> I simplified my setup and turned on all the tree-sitter
+modes
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span>treesit-enabled-modes t<span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+I regretted that as soon as I opened a YAML file though. It turns out the
+<code>yaml-ts-mode</code> is rather unusable.<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup> I switched back to <a href="https://github.com/yoshiki/yaml-mode"><code>yaml-mode</code></a> and
+adjusted the value of <code>treesit-enabled-modes</code> to include what I have use for
+(<a href="https://gitlab.com/magus/mes/-/commit/f31d0551ff7cd16ce5c498d1a24aab042f736ade">the change</a>):
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span>treesit-enabled-modes '<span class="org-rainbow-delimiters-depth-2">(</span>bash-ts-mode
+                         c++-ts-mode
+                         c-or-c++-ts-mode
+                         c-ts-mode
+                         dockerfile-ts-mode
+                         go-mod-ts-mode
+                         go-ts-mode
+                         go-work-ts-mode
+                         json-ts-mode
+                         python-ts-mode
+                         rust-ts-mode
+                         typescript-ts-mode<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+The customization of <code>treesit-enabled-modes</code> contains a list of all the
+supported modes.
+</p>
+
+<p>
+I hope someone will take pity on <code>yaml-ts-mode</code> and make it usable soon.
+</p>
+</div>
+</div>
+<div id="outline-container-org0283871" class="outline-2">
+<h2 id="org0283871">Tree-sitter grammar for Cabal files</h2>
+<div class="outline-text-2" id="text-org0283871">
+<p>
+When I began tinkering with my own <a href="https://gitlab.com/magus/haskell-ng-mode">treesitter-based mode for Haskell</a> I failed to
+find a tree-sitter grammar for <a href="https://cabal.readthedocs.io/en/stable/index.html">Cabal files</a> so I wrote a rather rough one myself.
+My hope was that it could serve as a base, or motivation, for someone else to
+write a proper one. It took more than 2 years, but now <a href="https://crtschin.com/posts/how-to-not-write-parsers">it's finally happened</a>!
+</p>
+
+<p>
+I've switched my mode to use Curtis's grammar and I'll be archiving mine. (<a href="https://gitlab.com/magus/haskell-ng-mode/-/commit/557b1db98128f14400603e77c1cf18486b4c9bb2">The
+change</a>.)
+</p>
+</div>
+</div>
+<div id="outline-container-org7fa14ad" class="outline-2">
+<h2 id="org7fa14ad">Hello editable <code>xref</code>, good bye <code>wgrep</code></h2>
+<div class="outline-text-2" id="text-org7fa14ad">
+<p>
+<a href="https://www.rahuljuliato.com/posts/emacs-31-around-the-corner">Rahul's post</a> also mentions that editable <code>xref</code> buffers. I had the same itch to
+have editable <code>xref</code> buffers, and I'd added a function to turn them into <code>grep</code>
+buffers to be able to edit them. I've now <a href="https://gitlab.com/magus/mes/-/commit/5c4dcd17c85f39fa768d302eeace635ff4c1da86">switched to using the built-in
+support</a>, and removed the function.
+</p>
+
+<p>
+At the same time I also decided to remove <code>wgrep</code> and instead <a href="https://gitlab.com/magus/mes/-/commit/6fb854b238b7a27f489da9d88a185ba4cd158052">use the builtin
+function for editing <code>grep</code> buffers</a>.
+</p>
+</div>
+</div>
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+
+<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+A mode for an indentation-sensitive language really ought to at least handle
+indentation!
+</p></div></div>
+
+
+</div>
+</div><div class="taglist"><a href="https://magnus.therning.org/tags.html"><span class="tag-label">Tags</span></a><span class="tag-separator">: </span><span class="taglist__tags"><a href="https://magnus.therning.org/tag-emacs.html" class="tag" data-tag="emacs" data-index="0">emacs</a> <a href="https://magnus.therning.org/tag-haskell.html" class="tag" data-tag="haskell" data-index="1">haskell</a> </span></div>
+
 <div class="post-date">04 May 2026</div><h1 class="post-title"><a href="https://magnus.therning.org/2026-05-04-jumping-to-errors-in-evil.html">Jumping to errors in Evil</a></h1>
 <p>
 Recently I realised that it'd be really nice if jumping to errors would store
@@ -368,38 +464,6 @@ fairly confident I'll be happy keeping it.
 </div>
 </div>
 <div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-project-el.html">project-el</a> </div>
-
-<div class="post-date">16 Feb 2026</div><h1 class="post-title"><a href="https://magnus.therning.org/2026-02-16-using-advice-to-limit-lsp-ui-doc-nuisance.html">Using advice to limit lsp-ui-doc nuisance</a></h1>
-<p>
-I've switched back to <a href="https://emacs-lsp.github.io/lsp-mode/">lsp-mode</a> temporarily until I've had time to fix a few
-things with my <code>eglot</code> setup. Returning prompted me to finally address an
-irritating behaviour with <a href="https://emacs-lsp.github.io/lsp-ui/#lsp-ui-doc">lsp-ui-doc</a>.
-</p>
-
-<p>
-No matter what I set <code>lsp-ui-doc-position</code> to it ends up covering information
-that I want to see. While waiting for a <a href="https://github.com/emacs-lsp/lsp-ui/issues/793">fix</a> I decided to work around it. It
-seems to me that this is exactly what <a href="https://www.gnu.org/software/emacs/manual/html_node/elisp/Advising-Functions.html">advice</a> is for.
-</p>
-
-<p>
-I came up with the following to make sure the frame appears on the half of the
-buffer where <code>point</code> isn't.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">my-lsp-ui-doc-wrapper</span> <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-type">&amp;rest</span> _<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">let*</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>pos-line <span class="org-rainbow-delimiters-depth-5">(</span>- <span class="org-rainbow-delimiters-depth-6">(</span>line-number-at-pos <span class="org-rainbow-delimiters-depth-7">(</span>point<span class="org-rainbow-delimiters-depth-7">)</span><span class="org-rainbow-delimiters-depth-6">)</span>
-                      <span class="org-rainbow-delimiters-depth-6">(</span>line-number-at-pos <span class="org-rainbow-delimiters-depth-7">(</span>window-start<span class="org-rainbow-delimiters-depth-7">)</span><span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
-         <span class="org-rainbow-delimiters-depth-4">(</span>pos <span class="org-rainbow-delimiters-depth-5">(</span><span class="org-keyword">if</span> <span class="org-rainbow-delimiters-depth-6">(</span>&lt;= pos-line <span class="org-rainbow-delimiters-depth-7">(</span>/ <span class="org-rainbow-delimiters-depth-8">(</span>window-body-height<span class="org-rainbow-delimiters-depth-8">)</span> 2<span class="org-rainbow-delimiters-depth-7">)</span><span class="org-rainbow-delimiters-depth-6">)</span>
-                  'bottom
-                'top<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
-    <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">setopt</span> lsp-ui-doc-position pos<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-
-<span class="org-rainbow-delimiters-depth-1">(</span>advice-add 'lsp-ui-doc--move-frame <span class="org-builtin">:before</span> #'my-lsp-ui-doc-wrapper<span class="org-rainbow-delimiters-depth-1">)</span>
-</code></pre>
-</div>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-lsp-mode.html">lsp-mode</a> </div>
 <div id="archive">
 <a href="https://magnus.therning.org/archive.html">Other posts</a>
 </div>

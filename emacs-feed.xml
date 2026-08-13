@@ -5,7 +5,111 @@
 <description><![CDATA[Magnus web site - emacs]]></description>
 <link>https://magnus.therning.org//tag-emacs.html</link>
 <atom:link href="https://magnus.therning.org/emacs-feed.xml" rel="self" type="application/rss+xml" />
-<lastBuildDate>Mon, 04 May 2026 08:17:56 +0200</lastBuildDate>
+<lastBuildDate>Thu, 13 Aug 2026 21:48:10 +0200</lastBuildDate>
+<item>
+  <title><![CDATA[Emacs salmagundi, 2026-08-13]]></title>
+  <description><![CDATA[
+<p>
+Here's a few minor tweaks I've made to my Emacs setup recently.
+</p>
+<div id="outline-container-orgcff92e2" class="outline-2">
+<h2 id="orgcff92e2">Limiting enabled tree-sitter modes</h2>
+<div class="outline-text-2" id="text-orgcff92e2">
+<p>
+After reading Rahul's post <a href="https://www.rahuljuliato.com/posts/emacs-31-around-the-corner">Emacs 31 Is Around the Corner: The Changes I'm
+Already Daily Driving</a> I simplified my setup and turned on all the tree-sitter
+modes
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span>treesit-enabled-modes t<span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+I regretted that as soon as I opened a YAML file though. It turns out the
+<code>yaml-ts-mode</code> is rather unusable.<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup> I switched back to <a href="https://github.com/yoshiki/yaml-mode"><code>yaml-mode</code></a> and
+adjusted the value of <code>treesit-enabled-modes</code> to include what I have use for
+(<a href="https://gitlab.com/magus/mes/-/commit/f31d0551ff7cd16ce5c498d1a24aab042f736ade">the change</a>):
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span>treesit-enabled-modes '<span class="org-rainbow-delimiters-depth-2">(</span>bash-ts-mode
+                         c++-ts-mode
+                         c-or-c++-ts-mode
+                         c-ts-mode
+                         dockerfile-ts-mode
+                         go-mod-ts-mode
+                         go-ts-mode
+                         go-work-ts-mode
+                         json-ts-mode
+                         python-ts-mode
+                         rust-ts-mode
+                         typescript-ts-mode<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+The customization of <code>treesit-enabled-modes</code> contains a list of all the
+supported modes.
+</p>
+
+<p>
+I hope someone will take pity on <code>yaml-ts-mode</code> and make it usable soon.
+</p>
+</div>
+</div>
+<div id="outline-container-org0283871" class="outline-2">
+<h2 id="org0283871">Tree-sitter grammar for Cabal files</h2>
+<div class="outline-text-2" id="text-org0283871">
+<p>
+When I began tinkering with my own <a href="https://gitlab.com/magus/haskell-ng-mode">treesitter-based mode for Haskell</a> I failed to
+find a tree-sitter grammar for <a href="https://cabal.readthedocs.io/en/stable/index.html">Cabal files</a> so I wrote a rather rough one myself.
+My hope was that it could serve as a base, or motivation, for someone else to
+write a proper one. It took more than 2 years, but now <a href="https://crtschin.com/posts/how-to-not-write-parsers">it's finally happened</a>!
+</p>
+
+<p>
+I've switched my mode to use Curtis's grammar and I'll be archiving mine. (<a href="https://gitlab.com/magus/haskell-ng-mode/-/commit/557b1db98128f14400603e77c1cf18486b4c9bb2">The
+change</a>.)
+</p>
+</div>
+</div>
+<div id="outline-container-org7fa14ad" class="outline-2">
+<h2 id="org7fa14ad">Hello editable <code>xref</code>, good bye <code>wgrep</code></h2>
+<div class="outline-text-2" id="text-org7fa14ad">
+<p>
+<a href="https://www.rahuljuliato.com/posts/emacs-31-around-the-corner">Rahul's post</a> also mentions that editable <code>xref</code> buffers. I had the same itch to
+have editable <code>xref</code> buffers, and I'd added a function to turn them into <code>grep</code>
+buffers to be able to edit them. I've now <a href="https://gitlab.com/magus/mes/-/commit/5c4dcd17c85f39fa768d302eeace635ff4c1da86">switched to using the built-in
+support</a>, and removed the function.
+</p>
+
+<p>
+At the same time I also decided to remove <code>wgrep</code> and instead <a href="https://gitlab.com/magus/mes/-/commit/6fb854b238b7a27f489da9d88a185ba4cd158052">use the builtin
+function for editing <code>grep</code> buffers</a>.
+</p>
+</div>
+</div>
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+
+<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+A mode for an indentation-sensitive language really ought to at least handle
+indentation!
+</p></div></div>
+
+
+</div>
+</div><div class="taglist"><a href="https://magnus.therning.org/tags.html"><span class="tag-label">Tags</span></a><span class="tag-separator">: </span><span class="taglist__tags"><a href="https://magnus.therning.org/tag-emacs.html" class="tag" data-tag="emacs" data-index="0">emacs</a> <a href="https://magnus.therning.org/tag-haskell.html" class="tag" data-tag="haskell" data-index="1">haskell</a> </span></div>
+]]></description>
+  <category><![CDATA[emacs]]></category>
+  <category><![CDATA[haskell]]></category>
+  <link>https://magnus.therning.org/2026-08-13-emacs-salmagundi,-2026-08-13.html</link>
+  <guid>https://magnus.therning.org/2026-08-13-emacs-salmagundi,-2026-08-13.html</guid>
+  <pubDate>Thu, 13 Aug 2026 21:44:00 +0200</pubDate>
+</item>
 <item>
   <title><![CDATA[Jumping to errors in Evil]]></title>
   <description><![CDATA[
@@ -1112,94 +1216,6 @@ No more leakage and <code>consult-buffer</code> works like I wanted it to.
   <link>https://magnus.therning.org/2025-09-16-listing-buffers-by-tab-using-consult-and-bufferlo.html</link>
   <guid>https://magnus.therning.org/2025-09-16-listing-buffers-by-tab-using-consult-and-bufferlo.html</guid>
   <pubDate>Tue, 16 Sep 2025 08:29:00 +0200</pubDate>
-</item>
-<item>
-  <title><![CDATA[Reviewing GitHub PRs in Emacs]]></title>
-  <description><![CDATA[
-<p>
-My Emacs config's todo-list has long had an item about finding some way to
-review GitHub PRs without having to leave Emacs and when the <a href="https://github.com/magit/forge/issues/75">forge issue</a> that I
-subscribe to came alive again I thought it was time to see if I can improve my
-config.
-</p>
-
-<p>
-I found three packages for doing reviews
-</p>
-
-<ul class="org-ul">
-<li><a href="https://github.com/wandersoncferreira/code-review">code-review</a></li>
-<li><a href="https://github.com/charignon/github-review">github-review</a></li>
-<li><a href="https://github.com/blahgeek/emacs-pr-review">emacs-pr-review</a></li>
-</ul>
-
-<p>
-I've tried the first one before but at the time it didn't seem to work at all.
-Apparently that's improved somewhat, though there's a PR with a change that's
-necessary to make it work.<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup> The first two don't support comments on multiple
-lines of a PR, there are issues/discussions for both
-</p>
-
-<ul class="org-ul">
-<li><code>code-review</code>: <a href="https://github.com/wandersoncferreira/code-review/discussions/259">Code suggestion on multiple lines</a></li>
-<li><code>github-review</code>: <a href="https://github.com/charignon/github-review/issues/46">Multi-line code comments</a></li>
-</ul>
-
-<p>
-The last one, <code>emacs-pr-review</code> does support commenting on multiple lines, but
-it lacks a nice way of opening a review from <code>magit</code>. What I can do is
-</p>
-
-<ol class="org-ol">
-<li>position the cursor on a PR in the <code>magit</code> status view, then</li>
-<li>copy the the PR's URL using <code>forge-copy-url-at-point-as-kill</code>, and</li>
-<li>open the PR by calling <code>pr-review</code> and pasting the PR's URL.</li>
-</ol>
-
-<p>
-Which I did for a few days until I got tired of it and wrote a function to cut
-out they copy/paste part.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">mes/pr-review-via-forge</span> <span class="org-rainbow-delimiters-depth-2">()</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">if-let*</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>target <span class="org-rainbow-delimiters-depth-5">(</span>forge--browse-target<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
-            <span class="org-rainbow-delimiters-depth-4">(</span>url <span class="org-rainbow-delimiters-depth-5">(</span><span class="org-keyword">if</span> <span class="org-rainbow-delimiters-depth-6">(</span>stringp target<span class="org-rainbow-delimiters-depth-6">)</span> target <span class="org-rainbow-delimiters-depth-6">(</span>forge-get-url target<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
-            <span class="org-rainbow-delimiters-depth-4">(</span>rev-url <span class="org-rainbow-delimiters-depth-5">(</span>pr-review-url-parse url<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
-      <span class="org-rainbow-delimiters-depth-3">(</span>pr-review url<span class="org-rainbow-delimiters-depth-3">)</span>
-    <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-warning">user-error</span> <span class="org-string">"No PR to review at point"</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</pre>
-</div>
-
-<p>
-I've bound it to a key in <code>magit-mode-map</code> to make it easier.
-</p>
-
-<p>
-I have to say I'm not completely happy with <code>emacs-pr-review</code>, so if either of
-the other two sort out commenting on multiple lines I'll check them out again.
-</p>
-
-<p>
-My full setup for <code>pr-review</code> is <a href="https://gitlab.com/magus/mes/-/blob/8615353ec007bd66209ee1ae3badddd26d3a3dc9/lisp/mes-dev-basics.el#L76">here</a>.
-</p>
-<div id="footnotes">
-<h2 class="footnotes">Footnotes: </h2>
-<div id="text-footnotes">
-
-<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
-The details can be found among the comments of the <a href="https://github.com/magit/forge/issues/75">forge issue</a>.
-</p></div></div>
-
-
-</div>
-</div><div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> </div>
-]]></description>
-  <category><![CDATA[emacs]]></category>
-  <link>https://magnus.therning.org/2025-01-19-reviewing-github-prs-in-emacs.html</link>
-  <guid>https://magnus.therning.org/2025-01-19-reviewing-github-prs-in-emacs.html</guid>
-  <pubDate>Sun, 19 Jan 2025 11:10:00 +0100</pubDate>
 </item>
 </channel>
 </rss>
