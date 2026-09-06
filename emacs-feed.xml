@@ -5,7 +5,82 @@
 <description><![CDATA[Magnus web site - emacs]]></description>
 <link>https://magnus.therning.org//tag-emacs.html</link>
 <atom:link href="https://magnus.therning.org/emacs-feed.xml" rel="self" type="application/rss+xml" />
-<lastBuildDate>Thu, 13 Aug 2026 21:48:10 +0200</lastBuildDate>
+<lastBuildDate>Sun, 06 Sep 2026 18:33:45 +0200</lastBuildDate>
+<item>
+  <title><![CDATA[Emacs salmagundi, 2026-09-06]]></title>
+  <description><![CDATA[
+<div id="outline-container-org7166f6e" class="outline-2">
+<h2 id="org7166f6e">Compilation commands by project type</h2>
+<div class="outline-text-2" id="text-org7166f6e">
+<p>
+I while ago I added a minor mode, <code>haskell-ng-project-mode</code>, to my Haskell mode.
+The idea I had was that I could use it to add keybindings for running various
+tools (via <code>compile</code>), e.g. I bound <code>cabal build</code> and <code>cabal test</code> <code>, p b</code> and
+<code>, p t</code> respectively. Then I hooked in the minor mode in my <code>haskell-ng-mode</code>.
+Soon I realised it'd be nice to have those shortcuts available in <code>dired</code> too,
+so I hooked it in there as well. When I later wanted to re-run the tests after
+modifying a JSON file that was part of a golden test I realised that this wasn't
+a very nice solution at all.
+</p>
+
+<p>
+After looking around a bit I found <a href="https://github.com/ReanGD/emacs-multi-compile">emacs-multi-compile</a>. I removed the minor mode
+and add this configuration instead
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span>add-to-list 'multi-compile-alist
+             '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-rainbow-delimiters-depth-3">(</span>haskell-ng-is-project<span class="org-rainbow-delimiters-depth-3">)</span> . <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span><span class="org-string">"cabal build"</span> <span class="org-string">"cabal build -j --semaphore"</span> <span class="org-rainbow-delimiters-depth-5">(</span>project-root <span class="org-rainbow-delimiters-depth-6">(</span>project-current<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+                                          <span class="org-rainbow-delimiters-depth-4">(</span><span class="org-string">"cabal test"</span> <span class="org-string">"cabal test"</span> <span class="org-rainbow-delimiters-depth-5">(</span>project-root <span class="org-rainbow-delimiters-depth-6">(</span>project-current<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+                                          <span class="org-rainbow-delimiters-depth-4">(</span><span class="org-string">"fourmolu"</span> <span class="org-string">"fourmolu -i $(fd .hs$)"</span> <span class="org-rainbow-delimiters-depth-5">(</span>project-root <span class="org-rainbow-delimiters-depth-6">(</span>project-current<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+I've had some vague thoughts that it'd be rather easy to write something
+slightly more custom, but <code>emacs-multi-compile</code> works very well for me so I'm
+very happy with it.
+</p>
+</div>
+</div>
+<div id="outline-container-org7f07d4a" class="outline-2">
+<h2 id="org7f07d4a">Jumping between implementation and test, again</h2>
+<div class="outline-text-2" id="text-org7f07d4a">
+<p>
+I wrote about this <a href="https://magnus.therning.org/2026-02-18-switching-to-project.el.html">a while ago</a>. At the time I came up with a way of bending
+<code>ff-find-other-file</code> to my will, but soon after that I ran into a case where
+there may be 2 "other files" &ndash; one of the Haskell projects at work put unit
+tests in files ending in <code>Spec.hs</code> and property tests in filed ending with
+<code>Prop.hs</code>. Unfortunately this is a situation that <code>ff-find-other-file</code> can't
+handle.
+</p>
+
+<p>
+I ended up hacking together <a href="https://gitlab.com/magus/mep-project-extras/-/blob/main/consult-kith.el"><code>consult-kith</code></a> to deal with it. The configuration to
+handle two kinds of test files looks like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">setq-local</span> consult-kith-alist `<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-rainbow-delimiters-depth-3">(</span>,<span class="org-rainbow-delimiters-depth-4">(</span><span class="org-keyword">rx</span> <span class="org-rainbow-delimiters-depth-5">(</span>seq <span class="org-string">"Spec.hs"</span> eol<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span> <span class="org-rainbow-delimiters-depth-4">(</span><span class="org-string">".hs"</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+                                 <span class="org-rainbow-delimiters-depth-3">(</span>,<span class="org-rainbow-delimiters-depth-4">(</span><span class="org-keyword">rx</span> <span class="org-rainbow-delimiters-depth-5">(</span>seq <span class="org-string">"Prop.hs"</span> eol<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span> <span class="org-rainbow-delimiters-depth-4">(</span><span class="org-string">".hs"</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+                                 <span class="org-rainbow-delimiters-depth-3">(</span>,<span class="org-rainbow-delimiters-depth-4">(</span><span class="org-keyword">rx</span> <span class="org-rainbow-delimiters-depth-5">(</span>seq <span class="org-string">".hs"</span> eol<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span> <span class="org-rainbow-delimiters-depth-4">(</span><span class="org-string">"Prop.hs"</span> <span class="org-string">"Spec.hs"</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
+            consult-kith-search-directories '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-string">"src"</span> <span class="org-string">"test"</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+The project has since settled on only using <code>Spec.hs</code> for tests, but I'm
+sticking to <code>consult-kith</code> for now.
+</p>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html"><span class="tag-label">Tags</span></a><span class="tag-separator">: </span><span class="taglist__tags"><a href="https://magnus.therning.org/tag-emacs.html" class="tag" data-tag="emacs" data-index="0">emacs</a> </span></div>
+]]></description>
+  <category><![CDATA[emacs]]></category>
+  <link>https://magnus.therning.org/2026-09-06-emacs-salmagundi,-2026-09-06.html</link>
+  <guid>https://magnus.therning.org/2026-09-06-emacs-salmagundi,-2026-09-06.html</guid>
+  <pubDate>Sun, 06 Sep 2026 18:33:00 +0200</pubDate>
+</item>
 <item>
   <title><![CDATA[Emacs salmagundi, 2026-08-13]]></title>
   <description><![CDATA[
@@ -1121,101 +1196,6 @@ and use <a href="https://github.com/catppuccin/emacs"><code>catppuccin-theme</co
   <link>https://magnus.therning.org/2025-11-08-making-a-theme-based-on-modus.html</link>
   <guid>https://magnus.therning.org/2025-11-08-making-a-theme-based-on-modus.html</guid>
   <pubDate>Sat, 08 Nov 2025 09:45:00 +0100</pubDate>
-</item>
-<item>
-  <title><![CDATA[Listing buffers by tab using consult and bufferlo]]></title>
-  <description><![CDATA[
-<p>
-I've gotten into the habit of using tabs, via <code>tab-bar</code>, to organise my buffers
-when I have multiple projects open at once. Each project has its own tab.
-There's nothing fancy here (yet), I simply open a new tab manually before
-opening a new project.
-</p>
-
-<p>
-A while ago I added <a href="https://github.com/florommel/bufferlo">bufferlo</a> to my config to help with getting <code>consult-buffer</code>
-to organise buffers (somewhat) by tab. I copied the configuration from <a href="https://github.com/florommel/bufferlo?tab=readme-ov-file#consult">the
-bufferlo README</a> and started using it. It took me a little while to notice that
-the behaviour wasn't quite what I wanted. It seemed like one buffer "leaked"
-from another tab.
-</p>
-
-
-<figure id="org1786323">
-<img src="static/2025-09-16-buffer-leakage.png" alt="2025-09-16-buffer-leakage.png">
-
-<figcaption><span class="figure-number">Figure 1: </span>Example of buffer leakage</figcaption>
-</figure>
-
-<p>
-In the image above all files in <code>~/.emacs.d</code> should be listed under <i>Other
-Buffers</i>, but one has been brought over into the tab for the Sider project.
-</p>
-
-<p>
-After a bit of experimenting I realised that
-</p>
-
-<ol class="org-ol">
-<li>the buffer that leaks is the one I'm in when creating the new tab, and</li>
-<li>my function for creating a new tab doesn't work the way I thought.</li>
-</ol>
-
-<p>
-My function for creating a new tab looked like this
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">lambda</span> <span class="org-rainbow-delimiters-depth-2">()</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>tab-new<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>dashboard-open<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</code></pre>
-</div>
-
-<p>
-and it turns out that <code>tab-new</code> shows the current buffer in the new tab which in
-turn caused bufferlo to associate it to the wrong tab. From what I can see
-there's no way to tell <code>tab-new</code> to open a specific buffer in the newly created
-tab. I tried the following
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">lambda</span> <span class="org-rainbow-delimiters-depth-2">()</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">with-current-buffer</span> dashboard-buffer-name
-    <span class="org-rainbow-delimiters-depth-3">(</span>tab-new<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</code></pre>
-</div>
-
-<p>
-hoping that the dashboard would open in the new tab. It didn't, it was still the
-active buffer that popped up in the new tab.
-</p>
-
-<p>
-In the end I resorted to use <code>bufferlo-remove</code> to simply remove the current
-buffer from the new tab.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">lambda</span> <span class="org-rainbow-delimiters-depth-2">()</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">interactive</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>tab-new<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>bufferlo-remove <span class="org-rainbow-delimiters-depth-3">(</span>current-buffer<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>dashboard-open<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</code></pre>
-</div>
-
-<p>
-No more leakage and <code>consult-buffer</code> works like I wanted it to.
-</p>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> </div>
-]]></description>
-  <category><![CDATA[emacs]]></category>
-  <link>https://magnus.therning.org/2025-09-16-listing-buffers-by-tab-using-consult-and-bufferlo.html</link>
-  <guid>https://magnus.therning.org/2025-09-16-listing-buffers-by-tab-using-consult-and-bufferlo.html</guid>
-  <pubDate>Tue, 16 Sep 2025 08:29:00 +0200</pubDate>
 </item>
 </channel>
 </rss>
