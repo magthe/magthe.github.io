@@ -12,6 +12,110 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <h1 class="title">Posts tagged "emacs":</h1>
+<div class="post-date">13 Oct 2026</div><h1 class="post-title"><a href="https://magnus.therning.org/2026-10-13-emacs-salmagundi,-2026-10-11.html">Emacs salmagundi, 2026-10-11</a></h1>
+<div id="outline-container-org7b28134" class="outline-2">
+<h2 id="org7b28134">Combining lists of compilation commands</h2>
+<div class="outline-text-2" id="text-org7b28134">
+<p>
+To my delight I found that <a href="https://github.com/ReanGD/emacs-multi-compile">emacs-multi-compile</a> will combine the of all matches
+compilation commands!
+</p>
+
+<p>
+I added this to my setup
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span>add-to-list 'multi-compile-alist
+               '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-rainbow-delimiters-depth-3">(</span>mes/is-in-git-project<span class="org-rainbow-delimiters-depth-3">)</span> . <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span><span class="org-string">"git clean -n"</span> <span class="org-string">"git clean -ndx"</span> <span class="org-rainbow-delimiters-depth-5">(</span>project-root <span class="org-rainbow-delimiters-depth-6">(</span>project-current<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+                                            <span class="org-rainbow-delimiters-depth-4">(</span><span class="org-string">"git clean -f"</span> <span class="org-string">"git clean -fdx"</span> <span class="org-rainbow-delimiters-depth-5">(</span>project-root <span class="org-rainbow-delimiters-depth-6">(</span>project-current<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+and those commands are now shown together with the ones I defined for Haskell
+project (see my <a href="https://magnus.therning.org/2026-09-06-emacs-salmagundi,-2026-09-06.html">previous post</a>) when both match.
+</p>
+</div>
+</div>
+<div id="outline-container-org534bdaa" class="outline-2">
+<h2 id="org534bdaa">Recognising a git project</h2>
+<div class="outline-text-2" id="text-org534bdaa">
+<p>
+To add the git commands to <code>multi-compile-list</code> I needed a function to determine
+if the current buffer is in a git working tree. I failed to find something
+fitting so I ended up adding this little function.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">mes/is-in-git-project</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-doc">"Check if we're currently in a git project."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">when-let*</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>proj-dir <span class="org-rainbow-delimiters-depth-5">(</span>project-root <span class="org-rainbow-delimiters-depth-6">(</span>project-current<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>vc-git-root proj-dir<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org4e46a61" class="outline-2">
+<h2 id="org4e46a61">Taming compilation mode buffers</h2>
+<div class="outline-text-2" id="text-org4e46a61">
+<p>
+I'm using <code>display-buffer-alist</code> to control how Emacs places buffers. For
+compilation mode I had the following actions.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span>display-buffer-reuse-mode-window display-buffer-in-side-window<span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-rainbow-delimiters-depth-1">(</span>mode compilation-mode<span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-rainbow-delimiters-depth-1">(</span>window-height . 0.25<span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-rainbow-delimiters-depth-1">(</span>side . bottom<span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-rainbow-delimiters-depth-1">(</span>post-command-select-window . t<span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+That last command made switching buffers with <code>consult-buffer</code> a bit irritating
+as previewing would interrupt the buffer switching by selecting the compilation
+window. However, I really want the compilation window selected after a
+compilation. Or rather, as I realised after reflecting a bit, I want the
+compilation window selected if there are errors.
+</p>
+
+<p>
+Compilation mode has a way of running functions when a compilation finishes so I
+defined two functions and added them to <code>compilation-finish-functions</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">mes/close-successful-compilation</span> <span class="org-rainbow-delimiters-depth-2">(</span>buf msg<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-doc">"Close compilation buffer after success."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">when</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">and</span> <span class="org-rainbow-delimiters-depth-4">(</span>buffer-live-p buf<span class="org-rainbow-delimiters-depth-4">)</span>
+             <span class="org-rainbow-delimiters-depth-4">(</span><span class="org-keyword">with-current-buffer</span> buf <span class="org-rainbow-delimiters-depth-5">(</span>eq major-mode 'compilation-mode<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+             <span class="org-rainbow-delimiters-depth-4">(</span>string-match <span class="org-string">"finished"</span> msg<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>run-with-timer 3 nil
+                    <span class="org-rainbow-delimiters-depth-4">(</span><span class="org-keyword">lambda</span> <span class="org-rainbow-delimiters-depth-5">()</span>
+                      <span class="org-rainbow-delimiters-depth-5">(</span>kill-buffer buf<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">mes/select-failed-compilation</span> <span class="org-rainbow-delimiters-depth-2">(</span>buf msg<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-doc">"Select compilation buffer after failed compilation."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">when</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">and</span> <span class="org-rainbow-delimiters-depth-4">(</span>buffer-live-p buf<span class="org-rainbow-delimiters-depth-4">)</span>
+             <span class="org-rainbow-delimiters-depth-4">(</span><span class="org-keyword">with-current-buffer</span> buf <span class="org-rainbow-delimiters-depth-5">(</span>eq major-mode 'compilation-mode<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+             <span class="org-rainbow-delimiters-depth-4">(</span>string-match <span class="org-string">"abnormally"</span> msg<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>select-window <span class="org-rainbow-delimiters-depth-4">(</span>get-buffer-window buf<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+  <span class="org-rainbow-delimiters-depth-1">(</span>add-to-list 'compilation-finish-functions #'mes/close-successful-compilation<span class="org-rainbow-delimiters-depth-1">)</span>
+  <span class="org-rainbow-delimiters-depth-1">(</span>add-to-list 'compilation-finish-functions #'mes/select-failed-compilation<span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+With that a successful compilation is closed automatically after 3s and on a
+failed compilation the compilation buffer is selection.
+</p>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html"><span class="tag-label">Tags</span></a><span class="tag-separator">: </span><span class="taglist__tags"><a href="https://magnus.therning.org/tag-emacs.html" class="tag" data-tag="emacs" data-index="0">emacs</a> </span></div>
+
 <div class="post-date">06 Sep 2026</div><h1 class="post-title"><a href="https://magnus.therning.org/2026-09-06-emacs-salmagundi,-2026-09-06.html">Emacs salmagundi, 2026-09-06</a></h1>
 <div id="outline-container-org7166f6e" class="outline-2">
 <h2 id="org7166f6e">Compilation commands by project type</h2>

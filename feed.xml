@@ -5,7 +5,118 @@
 <description><![CDATA[Magnus web site]]></description>
 <link>https://magnus.therning.org/</link>
 <atom:link href="https://magnus.therning.org/feed.xml" rel="self" type="application/rss+xml" />
-<lastBuildDate>Sun, 06 Sep 2026 18:33:43 +0200</lastBuildDate>
+<lastBuildDate>Tue, 13 Oct 2026 21:46:43 +0200</lastBuildDate>
+<item>
+  <title><![CDATA[Emacs salmagundi, 2026-10-11]]></title>
+  <description><![CDATA[
+<div id="outline-container-org7b28134" class="outline-2">
+<h2 id="org7b28134">Combining lists of compilation commands</h2>
+<div class="outline-text-2" id="text-org7b28134">
+<p>
+To my delight I found that <a href="https://github.com/ReanGD/emacs-multi-compile">emacs-multi-compile</a> will combine the of all matches
+compilation commands!
+</p>
+
+<p>
+I added this to my setup
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span>add-to-list 'multi-compile-alist
+               '<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-rainbow-delimiters-depth-3">(</span>mes/is-in-git-project<span class="org-rainbow-delimiters-depth-3">)</span> . <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span><span class="org-string">"git clean -n"</span> <span class="org-string">"git clean -ndx"</span> <span class="org-rainbow-delimiters-depth-5">(</span>project-root <span class="org-rainbow-delimiters-depth-6">(</span>project-current<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+                                            <span class="org-rainbow-delimiters-depth-4">(</span><span class="org-string">"git clean -f"</span> <span class="org-string">"git clean -fdx"</span> <span class="org-rainbow-delimiters-depth-5">(</span>project-root <span class="org-rainbow-delimiters-depth-6">(</span>project-current<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+and those commands are now shown together with the ones I defined for Haskell
+project (see my <a href="https://magnus.therning.org/2026-09-06-emacs-salmagundi,-2026-09-06.html">previous post</a>) when both match.
+</p>
+</div>
+</div>
+<div id="outline-container-org534bdaa" class="outline-2">
+<h2 id="org534bdaa">Recognising a git project</h2>
+<div class="outline-text-2" id="text-org534bdaa">
+<p>
+To add the git commands to <code>multi-compile-list</code> I needed a function to determine
+if the current buffer is in a git working tree. I failed to find something
+fitting so I ended up adding this little function.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">mes/is-in-git-project</span> <span class="org-rainbow-delimiters-depth-2">()</span>
+  <span class="org-doc">"Check if we're currently in a git project."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">when-let*</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>proj-dir <span class="org-rainbow-delimiters-depth-5">(</span>project-root <span class="org-rainbow-delimiters-depth-6">(</span>project-current<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>vc-git-root proj-dir<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org4e46a61" class="outline-2">
+<h2 id="org4e46a61">Taming compilation mode buffers</h2>
+<div class="outline-text-2" id="text-org4e46a61">
+<p>
+I'm using <code>display-buffer-alist</code> to control how Emacs places buffers. For
+compilation mode I had the following actions.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span>display-buffer-reuse-mode-window display-buffer-in-side-window<span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-rainbow-delimiters-depth-1">(</span>mode compilation-mode<span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-rainbow-delimiters-depth-1">(</span>window-height . 0.25<span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-rainbow-delimiters-depth-1">(</span>side . bottom<span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-rainbow-delimiters-depth-1">(</span>post-command-select-window . t<span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+That last command made switching buffers with <code>consult-buffer</code> a bit irritating
+as previewing would interrupt the buffer switching by selecting the compilation
+window. However, I really want the compilation window selected after a
+compilation. Or rather, as I realised after reflecting a bit, I want the
+compilation window selected if there are errors.
+</p>
+
+<p>
+Compilation mode has a way of running functions when a compilation finishes so I
+defined two functions and added them to <code>compilation-finish-functions</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">mes/close-successful-compilation</span> <span class="org-rainbow-delimiters-depth-2">(</span>buf msg<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-doc">"Close compilation buffer after success."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">when</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">and</span> <span class="org-rainbow-delimiters-depth-4">(</span>buffer-live-p buf<span class="org-rainbow-delimiters-depth-4">)</span>
+             <span class="org-rainbow-delimiters-depth-4">(</span><span class="org-keyword">with-current-buffer</span> buf <span class="org-rainbow-delimiters-depth-5">(</span>eq major-mode 'compilation-mode<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+             <span class="org-rainbow-delimiters-depth-4">(</span>string-match <span class="org-string">"finished"</span> msg<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>run-with-timer 3 nil
+                    <span class="org-rainbow-delimiters-depth-4">(</span><span class="org-keyword">lambda</span> <span class="org-rainbow-delimiters-depth-5">()</span>
+                      <span class="org-rainbow-delimiters-depth-5">(</span>kill-buffer buf<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">defun</span> <span class="org-function-name">mes/select-failed-compilation</span> <span class="org-rainbow-delimiters-depth-2">(</span>buf msg<span class="org-rainbow-delimiters-depth-2">)</span>
+  <span class="org-doc">"Select compilation buffer after failed compilation."</span>
+  <span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">when</span> <span class="org-rainbow-delimiters-depth-3">(</span><span class="org-keyword">and</span> <span class="org-rainbow-delimiters-depth-4">(</span>buffer-live-p buf<span class="org-rainbow-delimiters-depth-4">)</span>
+             <span class="org-rainbow-delimiters-depth-4">(</span><span class="org-keyword">with-current-buffer</span> buf <span class="org-rainbow-delimiters-depth-5">(</span>eq major-mode 'compilation-mode<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span>
+             <span class="org-rainbow-delimiters-depth-4">(</span>string-match <span class="org-string">"abnormally"</span> msg<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>
+    <span class="org-rainbow-delimiters-depth-3">(</span>select-window <span class="org-rainbow-delimiters-depth-4">(</span>get-buffer-window buf<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
+
+  <span class="org-rainbow-delimiters-depth-1">(</span>add-to-list 'compilation-finish-functions #'mes/close-successful-compilation<span class="org-rainbow-delimiters-depth-1">)</span>
+  <span class="org-rainbow-delimiters-depth-1">(</span>add-to-list 'compilation-finish-functions #'mes/select-failed-compilation<span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
+</div>
+
+<p>
+With that a successful compilation is closed automatically after 3s and on a
+failed compilation the compilation buffer is selection.
+</p>
+</div>
+</div>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html"><span class="tag-label">Tags</span></a><span class="tag-separator">: </span><span class="taglist__tags"><a href="https://magnus.therning.org/tag-emacs.html" class="tag" data-tag="emacs" data-index="0">emacs</a> </span></div>
+]]></description>
+  <category><![CDATA[emacs]]></category>
+  <link>https://magnus.therning.org/2026-10-13-emacs-salmagundi,-2026-10-11.html</link>
+  <guid>https://magnus.therning.org/2026-10-13-emacs-salmagundi,-2026-10-11.html</guid>
+  <pubDate>Tue, 13 Oct 2026 21:46:00 +0200</pubDate>
+</item>
 <item>
   <title><![CDATA[Emacs salmagundi, 2026-09-06]]></title>
   <description><![CDATA[
@@ -1074,116 +1185,6 @@ to it longer this time.
   <link>https://magnus.therning.org/2026-01-19-trying-eglot,-again.html</link>
   <guid>https://magnus.therning.org/2026-01-19-trying-eglot,-again.html</guid>
   <pubDate>Mon, 19 Jan 2026 08:00:00 +0100</pubDate>
-</item>
-<item>
-  <title><![CDATA[Validation of data in a servant server]]></title>
-  <description><![CDATA[
-<p>
-I've been playing around with adding more validation of data received by an HTTP
-endpoint in a <a href="https://hackage.haskell.org/package/servant">servant</a> server. Defining a type with a <code>FromJSON</code> instance is very
-easy, just derive a <code>Generic</code> instance and it just works. Here's a simple
-example
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><code><span class="org-keyword">data</span> Person = Person
-    { name :: <span class="org-type">Text</span>
-    , age :: <span class="org-type">Int</span>
-    , occupation :: <span class="org-type">Occupation</span>
-    }
-    <span class="org-keyword">deriving</span> (Generic, Show)
-    <span class="org-keyword">deriving</span> (FromJSON, ToJSON) via <span class="org-type">(Generically Person)</span>
-
-<span class="org-keyword">data</span> Occupation = UnderAge | Student | Unemployed | SelfEmployed | Retired | Occupation <span class="org-type">Text</span>
-    <span class="org-keyword">deriving</span> (Eq, Generic, Ord, Show)
-    <span class="org-keyword">deriving</span> (FromJSON, ToJSON) via <span class="org-type">(Generically Occupation)</span>
-</code></pre>
-</div>
-
-<p>
-However, the validation is rather limited, basically it's just checking that
-each field is present and of the correct type. For the type above I'd like to
-enforce some constraints for the combination of <code>age</code> and <code>occupation</code>.
-</p>
-
-<p>
-The steps I thought of are
-</p>
-
-<ol class="org-ol">
-<li>Hide the default constructor and define a <a href="https://wiki.haskell.org/Smart_constructors">smart</a> one. (This is the standard
-suggestion for placing extra constraints values.)</li>
-<li>Manually define the <code>FromJSON</code> instance using the <code>Generic</code> instance to limit
-the amount of code and the smart constructor.</li>
-</ol>
-<div id="outline-container-org8b6637c" class="outline-2">
-<h2 id="org8b6637c">The smart constructor</h2>
-<div class="outline-text-2" id="text-org8b6637c">
-<p>
-I give the constructor the result type <code>Either String Person</code> to make sure it
-can both be usable in code and when defining <code>parseJSON</code>.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><code><span class="org-function-name">mkPerson</span> :: <span class="org-type">Text</span> <span class="org-operator">-&gt;</span> <span class="org-type">Int</span> <span class="org-operator">-&gt;</span> <span class="org-type">Occupation</span> <span class="org-operator">-&gt;</span> <span class="org-type">Either String Person</span>
-<span class="org-function-name">mkPerson</span> name age occupation = <span class="org-keyword">do</span>
-    guardE mustBeUnderAge
-    guardE notUnderAge
-    guardE tooOldToBeStudent
-    guardE mustBeRetired
-    pure <span class="org-operator">$</span> Person name age occupation
-  <span class="org-keyword">where</span>
-    <span class="org-function-name">guardE</span> (pred, err) = when pred <span class="org-operator">$</span> Left err
-    <span class="org-function-name">mustBeUnderAge</span> = (age <span class="org-operator">&lt;</span> <span class="org-number">8</span> <span class="org-operator">&amp;&amp;</span> occupation <span class="org-operator">&gt;</span> UnderAge, <span class="org-string">"too young for occupation"</span>)
-    <span class="org-function-name">notUnderAge</span> = (age <span class="org-operator">&gt;</span> <span class="org-number">15</span> <span class="org-operator">&amp;&amp;</span> occupation <span class="org-operator">==</span> UnderAge, <span class="org-string">"too old to be under age"</span>)
-    <span class="org-function-name">tooOldToBeStudent</span> = (age <span class="org-operator">&gt;</span> <span class="org-number">45</span> <span class="org-operator">&amp;&amp;</span> occupation <span class="org-operator">==</span> Student, <span class="org-string">"too old to be a student"</span>)
-    <span class="org-function-name">mustBeRetired</span> = (age <span class="org-operator">&gt;</span> <span class="org-number">65</span> <span class="org-operator">&amp;&amp;</span> occupation <span class="org-operator">/=</span> Retired, <span class="org-string">"too old to not be retired"</span>)
-</code></pre>
-</div>
-
-<p>
-Here I'm making use of <code>Either e</code> being a <code>Monad</code> and use <code>when</code> to apply the
-constraints and ensure the reason for failure is given to the caller.
-</p>
-</div>
-</div>
-<div id="outline-container-org323ebdf" class="outline-2">
-<h2 id="org323ebdf">The <code>FromJSON</code> instance</h2>
-<div class="outline-text-2" id="text-org323ebdf">
-<p>
-When defining the instance I take advantage of the <code>Generic</code> instance to make
-the implementation short and simple.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-haskell"><code><span class="org-keyword">instance</span> FromJSON <span class="org-type">Person</span> <span class="org-keyword">where</span>
-    <span class="org-function-name">parseJSON</span> v = <span class="org-keyword">do</span>
-        Person{name, age, occupation} &lt;- genericParseJSON defaultOptions v
-        either fail pure <span class="org-operator">$</span> mkPerson name age occupation
-</code></pre>
-</div>
-
-<p>
-If there are many more fields in the type I'd consider using <a href="https://downloads.haskell.org/ghc/latest/docs/users_guide/exts/record_wildcards.html"><code>RecordWildCards</code></a>.
-</p>
-</div>
-</div>
-<div id="outline-container-orgb6bf602" class="outline-2">
-<h2 id="orgb6bf602">Conclusion</h2>
-<div class="outline-text-2" id="text-orgb6bf602">
-<p>
-No, it's nothing ground-breaking but I think it's a fairly nice example of how
-things can fit together in Haskell.
-</p>
-</div>
-</div>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-haskell.html">haskell</a> <a href="https://magnus.therning.org/tag-servant.html">servant</a> </div>
-]]></description>
-  <category><![CDATA[haskell]]></category>
-  <category><![CDATA[servant]]></category>
-  <link>https://magnus.therning.org/2026-01-04-validation-of-data-in-a-servant-server.html</link>
-  <guid>https://magnus.therning.org/2026-01-04-validation-of-data-in-a-servant-server.html</guid>
-  <pubDate>Sun, 04 Jan 2026 10:58:00 +0100</pubDate>
 </item>
 </channel>
 </rss>
