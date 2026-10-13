@@ -5,7 +5,169 @@
 <description><![CDATA[Magnus web site]]></description>
 <link>https://magnus.therning.org/</link>
 <atom:link href="https://magnus.therning.org/feed.xml" rel="self" type="application/rss+xml" />
-<lastBuildDate>Tue, 13 Oct 2026 21:46:43 +0200</lastBuildDate>
+<lastBuildDate>Tue, 13 Oct 2026 23:33:16 +0200</lastBuildDate>
+<item>
+  <title><![CDATA[QuickCheck: shrinking like tuples, writing like applicative]]></title>
+  <description><![CDATA[
+<p>
+The <a href="https://hackage.haskell.org/package/QuickCheck">QuickCheck</a> documentation for <a href="https://hackage-content.haskell.org/package/QuickCheck-2.19.0.0/docs/Test-QuickCheck.html#g:5">Arbitrary</a> says that
+</p>
+
+<blockquote>
+<p>
+There is no generic arbitrary implementation included because we don't know how
+to make a high-quality one.
+</p>
+</blockquote>
+
+<p>
+Though in practice I've found that very often it suffices to write one that uses
+the fact that <code>Gen</code> is an <code>Applicative</code>. For instance, this type
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><code><span class="org-keyword">data</span> Foo = Foo
+    { tata :: <span class="org-type">Int</span>
+    , titi :: <span class="org-type">Double</span>
+    }
+</code></pre>
+</div>
+
+<p>
+would get an implementation that looks like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><code><span class="org-keyword">instance</span> Arbitrary <span class="org-type">Foo</span> <span class="org-keyword">where</span>
+    <span class="org-function-name">arbitrary</span> = Foo <span class="org-operator">&lt;$&gt;</span> arbitrary <span class="org-operator">&lt;*&gt;</span> arbitrary
+</code></pre>
+</div>
+
+<p>
+When it comes to writing the function for shrinking <code>Foo</code> it <i>is</i> possible to
+rely on a generic function and the documentation says that
+</p>
+
+<blockquote>
+<p>
+The default implementation returns the empty list, so will not try to shrink the
+value. If your data type has no special invariants, you can enable shrinking by
+defining <code>shrink = genericShrink</code>, but by customising the behaviour of shrink
+you can often get simpler counterexamples.
+</p>
+</blockquote>
+
+<p>
+Based on some manual testing it seems that <code>genericShrink</code> generates something
+like this for the type <code>Foo</code> above
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><code><span class="org-keyword">instance</span> Arbitrary <span class="org-type">Foo</span> <span class="org-keyword">where</span>
+    <span class="org-function-name">shrink</span> (Foo tata_ titi_) = Foo <span class="org-operator">&lt;$&gt;</span> shrink tata_ <span class="org-operator">&lt;*&gt;</span> shrink titi_
+</code></pre>
+</div>
+
+<p>
+which means that if <code>shrink tata_</code> generates a list of <i>m</i> elements and <code>shrink
+titi_</code> generates a list of <i>n</i> elements, then <code>shrink foo</code> will generate a list
+of <i>m×n</i> elements. It's clear that the size can become problematic with more
+fields. It also means that it's very easy to get an empty list &ndash; if <code>shrink v</code>
+results in an empty list, then <code>shrink foo</code> is also empty. Oh, and <code>shrink
+Nothing</code> is <code>[]</code>!
+</p>
+
+<p>
+A colleague pointed out that tuples have a rather efficient implementation of
+<code>shrink</code> that grows linearly with the number of elements and doesn't reduce to
+the empty list as easily. I could use it for <code>Foo</code> like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><code><span class="org-keyword">instance</span> Arbitrary <span class="org-type">Foo</span> <span class="org-keyword">where</span>
+    <span class="org-function-name">shrink</span> (Foo tata_ titi_) = uncurry Foo <span class="org-operator">&lt;$&gt;</span> shrink (tata_, titi_)
+</code></pre>
+</div>
+
+<p>
+However, that doesn't scale that well to more fields. Up to a point I can use
+list comprehensions, but it gets a bit difficult to read, I find. On top of
+that, the largest tuple with an <code>Arbitrary</code> instance has 10 elements, and then
+I'll have to either define more or use inner tuples.
+</p>
+
+<p>
+Wouldn't it be nice to write <code>shrink</code> in something that looks <code>Applicative</code>, but
+behaves like tuples?
+</p>
+
+<p>
+Here's one approach to this.
+</p>
+
+<p>
+First a type to hold information about what's being shrunk, or in this case <i>waned</i>
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><code><span class="org-keyword">data</span> Wane a = Wane <span class="org-type">a</span> <span class="org-type">[a]</span>
+    <span class="org-keyword">deriving</span> (Generic, Show)
+
+<span class="org-keyword">instance</span> Functor <span class="org-type">Wane</span> <span class="org-keyword">where</span>
+    <span class="org-function-name">fmap</span> f (Wane a as) = Wane (f a) (f <span class="org-operator">&lt;$&gt;</span> as)
+</code></pre>
+</div>
+
+<p>
+Then a couple of functions to bring values in and out, <code>unWane</code> to get the list
+of values out and <code>wane</code> to wrap a value in <code>Wane</code>
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><code><span class="org-function-name">unWane</span> :: <span class="org-type">Wane a</span> <span class="org-operator">-&gt;</span> <span class="org-type">[a]</span>
+<span class="org-function-name">unWane</span> (Wane _ as) = as
+
+<span class="org-function-name">wane</span> :: (Arbitrary <span class="org-type">a</span>) =&gt; <span class="org-type">a</span> <span class="org-operator">-&gt;</span> <span class="org-type">Wane a</span>
+<span class="org-function-name">wane</span> a = Wane a (shrink a)
+</code></pre>
+</div>
+
+<p>
+Finally a way to combine two <code>Wane</code> values is needed, and here I was inspired by
+the implementation of <code>Arbitrary</code> for <code>(a,b)</code>
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><code><span class="org-keyword">infixl</span> <span class="org-number">4</span> <span class="org-operator">\*/</span>
+
+(<span class="org-operator">\*/</span>) ::  <span class="org-type">Wane</span> (<span class="org-type">a</span> <span class="org-operator">-&gt;</span> <span class="org-type">b</span>) <span class="org-operator">-&gt;</span> <span class="org-type">Wane a</span> <span class="org-operator">-&gt;</span> <span class="org-type">Wane b</span>
+(<span class="org-operator">\*/</span>) (Wane f fs) (Wane a as) =  Wane (f a) ([f a' | a' &lt;- as] <span class="org-operator">&lt;&gt;</span> [f' a| f' &lt;- fs])
+</code></pre>
+</div>
+
+<p>
+It's now possible to write <code>shrink</code> for <code>Foo</code> like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><code><span class="org-keyword">instance</span> Arbitrary <span class="org-type">Foo</span> <span class="org-keyword">where</span>
+    <span class="org-function-name">shrink</span> (Foo tata_ titi_) = unWane <span class="org-operator">$</span> Foo <span class="org-operator">&lt;$&gt;</span> wane tata_ <span class="org-operator">\*/</span> wane titi_
+</code></pre>
+</div>
+
+<p>
+That scales to more fields just as nicely as applicative style, and the result
+matches what the variant using tuples produces (same elements, but the order is
+different).
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html"><span class="tag-label">Tags</span></a><span class="tag-separator">: </span><span class="taglist__tags"><a href="https://magnus.therning.org/tag-haskell.html" class="tag" data-tag="haskell" data-index="0">haskell</a> <a href="https://magnus.therning.org/tag-quickcheck.html" class="tag" data-tag="quickcheck" data-index="1">quickcheck</a> </span></div>
+]]></description>
+  <category><![CDATA[haskell]]></category>
+  <category><![CDATA[quickcheck]]></category>
+  <link>https://magnus.therning.org/2026-10-13-quickcheck:-shrinking-like-tuples,-writing-like-applicative.html</link>
+  <guid>https://magnus.therning.org/2026-10-13-quickcheck:-shrinking-like-tuples,-writing-like-applicative.html</guid>
+  <pubDate>Tue, 13 Oct 2026 23:21:00 +0200</pubDate>
+</item>
 <item>
   <title><![CDATA[Emacs salmagundi, 2026-10-11]]></title>
   <description><![CDATA[
@@ -975,216 +1137,6 @@ bad use.
   <link>https://magnus.therning.org/2026-01-25-more-on-the-switch-to-eglot.html</link>
   <guid>https://magnus.therning.org/2026-01-25-more-on-the-switch-to-eglot.html</guid>
   <pubDate>Sun, 25 Jan 2026 14:18:00 +0100</pubDate>
-</item>
-<item>
-  <title><![CDATA[Trying eglot, again]]></title>
-  <description><![CDATA[
-<p>
-I've been using <a href="https://emacs-lsp.github.io/lsp-mode/">lsp-mode</a> since I switched to Emacs several years ago. When <a href="https://github.com/joaotavora/eglot">eglot</a>
-made into Emacs core I used it very briefly but quickly switched back. Mainly I
-found eglot a bit too bare-bones; I liked some of the bells and whistles of
-<code>lsp-ui</code>. Fast-forward a few years and I've grown a bit tired of those bells and
-whistles. Specifically that it's difficult to make <code>lsp-ui-sideline</code> and
-<code>lsp-ui-doc</code> work well together. <code>lsp-ui-sidedline</code> is shown on the right side,
-which is good, but combining it with <code>lsp-ui-doc</code> leads to situations where the
-popup covers the sideline. What I've done so far is centre the line to bring the
-sideline text out. I was playing a little bit with making the setting of
-<code>lsp-ui-doc-position</code> change depending on the location of the current position.
-It didn't work that well though so I decided to try to find a simpler setup.
-Instead of simplifying the setup of <code>lsp-config</code> I thought I'd give <code>eglot</code>
-another shot.
-</p>
-<div id="outline-container-orgb1f7433" class="outline-2">
-<h2 id="orgb1f7433">Basic setup</h2>
-<div class="outline-text-2" id="text-orgb1f7433">
-<p>
-I removed the statements pulling in <code>lsp-mode</code>, <code>lsp-ui</code>, and all
-language-specific packages like <code>lsp-haskell</code>. Then I added this to configure
-<code>eglot</code>
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">use-package</span> eglot
-  <span class="org-builtin">:ensure</span> nil
-  <span class="org-builtin">:custom</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>eglot-autoshutdown t<span class="org-rainbow-delimiters-depth-2">)</span>
-  <span class="org-rainbow-delimiters-depth-2">(</span>eglot-confirm-server-edits '<span class="org-rainbow-delimiters-depth-3">(</span><span class="org-rainbow-delimiters-depth-4">(</span>eglot-rename . nil<span class="org-rainbow-delimiters-depth-4">)</span>
-                                <span class="org-rainbow-delimiters-depth-4">(</span>t . diff<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</code></pre>
-</div>
-
-<p>
-The rest was mainly just switching <code>lsp-mode</code> functions for <code>eglot</code> functions.
-</p>
-
-<table>
-
-
-<colgroup>
-<col  class="org-left">
-
-<col  class="org-left">
-</colgroup>
-<thead>
-<tr>
-<th scope="col" class="org-left">lsp-mode function</th>
-<th scope="col" class="org-left">eglot function</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="org-left"><code>lsp-deferred</code></td>
-<td class="org-left"><code>eglot-ensure</code></td>
-</tr>
-
-<tr>
-<td class="org-left"><code>lsp-describe-thing-at-point</code></td>
-<td class="org-left"><code>eldoc</code></td>
-</tr>
-
-<tr>
-<td class="org-left"><code>lsp-execute-code-action</code></td>
-<td class="org-left"><code>eglot-code-actions</code></td>
-</tr>
-
-<tr>
-<td class="org-left"><code>lsp-find-type-definition</code></td>
-<td class="org-left"><code>eglot-find-typeDefinition</code></td>
-</tr>
-
-<tr>
-<td class="org-left"><code>lsp-format-buffer</code></td>
-<td class="org-left"><code>eglot-format-buffer</code></td>
-</tr>
-
-<tr>
-<td class="org-left"><code>lsp-format-region</code></td>
-<td class="org-left"><code>eglot-format</code></td>
-</tr>
-
-<tr>
-<td class="org-left"><code>lsp-organize-imports</code></td>
-<td class="org-left"><code>eglot-code-action-organize-imports</code></td>
-</tr>
-
-<tr>
-<td class="org-left"><code>lsp-rename</code></td>
-<td class="org-left"><code>eglot-rename</code></td>
-</tr>
-
-<tr>
-<td class="org-left"><code>lsp-workspace-restart</code></td>
-<td class="org-left"><code>eglot-reconnect</code></td>
-</tr>
-
-<tr>
-<td class="org-left"><code>lsp-workspace-shutdown</code></td>
-<td class="org-left"><code>eglot-shutdown</code></td>
-</tr>
-</tbody>
-</table>
-
-<p>
-I haven't verified that the list is fully correct yet, but it looks good so far.
-</p>
-
-<p>
-The one thing I might miss is lenses, and using <code>lsp-avy-lens</code>. However,
-everything that I use lenses for can be done using actions, and to be honest I
-don't think I'll miss the huge lens texts from missing type annotations in
-Haskell.
-</p>
-</div>
-</div>
-<div id="outline-container-orgd8ac829" class="outline-2">
-<h2 id="orgd8ac829">Configuration</h2>
-<div class="outline-text-2" id="text-orgd8ac829">
-<p>
-One good thing about <code>lsp-mode</code>'s use of language-specific packages is that
-configuration of the various servers is performed through functions. This makes
-it easy to discover what options are available, though it also means not all
-options may be available. In <code>eglot</code> configuration is less organised, I have to
-know about the options for each language server and put the options into
-<code>eglot-workspace-configuration</code> myself. It's not always easy to track down what
-options are available, and I've found no easy way to verify the settings. For
-instance, with <code>lsp-mode</code> I configures <a href="https://github.com/haskell/haskell-language-server">HLS</a> like this
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span>lsp-haskell-formatting-provider <span class="org-string">"fourmolu"</span><span class="org-rainbow-delimiters-depth-1">)</span>
-<span class="org-rainbow-delimiters-depth-1">(</span>lsp-haskell-plugin-stan-global-on nil<span class="org-rainbow-delimiters-depth-1">)</span>
-</code></pre>
-</div>
-
-<p>
-which translates to this for <code>eglot</code>
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">setq-default</span> eglot-workspace-configuration
-              <span class="org-rainbow-delimiters-depth-2">(</span>plist-put eglot-workspace-configuration
-                         <span class="org-builtin">:haskell</span>
-                         '<span class="org-rainbow-delimiters-depth-3">(</span><span class="org-builtin">:formattingProvider</span> <span class="org-string">"fourmolu"</span>
-                           <span class="org-builtin">:plugin</span> <span class="org-rainbow-delimiters-depth-4">(</span><span class="org-builtin">:stan</span> <span class="org-rainbow-delimiters-depth-5">(</span><span class="org-builtin">:global-on</span> <span class="org-builtin">:json-false</span><span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</code></pre>
-</div>
-
-<p>
-and I can verify that this configuration has taken effect because I know enough
-about the Haskell tools.
-</p>
-
-<p>
-I do some development in Python and I used to configure <a href="https://pypi.org/project/python-lsp-server/">pylsp</a> like this
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span>lsp-pylsp-plugins-mypy-enabled t<span class="org-rainbow-delimiters-depth-1">)</span>
-<span class="org-rainbow-delimiters-depth-1">(</span>lsp-pylsp-plugins-ruff-enabled t<span class="org-rainbow-delimiters-depth-1">)</span>
-</code></pre>
-</div>
-
-<p>
-which I <i>think</i> translates to this for <code>eglot</code>
-</p>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><code><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">setq-default</span> eglot-workspace-configuration
-              <span class="org-rainbow-delimiters-depth-2">(</span>plist-put eglot-workspace-configuration
-                         <span class="org-builtin">:pylsp</span>
-                         '<span class="org-rainbow-delimiters-depth-3">(</span><span class="org-builtin">:plugins</span> <span class="org-rainbow-delimiters-depth-4">(</span><span class="org-builtin">:ruff</span> <span class="org-rainbow-delimiters-depth-5">(</span><span class="org-builtin">:enabled</span> t<span class="org-rainbow-delimiters-depth-5">)</span>
-                                     <span class="org-builtin">:mypy</span> <span class="org-rainbow-delimiters-depth-5">(</span><span class="org-builtin">:enabled</span> t<span class="org-rainbow-delimiters-depth-5">)</span><span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>
-</code></pre>
-</div>
-
-<p>
-but I don't know any convenient way of verifying these settings. I'm simply not
-familiar enough with the Python tools. I can check the value of
-<code>eglot-workspace-configuration</code> by inspecting it or calling
-<code>eglot-show-workspace-configuration</code> but is there really no way of asking the
-language server for its active configuration?
-</p>
-</div>
-</div>
-<div id="outline-container-org3d20108" class="outline-2">
-<h2 id="org3d20108">Closing remark</h2>
-<div class="outline-text-2" id="text-org3d20108">
-<p>
-The last time I gave up on <code>eglot</code> very quickly, probably too quickly to be
-honest. I made these changes to my configuration over the weekend, so the real
-test of <code>eglot</code> starts when I'm back in the office. I have a feeling I'll stick
-to it longer this time.
-</p>
-</div>
-</div>
-<div class="taglist"><a href="https://magnus.therning.org/tags.html">Tags</a>: <a href="https://magnus.therning.org/tag-eglot.html">eglot</a> <a href="https://magnus.therning.org/tag-emacs.html">emacs</a> <a href="https://magnus.therning.org/tag-lsp-mode.html">lsp-mode</a> </div>
-]]></description>
-  <category><![CDATA[eglot]]></category>
-  <category><![CDATA[emacs]]></category>
-  <category><![CDATA[lsp-mode]]></category>
-  <link>https://magnus.therning.org/2026-01-19-trying-eglot,-again.html</link>
-  <guid>https://magnus.therning.org/2026-01-19-trying-eglot,-again.html</guid>
-  <pubDate>Mon, 19 Jan 2026 08:00:00 +0100</pubDate>
 </item>
 </channel>
 </rss>

@@ -12,6 +12,160 @@
 <div id="preamble" class="status"><div class="nav-bar"><a class="nav-link" href="./index.html">Top</a><a class="nav-link" href="./archive.html">Archive</a><a class="nav-link align-right" href="./feed.xml"><img src="static/rss-feed-icon.png" style="height: 24px;" /></a></div></div>
 <div id="content">
 <h1 class="title">Posts tagged "quickcheck":</h1>
+<div class="post-date">13 Oct 2026</div><h1 class="post-title"><a href="https://magnus.therning.org/2026-10-13-quickcheck:-shrinking-like-tuples,-writing-like-applicative.html">QuickCheck: shrinking like tuples, writing like applicative</a></h1>
+<p>
+The <a href="https://hackage.haskell.org/package/QuickCheck">QuickCheck</a> documentation for <a href="https://hackage-content.haskell.org/package/QuickCheck-2.19.0.0/docs/Test-QuickCheck.html#g:5">Arbitrary</a> says that
+</p>
+
+<blockquote>
+<p>
+There is no generic arbitrary implementation included because we don't know how
+to make a high-quality one.
+</p>
+</blockquote>
+
+<p>
+Though in practice I've found that very often it suffices to write one that uses
+the fact that <code>Gen</code> is an <code>Applicative</code>. For instance, this type
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><code><span class="org-keyword">data</span> Foo = Foo
+    { tata :: <span class="org-type">Int</span>
+    , titi :: <span class="org-type">Double</span>
+    }
+</code></pre>
+</div>
+
+<p>
+would get an implementation that looks like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><code><span class="org-keyword">instance</span> Arbitrary <span class="org-type">Foo</span> <span class="org-keyword">where</span>
+    <span class="org-function-name">arbitrary</span> = Foo <span class="org-operator">&lt;$&gt;</span> arbitrary <span class="org-operator">&lt;*&gt;</span> arbitrary
+</code></pre>
+</div>
+
+<p>
+When it comes to writing the function for shrinking <code>Foo</code> it <i>is</i> possible to
+rely on a generic function and the documentation says that
+</p>
+
+<blockquote>
+<p>
+The default implementation returns the empty list, so will not try to shrink the
+value. If your data type has no special invariants, you can enable shrinking by
+defining <code>shrink = genericShrink</code>, but by customising the behaviour of shrink
+you can often get simpler counterexamples.
+</p>
+</blockquote>
+
+<p>
+Based on some manual testing it seems that <code>genericShrink</code> generates something
+like this for the type <code>Foo</code> above
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><code><span class="org-keyword">instance</span> Arbitrary <span class="org-type">Foo</span> <span class="org-keyword">where</span>
+    <span class="org-function-name">shrink</span> (Foo tata_ titi_) = Foo <span class="org-operator">&lt;$&gt;</span> shrink tata_ <span class="org-operator">&lt;*&gt;</span> shrink titi_
+</code></pre>
+</div>
+
+<p>
+which means that if <code>shrink tata_</code> generates a list of <i>m</i> elements and <code>shrink
+titi_</code> generates a list of <i>n</i> elements, then <code>shrink foo</code> will generate a list
+of <i>m×n</i> elements. It's clear that the size can become problematic with more
+fields. It also means that it's very easy to get an empty list &ndash; if <code>shrink v</code>
+results in an empty list, then <code>shrink foo</code> is also empty. Oh, and <code>shrink
+Nothing</code> is <code>[]</code>!
+</p>
+
+<p>
+A colleague pointed out that tuples have a rather efficient implementation of
+<code>shrink</code> that grows linearly with the number of elements and doesn't reduce to
+the empty list as easily. I could use it for <code>Foo</code> like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><code><span class="org-keyword">instance</span> Arbitrary <span class="org-type">Foo</span> <span class="org-keyword">where</span>
+    <span class="org-function-name">shrink</span> (Foo tata_ titi_) = uncurry Foo <span class="org-operator">&lt;$&gt;</span> shrink (tata_, titi_)
+</code></pre>
+</div>
+
+<p>
+However, that doesn't scale that well to more fields. Up to a point I can use
+list comprehensions, but it gets a bit difficult to read, I find. On top of
+that, the largest tuple with an <code>Arbitrary</code> instance has 10 elements, and then
+I'll have to either define more or use inner tuples.
+</p>
+
+<p>
+Wouldn't it be nice to write <code>shrink</code> in something that looks <code>Applicative</code>, but
+behaves like tuples?
+</p>
+
+<p>
+Here's one approach to this.
+</p>
+
+<p>
+First a type to hold information about what's being shrunk, or in this case <i>waned</i>
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><code><span class="org-keyword">data</span> Wane a = Wane <span class="org-type">a</span> <span class="org-type">[a]</span>
+    <span class="org-keyword">deriving</span> (Generic, Show)
+
+<span class="org-keyword">instance</span> Functor <span class="org-type">Wane</span> <span class="org-keyword">where</span>
+    <span class="org-function-name">fmap</span> f (Wane a as) = Wane (f a) (f <span class="org-operator">&lt;$&gt;</span> as)
+</code></pre>
+</div>
+
+<p>
+Then a couple of functions to bring values in and out, <code>unWane</code> to get the list
+of values out and <code>wane</code> to wrap a value in <code>Wane</code>
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><code><span class="org-function-name">unWane</span> :: <span class="org-type">Wane a</span> <span class="org-operator">-&gt;</span> <span class="org-type">[a]</span>
+<span class="org-function-name">unWane</span> (Wane _ as) = as
+
+<span class="org-function-name">wane</span> :: (Arbitrary <span class="org-type">a</span>) =&gt; <span class="org-type">a</span> <span class="org-operator">-&gt;</span> <span class="org-type">Wane a</span>
+<span class="org-function-name">wane</span> a = Wane a (shrink a)
+</code></pre>
+</div>
+
+<p>
+Finally a way to combine two <code>Wane</code> values is needed, and here I was inspired by
+the implementation of <code>Arbitrary</code> for <code>(a,b)</code>
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><code><span class="org-keyword">infixl</span> <span class="org-number">4</span> <span class="org-operator">\*/</span>
+
+(<span class="org-operator">\*/</span>) ::  <span class="org-type">Wane</span> (<span class="org-type">a</span> <span class="org-operator">-&gt;</span> <span class="org-type">b</span>) <span class="org-operator">-&gt;</span> <span class="org-type">Wane a</span> <span class="org-operator">-&gt;</span> <span class="org-type">Wane b</span>
+(<span class="org-operator">\*/</span>) (Wane f fs) (Wane a as) =  Wane (f a) ([f a' | a' &lt;- as] <span class="org-operator">&lt;&gt;</span> [f' a| f' &lt;- fs])
+</code></pre>
+</div>
+
+<p>
+It's now possible to write <code>shrink</code> for <code>Foo</code> like this
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell"><code><span class="org-keyword">instance</span> Arbitrary <span class="org-type">Foo</span> <span class="org-keyword">where</span>
+    <span class="org-function-name">shrink</span> (Foo tata_ titi_) = unWane <span class="org-operator">$</span> Foo <span class="org-operator">&lt;$&gt;</span> wane tata_ <span class="org-operator">\*/</span> wane titi_
+</code></pre>
+</div>
+
+<p>
+That scales to more fields just as nicely as applicative style, and the result
+matches what the variant using tuples produces (same elements, but the order is
+different).
+</p>
+<div class="taglist"><a href="https://magnus.therning.org/tags.html"><span class="tag-label">Tags</span></a><span class="tag-separator">: </span><span class="taglist__tags"><a href="https://magnus.therning.org/tag-haskell.html" class="tag" data-tag="haskell" data-index="0">haskell</a> <a href="https://magnus.therning.org/tag-quickcheck.html" class="tag" data-tag="quickcheck" data-index="1">quickcheck</a> </span></div>
+
 <div class="post-date">15 Jun 2015</div><h1 class="post-title"><a href="https://magnus.therning.org/2015-06-15-000-using-quickcheck-to-test-c-apis.html">Using QuickCheck to test C APIs</a></h1>
 <p>
 Last year at ICFP I attended the <a href="http://cufp.org/2014/t12-john-hughes-introduction-to-testing-with-quickcheck.html">tutorial on QuickCheck</a> with John Hughes. We got
